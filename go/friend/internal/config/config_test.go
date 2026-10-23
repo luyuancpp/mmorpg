@@ -251,15 +251,60 @@ func TestEtcYamlZoneRewriteAnchors(t *testing.T) {
 	if !regexp.MustCompile(`(?m)^Etcd:\r?\n(?:[ \t]+.*\r?\n)*?[ \t]+Key:\s*""`).MatchString(text) {
 		t.Error("Etcd 段必须显式写 `Key: \"\"`")
 	}
-	// go-zero 的 redis.RedisConf 根本没有 DB 字段,写了也是静默忽略;而契约 §4 要求
-	// 契约 key 一律落默认 DB 0(多运行时共写)。原配置写过 `DB: 3`,这条挡住它回来。
-	if regexp.MustCompile(`(?m)^[ \t]*DB:`).MatchString(text) {
-		t.Error("不应出现 DB: 键(契约 key 由多运行时共写,DB 号必须全仓一致 = 默认 0)")
+	// go-zero 的共享 RedisConf 没有 DB 字段；独立的 LoginRedisConf 则必须允许
+	// 显式选择原登录态的 DB。禁止未知字段只作用于共享 Redis 段，不能误伤登录态。
+	if sharedRedisHasDBKey(text) {
+		t.Error("共享 Redis 段不应出现 DB: 键(契约 key 由多运行时共写,DB 号必须全仓一致 = 默认 0)")
 	}
 	// chat 必须屏蔽 SendChat 的请求体;friend 的请求体只有数字 id,刻意不屏蔽(见 yaml 末尾注释)。
 	// 只匹配真正的键行(行首缩进后直接跟键名),yaml 末尾解释这个判断的注释不算。
 	if regexp.MustCompile(`(?m)^[ \t]*IgnoreContentMethods:`).MatchString(text) {
 		t.Error("friend 不需要 StatConf.IgnoreContentMethods:请求体没有隐私正文,全量日志是排障资产")
+	}
+}
+
+func sharedRedisHasDBKey(text string) bool {
+	inside := false
+	for _, line := range strings.Split(strings.ReplaceAll(text, "\r\n", "\n"), "\n") {
+		if line == "Redis:" {
+			inside = true
+			continue
+		}
+		if !inside {
+			continue
+		}
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "" || strings.HasPrefix(trimmed, "#") {
+			continue
+		}
+		if line[0] != ' ' && line[0] != '\t' {
+			inside = false
+			continue
+		}
+		if strings.HasPrefix(strings.TrimLeft(line, " \t"), "DB:") {
+			return true
+		}
+	}
+	return false
+}
+
+func TestSharedRedisDBAnchorScope(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		yaml string
+		want bool
+	}{
+		{"登录态DB在共享段之前", "LoginRedis:\n  DB: 3\nRedis:\n  Key: \"\"\n", false},
+		{"登录态DB在共享段之后", "Redis:\r\n  Key: \"\"\r\nLoginRedis:\r\n  DB: 0\r\n", false},
+		{"共享段显式零DB仍是未知字段", "Redis:\n  Key: \"\"\n  DB: 0\nLoginRedis:\n  DB: 3\n", true},
+		{"共享段非零DB不能假装生效", "LoginRedis:\n  DB: 0\nRedis:\n  DB: 3\n  Key: \"\"\n", true},
+		{"共享段空行与注释不能掩盖DB", "Redis:\n  Key: \"\"\n\n# 共享段注释\n  DB: 3\n", true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := sharedRedisHasDBKey(tc.yaml); got != tc.want {
+				t.Errorf("共享Redis的DB文本锚点: got %v, want %v", got, tc.want)
+			}
+		})
 	}
 }
 

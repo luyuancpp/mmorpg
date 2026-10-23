@@ -101,6 +101,7 @@ target_link_libraries(redis_lifecycle_test PRIVATE lifecycle_muduo lifecycle_gte
 
 add_executable(timer_queue_lifecycle_test
     "${MMORPG_SOURCE_ROOT}/cpp/tests/timer_queue_unit_test/timer_queue_unit_test.cpp"
+    "${MMORPG_SOURCE_ROOT}/cpp/tests/timer_queue_unit_test/muduo_base_contract_test.cpp"
     "${MMORPG_SOURCE_ROOT}/cpp/libs/engine/core/time/comp/timer_task_comp.cpp")
 target_include_directories(timer_queue_lifecycle_test PRIVATE
     "${MMORPG_SOURCE_ROOT}/cpp/libs/engine/core"

@@ -499,9 +499,9 @@ type dbOpHandler func(
 	msg proto.Message,
 ) (writeOutcome, error)
 
-var dbOpHandlers = map[string]dbOpHandler{
-	"read":  handleDBReadOp,
-	"write": handleDBWriteOp,
+var dbOpHandlers = map[db_proto.DBOp]dbOpHandler{
+	db_proto.DBOp_DB_OP_READ:  handleDBReadOp,
+	db_proto.DBOp_DB_OP_WRITE: handleDBWriteOp,
 }
 
 // handleDBReadOp 的 ctx 是调用方的 ctx(Kafka 来源即 claimCtx):claim 被收回、停机超时时读随之取消,排空更快;
@@ -669,12 +669,12 @@ func orderingForTask(ctx context.Context, rc redis.Cmdable, topic string, dbTask
 	// even when this key has no marker: Key%N is not the producer's partitioner,
 	// and executing the task could race a fresh write on another worker.
 	if task.fromRetry && (task.seq == 0 || !task.hasOriginPartition) {
-		if dbTask.Op == "write" {
+		if dbTask.Op == db_proto.DBOp_DB_OP_WRITE {
 			metrics.CountOrderingGuard(metrics.OrderingIncomparable)
 		}
 		return orderingIncomparable, nil
 	}
-	if dbTask.Op != "write" {
+	if dbTask.Op != db_proto.DBOp_DB_OP_WRITE {
 		return orderingApply, nil
 	}
 	getStart := time.Now()
@@ -719,7 +719,7 @@ func orderingForTask(ctx context.Context, rc redis.Cmdable, topic string, dbTask
 // tying it to the 24h business-cache TTL would let a delayed retry resurrect
 // after the guard expired and overwrite a newer full snapshot.
 func markAppliedSeq(ctx context.Context, rc redis.Cmdable, topic string, dbTask *db_proto.DBTask, task *workerTask) error {
-	if task.seq == 0 || dbTask.Op != "write" {
+	if task.seq == 0 || dbTask.Op != db_proto.DBOp_DB_OP_WRITE {
 		return nil
 	}
 	cursor := appliedCursor{seq: task.seq, partition: task.originPartition, hasPartition: task.hasOriginPartition}
@@ -969,7 +969,7 @@ func (w *worker) guardOwnerEpoch(task *workerTask, dbTask *db_proto.DBTask) bool
 // 失败不回滚业务写、也不让任务重试:代价只是守卫暂时少看到一格(之后同一持有者的
 // 任何一次成功写都会补上),而重试一笔已经落库的写没有任何收益。
 func (w *worker) markAppliedOwnerEpoch(dbTask *db_proto.DBTask) {
-	if dbTask.Op != "write" || dbTask.OwnerEpoch == 0 || w.appliedEpochs == nil {
+	if dbTask.Op != db_proto.DBOp_DB_OP_WRITE || dbTask.OwnerEpoch == 0 || w.appliedEpochs == nil {
 		return
 	}
 	if err := w.appliedEpochs.MarkAppliedEpoch(w.ctx, w.topic, dbTask.Key, dbTask.MsgType, dbTask.OwnerEpoch); err != nil {
@@ -1761,9 +1761,13 @@ func (c *KeyOrderedKafkaConsumer) parseClaimedRetry(msg []byte, mode string) (*d
 		deadLetter(metrics.DeadLetterMalformedPayload, fmt.Sprintf("malformed payload: %v", err))
 		return nil, 0, 0, nil, false
 	}
+	if _, ok := dbOpHandlers[task.Op]; !ok {
+		deadLetter(metrics.DeadLetterMalformedPayload, fmt.Sprintf("unsupported op: %d", task.Op))
+		return nil, 0, 0, nil, false
+	}
 
 	if task.RetryCount >= int32(c.retryMaxTimes) {
-		if task.Op == "read" {
+		if task.Op == db_proto.DBOp_DB_OP_READ {
 			// 读不改数据,进死信没有可保全的东西,只会让死信告警失去判别力(L-04 §3.6)。
 			if c.abandonClaimedReadRetry(msg, &task) {
 				metrics.CountRetryRoute(mode, metrics.RetryRouteDead)
@@ -2040,7 +2044,7 @@ func (w *worker) processTaskBatch(batch []*workerTask, isOfflineExpand bool) {
 		}
 		ck := writeCoalesceKey{key: pt.dbTask.Key, msgType: pt.dbTask.MsgType}
 		switch pt.dbTask.Op {
-		case "write":
+		case db_proto.DBOp_DB_OP_WRITE:
 			if pt.wt.seq == 0 || !pt.wt.hasOriginPartition {
 				continue
 			}
@@ -2082,10 +2086,13 @@ func (w *worker) processTaskBatch(batch []*workerTask, isOfflineExpand bool) {
 			} else {
 				byPartition[pt.wt.originPartition] = i
 			}
-		case "read":
+		case db_proto.DBOp_DB_OP_READ:
 			// Read acts as a barrier: any earlier write for ck is in a
 			// different segment and must execute so the read sees post-write
 			// state.
+			delete(liveBestWrite, ck)
+		default:
+			// 未知操作由 handleTask 持久隔离；不能跨过它合并写，保留原始执行边界。
 			delete(liveBestWrite, ck)
 		}
 	}
@@ -2189,9 +2196,19 @@ func (w *worker) handleTask(task *workerTask, isOfflineExpand bool) {
 	// Keep the decoded task on the envelope so panic recovery can persist the
 	// exact operation instead of leaving a retry receipt stranded.
 	task.dbTask = dbTask
+	if _, ok := dbOpHandlers[dbTask.Op]; !ok {
+		cause := fmt.Errorf("unsupported op: %d", dbTask.Op)
+		// 旧字符串载荷按新协议解码后 Op 为零，也必须先保全原始载荷再确认。
+		if task.fromRetry {
+			w.quarantineOrderingConflict(task, dbTask, metrics.DeadLetterMalformedPayload, cause.Error())
+		} else {
+			w.quarantinePoisonTask(task, cause)
+		}
+		return
+	}
 
 	var orderingLock *orderingLease
-	if dbTask.Op == "write" {
+	if dbTask.Op == db_proto.DBOp_DB_OP_WRITE {
 		var lockErr error
 		orderingLock, lockErr = acquireOrderingLock(w.ctx, w, dbTask)
 		if lockErr != nil {
@@ -2246,15 +2263,14 @@ func (w *worker) handleTask(task *workerTask, isOfflineExpand bool) {
 
 	// 归属 epoch 守卫:seq 只证明「同分区内更晚到」,不证明「来自当前归属节点」。
 	// 只对 write 生效;read 不改数据。判定与终态处理都在 guardOwnerEpoch 里。
-	if dbTask.Op == "write" && !w.guardOwnerEpoch(task, dbTask) {
+	if dbTask.Op == db_proto.DBOp_DB_OP_WRITE && !w.guardOwnerEpoch(task, dbTask) {
 		return
 	}
 
 	// 按玩家落点选库(player-storage-placement.md §6.2):写在上面三道守卫全部通过之后才选,
 	// 选中的库连同选库时的快照交给执行路径,SQL 之后由 runDBOp 复核(§6.3)。
-	// 读写之外的 op 不选库,执行时按 unsupported op 报错(与改动前相同)。
 	var route *placementRoute
-	if dbTask.Op == "write" || dbTask.Op == "read" {
+	if dbTask.Op == db_proto.DBOp_DB_OP_WRITE || dbTask.Op == db_proto.DBOp_DB_OP_READ {
 		var routed bool
 		if route, routed = w.routeTask(task, dbTask); !routed {
 			return
@@ -2286,7 +2302,7 @@ func (w *worker) handleTask(task *workerTask, isOfflineExpand bool) {
 		metrics.CountFenceRejectedBytes("epoch_override", len(dbTask.Body))
 	}
 	// C2(persist_schema.go):行世代高于本实例的读立即回失败回执,不进重试 —— 读按 L-04 会耗预算,排队只会让登录等满超时。
-	if err != nil && dbTask.Op == "read" && errors.Is(err, errSchemaTooNew) {
+	if err != nil && dbTask.Op == db_proto.DBOp_DB_OP_READ && errors.Is(err, errSchemaTooNew) {
 		w.failReadSchemaTooNew(task, dbTask, err)
 		return
 	}
@@ -2784,6 +2800,9 @@ func (h *consumerGroupHandler) drainClaimForShutdown(claim sarama.ConsumerGroupC
 }
 
 func processDBTask(ctx context.Context, w *worker, task *db_proto.DBTask, route *placementRoute, lease writeLease, partition int32, seq uint64, isOfflineExpand bool) (writeOutcome, error) {
+	if _, ok := dbOpHandlers[task.GetOp()]; !ok {
+		return writeOutcome{}, fmt.Errorf("unsupported op: %d", task.GetOp())
+	}
 	key := strconv.FormatUint(task.Key, 10)
 	logx.Debugf("received db task: taskID=%s, key=%s, partition=%d, seq=%d, isOfflineExpand=%v",
 		task.TaskId, key, partition, seq, isOfflineExpand)
@@ -2862,11 +2881,12 @@ func tryLockAndProcess(ctx context.Context, worker *worker, key string, task *db
 }
 
 func processTaskWithoutLock(ctx context.Context, redisClient redis.Cmdable, task *db_proto.DBTask, route *placementRoute, lease writeLease) (writeOutcome, error) {
-	totalStart := time.Now()
-	opLabel := task.Op
-	if opLabel != "read" && opLabel != "write" {
-		opLabel = "unknown"
+	handler, ok := dbOpHandlers[task.GetOp()]
+	if !ok {
+		return writeOutcome{}, fmt.Errorf("unsupported op: %d", task.GetOp())
 	}
+	totalStart := time.Now()
+	opLabel := taskOpLabel(task)
 	defer func() {
 		metrics.ObserveStage(metrics.StageOpTotal, opLabel, time.Since(totalStart))
 	}()
@@ -2892,24 +2912,18 @@ func processTaskWithoutLock(ctx context.Context, redisClient redis.Cmdable, task
 		return writeOutcome{kind: kind}, nil
 	}
 
-	var opErr error
-	var outcome writeOutcome
-	if handler, ok := dbOpHandlers[task.Op]; !ok {
-		opErr = fmt.Errorf("unsupported op: %s", task.Op)
-	} else {
-		// op_handler(写)= SQL + 落库后复核 + 核锁 + 缓存回写;(读)= SQL + 复核 + 缓存回写 + 结果发布。
-		// 写比 S4 之前多了一次核锁往返(原来在 handleTask 里、缓存回写之后),与 R19 对比时按这个口径。
-		handlerStart := time.Now()
-		outcome, opErr = runDBOp(ctx, redisClient, task, msg, handler, route, lease)
-		metrics.ObserveStage(metrics.StageOpHandler, opLabel, time.Since(handlerStart))
-	}
+	// op_handler(写)= SQL + 落库后复核 + 核锁 + 缓存回写;(读)= SQL + 复核 + 缓存回写 + 结果发布。
+	// 写比 S4 之前多了一次核锁往返(原来在 handleTask 里、缓存回写之后),与 R19 对比时按这个口径。
+	handlerStart := time.Now()
+	outcome, opErr := runDBOp(ctx, redisClient, task, msg, handler, route, lease)
+	metrics.ObserveStage(metrics.StageOpHandler, opLabel, time.Since(handlerStart))
 
 	errText := ""
 	if opErr != nil {
 		errText = opErr.Error()
 	}
 	logx.Infof("task processed: taskID=%s, op=%s, success=%v, err=%s",
-		task.TaskId, task.Op, opErr == nil, errText)
+		task.TaskId, opLabel, opErr == nil, errText)
 
 	if opErr != nil {
 		metrics.ObserveResult(opLabel, "error")
@@ -2933,10 +2947,13 @@ func processTaskWithoutLock(ctx context.Context, redisClient redis.Cmdable, task
 // lease 只对写生效;handleTask 只在真的持锁时才把租约装进接口(nil 指针装进接口后接口本身不为 nil)。
 func runDBOp(ctx context.Context, redisClient redis.Cmdable, task *db_proto.DBTask, msg proto.Message,
 	handler dbOpHandler, route *placementRoute, lease writeLease) (writeOutcome, error) {
-	if route == nil || route.store == nil {
-		return writeOutcome{}, fmt.Errorf("no placement route for op=%s taskID=%s; refusing to guess a database", task.Op, task.TaskId)
+	if _, ok := dbOpHandlers[task.GetOp()]; !ok {
+		return writeOutcome{}, fmt.Errorf("unsupported op: %d", task.GetOp())
 	}
-	isWrite := task.Op == "write"
+	if route == nil || route.store == nil {
+		return writeOutcome{}, fmt.Errorf("no placement route for op=%s taskID=%s; refusing to guess a database", taskOpLabel(task), task.TaskId)
+	}
+	isWrite := task.Op == db_proto.DBOp_DB_OP_WRITE
 	sqlCtx := ctx
 	finish := func(error) {}
 	if isWrite {

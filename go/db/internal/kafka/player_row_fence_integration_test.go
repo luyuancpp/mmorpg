@@ -281,7 +281,7 @@ func TestIntegrationSQLCommitLeaseLossReplayAndOldEpochEvidence(t *testing.T) {
 	model := openAssetFenceFixture(t)
 	w, mr, _ := newTestWorker(t, 0)
 	storesOf(t, w).stores[testZoneID] = &proto_sql.GameDB{SqlModel: model}
-	dbOpHandlers["write"] = handleDBWriteOp
+	dbOpHandlers[dbpb.DBOp_DB_OP_WRITE] = handleDBWriteOp
 	ledger := &componentpb.PlayerAssetOpLedgerComp{Streams: []*componentpb.AssetOpStreamLedger{{StreamEpoch: 1, MaxSeq: 1, SeenBits: []uint64{1}, AppliedBits: []uint64{1}, Receipts: []*componentpb.AssetOpReceipt{{Seq: 1, RequestDigest: bytes.Repeat([]byte{0x31}, 32), CorrelationId: 91}}}}}
 	row := fenceRow(100)
 	row.AssetOpLedger = ledger
@@ -290,12 +290,12 @@ func TestIntegrationSQLCommitLeaseLossReplayAndOldEpochEvidence(t *testing.T) {
 		next.Currency.Values[1] = balance
 		raw, err := proto.Marshal(next)
 		require.NoError(t, err)
-		return &workerTask{dbTask: &dbpb.DBTask{Key: 42, Op: "write", MsgType: "player_database", TaskId: fmt.Sprintf("fence-e%d-s%d-c%d", epoch, saveSeq, cursor), OwnerEpoch: epoch, SaveSeq: saveSeq, Body: raw}, seq: cursor, originPartition: 0, hasOriginPartition: true}
+		return &workerTask{dbTask: &dbpb.DBTask{Key: 42, Op: dbpb.DBOp_DB_OP_WRITE, MsgType: "player_database", TaskId: fmt.Sprintf("fence-e%d-s%d-c%d", epoch, saveSeq, cursor), OwnerEpoch: epoch, SaveSeq: saveSeq, Body: raw}, seq: cursor, originPartition: 0, hasOriginPartition: true}
 	}
 	require.NoError(t, w.redisClient.Set(w.ctx, ownerepoch.OwnerEpochKey(42), "7", 0).Err())
 	first := makeTask(7, 9, 10, 100)
 	// 保留真实 SQL 入口，仅在其返回后切换锁令牌，复现已提交但发布前失租。
-	dbOpHandlers["write"] = func(ctx context.Context, store *proto2mysql.DB, task *dbpb.DBTask, msg proto.Message) (writeOutcome, error) {
+	dbOpHandlers[dbpb.DBOp_DB_OP_WRITE] = func(ctx context.Context, store *proto2mysql.DB, task *dbpb.DBTask, msg proto.Message) (writeOutcome, error) {
 		outcome, err := handleDBWriteOp(ctx, store, task, msg)
 		if err == nil {
 			require.NoError(t, mr.Set(orderingLockRedisKey(w, task), "successor"))
@@ -316,7 +316,7 @@ func TestIntegrationSQLCommitLeaseLossReplayAndOldEpochEvidence(t *testing.T) {
 	}
 	require.Equal(t, int64(1), redisListLen(t, w, w.retryQueueKey))
 	require.NoError(t, w.redisClient.Del(w.ctx, orderingLockRedisKey(w, first.dbTask)).Err())
-	dbOpHandlers["write"] = handleDBWriteOp
+	dbOpHandlers[dbpb.DBOp_DB_OP_WRITE] = handleDBWriteOp
 	retry := claimRetry(t, w)
 	require.NotNil(t, retry)
 	// 同 (E,S) 的不同载荷仍判 equal，但发布内容只能来自先提交的 SQL 行。

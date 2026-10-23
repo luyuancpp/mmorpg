@@ -1623,10 +1623,18 @@ func TestLeaveScene_DecrementsPlayerCount(t *testing.T) {
 
 	// Enter first.
 	enterLogic := NewEnterSceneLogic(ctx, sc)
-	enterLogic.EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
-		PlayerId: 1001,
-		SceneId:  sceneId,
+	enterResp, enterErr := enterLogic.EnterScene(&scene_manager.EnterSceneRequest{OwnerRevision: 1,
+		PlayerId:  1001,
+		SceneId:   sceneId,
+		SessionId: 11, LoginGeneration: identGenA,
 	})
+
+	require.NoError(t, enterErr)
+	require.NotNil(t, enterResp)
+	require.Equal(t, uint32(0), enterResp.ErrorCode)
+	enteredCount, countErr := sc.Redis.Get(fmt.Sprintf(InstancePlayerCountKey, sceneId))
+	require.NoError(t, countErr)
+	require.Equal(t, "1", enteredCount, "离场前必须已成功计入同一场景")
 
 	// 持有节点已退出存盘并写出当前代的断线释放标记(A1′):LeaveScene 删 location 之前要求这枚证据
 	// (docs/design/location-release-binding.md §3.2)。首次落点铸的是 1。
@@ -1635,8 +1643,9 @@ func TestLeaveScene_DecrementsPlayerCount(t *testing.T) {
 	// Leave.
 	leaveLogic := NewLeaveSceneLogic(ctx, sc)
 	_, leaveErr := leaveLogic.LeaveScene(&scene_manager.LeaveSceneRequest{
-		PlayerId: 1001,
-		SceneId:  sceneId,
+		PlayerId:  1001,
+		SceneId:   sceneId,
+		SessionId: 11, LoginGeneration: identGenA,
 	})
 	require.NoError(t, leaveErr)
 

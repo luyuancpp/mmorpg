@@ -12,26 +12,36 @@ import (
 	"shared/assetopwake"
 )
 
-// 示例保留拒启默认；只有测试显式声明全局会话权威后才检查其它配置项。
+// 直接加载当前正式样例，避免测试注入掩盖全局会话权威的配置回归。
 func loadEtcWithAuthorityForTest(t *testing.T, c *Config) error {
 	t.Helper()
-	raw, err := os.ReadFile("../../etc/guild.yaml")
-	if err != nil {
-		return err
-	}
-	sample := strings.ReplaceAll(string(raw), "\r\n", "\n")
-	if !strings.Contains(sample, "GlobalLoginSessions: false") || !strings.Contains(sample, "LoginRedis:\n  Host: \"\"") {
-		t.Fatal("默认拒启样例契约改变，须显式审阅测试注入")
-	}
-	sample = strings.Replace(sample, "GlobalLoginSessions: false", "GlobalLoginSessions: true", 1)
-	sample = strings.Replace(sample, "LoginRedis:\n  Host: \"\"", "LoginRedis:\n  Host: 127.0.0.1:26379", 1)
-	return conf.LoadFromYamlBytes([]byte(sample), c)
+	return conf.Load("../../etc/guild.yaml", c)
 }
 
 func TestEtcTemplateRequiresExplicitGlobalSessions(t *testing.T) {
 	var c Config
-	if err := conf.Load("../../etc/guild.yaml", &c); err == nil || !strings.Contains(err.Error(), "LoginRedis") {
-		t.Fatalf("生产样例缺全局会话声明不得默认为可写: %v", err)
+	if err := loadEtcWithAuthorityForTest(t, &c); err != nil {
+		t.Fatalf("当前样例显式全局权威配置应可加载: %v", err)
+	}
+	if c.AccountRoleSchema == "" || !c.MySQL.RequiresTiDB() || c.MatchAuthoritySchema == "" || !c.GlobalLoginSessions || strings.TrimSpace(c.LoginRedis.Host) == "" {
+		t.Fatal("生产样例必须显式声明同TiDB权威库、Match权威库和全局LoginRedis")
+	}
+	for _, test := range []struct {
+		name   string
+		change func(*Config)
+	}{
+		{"未声明全局会话", func(c *Config) { c.GlobalLoginSessions = false }},
+		{"登录实例缺失", func(c *Config) { c.LoginRedis.Host = "" }},
+		{"非法登录DB", func(c *Config) { c.LoginRedis.DB = -1 }},
+		{"非法登录连接池", func(c *Config) { c.LoginRedis.PoolSize = -1 }},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			invalid := c
+			test.change(&invalid)
+			if err := invalid.Validate(); err == nil || !strings.Contains(err.Error(), "LoginRedis") {
+				t.Fatalf("缺失或非法全局会话权威必须拒启: %v", err)
+			}
+		})
 	}
 }
 

@@ -127,7 +127,7 @@ func publishDBWriteResult(ctx context.Context, lease writeLease, task *dbpb.DBTa
 }
 
 func advanceApplied(ctx context.Context, lease writeLease, topic string, dbTask *dbpb.DBTask, task *workerTask) error {
-	if dbTask.Op != "write" {
+	if dbTask.Op != dbpb.DBOp_DB_OP_WRITE {
 		return nil
 	}
 	cursor := ""

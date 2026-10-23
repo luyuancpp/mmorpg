@@ -187,6 +187,10 @@ func (p *KeyOrderedKafkaProducer) SendTasks(ctx context.Context, tasks []*db_pro
 			p.recycleMessages(msgs)
 			return fmt.Errorf("db_task kafka key %q does not match task key %d (want %q)", key, task.Key, want)
 		}
+		if task.Op != db_proto.DBOp_DB_OP_READ && task.Op != db_proto.DBOp_DB_OP_WRITE {
+			p.recycleMessages(msgs)
+			return fmt.Errorf("unsupported db_task op: %d", task.Op)
+		}
 
 		payload := p.payloadPool.Get().([]byte)
 		payload, err := proto.MarshalOptions{}.MarshalAppend(payload[:0], task)
@@ -270,6 +274,9 @@ func (p *KeyOrderedKafkaProducer) SendTask(ctx context.Context, task *db_proto.D
 	// 分区契约:Kafka key 必须是 DBTaskKey(task.Key),理由同 SendTasks。
 	if want := kafkautil.DBTaskKey(task.Key); key != want {
 		return fmt.Errorf("db_task kafka key %q does not match task key %d (want %q)", key, task.Key, want)
+	}
+	if task.Op != db_proto.DBOp_DB_OP_READ && task.Op != db_proto.DBOp_DB_OP_WRITE {
+		return fmt.Errorf("unsupported db_task op: %d", task.Op)
 	}
 
 	payload := p.payloadPool.Get().([]byte)

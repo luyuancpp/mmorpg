@@ -475,6 +475,32 @@ func assertNoDispatch(t *testing.T, c *KeyOrderedKafkaConsumer) {
 	}
 }
 
+func TestDBTaskOp_InvalidRetryIsDurablyQuarantined(t *testing.T) {
+	for _, mode := range []string{db_config.RetryRoutingOwner, db_config.RetryRoutingShared} {
+		for _, tc := range invalidDBTaskOpPayloads(t) {
+			t.Run(mode+"/"+tc.name, func(t *testing.T) {
+				f := newRoutingFixture(t)
+				c := f.consumer("db-enum-test", mode, 1)
+				lease := c.owned.acquire(0, f.ctx)
+				t.Cleanup(func() { c.owned.release(lease) })
+				payload := wrapRetryPayload(7, 0, tc.raw)
+				f.push(t, c.retryQueueKey, payload)
+				before := deadLetterCount(t, metrics.DeadLetterMalformedPayload)
+
+				c.consumeRetryQueue()
+
+				assert.Equal(t, [][]byte{payload}, f.list(t, c.retryDeadQueueKey), "保留完整原收据以便排查")
+				assert.Zero(t, f.llen(t, c.retryQueueKey))
+				assert.Zero(t, f.llen(t, c.retryProcessingKey))
+				assert.Empty(t, f.h.snapshot(), "非法重试不得执行 SQL")
+				assertNoDispatch(t, c)
+				assert.Equal(t, before+1, deadLetterCount(t, metrics.DeadLetterMalformedPayload),
+					"未知操作优先于重试预算耗尽归为载荷错误")
+			})
+		}
+	}
+}
+
 // ─────────────────────────── 路由:owner 模式 ───────────────────────────
 
 // (a) owner、没有租约:收件箱按载荷里的原始分区分拣进 p3 / p1,字节不变、RetryCount 不变、不执行。
@@ -1031,7 +1057,7 @@ func TestRetryRouting_RetryDoneOnEveryExit(t *testing.T) {
 			assert.Len(t, e.f.h.callsForKey(9801), 1, "the older write is superseded")
 		}},
 		{name: "handler panic", run: func(t *testing.T, e *env) {
-			dbOpHandlers["write"] = func(context.Context, *proto2mysql.DB, *db_proto.DBTask, proto.Message) (writeOutcome, error) {
+			dbOpHandlers[db_proto.DBOp_DB_OP_WRITE] = func(context.Context, *proto2mysql.DB, *db_proto.DBTask, proto.Message) (writeOutcome, error) {
 				panic("injected handler panic")
 			}
 			pl, _ := routedPayload(t, 9802, 5, 0, 0)

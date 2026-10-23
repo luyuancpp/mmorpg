@@ -8,6 +8,7 @@ import (
 	comppb "proto/common/component"
 	dbpb "proto/common/database"
 
+	"github.com/redis/go-redis/v9"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -115,3 +116,20 @@ func (l *EnterGameLogic) repairAccountAppearance(ctx context.Context, state ente
 	}, state.ownerRevision)
 	return err
 }
+
+// backfillPlayerClassScript 沿用原名:脚本本身与返回码语义没有变,只是写入的字节里多了名字;
+// go/shared/scenenode/locator.go 等处的注释按这个名字引用 KEYS[4]。
+
+var backfillPlayerClassScript = redis.NewScript(`
+if redis.call("GET", KEYS[2]) ~= ARGV[1] then
+    return -1
+end
+if redis.call("EXISTS", KEYS[3], KEYS[4]) > 0 then
+    return 2
+end
+if redis.call("GET", KEYS[1]) ~= ARGV[2] then
+    return 0
+end
+redis.call("SET", KEYS[1], ARGV[3], "KEEPTTL")
+return 1
+`)

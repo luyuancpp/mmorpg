@@ -33,6 +33,8 @@ ECS 改造交接见 [总索引](handoff/ecs-refactor/README.md);当前修正与�
 
 跨 zone 的完整节点图、源端双表 SQL ACK 交接时序、目标重登入场时序、[抵达后存盘与 go/db 选库](design/cross-zone-scene-travel.md#1551-zone-2-scene-正常存盘的完整时序)及水平扩展边界见 [跨 zone 场景传送 §15](design/cross-zone-scene-travel.md#15-跨-zone-完整节点与数据流程2026-10-20源码核对)（2026-10-20 源码核对，非本轮运行验收）。
 
+Redis 物理水平扩展的用户目标、当前存盘链问题、源码入口与后续验收要求见 [Claude Code 接手文档](handoff/redis-horizontal-scaling-requirements-20261022.md)；具体方案由接手者自主评估，本轮仅整理文档。
+
 ## 索引
 
 <!-- BEGIN GENERATED INDEX: tools/scripts/gen_docs_index.py -->

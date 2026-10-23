@@ -4549,7 +4549,7 @@ PlayerLifecycleSystem::SaveResult PlayerLifecycleSystem::SavePlayerToRedisImpl(
 		}
 		taskpb::DBTask dbTask;
 		dbTask.set_key(playerId);
-		dbTask.set_op("write");
+		dbTask.set_op(taskpb::DB_OP_WRITE);
 		dbTask.set_msg_type(tableName);
 		dbTask.set_body(std::move(bodyBytes));
 		dbTask.set_task_id(playerIdStr + ":" + tableName + ":" + std::to_string(TimeSystem::NowMillisecondsUTC()));

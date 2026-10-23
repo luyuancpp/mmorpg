@@ -15,7 +15,7 @@ import (
 func fencePublishFixture(t *testing.T) (*worker, *orderingLease, *dbpb.DBTask) {
 	t.Helper()
 	w, _, _ := newTestWorker(t, 0)
-	task := &dbpb.DBTask{Key: 42, Op: "write", MsgType: "player_database", OwnerEpoch: 7, SaveSeq: 9}
+	task := &dbpb.DBTask{Key: 42, Op: dbpb.DBOp_DB_OP_WRITE, MsgType: "player_database", OwnerEpoch: 7, SaveSeq: 9}
 	lease, err := acquireOrderingLock(context.Background(), w, task)
 	require.NoError(t, err)
 	t.Cleanup(func() { releaseOrderingLock(context.Background(), lease, task) })
@@ -72,7 +72,7 @@ func TestAppliedAdvanceRejectsMalformedEpochBeforeCursorWrite(t *testing.T) {
 
 func TestReadCachePublicationNXPreservesConcurrentWrite(t *testing.T) {
 	w, _, _ := newTestWorker(t, 0)
-	task := &dbpb.DBTask{Key: 42, Op: "read", MsgType: "player_database", TaskId: "read-nx"}
+	task := &dbpb.DBTask{Key: 42, Op: dbpb.DBOp_DB_OP_READ, MsgType: "player_database", TaskId: "read-nx"}
 	row := fenceRow(9)
 	raw, err := proto.Marshal(row)
 	require.NoError(t, err)

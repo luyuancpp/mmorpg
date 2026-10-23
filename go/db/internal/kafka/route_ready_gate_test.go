@@ -483,7 +483,7 @@ func TestRouteNotReady_DeferReasonAndRetryBudget(t *testing.T) {
 	assert.Equal(t, metrics.DeferRouteNotReady, deferReason(atRecheck), "the recheck error names the untrusted replica, not a move")
 	assert.Equal(t, metrics.DeferLeaseLost, deferReason(fmt.Errorf("%w: %w", errOrderingLeaseLost, atLookup)))
 
-	write, read := &db_proto.DBTask{Op: "write"}, &db_proto.DBTask{Op: "read"}
+	write, read := &db_proto.DBTask{Op: db_proto.DBOp_DB_OP_WRITE}, &db_proto.DBTask{Op: db_proto.DBOp_DB_OP_READ}
 	assert.True(t, retryBudgetExempt(write, atLookup), "an untrusted replica is not a failed write")
 	assert.False(t, retryBudgetExempt(read, atLookup), "reads consume their budget")
 	assert.True(t, retryBudgetExempt(write, atRecheck))

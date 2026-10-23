@@ -709,7 +709,7 @@ func travelSmokeEnvelopeHint(tip uint32) string {
 			"is not attached, see the gate's [TCP Node] WARN; or the scene dropped the request before dispatch " +
 			"(session not in the scene / player still loading / request failed to parse))"
 	case uint32(tiptable.CommonError_kFeatureUnavailable):
-		return " (kFeatureUnavailable: rejected by the gate GM guard, the request never reached the scene; the gate's GATE_RUN_MODE is not dev)"
+		return " (kFeatureUnavailable: gate GM 闸拒绝，请求未到 scene；gate 的 GATE_RUN_MODE 不是 dev)"
 	}
 	return ""
 }

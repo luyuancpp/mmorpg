@@ -53,7 +53,7 @@ func testIntent(t *testing.T, id, epoch, seq uint64, zone uint32) intent {
 	for i, row := range []proto.Message{&databasepb.PlayerDatabase{PlayerId: id}, &databasepb.PlayerDatabase_1{PlayerId: id}} {
 		body, err := proto.Marshal(row)
 		require.NoError(t, err)
-		raw, err := proto.Marshal(&dbpb.DBTask{Key: id, Op: "write", MsgType: string(row.ProtoReflect().Descriptor().FullName()),
+		raw, err := proto.Marshal(&dbpb.DBTask{Key: id, Op: dbpb.DBOp_DB_OP_WRITE, MsgType: string(row.ProtoReflect().Descriptor().FullName()),
 			Body: body, OwnerEpoch: epoch, SaveSeq: seq, TaskId: "原始任务身份"})
 		require.NoError(t, err)
 		if i == 0 {

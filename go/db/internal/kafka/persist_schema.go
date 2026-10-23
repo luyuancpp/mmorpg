@@ -155,7 +155,7 @@ func effectiveGen(raw uint64) uint64 {
 // checkWriteSchema 在进 SQL 之前判定 C0 / C1。只对带世代字段的玩家表生效,其余表返回 ("", nil)。
 // 返回非空 kind 表示确定性拒写(C0);返回包着 errSchemaTooNew 的错误表示延后(C1)。
 func checkWriteSchema(task *db_proto.DBTask, msg proto.Message) (string, error) {
-	if task.GetOp() != "write" || !isFenceTable(msg.ProtoReflect().Descriptor()) {
+	if task.GetOp() != db_proto.DBOp_DB_OP_WRITE || !isFenceTable(msg.ProtoReflect().Descriptor()) {
 		return "", nil
 	}
 	field := persistSchemaFieldOf(msg.ProtoReflect().Descriptor())
@@ -207,7 +207,7 @@ func logSchemaTooNew(dbTask *db_proto.DBTask, cause error) {
 		return
 	}
 	logx.Errorf("task deferred, persist schema generation newer than this go/db (retry budget kept for writes; upgrade go/db or finish the rollout): taskID=%s op=%s suppressed_since_last=%d cause=%v",
-		dbTask.GetTaskId(), dbTask.GetOp(), suppressed, cause)
+		dbTask.GetTaskId(), taskOpLabel(dbTask), suppressed, cause)
 }
 
 // failReadSchemaTooNew 以失败回执结束一条读(C2):旧版 go/db 读不到新列,冷加载拿到的会是截断副本。

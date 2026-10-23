@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"os"
 	"strings"
 	"sync"
 	"testing"
@@ -11,8 +12,10 @@ import (
 
 	"chat/internal/constants"
 	chatpb "proto/chat"
+	"shared/authoritysql"
 	"shared/placement"
 
+	"github.com/go-sql-driver/mysql"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 )
@@ -44,6 +47,36 @@ func count(t *testing.T, s *Store) int {
 	return n
 }
 
+// 副本重新走生产连接入口；共享事务域，不共享进程内 Store 或 SQL 池。
+func independentStore(t *testing.T, s *Store) *Store {
+	t.Helper()
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	var database string
+	require.NoError(t, s.db.QueryRowContext(ctx, "SELECT DATABASE()").Scan(&database))
+	require.Regexp(t, `^chat_it_[0-9a-f]{32}$`, database)
+	config := mysql.NewConfig()
+	config.Net, config.Addr, config.User, config.DBName = "tcp", os.Getenv("CHAT_IT_TIDB"), "root", database
+	require.Equal(t, "127.0.0.1:24000", config.Addr)
+	config.Timeout, config.ReadTimeout, config.WriteTimeout = time.Second, 5*time.Second, 5*time.Second
+	db, err := authoritysql.Open(ctx, config.FormatDSN(), database, true, 8)
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, db.Close()) })
+	first, err := s.db.Conn(ctx)
+	require.NoError(t, err)
+	defer first.Close()
+	second, err := db.Conn(ctx)
+	require.NoError(t, err)
+	defer second.Close()
+	var firstID, secondID uint64
+	require.NoError(t, first.QueryRowContext(ctx, "SELECT CONNECTION_ID()").Scan(&firstID))
+	require.NoError(t, second.QueryRowContext(ctx, "SELECT CONNECTION_ID()").Scan(&secondID))
+	require.NotEqual(t, firstID, secondID, "副本必须持有不同物理连接")
+	peer, err := New(ctx, db, s.roleSchema, s.rules)
+	require.NoError(t, err)
+	return peer
+}
+
 func TestChatTiDBSQLSendPullPreserveOriginalAndIgnoreRedis(t *testing.T) {
 	s := nativeStore(t)
 	ctx := original(t, 11)
@@ -62,8 +95,7 @@ func TestChatTiDBSQLSendPullPreserveOriginalAndIgnoreRedis(t *testing.T) {
 		require.Greater(t, messages[0].SendTimeMs, int64(1))
 	}
 	// 故意没有任何Redis依赖：重建Store实例仍从同一SQL原件读取完整窗口。
-	restarted, err := New(ctx, s.db, s.roleSchema, s.rules)
-	require.NoError(t, err)
+	restarted := independentStore(t, s)
 	r, err = restarted.Send(ctx, in)
 	require.NoError(t, err)
 	require.True(t, r.Duplicate)
@@ -80,6 +112,7 @@ func TestChatTiDBOldOwnerTransferABAAndFreezeRejectAllEntrances(t *testing.T) {
 	for _, kind := range []string{"transfer", "same-account-ABA", "freeze"} {
 		t.Run(kind, func(t *testing.T) {
 			s := nativeStore(t)
+			peer := independentStore(t, s)
 			old := original(t, 11)
 			_, err := s.Send(old, sendRequest("old", 22))
 			require.NoError(t, err)
@@ -92,18 +125,20 @@ func TestChatTiDBOldOwnerTransferABAAndFreezeRejectAllEntrances(t *testing.T) {
 			case "freeze":
 				listing = 99
 			}
-			_, err = s.db.Exec("UPDATE account_role SET account=?,owner_revision=?,trade_listing_id=? WHERE player_id=11", []byte(account), revision, listing)
+			_, err = peer.db.Exec("UPDATE account_role SET account=?,owner_revision=?,trade_listing_id=? WHERE player_id=11", []byte(account), revision, listing)
 			require.NoError(t, err)
 			for _, id := range []string{"old", "late-new"} {
-				_, err = s.Send(old, sendRequest(id, 22))
-				require.ErrorIs(t, err, ErrOriginal)
+				for _, replica := range []*Store{s, peer} {
+					_, err = replica.Send(old, sendRequest(id, 22))
+					require.ErrorIs(t, err, ErrOriginal)
+				}
 			}
 			_, err = s.Pull(old, &chatpb.PullChatHistoryRequest{Channel: chatpb.ChatChannelType_CHAT_CHANNEL_TYPE_PRIVATE, PeerPlayerId: 22}, 20)
 			require.ErrorIs(t, err, ErrOriginal)
 			require.Equal(t, 1, count(t, s))
 			if kind != "freeze" {
 				current := actor(t, 11, account, revision)
-				require.Len(t, pull(t, s, current, 22), 1, "合法新owner保留role-id历史")
+				require.Len(t, pull(t, peer, current, 22), 1, "合法新owner保留role-id历史")
 				_, err = s.Send(current, sendRequest("old", 22))
 				require.ErrorIs(t, err, ErrOriginal)
 				_, err = s.Send(current, sendRequest("new-owner", 22))
@@ -116,12 +151,14 @@ func TestChatTiDBOldOwnerTransferABAAndFreezeRejectAllEntrances(t *testing.T) {
 
 func TestChatTiDBConcurrentSameOriginalCommitsOnce(t *testing.T) {
 	s := nativeStore(t)
+	peer := independentStore(t, s)
 	ctx := original(t, 11)
 	var wg sync.WaitGroup
 	results := make(chan error, 8)
-	for range 8 {
+	for i := range 8 {
+		replica := []*Store{s, peer}[i%2]
 		wg.Add(1)
-		go func() { defer wg.Done(); _, err := s.Send(ctx, sendRequest("concurrent", 22)); results <- err }()
+		go func() { defer wg.Done(); _, err := replica.Send(ctx, sendRequest("concurrent", 22)); results <- err }()
 	}
 	wg.Wait()
 	close(results)
@@ -129,7 +166,37 @@ func TestChatTiDBConcurrentSameOriginalCommitsOnce(t *testing.T) {
 		require.NoError(t, err)
 	}
 	require.Equal(t, 1, count(t, s))
-	require.Len(t, pull(t, s, ctx, 22), 1)
+	require.Len(t, pull(t, peer, ctx, 22), 1)
+	changed := sendRequest("concurrent", 22)
+	changed.Message.Content = "同原件不同正文"
+	_, err := peer.Send(ctx, changed)
+	require.ErrorIs(t, err, ErrConflict)
+	restored := independentStore(t, peer)
+	replayed, err := restored.Send(ctx, sendRequest("concurrent", 22))
+	require.NoError(t, err)
+	require.True(t, replayed.Duplicate)
+	require.Len(t, pull(t, restored, ctx, 22), 1)
+	conflicts := make(chan error, 2)
+	start := make(chan struct{})
+	for i, replica := range []*Store{s, peer} {
+		request := sendRequest("concurrent-conflict", 22)
+		request.Message.Content = fmt.Sprintf("不同正文-%d", i)
+		go func() { <-start; _, err := replica.Send(ctx, request); conflicts <- err }()
+	}
+	close(start)
+	accepted, rejected := 0, 0
+	for range 2 {
+		err := <-conflicts
+		if err == nil {
+			accepted++
+		} else {
+			require.ErrorIs(t, err, ErrConflict)
+			rejected++
+		}
+	}
+	require.Equal(t, 1, accepted)
+	require.Equal(t, 1, rejected)
+	require.Equal(t, 2, count(t, restored))
 }
 
 func TestChatTiDBSQLRateRejectDoesNotConsumeUUID(t *testing.T) {
