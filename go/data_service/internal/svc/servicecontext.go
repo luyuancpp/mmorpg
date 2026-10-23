@@ -586,6 +586,7 @@ func newPlayerRouteStore(c config.Config, mysqlCfg store.MySQLConfig, schemaRead
 //     读方会永久回源库。记 ERROR,但**不**拒启、不拒装配:读结果仍然正确(只是每次读多一次库查询),哨兵切主期间启动的 Pod
 //     也可能短暂碰到 not_master,拒启会把「正确但慢」变成故障(核实意见);
 //   - 其余(absent、identity_mismatch、malformed、newer_version、trusted):启动时的正常状态(leader 预热完才挂),记 Info。
+//
 // 放在开库之前:与 WAITAOF 探针同理,配置错误挡在启动期,不让它变成每一次读都回源、每一次回源都多两次失败的 INFO。
 func probeRouteReadyReadAtStartup(c config.Config) bool {
 	if !c.RouteStore.ReadRequiresReady {

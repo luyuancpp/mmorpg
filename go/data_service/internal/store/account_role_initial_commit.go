@@ -5,18 +5,18 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"strings"
 	"strconv"
+	"strings"
 
 	"github.com/go-sql-driver/mysql"
 
+	"google.golang.org/protobuf/reflect/protoreflect"
 	base "proto/common/base"
 	databasepb "proto/common/database"
 	"shared/accountdirectory"
 	"shared/generated/persistschema"
 	"shared/placement"
 	"shared/savebarrier"
-	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 // 只由正式迁移调用。旧角色只取得默认 0，绝不从现有 1:1 数字推断出生资格。
@@ -36,46 +36,75 @@ func ensureInitialPlayerCommitSchema(ctx context.Context, db *sql.DB, schema str
 // 初始证据必须核实际完整行，不能只凭可与旧围栏重号的 1:1 元组。
 func initialSQLRowMatches(ctx context.Context, tx *sql.Tx, schema, table string, player uint64, fields protoreflect.FieldDescriptors) (bool, error) {
 	rows, err := tx.QueryContext(ctx, "SELECT * FROM `"+schema+"`.`"+table+"` WHERE player_id=? FOR UPDATE", player)
-	if err != nil { return false, err }
+	if err != nil {
+		return false, err
+	}
 	defer rows.Close()
 	columns, err := rows.Columns()
-	if err != nil { return false, err }
-	if len(columns) != fields.Len() { return false, nil }
-	if !rows.Next() { return false, rows.Err() }
+	if err != nil {
+		return false, err
+	}
+	if len(columns) != fields.Len() {
+		return false, nil
+	}
+	if !rows.Next() {
+		return false, rows.Err()
+	}
 	values := make([]sql.RawBytes, len(columns))
 	dest := make([]any, len(columns))
-	for i := range values { dest[i] = &values[i] }
-	if err := rows.Scan(dest...); err != nil { return false, err }
+	for i := range values {
+		dest[i] = &values[i]
+	}
+	if err := rows.Scan(dest...); err != nil {
+		return false, err
+	}
 	seen := make(map[string]bool, len(columns))
 	for i, name := range columns {
 		field := fields.ByName(protoreflect.Name(name))
-		if field == nil || seen[name] { return false, nil }
+		if field == nil || seen[name] {
+			return false, nil
+		}
 		seen[name] = true
 		var want uint64
 		switch name {
-		case "player_id": want = player
-		case "fence_owner_epoch": want = savebarrier.InitialOwnerEpoch
-		case "fence_save_seq": want = savebarrier.InitialSaveSeq
+		case "player_id":
+			want = player
+		case "fence_owner_epoch":
+			want = savebarrier.InitialOwnerEpoch
+		case "fence_save_seq":
+			want = savebarrier.InitialSaveSeq
 		case "persist_schema_gen":
 			gen, e := strconv.ParseUint(string(values[i]), 10, 32)
-			if e != nil || gen == 0 || gen > uint64(persistschema.Gen) { return false, nil }
+			if e != nil || gen == 0 || gen > uint64(persistschema.Gen) {
+				return false, nil
+			}
 			continue
 		default:
-			if len(values[i]) == 0 { continue }
+			if len(values[i]) == 0 {
+				continue
+			}
 			switch field.Kind() {
 			case protoreflect.MessageKind, protoreflect.BytesKind, protoreflect.StringKind:
 				return false, nil
 			default:
-				if string(values[i]) != "0" { return false, nil }
+				if string(values[i]) != "0" {
+					return false, nil
+				}
 			}
 			continue
 		}
-		if string(values[i]) != strconv.FormatUint(want, 10) { return false, nil }
+		if string(values[i]) != strconv.FormatUint(want, 10) {
+			return false, nil
+		}
 	}
 	for _, name := range []string{"player_id", "fence_owner_epoch", "fence_save_seq", "persist_schema_gen"} {
-		if !seen[name] { return false, nil }
+		if !seen[name] {
+			return false, nil
+		}
 	}
-	if rows.Next() { return false, errors.New("玩家初始行主键不唯一") }
+	if rows.Next() {
+		return false, errors.New("玩家初始行主键不唯一")
+	}
 	return rows.Err() == nil, rows.Err()
 }
 

@@ -424,7 +424,7 @@ net.ipv4.tcp_max_syn_backlog     = 65535
 
 ### 对局 / 战斗
 - [turn-based-battle-server.md](./turn-based-battle-server.md) — 回合制 battle 节点设计与决策(§18 票据直连;§22 直连收缩 D65–D75)
-- [moba-battle-target-architecture.md](../notes/slg-moba/moba-battle-target-architecture.md) — 会话制对局目标形态与本仓现状映射、验收判据
+- [moba-battle-target-architecture.md](../notes/moba/moba-battle-target-architecture.md) — 会话制对局目标形态与本仓现状映射、验收判据
 - [cross-zone-matchmaking.md](./cross-zone-matchmaking.md) — 全服跨 zone 匹配、match 全局池与票据自愈
 
 ### 跨服与场景
@@ -432,8 +432,8 @@ net.ipv4.tcp_max_syn_backlog     = 65535
 - [mmo_cross_server_architecture.md](./mmo_cross_server_architecture.md)
 - [cross_scene_player_messaging.md](./cross_scene_player_messaging.md)
 - [scene-creation-architecture.md](./scene-creation-architecture.md)
-- [scene-grpc-server-design.md](./scene-grpc-server-design.md)
-- [scene-node-threading-model.md](./scene-node-threading-model.md)
+- [gRPC 传输与节点双端口](./grpc-muduo-transport.md#node-grpc-endpoints)
+- [scene-node-threading-model.md](./scene-node-threading-model.md) — 业务线程归属、50ms 固定步长与整体停机顺序
 - [enter-scene-zone-routing.md](./enter-scene-zone-routing.md)
 
 ### 数据与持久化
@@ -459,7 +459,7 @@ net.ipv4.tcp_max_syn_backlog     = 65535
 
 ### 玩法 / ECS / SLG
 - [ecs.md](./ecs.md) / [ecs-component-access-rules.md](./ecs-component-access-rules.md)
-- [slg-server-architecture-design.md](../notes/slg-moba/slg-server-architecture-design.md)
+- [slg-server-architecture-design.md](../notes/slg/slg-server-architecture-design.md)
 - [aoi_priority_design.md](./aoi_priority_design.md)
 
 ### 压测 / 调优

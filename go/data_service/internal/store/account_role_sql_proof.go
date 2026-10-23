@@ -104,10 +104,16 @@ func (v *SQLRoleFreezeVerifier) VerifyFrozen(ctx context.Context, tx *sql.Tx, r 
 			return nil, accountdirectory.ErrConflict
 		}
 		first, err := initialSQLRowMatches(ctx, tx, schema, "player_database", r.PlayerId, (&dbpb.PlayerDatabase{}).ProtoReflect().Descriptor().Fields())
-		if err != nil { return nil, err }
+		if err != nil {
+			return nil, err
+		}
 		second, err := initialSQLRowMatches(ctx, tx, schema, "player_database_1", r.PlayerId, (&dbpb.PlayerDatabase_1{}).ProtoReflect().Descriptor().Fields())
-		if err != nil { return nil, err }
-		if !first || !second { return nil, accountdirectory.ErrConflict }
+		if err != nil {
+			return nil, err
+		}
+		if !first || !second {
+			return nil, accountdirectory.ErrConflict
+		}
 		kind = dspb.AccountRoleFreezeEvidenceKind_ACCOUNT_ROLE_FREEZE_EVIDENCE_KIND_INITIAL_COMMIT
 	} else if epoch == 0 && seq == 0 {
 		// 只有实际未进场种子、没有历史存盘下限、没有本轮原生 holder 才能采用此分支。

@@ -45,28 +45,42 @@ func TestCommittedSeedCarriesFullSQLVersionAndFirstEnterRemainsFast(t *testing.T
 	}
 	version := savebarrier.Version(1, 1)
 	for _, field := range []string{"pending", "player_database", "player_database_1"} {
-		if rc.HGet(ctx, savebarrier.Key(seedTestPlayerID), field).Val() != version { t.Fatal("初始提交屏障不完整") }
+		if rc.HGet(ctx, savebarrier.Key(seedTestPlayerID), field).Val() != version {
+			t.Fatal("初始提交屏障不完整")
+		}
 	}
 	calls := 0
 	ensurePlayerAllDataInRedisAsync(ctx, rc, testParentLoadScripts, true, nil, nil, seedTestPlayerID, 0, func(err error) {
-		calls++; if err != nil { t.Error(err) }
+		calls++
+		if err != nil {
+			t.Error(err)
+		}
 	})
-	if calls != 1 { t.Fatal("可信种子没有保留首次进场快路径") }
+	if calls != 1 {
+		t.Fatal("可信种子没有保留首次进场快路径")
+	}
 }
 
 func TestCommittedSeedRefusesLateOwnerOrBarrierWithoutChangingKeys(t *testing.T) {
 	for _, kind := range []string{"owner", "barrier", "wrongtype", "outbox"} {
 		t.Run(kind, func(t *testing.T) {
-			mr, rc := newSeedTestRedis(t); ctx := context.Background()
+			mr, rc := newSeedTestRedis(t)
+			ctx := context.Background()
 			switch kind {
-			case "owner": _ = rc.Set(ctx, ownerepoch.OwnerEpochKey(seedTestPlayerID), "3", 0).Err()
-			case "barrier": _ = rc.HSet(ctx, savebarrier.Key(seedTestPlayerID), "pending", savebarrier.Version(2, 99)).Err()
-			case "wrongtype": _ = rc.Set(ctx, savebarrier.Key(seedTestPlayerID), "bad", 0).Err()
-			case "outbox": _ = rc.HSet(ctx, savebarrier.Key(seedTestPlayerID), "outbox_retry_ms", "1").Err()
+			case "owner":
+				_ = rc.Set(ctx, ownerepoch.OwnerEpochKey(seedTestPlayerID), "3", 0).Err()
+			case "barrier":
+				_ = rc.HSet(ctx, savebarrier.Key(seedTestPlayerID), "pending", savebarrier.Version(2, 99)).Err()
+			case "wrongtype":
+				_ = rc.Set(ctx, savebarrier.Key(seedTestPlayerID), "bad", 0).Err()
+			case "outbox":
+				_ = rc.HSet(ctx, savebarrier.Key(seedTestPlayerID), "outbox_retry_ms", "1").Err()
 			}
 			before := mr.Dump()
 			result, _ := seedCommittedNewPlayerAllData(ctx, rc, testParentLoadScripts, savebarrier.InitialPlayerData(seedTestPlayerID))
-			if result == SeedWritten || result == SeedIdempotent || mr.Dump() != before { t.Fatal("迟到初始种子覆盖或更改了现有权威状态") }
+			if result == SeedWritten || result == SeedIdempotent || mr.Dump() != before {
+				t.Fatal("迟到初始种子覆盖或更改了现有权威状态")
+			}
 		})
 	}
 }
@@ -74,14 +88,29 @@ func TestCommittedSeedRefusesLateOwnerOrBarrierWithoutChangingKeys(t *testing.T)
 func TestInitialSQLCommitRecoversFailedFirstLandingWithoutLoweringOwner(t *testing.T) {
 	for _, owner := range []string{"", "3"} {
 		t.Run("owner="+owner, func(t *testing.T) {
-			_, rc := newSeedTestRedis(t); ctx := context.Background()
-			if owner != "" { if err := rc.Set(ctx, ownerepoch.OwnerEpochKey(seedTestPlayerID), owner, 0).Err(); err != nil { t.Fatal(err) } }
+			_, rc := newSeedTestRedis(t)
+			ctx := context.Background()
+			if owner != "" {
+				if err := rc.Set(ctx, ownerepoch.OwnerEpochKey(seedTestPlayerID), owner, 0).Err(); err != nil {
+					t.Fatal(err)
+				}
+			}
 			reads := &coldSQLReads{read: initialCommitSQLRead}
 			calls := 0
-			ensurePlayerAllDataInRedisAsync(ctx, rc, testParentLoadScripts, true, reads, reads, seedTestPlayerID, 0, func(err error) { calls++; if err != nil { t.Error(err) } })
+			ensurePlayerAllDataInRedisAsync(ctx, rc, testParentLoadScripts, true, reads, reads, seedTestPlayerID, 0, func(err error) {
+				calls++
+				if err != nil {
+					t.Error(err)
+				}
+			})
 			got, _ := readSeedParent(t, rc, seedTestPlayerID)
-			wantOwner := owner; if wantOwner == "" { wantOwner = "1" }
-			if calls != 1 || reads.count != 2 || !proto.Equal(got, savebarrier.InitialPlayerData(seedTestPlayerID)) || rc.Get(ctx, ownerepoch.OwnerEpochKey(seedTestPlayerID)).Val() != wantOwner { t.Fatal("初始提交恢复缺失、不完整或降低已有 owner") }
+			wantOwner := owner
+			if wantOwner == "" {
+				wantOwner = "1"
+			}
+			if calls != 1 || reads.count != 2 || !proto.Equal(got, savebarrier.InitialPlayerData(seedTestPlayerID)) || rc.Get(ctx, ownerepoch.OwnerEpochKey(seedTestPlayerID)).Val() != wantOwner {
+				t.Fatal("初始提交恢复缺失、不完整或降低已有 owner")
+			}
 		})
 	}
 }

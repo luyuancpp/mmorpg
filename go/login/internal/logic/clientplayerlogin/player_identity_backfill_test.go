@@ -30,8 +30,8 @@ import (
 	loginpb "proto/login"
 	plpb "proto/player_locator"
 	"shared/generated/pb/table"
-	"shared/savebarrier"
 	"shared/ownerepoch"
+	"shared/savebarrier"
 )
 
 const (
@@ -503,10 +503,14 @@ func newEnterWiringHarness(t *testing.T, players []*pbbase.AccountSimplePlayer, 
 		t.Fatalf("seed player blob: %v", err)
 	}
 	// 这是已持久提交的入场夹具，不能把缺屏障的零序号父键当快路径。
-	if err := rdb.Set(ctx, ownerepoch.OwnerEpochKey(identityPlayerID), "1", 0).Err(); err != nil { t.Fatal(err) }
+	if err := rdb.Set(ctx, ownerepoch.OwnerEpochKey(identityPlayerID), "1", 0).Err(); err != nil {
+		t.Fatal(err)
+	}
 	version := savebarrier.Version(1, 1)
 	if err := rdb.HSet(ctx, savebarrier.Key(identityPlayerID), "pending", version, "player_database", version,
-		"player_database_1", version, savebarrier.VerifiedIdentityField, strings.Repeat("a", 40)+":"+strings.Repeat("b", 40)).Err(); err != nil { t.Fatal(err) }
+		"player_database_1", version, savebarrier.VerifiedIdentityField, strings.Repeat("a", 40)+":"+strings.Repeat("b", 40)).Err(); err != nil {
+		t.Fatal(err)
+	}
 
 	pool, err := ants.NewPool(1)
 	if err != nil {

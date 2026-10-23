@@ -1,9 +1,9 @@
 package barrierrestore
 
 import (
-    "strings"
 	"context"
 	"database/sql/driver"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -50,7 +50,7 @@ func TestSchemaGenRestoreUsesSQLMinimumAndOverwritesIndex(t *testing.T) {
 				fields, err := r.Redis.HGetAll(context.Background(), savebarrier.Key(7)).Result()
 				require.NoError(t, err)
 				require.Len(t, fields, 5)
-                assertRestoredFence(t, fields["handoff_fence"], "9", "", "0", strings.Repeat("0", 32))
+				assertRestoredFence(t, fields["handoff_fence"], "9", "", "0", strings.Repeat("0", 32))
 			}
 			require.Equal(t, beforeRows, store.rows, "世代索引恢复不能改SQL原戳或资产")
 			require.Zero(t, store.commits)

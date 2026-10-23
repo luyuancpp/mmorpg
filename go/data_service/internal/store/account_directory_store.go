@@ -27,9 +27,9 @@ const accountRoleDDL = "CREATE TABLE IF NOT EXISTS account_role (player_id BIGIN
 
 // AccountDirectoryStore 只拥有全局目录；与快照池隔离，不访问认证 password 或 Redis。
 type AccountDirectoryStore struct {
-	db        *sql.DB
-	maxRoles  int
-	contracts *roleAssetContractGuard
+	db              *sql.DB
+	maxRoles        int
+	contracts       *roleAssetContractGuard
 	schema          string
 	initialRequired bool
 	initialStores   map[uint32]bool

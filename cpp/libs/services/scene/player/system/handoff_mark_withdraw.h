@@ -9,33 +9,10 @@
 #include <utility>
 #include <vector>
 
-// handoff 标记的"待撤回表"—— 纯容器,不含 entt / redis / muduo,可单测
-// (cpp/tests/cross_zone_test 的 HandoffMarkWithdrawQueue.*)。
-//
-// 为什么需要:源 scene 写下的 player:{id}:handoff 标记("{epoch}:{ms}",EX 300)表示"这一刻的状态
-// 已落盘、可以交接"。交接作废(退出优先 / AbortTravelHandoff)后玩家会继续产生新状态,标记必须撤回;
-// 而撤回那一刻 Redis 可能正好不通,或命令已发出但应答丢了(结果未知)。旧实现是一条 best-effort DEL、
-// 失败零日志,标记带着当前 owner_epoch 残活到 TTL:这段时间内该玩家任何一次跨节点 EnterScene 都会凭
-// 旧标记免存盘过 scene_manager 的换手门 —— 目标节点读到旧档(回档),全程只有一条像双主的
-// stale_owner_write_rejected。
-//
-// 契约(粘合代码在 player_lifecycle.cpp 的 WithdrawHandoffMark / RetryPendingHandoffWithdrawals):
-//   * 先登记、后发命令;只有拿到 Redis 的整数应答(条件删除确实执行了)才 Confirm 销账。
-//   * 表里还有某玩家的条目 = 他的旧标记可能还活着 → PlayerLifecycleSystem::IsSceneChangeBusy 对他
-//     返回 true,**本节点**不替他发任何 EnterScene(fail-closed,AGENTS §11.3)。这道闸只管得住本节点
-//     替在线玩家发出的请求;不经本节点的跨节点落点(玩家断线后重登落到别的节点)它拦不到,那条路
-//     在撤回确认之前仍只有标记 TTL 兜底 —— 已知残余风险,要根治得在 scene_manager 侧处理。
-//   * 截止时刻用单调时钟:标记自带 300s TTL,过了"TTL + 余量"Redis 侧的标记必然已过期,
-//     放弃重试是安全的,但要计数(withdraw_expired)。
-//   * 表只活在 scene 逻辑线程的 thread_local 里。进程退出丢表无害:location 指向已死节点,
-//     scene_manager 接管时必然铸造新 epoch,旧标记自然失配。
-//   * 本表只管"交接作废后撤回"这一种删除。handoff 键的完整写入方 / 删除方清单是键契约的一部分,
-//     见 player_ownership_comp.h 与 exit_release_mark.h 文件头:断线释放标记(A1′,干净退出收敛后写)
-//     **不进本表** —— 它的语义本来就是"已落盘、本节点不再持有",无需撤回;玩家重登载入时由 A2′ 按
-//     owner_epoch 条件删 ≤N 的标记(含本表没来得及撤回的那一份)。所以同节点新建的实体上也可能挂着
-//     一份有效标记,不能据"刚载入"省掉任何清理。
-//
-// 时间一律由调用方传入(显式依赖,AGENTS §11.2),本文件不读任何时钟。
+// scene逻辑线程独占的撤资格重试表。Entry保存原H/F与发出前固定的R，不保存连接或对象指针。
+// Redis成功/旧资格已被更新世代取代才销账；标记TTL到期不能证明迟到publisher已无资格。
+// 满表拒绝新增而不淘汰未确认原件。在线Abort由原组件保持冻结并自行重试；退出后条目仍按原token收尾。
+// 任何更新实体的回调另核原entity/holder/冻结代次，旧Confirm不能消掉新资格的同毫秒条目。
 namespace handoff_mark_withdraw
 {
 	using Clock = std::chrono::steady_clock;
@@ -61,7 +38,7 @@ namespace handoff_mark_withdraw
         std::string publishedFence;
         std::string revokedFence;
         std::string markValue;		   // 标记原文 "{epoch}:{ms}",唯一标识"我写的那一份"
-		Clock::time_point deadline;	   // 过了就放弃(Redis 侧的标记此时也已过期)
+		Clock::time_point deadline; // 原标记观察截止，仅诊断使用，不是资格过期
 		Clock::time_point nextAttemptAt; // 周期重试的最早时刻
 		uint32_t attempts{0};			 // 已被 CollectDue 取走几次;调用方据此只在首发失败时打 ERROR
 	};
@@ -69,10 +46,7 @@ namespace handoff_mark_withdraw
 	class Queue
 	{
 	public:
-		// 登记一条待撤回。返回 true = 新登记;false = 同 (playerId, markValue) 已在表里(不改它的
-		// deadline:截止时刻跟的是标记写入时刻,重复登记不该把它往后推)。
-		// 表满时淘汰 deadline 最早的一条(最接近自然过期、风险最小),被淘汰的条目经 evictedOut 带出,
-		// 由调用方记日志(要能定位到是哪个玩家)+ 计数;其余情况 evictedOut 置空。
+        // 同(player,mark,原holder)幂等；满表返回false，绝不淘汰未确认撤资格。
 		bool Add(uint64_t playerId, std::string markValue, Clock::time_point now, std::chrono::seconds ttl,
 				 std::optional<Entry> &evictedOut, std::string holderFence = {},
                  std::string publishedFence = {}, std::string revokedFence = {})
@@ -104,10 +78,7 @@ namespace handoff_mark_withdraw
 							   [playerId](const Entry &entry) { return entry.playerId == playerId; });
 		}
 
-		// 1. 删掉 deadline <= now 的条目,个数写入 expiredOut。
-		// 2. 返回该重试的条目副本(nextAttemptAt <= now;force = true 时忽略 nextAttemptAt),
-		//    并把它们的 nextAttemptAt 推到 now + kRetryInterval、attempts 加一(副本里是加过之后的值)。
-		// 返回副本而不是引用:调用方发命令的过程中不该攥着表内指针。
+        // 只取到期重试副本，不因标记TTL删除条目；销账必须确认同一原holder。
 		std::vector<Entry> CollectDue(Clock::time_point now, bool force, std::size_t &expiredOut)
 		{
 			expiredOut = 0; // 资格没有 TTL，未确认撤销不能因标记过期而消账。

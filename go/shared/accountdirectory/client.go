@@ -9,8 +9,8 @@ import (
 
 	base "proto/common/base"
 	dspb "proto/data_service"
-	"shared/serviceauth"
 	"shared/savebarrier"
+	"shared/serviceauth"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

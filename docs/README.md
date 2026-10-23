@@ -9,6 +9,8 @@
 
 协议生成的当前命令、输入完整性与守护段规则见[生成器主说明](../tools/proto_generator/README.md)；旧 pbgen 三语杂记已由该入口与专项设计承接。
 
+脚本归属见[脚本主说明](../tools/scripts/README.md)；C++ 串行构建与 scene 编译器 PDB 隔离见[C++ 主说明](../cpp/README.md)。
+
 ## 目录约定
 
 | 目录 | 放什么 | 不放什么 |
@@ -58,8 +60,6 @@ Redis 物理水平扩展的用户目标、当前存盘链问题、源码入口�
 - [data-consistency-guarantee-map-20261020.md](design/data-consistency-guarantee-map-20261020.md) — 数据一致性等级核对：各类数据实际做到哪一级、Redis 回退一族与战斗到期结算丢失（2026-10-20）
 - [zone-redis-regression-guard-20261022.md](design/zone-redis-regression-guard-20261022.md) — zone Redis 回退防护：Redis 回退一族 6 条 low 的合并设计（身份戳与自动采纳、ACK 高于 pending、铸造墙钟地板与 WAITAOF；设计稿，未落码，2026-10-22）
 - [onboarding.md](design/onboarding.md) — 开发者上手指南 — MMO Server
-- [root_level_cleanup_findings.md](design/root_level_cleanup_findings.md) — Root Level & Tools Directory Audit (2026-03-24) · [EN](design/root_level_cleanup_findings_en.md) · [中文](design/root_level_cleanup_findings_zh.md)
-- [script_directory_rules.md](design/script_directory_rules.md) — Script Directory Rules · [EN](design/script_directory_rules_en.md) · [中文](design/script_directory_rules_zh.md)
 - [table-api-reference.md](design/table-api-reference.md) — Configuration Table API Reference · [中文](design/table-api-reference-zh.md)
 
 #### 接入层:网关、gate 与登录
@@ -100,9 +100,8 @@ Redis 物理水平扩展的用户目标、当前存盘链问题、源码入口�
 - [scene-creation-architecture.md](design/scene-creation-architecture.md) — Scene Creation Architecture
 - [scene-enter-chain-residuals.md](design/scene-enter-chain-residuals.md) — 进场链余项 a–e:踢线、离场、落点、释放与断线上报的身份栅栏(设计稿,2026-10-16)
 - [scene-enter-session-fence.md](design/scene-enter-session-fence.md) — 入场会话栅栏:登录代次(login_generation)
-- [scene-grpc-server-design.md](design/scene-grpc-server-design.md) — Scene Node gRPC Server Design
 - [scene-navmesh-pipeline.md](design/scene-navmesh-pipeline.md) — 场景导航网格管线(Recast 烘焙 + 服务器寻路阻挡校验)
-- [scene-node-threading-model.md](design/scene-node-threading-model.md) — Scene Node 线程模型决策
+- [scene-node-threading-model.md](design/scene-node-threading-model.md) — Scene Node 线程归属、帧循环与停机
 - [scene-owner-reentry-barrier.md](design/scene-owner-reentry-barrier.md) — 场景所有权：再入屏障与 owner_epoch
 - [location-release-binding.md](design/location-release-binding.md) — 删 location 绑定"持有者已释放"(审计 §2.1 修复:LeaveScene 释放证据、ReleasePlayer.session_ended、gate LeaveGame 与同节点新 epoch,2026-10-18)
 - [scene-switch-release-design.md](design/scene-switch-release-design.md) — SceneManager跨节点切场景释放玩家方案选型
@@ -175,13 +174,13 @@ Redis 物理水平扩展的用户目标、当前存盘链问题、源码入口�
 - [mixed-version-persist-field-protection.md](design/mixed-version-persist-field-protection.md) — 新旧版本混跑时的玩家持久字段保护：未知字段跟着对象走、覆盖世代校验、go/db 超前延后与倒退拒写（v0.5 已拍板；第 1 批已验证，第 2 批构建通过、单测未跑，第 3a 批已落码未编译，3b / 4 / 5 未开工；交接见 handoff/mixed-version-persist-handoff-20261019.md）
 - [landing-recovery-sync-digest.md](design/landing-recovery-sync-digest.md) — 落地恢复：按域版本摘要、场景侧待办唤醒与超窗处置（2026-10-14）
 - [new-player-first-enter-no-cold-read.md](design/new-player-first-enter-no-cold-read.md) — 新号首次进场免冷读:建角时写入 PlayerAllData 种子
-- [player-async-save-loss-windows.md](design/player-async-save-loss-windows.md) — 玩家异步存盘的丢失窗口（置脏 / 快照跳过 / 重试耗尽）
+- [player-async-save-loss-windows.md](design/player-async-save-loss-windows.md) — 玩家异步存盘：已修复问题、剩余丢失窗口与修复任务
 - [player-inbox-service.md](design/player-inbox-service.md) — 玩家持久收件箱服务（player_inbox）设计
 - [player-route-mapping-durability-proposal.md](design/player-route-mapping-durability-proposal.md) — 玩家归属与落点映射持久化:库为真源 + Redis 完整副本 + 就绪标记(已拍板;第 0 ~ 3 批已落码,未验证;2026-10-19 起读方按身份绑定的就绪标记判可信,见 §13)
 - [player-storage-placement.md](design/player-storage-placement.md) — 玩家存储落点(Placement):归属与存储拆分、单玩家搬库、Phase 2 全局库
 - [player_live_data_export_runbook.md](design/player_live_data_export_runbook.md) — 玩家线上数据下线导出操作记录
 - [proto-compare-dirty-save.md](design/proto-compare-dirty-save.md) — Proto-Compare-Driven Dirty Save — Design (todo.md #204 + #226)
-- [redis-async-client-retry-fix.md](design/redis-async-client-retry-fix.md) — Redis 重连、认证、同批 socket 事件与 Hiredis 生命周期
+- [redis-async-client-retry-fix.md](design/redis-async-client-retry-fix.md) — Redis 异步客户端重试、重连与生命周期
 - [reliable-player-inbox-20261014.md](design/reliable-player-inbox-20261014.md) — 重要玩家消息：持久收件箱、拉取恢复与迁移围栏（2026-10-14）
 - [tidb-phase1-and-launch-readiness.md](design/tidb-phase1-and-launch-readiness.md) — TiDB Phase 1 设计与实施清单（含开服准备）
 
@@ -241,8 +240,6 @@ Redis 物理水平扩展的用户目标、当前存盘链问题、源码入口�
 - [published-contract-compatibility-20261017.md](design/published-contract-compatibility-20261017.md) — 两套已发布契约的合并兼容方案（双入口方向已批准；来源与实施状态见文内）
 - [excel-6row-header-format.md](design/excel-6row-header-format.md) — 配置表格式说明入口（旧六行表头已停用） · [EN](design/excel-6row-header-format_en.md) · [中文](design/excel-6row-header-format_zh.md)
 - [generated-table-header-decoupling-plan.md](design/generated-table-header-decoupling-plan.md) — 交接：mmorpg 导表器生成头文件解耦（①exprtk ②FK声明化 ③muduo）
-- [proto-scene-file-rename-2026-04.md](design/proto-scene-file-rename-2026-04.md) — Proto Scene File Rename (2026-04)
-- [proto3_enum_zero_requirement.md](design/proto3_enum_zero_requirement.md) — Proto3 Enum Zero Requirement · [EN](design/proto3_enum_zero_requirement_en.md) · [中文](design/proto3_enum_zero_requirement_zh.md)
 - [tip-code-axis.md](design/tip-code-axis.md) — tip 码轴：段是发号器的输入
 
 #### 构建、部署与发布
@@ -252,7 +249,6 @@ Redis 物理水平扩展的用户目标、当前存盘链问题、源码入口�
 - [gateway-k8s-deployment.md](design/gateway-k8s-deployment.md) — Gateway Service Notes
 - [release-packaging-standard-20260914.md](design/release-packaging-standard-20260914.md) — 服务端发布打包标准(对标 luyuan-go/xuanming-server)
 - [rolling-update-restart-resilience-tests.md](design/rolling-update-restart-resilience-tests.md) — Rolling Update & Node Restart Resilience Tests
-- [scene_build_pdb_note.md](design/scene_build_pdb_note.md) — Scene Build PDB Note · [EN](design/scene_build_pdb_note_en.md) · [中文](design/scene_build_pdb_note_zh.md)
 - [vs2026_cross_machine_compatibility.md](design/vs2026_cross_machine_compatibility.md) — VS2026 跨电脑兼容性维护记录 · [EN](design/vs2026_cross_machine_compatibility_en.md) · [中文](design/vs2026_cross_machine_compatibility_zh.md)
 
 #### 测试与机器人
@@ -260,7 +256,6 @@ Redis 物理水平扩展的用户目标、当前存盘链问题、源码入口�
 - [data-consistency-stress-testing.md](design/data-consistency-stress-testing.md) — Player-Data Consistency: Stress Testing & Verification
 - [login-test-anti-stuck-system.md](design/login-test-anti-stuck-system.md) — 登录回归套件与超时检测
 - [robot-login-test-scenarios.md](design/robot-login-test-scenarios.md) — Robot Login Test Scenarios
-- [robot-zone-auto-select.md](design/robot-zone-auto-select.md) — Robot Zone Auto-Select Feature
 
 #### 移植记录
 
@@ -395,23 +390,26 @@ Redis 物理水平扩展的用户目标、当前存盘链问题、源码入口�
 - [server-crash-memory-debugging-qa.md](notes/server-crash-memory-debugging-qa.md) — 游戏服务器线上崩溃和内存问题排查问答
 - [todo_zh.md](notes/todo_zh.md) — 工程待办 / 设计备忘 · [EN](notes/todo_en.md)
 
-### 笔记(`notes/slg-moba/`)
+### 笔记(`notes/moba/`)
 
-- [moba-battle-target-architecture.md](notes/slg-moba/moba-battle-target-architecture.md) — 会话制对局(MOBA 形态)目标架构基准
-- [moba-ds-server-interview-qa.md](notes/slg-moba/moba-ds-server-interview-qa.md) — MOBA 服务器面试 Q&A — DS（Dedicated Server / 战斗服）
-- [moba-ds-server-interview-qa-advanced.md](notes/slg-moba/moba-ds-server-interview-qa-advanced.md) — MOBA DS 服务器面试 Q&A — 进阶篇
-- [moba-non-ds-server-interview-qa.md](notes/slg-moba/moba-non-ds-server-interview-qa.md) — MOBA 服务器面试 Q&A — 非 DS（大厅 / 匹配 / 房间 / 战绩 / 段位 / 社交）
-- [slg-battle-interview-qa.md](notes/slg-moba/slg-battle-interview-qa.md) — SLG 沙盘战斗系统面试 Q&A（率土之滨风格）
-- [slg-interview-qa.md](notes/slg-moba/slg-interview-qa.md) — 率土之滨 SLG 游戏服务器主程序面试 Q&A
-- [slg-march-position-formula.md](notes/slg-moba/slg-march-position-formula.md) — SLG 行军位置公式
-- [slg-march-system-complete.md](notes/slg-moba/slg-march-system-complete.md) — SLG 行军系统完整设计（率土之滨风格）
-- [slg-pathfinding-interview-qa.md](notes/slg-moba/slg-pathfinding-interview-qa.md) — SLG 沙盘寻路面试 Q&A（率土之滨风格）
-- [slg-performance-interview-qa.md](notes/slg-moba/slg-performance-interview-qa.md) — SLG 沙盘性能优化面试 Q&A（率土之滨风格）
-- [slg-server-architecture-design.md](notes/slg-moba/slg-server-architecture-design.md) — SLG Server Architecture Design (率土之滨 Style)
-- [slg-server-complete-framework.md](notes/slg-moba/slg-server-complete-framework.md) — 率土之滨 SLG 游戏服务器 —— 完整框架设计
-- [slg-server-framework-complete.md](notes/slg-moba/slg-server-framework-complete.md) — 率土之滨风格 SLG 游戏服务器框架 — 完整设计文档
-- [slg-server-interview-complete-qa.md](notes/slg-moba/slg-server-interview-complete-qa.md) — 率土之滨 SLG 服务器主程序面试 —— 全面 Q&A
-- [slg-server-mainprog-interview-qa.md](notes/slg-moba/slg-server-mainprog-interview-qa.md) — SLG 服务器主程序面试 Q&A（率土之滨风格）
+- [moba-battle-target-architecture.md](notes/moba/moba-battle-target-architecture.md) — 会话制对局(MOBA 形态)目标架构基准
+- [moba-ds-server-interview-qa.md](notes/moba/moba-ds-server-interview-qa.md) — MOBA 服务器面试 Q&A — DS（Dedicated Server / 战斗服）
+- [moba-ds-server-interview-qa-advanced.md](notes/moba/moba-ds-server-interview-qa-advanced.md) — MOBA DS 服务器面试 Q&A — 进阶篇
+- [moba-non-ds-server-interview-qa.md](notes/moba/moba-non-ds-server-interview-qa.md) — MOBA 服务器面试 Q&A — 非 DS（大厅 / 匹配 / 房间 / 战绩 / 段位 / 社交）
+
+### 笔记(`notes/slg/`)
+
+- [slg-battle-interview-qa.md](notes/slg/slg-battle-interview-qa.md) — SLG 沙盘战斗系统面试 Q&A（率土之滨风格）
+- [slg-interview-qa.md](notes/slg/slg-interview-qa.md) — 率土之滨 SLG 游戏服务器主程序面试 Q&A
+- [slg-march-position-formula.md](notes/slg/slg-march-position-formula.md) — SLG 行军位置公式
+- [slg-march-system-complete.md](notes/slg/slg-march-system-complete.md) — SLG 行军系统完整设计（率土之滨风格）
+- [slg-pathfinding-interview-qa.md](notes/slg/slg-pathfinding-interview-qa.md) — SLG 沙盘寻路面试 Q&A（率土之滨风格）
+- [slg-performance-interview-qa.md](notes/slg/slg-performance-interview-qa.md) — SLG 沙盘性能优化面试 Q&A（率土之滨风格）
+- [slg-server-architecture-design.md](notes/slg/slg-server-architecture-design.md) — SLG Server Architecture Design (率土之滨 Style)
+- [slg-server-complete-framework.md](notes/slg/slg-server-complete-framework.md) — 率土之滨 SLG 游戏服务器 —— 完整框架设计
+- [slg-server-framework-complete.md](notes/slg/slg-server-framework-complete.md) — 率土之滨风格 SLG 游戏服务器框架 — 完整设计文档
+- [slg-server-interview-complete-qa.md](notes/slg/slg-server-interview-complete-qa.md) — 率土之滨 SLG 服务器主程序面试 —— 全面 Q&A
+- [slg-server-mainprog-interview-qa.md](notes/slg/slg-server-mainprog-interview-qa.md) — SLG 服务器主程序面试 Q&A（率土之滨风格）
 
 ### 历史归档(`archive/`)
 

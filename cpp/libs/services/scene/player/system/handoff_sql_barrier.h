@@ -13,8 +13,8 @@
 
 #include "player/system/travel_freeze_cap.h"
 
-// 归属只在冻结快照的两张 SQL ACK 齐备后才可切换。Lua 的唯一写入是最后的 handoff SET,
-// 因而 0/-1/ERROR 都能证明本次未写标记;连接断开或不认识的回包仍属于结果未知。
+// 归属只在冻结快照双 SQL ACK 齐备后切换。登记下限和 H/F/R 资格是永久字段，
+// 发布以同一 Lua 的 H→F 与 SET 提交；未知应答只重放原候选，不以标记 TTL 推断撤销。
 namespace handoff_sql_barrier
 {
     // 永久 hash 字段保存的是登记下限与本次资格，不是可由当前 Redis 身份补发的授权。
@@ -218,6 +218,34 @@ if mark then redis.call('DEL',KEYS[3]) end
 return 1
 )";
 
+    // 登记命令本身也可能迟到：按首次 prior 撤销尚未出现的候选，不等待 H 已存在。
+    // 只能提高原 E/S/N floor；新 holder 已接任时返回0，绝不能借 fresh prior 撤新资格。
+    inline const std::string kCancelRegistrationLua = std::string(kFenceLuaHelpers) + R"(
+if #ARGV~=4 or not types3() then return redis.error_reply('HANDOFF cancel registration shape') end
+local candidate,next=fence(ARGV[2]),fence(ARGV[4])
+local raw,old=prior()
+if not uint(ARGV[1]) or not candidate or not next or raw==nil or candidate.e~=ARGV[1]
+    or candidate.k~='H' or next.k~='R' or not sameholder(candidate,next) or candidate.t==next.t then
+    return redis.error_reply('HANDOFF cancel registration record') end
+local owner=redis.call('GET',KEYS[1])
+if not uint(owner) or cmp(owner,candidate.e)<0 then return redis.error_reply('HANDOFF cancel registration owner') end
+if raw==ARGV[4] then return 1 end
+if raw~=ARGV[2] then
+    if raw~=ARGV[3] then return 0 end
+    if old then
+        local order=cmp(candidate.e,old.e)
+        if order<0 or (order==0 and (old.n=='0' or candidate.i~=old.i or cmp(candidate.n,old.n)<=0)) then return 0 end
+    end
+end
+local mark=redis.call('GET',KEYS[3])
+if mark then
+    local e,t=string.match(mark,'^(%d+):(%d+)$')
+    if not uint(e) or not uint(t) then return redis.error_reply('HANDOFF cancel registration marker') end
+end
+redis.call('HSET',KEYS[2],'handoff_fence',ARGV[4])
+return 1
+)";
+
     // 只确认登记时已经清过标记的原资格；旧 A2 回调不能再次删新持有者的标记。
     inline const std::string kConfirmFenceLua = std::string(kFenceLuaHelpers) + R"(
 if #ARGV~=2 or not types3() then return redis.error_reply('HANDOFF confirm shape') end
@@ -236,6 +264,7 @@ local held,published,next=fence(ARGV[1]),fence(ARGV[2]),fence(ARGV[3])
 local raw=prior()
 if not held or not published or not next or raw==nil or held.k~='H'
     or not sameholder(held,published) or not sameholder(held,next)
+    or (published.k~='F' and ARGV[2]~=ARGV[1]) or (published.k=='F' and published.t==held.t)
     or (next.k~='H' and next.k~='R') or next.t==held.t or next.t==published.t then
     return redis.error_reply('HANDOFF revoke record') end
 local owner=redis.call('GET',KEYS[1])
@@ -317,6 +346,7 @@ local held,published,next=fence(ARGV[1]),fence(ARGV[2]),fence(ARGV[3])
 local raw=prior()
 if not held or not published or not next or raw==nil or not sameholder(held,published)
     or not sameholder(held,next) or held.k~='H' or next.k~='R'
+    or (published.k~='F' and ARGV[2]~=ARGV[1]) or (published.k=='F' and published.t==held.t)
     or next.t==held.t or next.t==published.t then return redis.error_reply('HANDOFF outcome record') end
 if raw~=ARGV[1] and raw~=ARGV[2] and raw~=ARGV[3] then return redis.error_reply('HANDOFF outcome superseded') end
 local owner=redis.call('GET',KEYS[1])

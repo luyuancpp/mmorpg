@@ -184,6 +184,7 @@ struct PlayerTravelHandoffComp
 	std::chrono::steady_clock::time_point frozenAtSteady{};
 	bool destroyDeferralReported{false};
 	uint32_t sqlBarrierWaits{0};
+    bool sqlBarrierExpiryReported{false};
 	// 值捕获冻结前资格、拟发布资格及稳定撤销后继。回调必须同时核这些原值，不能命中新实体。
 	std::string holderFence;
 	std::string publishedFence;

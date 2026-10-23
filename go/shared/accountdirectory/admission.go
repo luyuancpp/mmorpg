@@ -3,9 +3,9 @@ package accountdirectory
 import (
 	"context"
 	"regexp"
+	"shared/savebarrier"
 	"strings"
 	"unicode/utf8"
-	"shared/savebarrier"
 
 	base "proto/common/base"
 	dspb "proto/data_service"

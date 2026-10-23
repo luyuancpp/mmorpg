@@ -15,8 +15,8 @@ import (
 
 	"github.com/alicebob/miniredis/v2"
 	"github.com/redis/go-redis/v9"
+	"github.com/stretchr/testify/require"
 	"shared/savebarrier"
-    "github.com/stretchr/testify/require"
 )
 
 // 录制驱动只隔离 SQL I/O；回归调用完整 Prepare/ApplyOne 与真实 Lua，核对提交前后可观察状态。
@@ -358,50 +358,57 @@ func TestPlanValidationBeforeIO(t *testing.T) {
 
 // 保留全部四持久字段，另验永久撤销 floor；返回原文供完整 map 精确比较。
 func assertRestoredFence(t *testing.T, raw, owner, instance, generation, admission string) string {
-    t.Helper()
-    parts := strings.Split(raw,"|")
-    require.Len(t, parts,6)
-    require.Equal(t,[]string{owner,instance,generation,admission,"R"},parts[:5])
-    require.Len(t,parts[5],32)
-    require.NotEqual(t,strings.Repeat("0",32),parts[5])
-    for _, ch := range parts[5] { require.True(t,ch>='0'&&ch<='9'||ch>='a'&&ch<='f') }
-    return raw
+	t.Helper()
+	parts := strings.Split(raw, "|")
+	require.Len(t, parts, 6)
+	require.Equal(t, []string{owner, instance, generation, admission, "R"}, parts[:5])
+	require.Len(t, parts[5], 32)
+	require.NotEqual(t, strings.Repeat("0", 32), parts[5])
+	for _, ch := range parts[5] {
+		require.True(t, ch >= '0' && ch <= '9' || ch >= 'a' && ch <= 'f')
+	}
+	return raw
 }
 
 func TestRestoreRevokesOriginalHandoffFloorAndRotatesEveryTime(t *testing.T) {
-    for _,known:=range []bool{false,true} {
-        t.Run(fmt.Sprint("known=",known),func(t *testing.T) {
-            r,_,cache:=fixture(t,"8","90")
-            plan:=prepare(t,r,false)
-            admission:=strings.Repeat("a",32)
-            if known {
-                v:=savebarrier.Version(8,90)
-                cache.HSet(savebarrier.Key(7),"pending",v,"player_database",v,"player_database_1",v,
-                    "handoff_fence","8|scene|12|"+admission+"|H|"+strings.Repeat("b",32))
-            }
-            last:=""
-            for i:=0;i<2;i++ {
-                require.NoError(t,r.ApplyOne(context.Background(),plan,0))
-                raw:=cache.HGet(savebarrier.Key(7),"handoff_fence")
-                if known { assertRestoredFence(t,raw,"8","scene","12",admission) } else {
-                    assertRestoredFence(t,raw,"9","","0",strings.Repeat("0",32))
-                }
-                require.NotEqual(t,last,raw);last=raw
-                require.Equal(t,time.Duration(0),cache.TTL(savebarrier.Key(7)),"永久下限不随标记TTL失效")
-            }
-        })
-    }
+	for _, known := range []bool{false, true} {
+		t.Run(fmt.Sprint("known=", known), func(t *testing.T) {
+			r, _, cache := fixture(t, "8", "90")
+			plan := prepare(t, r, false)
+			admission := strings.Repeat("a", 32)
+			if known {
+				v := savebarrier.Version(8, 90)
+				cache.HSet(savebarrier.Key(7), "pending", v, "player_database", v, "player_database_1", v,
+					"handoff_fence", "8|scene|12|"+admission+"|H|"+strings.Repeat("b", 32))
+			}
+			last := ""
+			for i := 0; i < 2; i++ {
+				require.NoError(t, r.ApplyOne(context.Background(), plan, 0))
+				raw := cache.HGet(savebarrier.Key(7), "handoff_fence")
+				if known {
+					assertRestoredFence(t, raw, "8", "scene", "12", admission)
+				} else {
+					assertRestoredFence(t, raw, "9", "", "0", strings.Repeat("0", 32))
+				}
+				require.NotEqual(t, last, raw)
+				last = raw
+				require.Equal(t, time.Duration(0), cache.TTL(savebarrier.Key(7)), "永久下限不随标记TTL失效")
+			}
+		})
+	}
 }
 
 func TestRestoreRejectsDamagedHandoffFloorWithoutAnyMutation(t *testing.T) {
-    for _,raw:=range []string{"", "8|scene|1|bad|H|bad", "10|scene|1|"+strings.Repeat("a",32)+"|H|"+strings.Repeat("b",32)} {
-        t.Run(raw,func(t *testing.T) {
-            r,store,cache:=fixture(t,"8","90")
-            p:=prepare(t,r,false);v:=savebarrier.Version(8,90)
-            cache.HSet(savebarrier.Key(7),"pending",v,"player_database",v,"player_database_1",v,"handoff_fence",raw)
-            before:=cache.Dump()
-            require.Error(t,r.ApplyOne(context.Background(),p,0))
-            require.Equal(t,before,cache.Dump());require.Zero(t,store.commits)
-        })
-    }
+	for _, raw := range []string{"", "8|scene|1|bad|H|bad", "10|scene|1|" + strings.Repeat("a", 32) + "|H|" + strings.Repeat("b", 32)} {
+		t.Run(raw, func(t *testing.T) {
+			r, store, cache := fixture(t, "8", "90")
+			p := prepare(t, r, false)
+			v := savebarrier.Version(8, 90)
+			cache.HSet(savebarrier.Key(7), "pending", v, "player_database", v, "player_database_1", v, "handoff_fence", raw)
+			before := cache.Dump()
+			require.Error(t, r.ApplyOne(context.Background(), p, 0))
+			require.Equal(t, before, cache.Dump())
+			require.Zero(t, store.commits)
+		})
+	}
 }

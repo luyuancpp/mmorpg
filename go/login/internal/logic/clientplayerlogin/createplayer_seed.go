@@ -37,7 +37,7 @@ const newPlayerSeedTimeout = time.Second
 // 客户端没开 ContextTimeoutEnabled,ctx 截止不约束 socket 读写,但 go-redis 取连接(连接池排队)与拨号认 ctx:
 // 1s 子预算会让连接池等满超过 1s 的探测以 DeadlineExceeded 失败,而探测 fail-closed,它就成了唯一一个预算短于
 // handler、又会拒绝建角的 Redis 步骤(读 blob、围栏写都用请求 ctx)。用请求 ctx 后它对池等待的容忍度与读 blob
-// 一致,上界是 handler 截止;6c 之后的写仍由 6c'' 的 abandonAfterDeadline 把关,login.yaml 锁 TTL 的推导不变。
+// 一致,上界是 handler 截止;6c 之后的写仍由 6c” 的 abandonAfterDeadline 把关,login.yaml 锁 TTL 的推导不变。
 // 只读 EXISTS 在预算内被 go-redis 重发是无害的。
 func (l *CreatePlayerLogic) probeMintedID(account string, playerID uint64) *login_proto_common.TipInfoMessage {
 	// 发出之前先查请求 ctx:截止之后不再发任何命令(docs/design/client-request-ordering.md §6.1)。

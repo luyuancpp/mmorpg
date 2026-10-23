@@ -833,8 +833,8 @@ namespace travel_outcome
 	//   那一刻的",不依赖连接的执行顺序。它**取代**了改动前"同一条不重放连接上先 DEL 后 MGET"的顺序保证。以后若拆回
 	//   两条命令,**必须**走不重放的同一连接(tlsRedis.GetZoneRedis() 的 muduo hiredis::Hiredis:command() 是
 	//   redisvAsyncCommand 的薄封装,无队列、无重放);改走 redis_client.h 那类带重试队列的接口会无声地打破这条保证。
-	// 跨语言金样 go/scene_manager/internal/logic/owner_epoch_crosslang_test.go 逐字复制了本脚本(去掉首行 #!lua,
-	// miniredis 不认 shebang):**改这里必须同步改那边**。
+    // 新金样复制 handoff_sql_barrier 的共享校验与具名脚本；取证先H/F→R撤资格、条件删本族，再读原owner/location。
+
 	inline const std::string& kLuaJudgeTravelOutcome = handoff_sql_barrier::kJudgeOutcomeLua;
 
 	// 取证脚本成功之后,读数说明了什么(判定表 B4–B9)。纯判定,不依赖 hiredis / entt,单测见 cross_zone_test 的

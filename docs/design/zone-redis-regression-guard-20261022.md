@@ -1,5 +1,7 @@
 # zone Redis 回退防护：「Redis 回退一族」6 条 low 的合并设计
 
+> **2026-10-23 初始持久基底后继（待正式生成与运行验证）**：正式 Create 目录与双 SQL 初始行同一 TiDB 事务严格 INSERT，持久 marker 只在首次成功写入；保留无 actor 初始提交 `(1,1)`，首任 actor 由 SceneManager 在采纳地板后铸到 2。完整合同与免冷读种子的提交后顺序见[建角初始持久提交](new-player-first-enter-no-cold-read.md#建角初始持久提交)。空 SQL 或零序号旧缓存不能证明新号，任一真实玩家行缺失均拒绝。
+
 - 日期：2026-10-22
 - 状态：**2026-10-23 起落码中，未编译、未测试**。负责人 2026-10-22 授权「按最标准的方式做完」，§13 各项按推荐取；项目未上线、玩家数据可以完全清空，§6 的混版与回退兼容不再实现。编译、测试、压测按 AGENTS §10.1 交 Codex。落码相对本稿的取舍见 §14。
 - 来源：[数据一致性等级核对](data-consistency-guarantee-map-20261020.md) §2.2 的 6 条 low（player-save#1、identity-routing-redis-v#2、cross-service-assets-v#1、player-save#2 / identity-routing-redis-v#1、identity-routing-redis#1）。

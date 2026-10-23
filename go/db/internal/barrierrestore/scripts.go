@@ -23,6 +23,17 @@ end
 local function cmp(a,b)
     return bytecmp(a,b)
 end
+local function plus2(s)
+    local out,carry='',2
+    for i=#s,1,-1 do
+        local value=string.byte(s,i)-48+carry
+        out=string.char(48+value%10)..out
+        carry=math.floor(value/10)
+    end
+    if carry>0 then out=string.char(48+carry)..out end
+    if not uint(out) then return nil end
+    return out
+end
 local function nonce(s,zero)
     return type(s)=='string' and #s==32 and not string.find(s,'[^0-9a-f]')
         and (zero or s~=string.rep('0',32))
@@ -76,7 +87,7 @@ local function is_schema_gen(s)
     if type(s) ~= 'string' or #s == 0 or #s > 10 or not string.match(s,'^[1-9]%d*$') then return false end
     return #s < 10 or not version_gt(s,'4294967295')
 end
-if (#KEYS ~= 75 and #KEYS ~= 72) or #ARGV ~= 10 or not is_version(ARGV[3])
+if (#KEYS ~= 75 and #KEYS ~= 72) or #ARGV ~= 10 or not uint(ARGV[2]) or not is_version(ARGV[3])
     or not is_schema_gen(ARGV[8]) or not nonce(ARGV[10]) then return redis.error_reply('restore arguments invalid') end
 local schema_gen=ARGV[8]
 if redis.call('TYPE',KEYS[1]).ok ~= 'string' or redis.call('GET',KEYS[1]) ~= ARGV[1]

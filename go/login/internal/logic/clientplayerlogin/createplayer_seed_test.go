@@ -24,11 +24,11 @@ import (
 	dspb "proto/data_service"
 	loginpb "proto/login"
 	"shared/generated/pb/table"
-	"shared/idsegment"
 	"shared/generated/persistschema"
-	"shared/savebarrier"
+	"shared/idsegment"
 	"shared/ownerepoch"
 	"shared/playername"
+	"shared/savebarrier"
 )
 
 // 建角写新号种子(docs/design/new-player-first-enter-no-cold-read.md)的单测。harness 沿用
@@ -42,11 +42,16 @@ const newPlayerSeedTTL = 24 * time.Hour
 // 正式 Lua 的快路判定/屏障检查不变，也不关闭默认身份核验开关。
 func installParentIdentityInfoForTest(mr *miniredis.Miniredis) {
 	mr.Server().SetPreHook(func(peer *server.Peer, command string, args ...string) bool {
-		if command != "INFO" || len(args) != 1 { return false }
+		if command != "INFO" || len(args) != 1 {
+			return false
+		}
 		switch strings.ToLower(args[0]) {
-		case "server": peer.WriteBulk("run_id:" + strings.Repeat("a", 40) + "\r\n")
-		case "replication": peer.WriteBulk("role:master\r\nmaster_replid:" + strings.Repeat("b", 40) + "\r\n")
-		default: return false
+		case "server":
+			peer.WriteBulk("run_id:" + strings.Repeat("a", 40) + "\r\n")
+		case "replication":
+			peer.WriteBulk("role:master\r\nmaster_replid:" + strings.Repeat("b", 40) + "\r\n")
+		default:
+			return false
 		}
 		return true
 	})
@@ -85,9 +90,9 @@ func seedSubCacheKeys(playerID uint64) []string {
 // 独立表达正式初始提交，不复用被测构造函数；仍不携带身份和注册业务初值。
 func expectedSeed(playerID uint64) *pbdb.PlayerAllData {
 	return &pbdb.PlayerAllData{
-		PlayerDatabaseData: &pbdb.PlayerDatabase{PlayerId: playerID, FenceOwnerEpoch: 1, FenceSaveSeq: 1, PersistSchemaGen: persistschema.Gen},
+		PlayerDatabaseData:   &pbdb.PlayerDatabase{PlayerId: playerID, FenceOwnerEpoch: 1, FenceSaveSeq: 1, PersistSchemaGen: persistschema.Gen},
 		PlayerDatabase_1Data: &pbdb.PlayerDatabase_1{PlayerId: playerID, FenceOwnerEpoch: 1, FenceSaveSeq: 1, PersistSchemaGen: persistschema.Gen},
-		LastSaveSeq: 1,
+		LastSaveSeq:          1,
 	}
 }
 
@@ -142,9 +147,13 @@ func TestCreatePlayer_SeedOnWritesCompleteCommitAfterDirectory(t *testing.T) {
 	if !proto.Equal(parent, expectedSeed(hzPlayerID)) {
 		t.Fatalf("seed = %v, want the complete initial SQL commit", parent)
 	}
-	if h.rdb.Get(h.ctx, ownerepoch.OwnerEpochKey(hzPlayerID)).Val() != "1" { t.Fatal("缺初始 owner 地板") }
+	if h.rdb.Get(h.ctx, ownerepoch.OwnerEpochKey(hzPlayerID)).Val() != "1" {
+		t.Fatal("缺初始 owner 地板")
+	}
 	for _, field := range []string{"pending", "player_database", "player_database_1"} {
-		if h.rdb.HGet(h.ctx, savebarrier.Key(hzPlayerID), field).Val() != savebarrier.Version(1, 1) { t.Fatal("初始提交屏障不完整") }
+		if h.rdb.HGet(h.ctx, savebarrier.Key(hzPlayerID), field).Val() != savebarrier.Version(1, 1) {
+			t.Fatal("初始提交屏障不完整")
+		}
 	}
 	if ttl := h.mr.TTL(seedParentKeyFor(hzPlayerID)); ttl <= 0 || ttl > newPlayerSeedTTL {
 		t.Fatalf("seed TTL = %v, want (0, %v]", ttl, newPlayerSeedTTL)
@@ -681,7 +690,9 @@ func TestCreatePlayer_SeedErrorDoesNotFailCreate(t *testing.T) {
 	h := newCreatePlayerHarnessWithNames(t, homezone.New(fake, 0, 0, 0), fake)
 	key := seedParentKeyFor(hzPlayerID)
 	fixtureDirectory(t, h.rdb).afterCommit = func() {
-		if _, err := h.mr.Lpush(key, "x"); err != nil { t.Fatal(err) }
+		if _, err := h.mr.Lpush(key, "x"); err != nil {
+			t.Fatal(err)
+		}
 	}
 	before := seedCount(t, "error")
 
@@ -700,7 +711,9 @@ func TestCreatePlayer_SeedErrorDoesNotFailCreate(t *testing.T) {
 	if typ := h.mr.Type(key); typ != "list" {
 		t.Fatalf("parent key type = %q after a failed seed, want the original list untouched", typ)
 	}
-	if len(fake.releaseReqs) != 0 { t.Fatal("缓存失败释放了已提交角色的在役名字") }
+	if len(fake.releaseReqs) != 0 {
+		t.Fatal("缓存失败释放了已提交角色的在役名字")
+	}
 }
 
 func TestCreatePlayer_LateCommittedSeedKeepsOwnerAndRegisteredName(t *testing.T) {
@@ -708,15 +721,21 @@ func TestCreatePlayer_LateCommittedSeedKeepsOwnerAndRegisteredName(t *testing.T)
 	n := newNameHarness(t)
 	ownerKey := ownerepoch.OwnerEpochKey(hzPlayerID)
 	fixtureDirectory(t, n.rdb).afterCommit = func() {
-		if err := n.rdb.Set(n.ctx, ownerKey, "3", 0).Err(); err != nil { t.Fatal(err) }
+		if err := n.rdb.Set(n.ctx, ownerKey, "3", 0).Err(); err != nil {
+			t.Fatal(err)
+		}
 	}
 	resp, err := n.l.CreatePlayer(&loginpb.CreatePlayerRequest{})
 	requireCreated(t, resp, err)
 	if n.rdb.Get(n.ctx, ownerKey).Val() != "3" || n.mr.Exists(seedParentKeyFor(hzPlayerID)) {
 		t.Fatal("迟到初始种子覆盖了更高 owner 或写出旧父快照")
 	}
-	if len(n.fake.releaseReqs) != 0 || len(n.scheduled) != 0 { t.Fatal("迟到种子补偿释放了已提交角色的名字") }
-	if len(storedPlayers(t, n.ctx, n.rdb)) != 1 { t.Fatal("缓存拒写删除了已提交目录") }
+	if len(n.fake.releaseReqs) != 0 || len(n.scheduled) != 0 {
+		t.Fatal("迟到种子补偿释放了已提交角色的名字")
+	}
+	if len(storedPlayers(t, n.ctx, n.rdb)) != 1 {
+		t.Fatal("缓存拒写删除了已提交目录")
+	}
 }
 
 func TestCreatePlayer_UnknownCommitRecoversDirectoryWithoutSeedReceipt(t *testing.T) {
@@ -724,14 +743,22 @@ func TestCreatePlayer_UnknownCommitRecoversDirectoryWithoutSeedReceipt(t *testin
 	n := newNameHarness(t)
 	fixtureDirectory(t, n.rdb).afterCreateErr = errors.New("SQL 已提交但应答丢失")
 	before := make(map[string]float64)
-	for _, label := range seedResultLabels { before[label] = seedCount(t, label) }
+	for _, label := range seedResultLabels {
+		before[label] = seedCount(t, label)
+	}
 	resp, err := n.l.CreatePlayer(&loginpb.CreatePlayerRequest{})
 	requireCreated(t, resp, err)
 	if n.mr.Exists(seedParentKeyFor(hzPlayerID)) || n.mr.Exists(ownerepoch.OwnerEpochKey(hzPlayerID)) {
 		t.Fatal("未知提交经 Lookup 恢复时制造了初始凭据")
 	}
-	if len(storedPlayers(t, n.ctx, n.rdb)) != 1 || len(n.fake.releaseReqs) != 0 { t.Fatal("未知提交恢复未保留目录与名字") }
-	for _, label := range seedResultLabels { if seedCount(t, label) != before[label] { t.Fatal("Lookup 恢复触发了缓存种子") } }
+	if len(storedPlayers(t, n.ctx, n.rdb)) != 1 || len(n.fake.releaseReqs) != 0 {
+		t.Fatal("未知提交恢复未保留目录与名字")
+	}
+	for _, label := range seedResultLabels {
+		if seedCount(t, label) != before[label] {
+			t.Fatal("Lookup 恢复触发了缓存种子")
+		}
+	}
 }
 
 // 种子 → EnterGame:预加载走 EXISTS 快路径(svc 里 KafkaClient / TaskResultDispatcher 为 nil,

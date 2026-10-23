@@ -1,7 +1,6 @@
 package barrierrestore
 
 import (
-    "strings"
 	"context"
 	"crypto/rand"
 	"database/sql"
@@ -9,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 

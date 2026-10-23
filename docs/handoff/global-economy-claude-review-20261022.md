@@ -14,7 +14,7 @@
 
 | 仓库 | HEAD | 保护范围 |
 | --- | --- | --- |
-| `D:/luyuan/xuanming-server-mmo-cpp` | `9d2784fbf3e3009cada8ce66cb98d6f604434ffe` | 保留新保存的提交、子模块既有状态、生成器、存盘、路由与并行修复；其中包含本批尚未收尾的部分代码，提交不等于验收完成 |
+| `D:/luyuan/xuanming-server-mmo-cpp` | `69f0c1abd54d1a798e617f97daad0b7baf9cf567` | 保留新保存的提交、子模块既有状态、生成器、存盘、路由与并行修复；其中包含本批尚未收尾的部分代码，提交不等于验收完成 |
 | `D:/luyuan/xuanming-server-mmo` | `393be2a2fd5eabf751dd65925b5a12b7ff12a2a2` | 保留最新刷新令牌家族、快照存在性与后继夹具修复，在其基础上继续验证 |
 | `D:/luyuan/mmorpg-client` | `242e35060a7364bb2d3a28bfb2581b04e530f290` | 保留最新帮会经济恢复提示与断言；使用 CurrentMaps，不恢复旧天墉城，不覆盖新地图、资源、prefab 或 meta |
 
@@ -23,6 +23,8 @@ Go 权威源码目录是主仓的 `D:/luyuan/xuanming-server-mmo-cpp/go`，Robot
 三仓均不是本任务独占工作区。**不要把整仓 `git diff` 归为本批，也不要用旧提交文件覆盖当前文件。** 原交接 §3、§8–60 与分批输入快照用于定位本任务接缝；输入快照是验证输入清单，不自动等于本任务作者清单。尚无逐行完整归属清单，不能声称所有 dirty 均由本任务产生。本任务没有 commit、push 或 tag。
 
 续验期间新保存的两次提交已纳入上表；此前主仓 `2c07f2c28`、Java `e16d2f9c` 的验证仍保留其原始提交说明。Java Data 下一阶段在 Maven 启动前检测到 HEAD 变化而拒绝，原件 `C:/Users/luyua/.codex/tmp/java-current-b0b7551-current-epoch-preparation-r1/data-state-safety-green-r1/run-DataBuild/proof.json`，SHA `84797856F29F135328A308855FEC10D76C79DAE75EDDEBFBE64085087F8DBD13`；完整 2664 项已记录源字节与阶段前清单相同，后继更新真实提交号后继续，不回退文件、不重复已成功的 Store 测试。该次原生启动数为 0，不能算一次编译失败或通过。
+
+负责人随后明确：这两次提交只是保存本任务当前改动，没有新增其他人的代码。以当前实际字节为准接续，提交号变化本身不构成重跑已通过验证的理由；后续只补验实际源码和依赖变化影响的范围。
 
 ## 2. 已实现的主要接缝与审核重点
 
@@ -100,7 +102,7 @@ Go 权威源码目录是主仓的 `D:/luyuan/xuanming-server-mmo-cpp/go`，Robot
 
 Docker Engine 曾退出，旧基础设施 StartedAt 与协议证据只能作历史。负责人现已释放内存并要求继续；必须对同 CID、卷、端口、标签、镜像及新启动时间重新取证，重新核对强会话与正式 CHECK，不能把旧结果改成新 epoch。执行进程也已自然退出，需用当前 PID、创建时间和原句柄重新登记三语言队列。
 
-门禁保持启动可用内存至少 7340032 KiB、运行至少 2883584 KiB、采样预算 2000 ms、未知进程拒绝；C++ `/m:1 /nr:false /p:CL_MPCount=1`。不终止外部任务、不改防火墙、不为通过而关闭断言或跳过测试。
+负责人随后明确授权：普通串行编译／单元测试的启动可用内存门槛改为 6291456 KiB（6 GiB）；真库与双区服务启动仍为 7340032 KiB（7 GiB）。运行至少 2883584 KiB、采样预算 2000 ms、未知重型进程为 0、2 CPU 的约束保持；C++ `/m:1 /nr:false /p:CL_MPCount=1`。授权原件 `C:/Users/luyua/.codex/tmp/global-normal-build-six-GiB-user-authorization-r1/authorization.json`，SHA `53467DED6A436065671CD61C4391FFCE87C64F3D1C7DA7ADBC38806A69EE0EE6`。这不是进程 RSS 的硬内存上限，不扩大到真库、服务或压测。不终止外部任务、不改防火墙、不为通过而关闭断言或跳过测试。
 
 “全球同服、可加副本”仍受已验证容量、数据库事务及部署边界限制。单机双区不能证明跨机房容灾或无限容量。任意整库 PITR 不能靠被恢复的数据库自证最新归属，必须有独立审计的围栏与修订上界；未做真实故障验收前，不能承诺绝对不回档、不损坏。
 
@@ -164,3 +166,5 @@ Unity 完整 Guild 测试后继已经封存：**234 PASS、0 FAIL/SKIP**，六�
 迟到标记的双连接夹具也已取得真实结果：C2 清理后标记不存在，放行 C1 的旧 Lua 后，同 owner 的标记重新出现；两条主时序和五条对照全部记录，439 毫秒内完成，28 个专用键全部清除。原件 `C:/Users/luyua/.codex/tmp/unity-guild-current-evidence-20261023-r1/late-mark-real-20261023T083638978Z-9ccf60ce/fixture-raw/result.json`，SHA `5180712136A7419F014401F24B93CFF83F382E76EC673B023A20290A6A1A46F2`。原生退出 1 如实保留；这是受控 Redis 延迟模型中的缺陷复现，尚不是完整 Scene 资产回档复现或修后通过。
 
 Java 快照存在性的三项 SQL 回归已在旧生产实现上取得恰好 **3 项 JUnit 断言失败、0 ERROR/SKIP**，原生退出 1、全量输入与清理核对闭合：分别验证建角没有持久初始状态、缺失快照未被拒绝、孤儿快照冲突未导致目录回滚。原件 `C:/Users/luyua/.codex/tmp/java-current-b0b7551-current-epoch-preparation-r1/player-state-presence-semantic-red-r3/run-PlayerStoreRed/proof.json`，SHA `4F2C03F9860B749B2479CCCC6372CD12A4514B8AD10ACD5BD71335F281BC0EA0`。这是有意义的修复前红灯，不能标成产品验收通过；新生产逻辑仍须原子应用候选后跑完整受影响回归和真库。
+
+编译窗口后继：Data 普通回归在原生命令启动前实测可用内存 7061656 KiB，低于先前约定的 7340032 KiB，因此原生启动 0，原件 SHA `00AF601BB141075A3A0A37E78A23F1BFEC69373D77544BA73DAD3F0042F3F6C1`。确认 Go、Java 均无数据库事务或验收在途后，只正常暂停本任务 `codex-global-clean-20261023-r1` 的 TiDB、TiKV、PD；三个容器退出码均为 0、非 OOM、数据卷和挂载不变，未删除数据，未操作其他应用。原件 `C:/Users/luyua/.codex/tmp/global-owned-tidb-build-window-stop-db460ee251e145788cb2ae086cb9ece6/result.json`，SHA `DBEE903AC7C1BE66974449F78F421987CFA2E1A7B2FB5B1479B2F5CCAC80F1C2`。此次仅为释放普通编译窗口；TiDB 已暂停，旧协议和 S1 属历史来源，后续真库／双区须恢复实例并重新验证身份与强会话，不能沿用旧就绪结论。

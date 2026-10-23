@@ -24,7 +24,7 @@ type testDirectory struct {
 	accounts                                      map[string]bool
 	owners                                        map[uint64]*dspb.AccountRoleOwnership
 	readErr, lookupErr, createErr, afterCreateErr error
-	afterCommit func()
+	afterCommit                                   func()
 	max                                           int
 }
 
@@ -66,24 +66,40 @@ func (d *testDirectory) Read(ctx context.Context, a string, create bool) (*base.
 }
 func (d *testDirectory) Create(ctx context.Context, a string, r *base.AccountSimplePlayer) (*base.AccountSimplePlayerList, error) {
 	out, err := d.CreateWithInitialCommit(ctx, a, r)
-	if err != nil { return nil, err }
+	if err != nil {
+		return nil, err
+	}
 	return out.Players, nil
 }
 func (d *testDirectory) CreateWithInitialCommit(ctx context.Context, a string, r *base.AccountSimplePlayer) (*dspb.AccountDirectoryResponse, error) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
-	if err := ctx.Err(); err != nil { return nil, err }
-	if d.createErr != nil { return nil, d.createErr }
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	if d.createErr != nil {
+		return nil, d.createErr
+	}
 	if old := d.owners[r.GetPlayerId()]; old != nil {
-		if old.Account != a || old.TradeListingId != 0 || !proto.Equal(old.Role, r) { return nil, accountdirectory.ErrConflict }
-		if d.afterCreateErr != nil { return nil, d.afterCreateErr }
+		if old.Account != a || old.TradeListingId != 0 || !proto.Equal(old.Role, r) {
+			return nil, accountdirectory.ErrConflict
+		}
+		if d.afterCreateErr != nil {
+			return nil, d.afterCreateErr
+		}
 		return &dspb.AccountDirectoryResponse{Players: d.list(a)}, nil
 	}
-	if len(d.list(a).Players) >= d.max { return nil, accountdirectory.ErrFull }
+	if len(d.list(a).Players) >= d.max {
+		return nil, accountdirectory.ErrFull
+	}
 	d.accounts[a] = true
 	d.owners[r.PlayerId] = &dspb.AccountRoleOwnership{Account: a, Role: proto.Clone(r).(*base.AccountSimplePlayer), OwnerRevision: 1}
-	if d.afterCreateErr != nil { return nil, d.afterCreateErr }
-	if d.afterCommit != nil { d.afterCommit() }
+	if d.afterCreateErr != nil {
+		return nil, d.afterCreateErr
+	}
+	if d.afterCommit != nil {
+		d.afterCommit()
+	}
 	// 替身通过同一能力接口承诺 SQL 提交；未知应答和旧角色重放均不返回初始凭据。
 	return &dspb.AccountDirectoryResponse{Players: d.list(a), InitialPlayerData: savebarrier.InitialPlayerData(r.PlayerId)}, nil
 }

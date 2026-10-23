@@ -2426,3 +2426,19 @@ sequenceDiagram
 | [db/internal/svc/servicecontext.go](../../go/db/internal/svc/servicecontext.go)：`PlacementRedis`；[store_registry.go](../../go/db/internal/logic/pkg/proto_sql/store_registry.go)：`OpenPlacementStore`；[placement.go](../../go/shared/placement/placement.go)：`StoreDBName` | go/db 直接读取目录 Redis、按库名选择连接池；不是逐笔调用 data_service 解析 home_zone |
 | [saveoutbox/scripts.go](../../go/db/internal/saveoutbox/scripts.go)；[saveoutbox/replay.go](../../go/db/internal/saveoutbox/replay.go) | 持久待办认领、原任务补投、双 ACK 后清理 |
 | [data_service_role_and_scope.md](data_service_role_and_scope.md)；[player-locator-gate-session-index.md](player-locator-gate-session-index.md) | 目录、玩家存档链与会话索引的职责边界 |
+
+
+### 2026-10-23 同 owner 迟到交接标记：登记与撤资格合同
+
+本节修订旧“DEL 已完成便可解冻、标记 TTL 到期可销账”的假设。原本机两个独立 Redis 连接已确定复现：撤标记先完成，旧 `SET` 随后抵达，在同 owner 下重新造出可用凭证；原红按原件保留。下面是当前源码合同，尚须当前源编译、金样与真 Redis 重验，不把历史 C++ / Unity 结果说成修后绿。
+
+- `save_barrier.handoff_fence` 是不设 TTL 的单字段：`E|S|N|A|K|T`。E 为原 owner_epoch，S 为原 scene instance，N 为本次 SQL 确认的入场 generation，A 为本次加载固定随机令牌，K 为 H（持有）/F（冻结发布）/R（撤销），T 为转换令牌。E/N 用规范 uint64 十进制字节比较，不转 Lua number。
+- 新加载与已有实体复用均在 `RoleAdmissionSystem` 原 SQL 确认之后、`Activate` 之前登记。资格来自原 `PlayerEnterContext`，不从实时 confirmed identity 给旧请求补世代或会话。每次异步边界复核原 weak state、generation、Seal/Close 与原 15 秒截止；首次读到的 prior 与候选 A/T 在有限重试中固定。
+- Lua 登记同时核原 owner 和 prior。相同 E 只允许同 S 的更大 N；相同 N 仅完全相同原 H 幂等。旧加载即使迟到读到新 prior 也因 N 下限被拒。相同 E 的新 instance 不得自行接任，须由 SceneManager 的正式归属推进证明；当前同物理节点判断不含 instance，此处拒绝可能损害可用性，但不能为放行而放宽资格。
+- 登记成功原子清继承标记，后续 A2 仅确认原 H，不再次删除。发布在同一 Lua 中核双 SQL ACK、CAS 原 H→本轮 F、写原 E:t 标记。A1、疏散、弃载和改派补写只消费实体/原记录缓存的资格；实体和原记录都缺席的 session-ended 分支拒绝补发，不按刚读取的 owner 造权。
+- 中止即使尚无标记也先撤资格。原 H 或本轮 F 转换至发出前固定的新 H/R，确认后才解冻；迟到旧 SET 因 token CAS 被拒。在线组件未获确认持续冻结，原硬上限仍可按既有不存盘销毁规则收尾，不把 TTL 或重试表到期当成确认。
+- 每个转换候选必须在发送前缓存。已提交丢回包时只重放同一 H/R、目标 E 和 location 原字节；不能临时生成另一个令牌后误判已被取代。回调核原 entity/holder/冻结代次，旧回包不摘新实体组件。
+- B4/B5 先撤成原 R 再复核原 owner/location 整字节。B5 仍须原回执、同节点落点及 E+2 交叉成立；只有 CAS 原 R→固定新 H 成功，才在同一回调先提升缓存 epoch、后解冻并强制保存。任何失败保持冻结，不凭当前读值采纳新归属。
+- 恢复工具保留原四持久字段的全部校验，并保留/轮换第五字段的永久 R。已知 floor 保 E/S/N/A，每次恢复换 T；原字段缺席也写 `E||0|000…000|R|T`，它是未知 admission 的墓碑，不能作为某个活 holder。相同 E 不得从该墓碑重新登记；必须先满足原维护流程的写者停止、回调排空、Kafka/补投审计，再由正式归属推进恢复服务。维护标记本身不是业务写者的技术停写闸。
+
+回归入口：`RoleAdmissionTest.*` 原 ctx/迟到 HGET；`HandoffFenceCodec.*`；`CurrencyTest.*HandoffQualification*` 的真 Redis CAS；Go SceneManager 跨语言金样及 `go/db/internal/barrierrestore` 的完整恢复/世代/真库用例。原四字段精确断言保留并新增合法 R、每次轮换和 missing-prior 反证；新实际结果到位前保持未验证。

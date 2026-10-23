@@ -216,13 +216,14 @@ namespace
 	// 却在标记写成之前收口(AbortTravelHandoff 的共同出口:30s 存盘看门狗 / 35s 晚发闸 / 冻结上限),或标记写成得太晚、
 	// 在 enter_scene 阶段被晚发闸拦下时调用:计 sql_barrier_expired 并打一行 WARN,把"等 SQL ACK 超时"和"存盘落地太晚"
 	// 分开。没等过就什么都不做。调用方紧接着就摘组件或销毁实体,所以每次交接最多走到一次。
-	void ReportSqlBarrierExpiry(Guid playerId, const PlayerTravelHandoffComp &travel, const char *endedBy)
+	void ReportSqlBarrierExpiry(Guid playerId, PlayerTravelHandoffComp &travel, const char *endedBy)
 	{
-		if (travel.sqlBarrierWaits == 0)
+		if (travel.sqlBarrierWaits == 0 || travel.sqlBarrierExpiryReported)
 		{
 			return;
 		}
-		travel_handoff_stats::Inc(travel_handoff_stats::Get().sqlBarrierExpired);
+		travel.sqlBarrierExpiryReported = true;
+        travel_handoff_stats::Inc(travel_handoff_stats::Get().sqlBarrierExpired);
 		LOG_WARN << "[ZoneTravel][SqlBarrier] player=" << playerId << " sql_barrier_waits=" << travel.sqlBarrierWaits
 				 << " ended_by=\"" << endedBy << "\": the frozen snapshot's two SQL ACKs did not catch up with the"
 				 << " pending save in time (go/db slow or stalled) (metric=sql_barrier_expired)";
@@ -730,7 +731,7 @@ namespace
 			const int ret = redis->command(
 				[playerId, firstAttempt, markValue = entry.markValue, holderFence = entry.holderFence](hiredis::Hiredis *, redisReply *reply)
 				{
-					if (reply != nullptr && reply->type == REDIS_REPLY_INTEGER)
+					if (reply != nullptr && reply->type == REDIS_REPLY_INTEGER && (reply->integer == 0 || reply->integer == 1))
 					{
 						// 条件删除确实在 Redis 上执行过了:1 = 删掉了自己写的那一份;0 = 标记已不是这一份
 						// (没写成 / 已过期 / 已被同一玩家的新标记覆盖),两种都说明旧标记不在了,可以销账。
@@ -5083,6 +5084,11 @@ uint32_t PlayerLifecycleSystem::StartTravelHandoff(entt::entity player, uint32_t
 		return genericFailTip;
 	}
 
+    const auto* originalQualification = tlsEcs.actorRegistry.try_get<PlayerOwnerEpochComp>(player);
+    const auto originalRecord = originalQualification ? handoff_sql_barrier::ParseFence(originalQualification->handoffFence) : std::nullopt;
+    if (!originalRecord || originalRecord->state != handoff_sql_barrier::FenceState::kHeld
+        || originalRecord->ownerEpoch != originalQualification->epoch) return genericFailTip;
+
 	// ── 从这里开始改状态 ──
 	// 普通换图的在途记录到此为止:它的使命(记住"要去哪")已经转交给交接组件。
 	tlsEcs.actorRegistry.remove<PlayerSceneChangeInFlightComp>(player);
@@ -6720,17 +6726,22 @@ void PlayerLifecycleSystem::ExpireTravelFreeze(Guid playerId, travel_freeze_cap:
 	{
 	case travel_freeze_cap::FreezeCapAction::kNone:
 		return;
-	case travel_freeze_cap::FreezeCapAction::kUnfreeze:
-		// 标记从没发出:不可能已被放行(I0),解冻 + 失败 tip。30s 存盘看门狗正常早就处理了,这一支应恒不出现;
-		// 出现说明存盘看门狗没能按时触发(loop 长时间阻塞推迟了 muduo 定时器等)。
-		travel_handoff_stats::Inc(travel_handoff_stats::Get().freezeCapReached);
-		LOG_WARN << "[ZoneTravel][FreezeCap] player=" << playerId << " action="
-				 << travel_freeze_cap::FreezeCapActionName(action) << " target_zone=" << travel->targetZoneId
-				 << " frozen_ms=" << std::chrono::duration_cast<std::chrono::milliseconds>(frozenFor).count()
-				 << ": handoff mark was never sent; unfreezing with a failure tip";
-		// travel 指针到此为止不再使用:Abort 会摘组件。
-		AbortTravelHandoff(playerId, "handoff freeze cap reached before the handoff mark was sent");
-		return;
+    case travel_freeze_cap::FreezeCapAction::kUnfreeze:
+        if (HasUnsettledPlayerSave(playerId)) {
+            if (!travel->destroyDeferralReported) {
+                travel->destroyDeferralReported = true;
+                travel_handoff_stats::Inc(travel_handoff_stats::Get().destroyDeferredUnsettledSave);
+            }
+            return;
+        }
+        // 未发mark也可能有迟到publisher；撤资格未确认不能解冻。硬上限只作不存盘销毁。
+        travel_handoff_stats::Inc(travel_handoff_stats::Get().freezeCapReached);
+        ReportSqlBarrierExpiry(playerId, *travel, "revocation unconfirmed at freeze cap");
+        ObserveTravelHandoffEnded(playerEntity, travel_handoff_stats::Get().aborted);
+        if (HasLiveGateSession(playerEntity, playerId))
+            SendTipAndKickToClient(playerEntity, static_cast<uint32_t>(kEnterSceneFailed));
+        DestroyDeposedPlayer(playerId, "handoff_revocation_unconfirmed_at_freeze_cap");
+        return;
 	case travel_freeze_cap::FreezeCapAction::kDestroy:
 		// 标记已发出:归属在本节点核实不了,永不解冻。推迟销毁(有未落地存盘)时不计数,下一拍再判。
 		if (ConcludeHandoffAfterMarkSent(playerId, travel_freeze_cap::MarkSentSite::kFreezeCap, now))
@@ -6893,11 +6904,12 @@ void PlayerLifecycleSystem::AbortTravelHandoff(Guid playerId, const char *reason
 	{
 		return;
 	}
-	const auto *travel = tlsEcs.actorRegistry.try_get<PlayerTravelHandoffComp>(playerEntity);
+	auto *travel = tlsEcs.actorRegistry.try_get<PlayerTravelHandoffComp>(playerEntity);
 	if (travel == nullptr)
 	{
 		return; // 已经没有交接意图(应答与看门狗只有一个能赢),幂等
 	}
+    if (travel->requestedAtMs == 0) ReportSqlBarrierExpiry(playerId, *travel, reason);
     auto* mutableTravel = tlsEcs.actorRegistry.try_get<PlayerTravelHandoffComp>(playerEntity);
     const auto* holder = tlsEcs.actorRegistry.try_get<PlayerOwnerEpochComp>(playerEntity);
     const auto resumed = handoff_sql_barrier::ParseFence(travel->revokedFence);
@@ -6909,6 +6921,8 @@ void PlayerLifecycleSystem::AbortTravelHandoff(Guid playerId, const char *reason
             const auto candidate = handoff_sql_barrier::RotateFence(travel->holderFence, handoff_sql_barrier::FenceState::kHeld);
             if (!candidate) return;
             mutableTravel->cancelFence = *candidate;
+            mutableTravel->cancellationReason = reason;
+            mutableTravel->cancellationNotifyFailure = notifyFailure;
         }
         const auto next = std::optional<std::string>(mutableTravel->cancelFence);
         auto& redis = tlsRedis.GetZoneRedis();
@@ -6918,7 +6932,8 @@ void PlayerLifecycleSystem::AbortTravelHandoff(Guid playerId, const char *reason
         const auto published = travel->publishedFence.empty() ? original : travel->publishedFence;
         const auto stamp = travel->requestedAtMs;
         const auto frozenAt = travel->frozenAtSteady;
-        const std::string reasonText = reason;
+        const std::string reasonText = mutableTravel->cancellationReason;
+        notifyFailure = mutableTravel->cancellationNotifyFailure;
         const int sent = redis->command([playerId, playerEntity, original, next = *next, frozenAt, reasonText, notifyFailure]
             (hiredis::Hiredis*, redisReply* reply) {
             if (tlsEcs.GetPlayer(playerId) != playerEntity || !tlsEcs.actorRegistry.valid(playerEntity)) return;
@@ -6927,7 +6942,8 @@ void PlayerLifecycleSystem::AbortTravelHandoff(Guid playerId, const char *reason
             if (!pending || !owner || pending->holderFence != original || pending->frozenAtSteady != frozenAt) return;
             pending->cancellationPending = false;
             if (!reply || reply->type != REDIS_REPLY_INTEGER) return;
-            if (reply->integer != 1) { DestroyDeposedPlayer(playerId, "handoff qualification superseded"); return; }
+            // 0只证明原资格已被取代，不能借此销毁可能即将被新入场复用的实体；仍冻结到新ctx或原硬上限。
+            if (reply->integer != 1) return;
             owner->handoffFence = next; pending->revokedFence = next; pending->markEpoch = 0;
             AbortTravelHandoff(playerId, reasonText.c_str(), notifyFailure);
         }, "EVAL %s 3 %s %s %s %b %b %b %s", handoff_sql_barrier::kRevokeFenceLua.c_str(),
@@ -6941,7 +6957,6 @@ void PlayerLifecycleSystem::AbortTravelHandoff(Guid playerId, const char *reason
 	// 先抄后摘:失败 tip 按"这是哪一种交接"选、标记原文靠 markEpoch + requestedAtMs 还原,
 	// 摘掉组件就无从知道了。
 	const bool crossZone = (travel->targetZoneId != GetZoneId());
-	const uint64_t handoffMarkEpoch = travel->markEpoch;
 	const uint64_t handoffRequestedAtMs = travel->requestedAtMs;
 	// 标记还没写成(requestedAtMs == 0:两次重试之间)却等过 SQL ACK 的,这次中止就是"等 SQL ACK 超时"。
 	// 收口点是哪一个(30s 存盘看门狗 / 35s 晚发闸 / 冻结上限)都从这里过,所以归因放在这个共同出口。
@@ -6969,13 +6984,7 @@ void PlayerLifecycleSystem::AbortTravelHandoff(Guid playerId, const char *reason
 	// 解冻:StartTravelHandoff 用 PlayerFrozenComp 冻结输入,交接没发生就还给玩家。
 	if (!RoleAdmissionSystem::IsSealed(playerId)) tlsEcs.actorRegistry.remove<PlayerFrozenComp>(playerEntity);
 
-	// 撤回 handoff 标记:标记的语义是"这一刻的状态已落盘、可以交接",玩家解冻后会继续产生新状态,
-	// 留着它会让之后某次跨节点 EnterScene 误以为盘上是最新的(回档)。与 scene_manager 只比对不删的
-	// 契约不冲突:这是源端撤回自己写的标记。撤回没确认之前 IsSceneChangeBusy 对该玩家返回 true ——
-	// 解冻照常,只是暂时不替他发 EnterScene,不再是"删不掉就靠 TTL 兜底"。
-	// markEpoch == 0 = 盘上没有这份标记:写标记的 SET 从没发出去过(存盘看门狗 / epoch 未知 / Redis 未连接 / 命令没
-	// 发出去)、SET 收到 ERROR 应答(HandleTravelMarkWriteRejected),或 ResolveTravelOutcome 的取证脚本已在同一原子
-	// 步骤里删掉了本族标记(判定表 B4 / B5)。不登记,免得一个根本不存在的标记把玩家挡在换图之外。
+    // 上方已确认同一原资格的H/R转换和标记清理，这里不再发best-effort撤回。
 
 	if (!notifyFailure)
 	{

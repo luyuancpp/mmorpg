@@ -3490,3 +3490,52 @@ int main(int argc, char** argv)
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }
+
+TEST(CurrencyTest, HandoffQualificationCASRevokesLateWritersAndReplaysLostRepliesAgainstRealRedis)
+{
+    std::string host; uint16_t port=0;
+    if (!TestRedisAddr(host,port)) GTEST_SKIP() << "需要专用MMORPG_TEST_REDIS_ADDR";
+    SyncRedisForTest sync; ASSERT_TRUE(sync.Connect(host,port));
+    const auto id=std::to_string(IsolatedRedisPlayerIdForTest());
+    const std::string owner="player:"+id+":owner_epoch", barrier="player:{"+id+"}:save_barrier", mark="player:"+id+":handoff";
+    ASSERT_EQ(0LL,sync.Exists(owner));ASSERT_EQ(0LL,sync.Exists(barrier));ASSERT_EQ(0LL,sync.Exists(mark));
+    struct Cleanup { SyncRedisForTest& sync;std::vector<std::string> keys;~Cleanup(){ for(const auto& key:keys) sync.Del(key); } } cleanup{sync,{owner,barrier,mark}};
+    using Reply=std::unique_ptr<redisReply,decltype(&freeReplyObject)>;
+    const auto command=[&](std::vector<std::string> args) {
+        std::vector<const char*> values;std::vector<size_t> sizes;
+        for(const auto& arg:args){values.push_back(arg.data());sizes.push_back(arg.size());}
+        return Reply(static_cast<redisReply*>(redisCommandArgv(sync.context.get(),static_cast<int>(args.size()),values.data(),sizes.data())),&freeReplyObject);
+    };
+    const auto eval=[&](const std::string& lua,std::vector<std::string> args) {
+        std::vector<std::string> all{"EVAL",lua,"3",owner,barrier,mark};all.insert(all.end(),args.begin(),args.end());
+        return command(std::move(all));
+    };
+    const auto expectInteger=[&](const Reply& reply,long long value){ ASSERT_NE(nullptr,reply);ASSERT_EQ(REDIS_REPLY_INTEGER,reply->type);EXPECT_EQ(value,reply->integer); };
+    const auto makeFence=[](std::string generation,char admission,char state,char token) {
+        return "7|scene|"+generation+"|"+std::string(32,admission)+"|"+state+"|"+std::string(32,token);
+    };
+    const auto held=makeFence("1",'a','H','b'), frozen=makeFence("1",'a','F','c'), revoked=makeFence("1",'a','R','d');
+    const auto resumed=makeFence("1",'a','H','e');
+    sync.Set(owner,"7");
+    expectInteger(eval(handoff_sql_barrier::kRegisterFenceLua,{"7",held,""}),1);
+    // 原写帧在另一连接/队列中尚未抵达：mark缺席仍必须撤销，迟到SET不得复活。
+    expectInteger(eval(handoff_sql_barrier::kRevokeFenceLua,{held,frozen,revoked,"1000"}),1);
+    expectInteger(eval(handoff_sql_barrier::kReleaseMarkLua,{"7","7:1000","300",held,frozen}),0);
+    EXPECT_EQ(0LL,sync.Exists(mark));
+    auto location=owner+":location-fixture";ASSERT_EQ(0LL,sync.Exists(location));cleanup.keys.push_back(location);
+    const auto resume=[&]{return command({"EVAL",handoff_sql_barrier::kResumeFenceLua,"4",owner,barrier,mark,location,revoked,resumed,"7",""});};
+    // 忽略第一次已提交应答，第二次只能重放完全相同H，不能临时重造资格。
+    auto lost=resume();ASSERT_NE(nullptr,lost);ASSERT_EQ(REDIS_REPLY_INTEGER,lost->type);ASSERT_EQ(1,lost->integer);lost.reset();
+    expectInteger(resume(),1);
+    expectInteger(eval(handoff_sql_barrier::kReleaseMarkLua,{"7","7:1000","300",held,frozen}),0);
+    const auto newer=makeFence("2",'f','H','1');
+    expectInteger(eval(handoff_sql_barrier::kRegisterFenceLua,{"7",newer,resumed}),1);
+    expectInteger(eval(handoff_sql_barrier::kRegisterFenceLua,{"7",held,newer}),-2); // 旧N读到新prior仍不可接任
+    const auto before=command({"HGET",barrier,"handoff_fence"});ASSERT_NE(nullptr,before);ASSERT_EQ(REDIS_REPLY_STRING,before->type);
+    sync.Set(mark,"malformed");
+    auto bad=eval(handoff_sql_barrier::kRevokeFenceLua,{newer,newer,makeFence("2",'f','R','2'),"1000"});
+    ASSERT_NE(nullptr,bad);EXPECT_EQ(REDIS_REPLY_ERROR,bad->type);
+    auto after=command({"HGET",barrier,"handoff_fence"});ASSERT_NE(nullptr,after);ASSERT_EQ(REDIS_REPLY_STRING,after->type);
+    EXPECT_EQ(std::string(before->str,before->len),std::string(after->str,after->len));
+    EXPECT_EQ("malformed",sync.Get(mark)) << "损坏mark不准先写R再报错";
+}

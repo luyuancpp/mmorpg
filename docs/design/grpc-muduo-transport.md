@@ -6,7 +6,7 @@
 - 授权:负责人 2026-10-14 拍板「分 5 批推进、本次做第 1 批」「引入 nghttp2 v1.70.0 子模块」「etcd 走原生 gRPC 接口」
 - 关联:[client-rpc-router.md](client-rpc-router.md)(第 1 批接入点)、
   [§16 客户端调用契约](#grpc-client-contract)(deadline、完成回调与调用点归属)、
-  [scene-grpc-server-design.md](scene-grpc-server-design.md)(第 4 批替换对象)、
+  [§3.1 节点双端口与发现](#node-grpc-endpoints)、[Scene 线程与停机](scene-node-threading-model.md)、
   [thread-count-monitoring.md](thread-count-monitoring.md)(现有 gRPC 线程构成)、
   AGENTS.md §11.7(连接与回调生命周期)
 
@@ -75,6 +75,26 @@ nghttp2(HTTP/2 帧、HPACK、流控、SETTINGS、PING ACK)
   百分号编码)、`grpc_timeout`、`message_framing`(5 字节前缀的拼装与增量拆包)。
 - 生成客户端与业务调用方共享的调用结果、回调、选项和 metadata 类型由手写公共头 `cpp/libs/engine/core/network/grpc_client_call.h` 定义，以 `core/network/grpc_client_call.h` 引用。2026-10-19 将其从 `cpp/generated/grpc_client/grpc_call_tag.h` 迁出：`GrpcTag` 已删除，文件名改为表达现有类型职责，公共头归属 core，生成模板只引用、不产出该文件。历史实施记录中的旧路径保留作历史；调用语义与线上协议不变。
 - 节点的业务 `node_id` 与带版本的 EnTT 实体句柄是不同身份。`NodeConnector` 的 TCP / gRPC 路径均由 `registry.create()` 分配实体，按 `node_uuid` 识别同一进程，摘除也按 UUID 查找；业务查询使用 UUID 或 `FindNodeEntityByZoneAndNodeId`，不得把 `node_id` 强转成实体句柄。身份解析与跨 zone 回归见 [路由身份审计](routing-identity-audit-20260908.md)，句柄寿命见 [组件访问规则](ecs-component-access-rules.md#实体类型与生命周期边界)。旧故障中的“node_id 仅 zone 内唯一”和“TCP 仍直接使用 node_id 作句柄”均不作为当前约束。
+
+<a id="node-grpc-endpoints"></a>
+
+### 3.1 节点双端口与服务发现
+
+有注册 gRPC 服务的 C++ 节点使用两个端口：`NodeInfo.endpoint` 承载 muduo RPC0，
+`grpc_endpoint.port = endpoint.port + 30000` 承载标准 gRPC HTTP/2。两者不能混拨。
+NodeAllocator 检查派生端口；端口对不可用则本轮分配失败、不发布，不脱离 RPC0 端口单独扫描 gRPC fallback。
+该规则是当前分配契约，不保证任意环境无需路由或网络配置。
+
+Go scene_manager 的 `resolveNodeEndpoint` 只接受发现 JSON 的 `grpcEndpoint`，缺失时拒绝，
+不退回 RPC0 的 `endpoint`。客户端按 `(zoneId,nodeId)` 缓存；缓存命中前仍拒绝 watch 表中的已知重复注册，
+需要解析时要求唯一登记。它不等于每次缓存命中都重新向 etcd 实时验证唯一活注册。
+实现见 [node_allocator.cpp](../../cpp/libs/engine/core/node/system/node/node_allocator.cpp)
+与 [scene_node_client.go](../../go/scene_manager/internal/logic/scene_node_client.go)。
+
+CreateScene、DestroyScene 等需要明确应答与截止的控制调用走 unary gRPC；Gate 路由、踢线等异步通知可走 Kafka，
+恢复与重投仍由各自业务契约负责。这个取舍不依赖旧稿未实测的 gRPC／Kafka 固定延迟比较。
+节点控制端口保持内网职责，客户端接入另按入口设计；玩家交接安全仍须满足属主与存盘屏障。
+服务端具体实现、背压与排空统一见本文 §15，整体业务线程与拆除顺序见[Scene 线程模型](scene-node-threading-model.md)。
 
 ## 4. 线上契约(必须逐字节保持)
 
@@ -647,7 +667,7 @@ EtcdHelper(唯一出口,EtcdManager 的 keepalive 也收进来)
 | 题 | 决定 | 依据 | 代价 |
 |---|---|---|---|
 | Q1 回退开关 | **不设**。模板只生成新形态。回滚就是换回上一版镜像;灰度先发 1 个 scene 和 1 个 battle | 回到官方服务端就会重新拉起 poller 和 EventEngine 线程;§14.1 已定不保留官方分支;线上协议不变,新旧节点可以与同一批 Go 调用方并存 | 只能整版回滚 |
-| Q2 在途上限 | 两层:<br>① 每连接 SETTINGS `MAX_CONCURRENT_STREAMS=256`;<br>② 全节点在途 **1024**,超限在业务之前回 trailers-only `RESOURCE_EXHAUSTED "server in-flight call limit (1024) reached"`。<br>派发泵每轮 ≤64 个且 ≤2ms(至少 1 个)。每连接未收完的请求体 ≤16MiB。<br>Go `reconcile.go` 的 `Workers=8` 不动,只改注释 | MCS 是 HTTP/2 原生背压(RFC 9113 §6.5.2 建议 ≥100;Go net/http2 默认 250):grpc-go 在客户端排队,没发出的请求必定没执行。<br>RESOURCE_EXHAUSTED 是规范里的资源耗尽码,grpc C++ sync server 线程配额耗尽时也回它。<br>不用 REFUSED_STREAM:grpc-go 会立刻在同一连接透明重试。<br>每轮 2ms 是 50ms 帧预算的 4% | 极端突发时出现 RESOURCE_EXHAUSTED(业务未执行,调用方按失败重试) |
+| Q2 在途上限 | 两层:<br>① 每连接 SETTINGS `MAX_CONCURRENT_STREAMS=256`;<br>② 全节点在途 **1024**,超限在业务之前回 trailers-only `RESOURCE_EXHAUSTED "server in-flight call limit (1024) reached"`。<br>派发泵每轮至多 64 个，在调用之间检查 2ms 预算，至少处理 1 个；单个 handler 不可抢占。每连接未收完的请求体 ≤16MiB。<br>Go `reconcile.go` 的 `Workers=8` 不动,只改注释 | MCS 是 HTTP/2 原生背压(RFC 9113 §6.5.2 建议 ≥100;Go net/http2 默认 250):grpc-go 在客户端排队,没发出的请求必定没执行。<br>RESOURCE_EXHAUSTED 是规范里的资源耗尽码,grpc C++ sync server 线程配额耗尽时也回它。<br>不用 REFUSED_STREAM:grpc-go 会立刻在同一连接透明重试。<br>2ms 预算占 50ms 固定步长的 4%，不代表硬执行上限 | 极端突发时出现 RESOURCE_EXHAUSTED(业务未执行,调用方按失败重试) |
 | Q3 停接新连接 | 用 `Acceptor` 加自管 `TcpConnection`;停止监听就是经 queueInLoop 销毁 Acceptor;三份 muduo 树都不改。etcd 发现键**不提前撤**,仍在 `ReleaseNodeId` 随租约撤销 | grpc-go `GracefulStop` 和 grpc C++ `Shutdown` 都是先关监听。提前删键会让 scene_manager 改派,与本节点还在落地的存盘竞争(回档) | 排空窗口里 Go 仍能发现本节点,但拨号立刻 ECONNREFUSED、fail-fast,与今天一致 |
 | Q4 排空 | `kGrpcDrainTimeout=2s`,从 BeginShutdown 起算(在 hook 之后)。<br>第二段 GOAWAY 在收到 PING ACK 或满 1s 时发,取先到者。<br>最终 GOAWAY 之前收到的流照常处理。<br>2s 到期:业务未开始的回 `RST_STREAM(REFUSED_STREAM)`;已开始的回 `UNAVAILABLE "server shutting down"`。<br>之后半关,宽限 1s 再 forceClose,总上限约 3s | hook 里的 `Stop()` 已在排空之前拒掉所有许可等待者,Handle* 又都是同步的,所以通常一个 RTT 就排空。<br>grpc-go 在第一段 GOAWAY 后照常接受新流(`http2_server.go:1404-1407`)。<br>REFUSED_STREAM 是 RFC 9113 §8.7 的「未处理」;UNAVAILABLE 属于 Go 的「结果未知」(`spectate.go:387-392`) | 旧路径到期多是 CANCELLED,现在是 UNAVAILABLE 或 REFUSED |
 | Q5 截止 | 服务端用单一截止定时器(照 `Channel` 的 `deadlines_` 有序集合 + steady 复核):<br>投递前到期 → DEADLINE_EXCEEDED,不派发;<br>等许可时到期 → DEADLINE_EXCEEDED 完成调用,许可回来后不进业务;<br>业务已开始 → 立即回 DEADLINE_EXCEEDED,业务不打断,迟到的完成丢弃并计数 | grpc core 服务端的行为就是这样(今天线上跑的就是它);中途打断会制造半完成 | 多一个定时器加一个有序集合 |
@@ -1032,7 +1052,7 @@ private:
 
 - **数据流**:读事件 → `ServerConnection::HandleMessage` → `session.Receive`。muduo 一次 readv;nghttp2 同步解完,这一步只做分帧和 HPACK。
   - `OnRequestComplete` 检查在途上限 → 登记 `CallRecord`、登记截止 → `ready_.push_back` → `ScheduleDispatch()`。泵任务经 `queueInLoop` 排队,同一时刻至多一个。
-- **派发泵**:每轮最多 64 个且累计 ≤2ms,至少派发 1 个。剩余的再排一次:泵内再排时 `callingPendingFunctors_` 为真,会触发唤醒,落到下一轮,中间让出给定时器和 I/O。每个调用的处理:
+- **派发泵**:每轮最多 64 个，在调用之间检查 2ms 预算，有待处理项时至少处理 1 个（已截止项可能只被处理，不调用 handler）；同步 handler 不可抢占，单个调用可能超过预算，不能保证整轮累计 ≤2ms。剩余的再排一次:泵内再排时 `callingPendingFunctors_` 为真,会触发唤醒,落到下一轮,中间让出给定时器和 I/O。每个调用的处理:
   1. 记录已不在(被取消)就跳过;
   2. 已到期就回 DEADLINE_EXCEEDED;
   3. 否则建 token,**先把 message 移出记录**(handler 可能同步完成并删掉记录),再调 handler。

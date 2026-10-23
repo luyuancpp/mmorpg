@@ -25,13 +25,13 @@ END = "<!-- END GENERATED INDEX -->"
 DESIGN_RULES = [
     ("总览与入门", [
         "ARCH.md", "onboarding.md", "architecture-current-state-vs-gaps-*", "ecs*.md",
-        "table-api-reference*", "script_directory_rules*", "root_level_cleanup_findings*",
+        "table-api-reference*",
         "capacity-model-*",
     ]),
     ("构建、部署与发布", [
         "docker_k8s_build_deploy*", "cpp_image_optimization*", "release-packaging-standard-*",
         "rolling-update-restart-resilience-tests.md", "vs2026_cross_machine_compatibility*",
-        "scene_build_pdb_note*", "gateway-k8s-deployment.md",
+        "gateway-k8s-deployment.md",
     ]),
     ("测试与机器人", [
         "robot-*", "login-test-anti-stuck-system.md", "data-consistency-stress-testing.md",

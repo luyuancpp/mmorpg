@@ -474,7 +474,7 @@ Pulled from ❌ Not done — infrastructure gaps that hurt when production break
 | #103 | c2s string length | gate kMaxClientMessageSize=1024 | Per-string-field check | S | #192 |
 | #127 | Lost-message during scene switch | `cross_scene_player_messaging.md` + `cross-zone-scene-travel.md` §14 (2026-10-20 correction: `player_migration_event_handler` belonged to the removed player_migrate data-move chain and was deleted in `e7bb46070`) | Queue-based plan still TODO | M | #208 |
 | #206 | Client-data size | codec kMaxMessageLen=64MB | Gate-side dedicated client-packet check | S | #103 |
-| #247 | Protocol compatibility | proto3 native + `proto3_enum_zero_requirement.md` | Dedicated version compat layer | M | #255 |
+| #247 | 协议兼容 | [根 AGENTS.md §4、§11.3](../../AGENTS.md)：枚举首值须为 0，兼容性按具体变更判断 | 按实际发布接缝核验版本兼容与迁移，不能由 proto3 语法推定兼容 | M | #255 |
 
 ### Login · Session · Reconnect
 | # | Item | State | Missing | Effort | Depends |

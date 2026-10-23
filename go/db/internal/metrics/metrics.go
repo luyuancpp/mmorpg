@@ -336,9 +336,9 @@ var deadLetterReasons = []string{
 
 // 读任务被放弃的原因(db_task_read_abandoned_total 的 reason)。
 const (
-	ReadAbandonedStoreUnavailable = "store_unavailable" // 库打不开或在冷却期内:立即回失败回执
-	ReadAbandonedBudgetExhausted  = "budget_exhausted"  // 重试次数用完:丢弃,不进死信
-	ReadAbandonedSchemaTooNew     = "schema_too_new"    // 行的持久 schema 世代高于本实例(C2):立即回失败回执,不回填缓存
+	ReadAbandonedStoreUnavailable = "store_unavailable"  // 库打不开或在冷却期内:立即回失败回执
+	ReadAbandonedBudgetExhausted  = "budget_exhausted"   // 重试次数用完:丢弃,不进死信
+	ReadAbandonedSchemaTooNew     = "schema_too_new"     // 行的持久 schema 世代高于本实例(C2):立即回失败回执,不回填缓存
 	ReadAbandonedMissingPlayerRow = "player_row_missing" // 正式玩家双表缺行：立即回失败，不把请求体冒充真实存档
 )
 

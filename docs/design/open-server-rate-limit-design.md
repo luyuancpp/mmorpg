@@ -195,7 +195,7 @@ J1 未做：先扣 zone 再判 IP 的顺序不变，风险见 R13。冷却本身
 
 **持有 queue_token：**
 
-1. 一律轮询 `/api/queue-status` 查排位与取票，不把 assign-gate 当作正常轮询入口。
+1. 一律轮询 `/api/queue-status` 查排位与取票，不把 assign-gate 当作正常轮询入口；查询与恢复重入均沿用入队请求的 zone_id。
 2. 每次查询前等待 `max(retry_after_ms, 下限)`，再加基础间隔 0–20% 的均匀抖动。正常下限 2s；查询连续失败时下限依次为 2s、4s、8s、16s、30s，之后保持 30s。封顶约束的是退避下限，不截断服务端更大的 retry_after_ms。
 3. 仅查询出现网络错误、HTTP 非 200 或 JSON code=500 时，带原 token 调一次 assign-gate 作恢复。查询的非失败回包将连续失败数清零，恢复重入的回包不清零。
 4. 恢复回 code=0 则放行；回 100（login 或 ratelimit）或 429 时保留 token，按上述间隔回到 queue-status。不得套用无票 429 的 30/60/120s 重调节奏，否则可能错过 AdmitTTL 放行窗口。

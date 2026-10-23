@@ -1,10 +1,10 @@
 package savebarrier
 
 import (
-	"math"
-	"testing"
-	databasepb "proto/common/database"
 	"google.golang.org/protobuf/proto"
+	"math"
+	databasepb "proto/common/database"
+	"testing"
 )
 
 func TestInitialPlayerCommitIsCompleteAndNotAnActor(t *testing.T) {
@@ -14,13 +14,19 @@ func TestInitialPlayerCommitIsCompleteAndNotAnActor(t *testing.T) {
 		RowVersion(parent.PlayerDatabase_1Data.FenceOwnerEpoch, parent.PlayerDatabase_1Data.FenceSaveSeq) != Version(1, 1) {
 		t.Fatal("初始持久提交没有完整覆盖父水位和两张 SQL 围栏")
 	}
-	if IsInitialPlayerData(InitialPlayerData(0)) { t.Fatal("接受了零玩家初始提交") }
+	if IsInitialPlayerData(InitialPlayerData(0)) {
+		t.Fatal("接受了零玩家初始提交")
+	}
 	changed := proto.Clone(parent).(*databasepb.PlayerAllData)
 	changed.LastSaveSeq = 0
-	if IsInitialPlayerData(changed) { t.Fatal("接受了零水位缓存种子") }
+	if IsInitialPlayerData(changed) {
+		t.Fatal("接受了零水位缓存种子")
+	}
 	changed = proto.Clone(parent).(*databasepb.PlayerAllData)
 	changed.ProtoReflect().SetUnknown([]byte{0xA0, 0x06, 0x01})
-	if IsInitialPlayerData(changed) { t.Fatal("初始凭据丢弃了未知业务字段") }
+	if IsInitialPlayerData(changed) {
+		t.Fatal("初始凭据丢弃了未知业务字段")
+	}
 }
 
 func TestVersionRoundTripAndOrdering(t *testing.T) {

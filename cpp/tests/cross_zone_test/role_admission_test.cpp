@@ -57,16 +57,23 @@ protected:
             EXPECT_EQ(kPlayer, player); sqlReplies.push_back(std::move(reply)); return true;
         };
         dependencies.registerHandoffFence = [this](Guid player, std::string candidate, std::optional<std::string> prior,
-            std::function<bool()> stillQualified, Admission::FenceReply reply) {
+            std::function<bool(const std::string&)> stillQualified, Admission::FenceReply reply) {
             EXPECT_EQ(kPlayer, player);
             fenceCandidates.push_back(candidate); fencePriors.push_back(prior);
             auto afterRead = [this, stillQualified = std::move(stillQualified), reply = std::move(reply)] {
-                const bool allowed = stillQualified();
+                const bool allowed = stillQualified("");
                 if (allowed) ++fenceWrites;
-                reply(allowed, std::string(""));
+                auto finish = [reply, allowed] { reply(allowed, std::string("")); };
+                if (delayFenceReply) fenceReplies.push_back(std::move(finish)); else finish();
             };
             if (delayFence) fenceReads.push_back(std::move(afterRead)); else afterRead();
             return true;
+        };
+        dependencies.revokeHandoffFence = [this](Guid player, std::string candidate, std::string prior,
+            std::string revoked, std::function<void(bool)> reply) {
+            EXPECT_EQ(kPlayer, player); revokedCandidates.push_back(std::move(candidate));
+            EXPECT_TRUE(handoff_sql_barrier::ParseFence(revoked));
+            reply(true); return true;
         };
         dependencies.activate = [this](Guid player, PlayerEnterContext context) {
             EXPECT_EQ(kPlayer, player); activated.push_back(std::move(context));
@@ -175,8 +182,11 @@ protected:
     std::string lastEnterPreconditions;
     bool pendingLoad{false};
     bool delayFence{false};
+    bool delayFenceReply{false};
+    std::vector<std::function<void()>> fenceReplies;
     uint32_t fenceWrites{0};
     std::vector<std::string> fenceCandidates;
+    std::vector<std::string> revokedCandidates;
     std::vector<std::optional<std::string>> fencePriors;
     std::vector<std::function<void()>> fenceReads;
 };
@@ -524,4 +534,16 @@ TEST_F(RoleAdmissionTest, ContextIdentityMustMatchOriginalAdmissionAndSession) {
     EXPECT_TRUE(Admission::ConfirmedIdentityForContext(kPlayer, activated[1]));
     EXPECT_GT(activated[1].roleAdmissionGeneration, original.roleAdmissionGeneration);
     EXPECT_NE(activated[1].handoffFence, original.handoffFence);
+}
+
+TEST_F(RoleAdmissionTest, SealRevokesSubmittedRegistrationBeforeItsReplyCanActivate) {
+    delayFenceReply = true;
+    Enter(); CompleteRegister(0);
+    ASSERT_EQ(1u, fenceWrites); ASSERT_EQ(1u, fenceReplies.size());
+    EXPECT_TRUE(activated.empty());
+    ASSERT_TRUE(Admission::Seal(SealFor()));
+    ASSERT_EQ(1u, revokedCandidates.size()); EXPECT_EQ(fenceCandidates[0], revokedCandidates[0]);
+    fenceReplies[0]();
+    EXPECT_TRUE(activated.empty());
+    EXPECT_FALSE(Admission::Allows(kPlayer, registers[0].identity().generation(), kRevision));
 }

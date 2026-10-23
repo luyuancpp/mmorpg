@@ -62,9 +62,9 @@ var errParentBarrierNotCommitted = errors.New("parent SQL barrier not committed"
 // savebarrier.LuaInstanceIdentity(defaultParentLoadScripts);miniredis 不支持 INFO server / replication，
 // 单测经 newParentLoadScripts 换成从普通键读身份的替身。
 type parentLoadScripts struct {
-	begin  *redis.Script
-	commit *redis.Script
-	seed   *redis.Script // 建角写种子并写身份戳(new_player_seed.go)
+	begin         *redis.Script
+	commit        *redis.Script
+	seed          *redis.Script // 建角写种子并写身份戳(new_player_seed.go)
 	committedSeed *redis.Script // 只接收正式 SQL 初始提交回执。
 }
 
@@ -72,9 +72,9 @@ var defaultParentLoadScripts = newParentLoadScripts(savebarrier.LuaInstanceIdent
 
 func newParentLoadScripts(instanceIdentityLua string) parentLoadScripts {
 	return parentLoadScripts{
-		begin:  redis.NewScript(instanceIdentityLua + parentLoadBeginLua),
-		commit: redis.NewScript(parentLoadCommitLua),
-		seed:   redis.NewScript(instanceIdentityLua + seedNewPlayerLua),
+		begin:         redis.NewScript(instanceIdentityLua + parentLoadBeginLua),
+		commit:        redis.NewScript(parentLoadCommitLua),
+		seed:          redis.NewScript(instanceIdentityLua + seedNewPlayerLua),
 		committedSeed: redis.NewScript(instanceIdentityLua + committedPlayerSeedLua),
 	}
 }

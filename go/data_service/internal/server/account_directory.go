@@ -24,6 +24,7 @@ func (s *DataServiceServer) admitDirectory(ctx context.Context, method string, r
 	}
 	return nil
 }
+
 // directoryError 把目录 store 的错误映射成 gRPC status;directoryRPCResult 按同一张映射给指标归类,两处一起改。
 func directoryError(err error) error {
 	if err == nil {

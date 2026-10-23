@@ -4,8 +4,8 @@ import (
 	"context"
 	"crypto/rand"
 	"database/sql"
-	"encoding/hex"
 	"encoding/binary"
+	"encoding/hex"
 	"errors"
 	"net"
 	"os"
@@ -14,16 +14,16 @@ import (
 	"time"
 
 	"github.com/go-sql-driver/mysql"
+	"github.com/luyuancpp/proto2mysql"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/encoding/protowire"
 	"google.golang.org/protobuf/proto"
 	base "proto/common/base"
+	databasepb "proto/common/database"
 	dspb "proto/data_service"
 	"shared/accountdirectory"
 	"shared/authoritysql"
 	"shared/placement"
-	"github.com/luyuancpp/proto2mysql"
-	databasepb "proto/common/database"
 )
 
 // 显式专用 TiDB DSN；每例只建／删自己的随机库，不借用其它任务的现有库或端口假设。
@@ -209,15 +209,23 @@ func TestTiDBAccountDirectoryPreservesExactAccountIdentity(t *testing.T) {
 // 夹具只登记本次角色的正式原路由，随后仍调用公开 Create 完成真实双表事务。
 // 不预建所有玩家路由、不修改任何已存在路由；生产事务的路由/合服保护仍实际执行。
 func createInitialRoleForTest(s *AccountDirectoryStore, ctx context.Context, account string, role *base.AccountSimplePlayer) (*base.AccountSimplePlayerList, error) {
-	if err := installInitialRouteForTest(s, ctx, role); err != nil { return nil, err }
+	if err := installInitialRouteForTest(s, ctx, role); err != nil {
+		return nil, err
+	}
 	return s.Create(ctx, account, role)
 }
 
 func installInitialRouteForTest(s *AccountDirectoryStore, ctx context.Context, role *base.AccountSimplePlayer) error {
-	if err := ctx.Err(); err != nil { return err }
-	if len(s.initialStores) != 1 { return accountdirectory.ErrUnavailable }
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	if len(s.initialStores) != 1 {
+		return accountdirectory.ErrUnavailable
+	}
 	var storage uint32
-	for id := range s.initialStores { storage = id }
+	for id := range s.initialStores {
+		storage = id
+	}
 	_, err := s.db.ExecContext(ctx, "INSERT INTO player_route(route_shard,player_id,home_zone,storage_id,placement_version,rev,updated_by,created_at_ms,updated_at_ms) VALUES (?,?,?, ?,1,1,'initial-commit-test',1,1) ON DUPLICATE KEY UPDATE player_id=player_id", placement.RouteRowShard(role.GetPlayerId()), role.GetPlayerId(), role.GetZoneId(), storage)
 	return err
 }

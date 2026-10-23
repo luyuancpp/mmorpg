@@ -35,7 +35,8 @@ public:
         std::function<bool(data_service::AckRoleTradeDrainRequest, std::function<void(bool)>)> ackDrain;
         std::function<bool(Guid, std::function<void(std::optional<SqlAck>)>)> readSqlAck;
         // expectedPrior 首次读取后固定；重试保留同一 candidate 与 prior，不从当前身份补资格。
-        std::function<bool(Guid, std::string, std::optional<std::string>, std::function<bool()>, FenceReply)> registerHandoffFence;
+        std::function<bool(Guid, std::string, std::optional<std::string>, std::function<bool(const std::string&)>, FenceReply)> registerHandoffFence;
+        std::function<bool(Guid, std::string, std::string, std::string, std::function<void(bool)>)> revokeHandoffFence;
         std::function<void(Guid, PlayerEnterContext)> activate;
         std::function<void(Guid)> freeze;
         std::function<void(Guid, uint32_t)> reject;

@@ -1,9 +1,9 @@
 package barrierrestore
 
 import (
-    "strings"
 	"os"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 

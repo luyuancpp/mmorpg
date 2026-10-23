@@ -43,6 +43,8 @@
 | `docs/archive/` | `centre_decommission_*`(centre 已下线) | 9 |
 | `docs/notes/event-priority*.md` | 原 `docs/architecture*.md`(内容是事件优先级笔记,不是架构文档) | 3 |
 
+> 2026-10-23 更新：上述合并目录已拆为 `docs/notes/slg/`（11 篇）和 `docs/notes/moba/`（4 篇）；本表保留 2026-10-07 的整理记录。
+
 判据:只搬没有被生成物引用的文档。被源码注释引用的 15 处已同步改路径;`docs/PROGRESS.md` 是流水账,
 只修了它自己的相对链接,正文里的历史路径没有改。
 

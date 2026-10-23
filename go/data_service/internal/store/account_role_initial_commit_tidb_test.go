@@ -103,13 +103,21 @@ func TestTiDBCreateRoleConcurrentInitialReceiptIsIssuedOnce(t *testing.T) {
 	defer cancel()
 	role := &base.AccountSimplePlayer{PlayerId: 3103, ZoneId: 1}
 	require.NoError(t, installInitialRouteForTest(s, ctx, role))
-	type result struct { out *dspb.AccountDirectoryResponse; err error }
+	type result struct {
+		out *dspb.AccountDirectoryResponse
+		err error
+	}
 	results := make(chan result, 8)
 	start := make(chan struct{})
 	var workers sync.WaitGroup
 	for n := 0; n < 8; n++ {
 		workers.Add(1)
-		go func() { defer workers.Done(); <-start; out, err := s.CreateWithInitialCommit(ctx, "owner", proto.Clone(role).(*base.AccountSimplePlayer)); results <- result{out, err} }()
+		go func() {
+			defer workers.Done()
+			<-start
+			out, err := s.CreateWithInitialCommit(ctx, "owner", proto.Clone(role).(*base.AccountSimplePlayer))
+			results <- result{out, err}
+		}()
 	}
 	close(start)
 	workers.Wait()
@@ -118,7 +126,9 @@ func TestTiDBCreateRoleConcurrentInitialReceiptIsIssuedOnce(t *testing.T) {
 	for r := range results {
 		require.NoError(t, r.err)
 		require.Len(t, r.out.Players.Players, 1)
-		if r.out.InitialPlayerData != nil { issued++ }
+		if r.out.InitialPlayerData != nil {
+			issued++
+		}
 	}
 	require.Equal(t, 1, issued)
 	requireInitialRowsForTest(t, db, schema, role.PlayerId)
@@ -196,8 +206,10 @@ func TestTiDBInitialCommitProofNeedsOriginPayloadAndNoHistoricalFloor(t *testing
 			_, err := createInitialRoleForTest(s, ctx, "seller", &base.AccountSimplePlayer{PlayerId: 3107, ZoneId: 1})
 			require.NoError(t, err)
 			switch mode {
-			case "unmarked": _, err = db.Exec("UPDATE account_role SET initial_player_commit=0 WHERE player_id=3107")
-			case "payload": _, err = db.Exec("UPDATE `"+schema+"`.player_database SET `profile_component`=? WHERE player_id=3107", []byte{8, 1})
+			case "unmarked":
+				_, err = db.Exec("UPDATE account_role SET initial_player_commit=0 WHERE player_id=3107")
+			case "payload":
+				_, err = db.Exec("UPDATE `"+schema+"`.player_database SET `profile_component`=? WHERE player_id=3107", []byte{8, 1})
 			case "historical-floor":
 				admissions := NewAccountRoleAdmissionStore(s)
 				_, err = admissions.Register(ctx, admissionTestRequest(3107, 1, 1))
@@ -215,7 +227,9 @@ func TestTiDBInitialCommitProofNeedsOriginPayloadAndNoHistoricalFloor(t *testing
 				require.NoError(t, err)
 				require.Empty(t, out.Holders)
 				require.Equal(t, dspb.AccountRoleFreezeEvidenceKind_ACCOUNT_ROLE_FREEZE_EVIDENCE_KIND_INITIAL_COMMIT, out.FreezeEvidence.Kind)
-			} else { require.ErrorIs(t, err, accountdirectory.ErrConflict) }
+			} else {
+				require.ErrorIs(t, err, accountdirectory.ErrConflict)
+			}
 		})
 	}
 }
@@ -246,4 +260,3 @@ func TestTiDBImportAndRestoreNeverSeedInitialPlayerRows(t *testing.T) {
 	require.NoError(t, err)
 	require.Nil(t, out.InitialPlayerData)
 }
-

@@ -2036,6 +2036,9 @@ constexpr uint32_t kSmErrSomeRejection = 5; // 任意非 18 的 scene_manager �
 bool MakeReplyTestPlayer(entt::entity& player)
 {
     player = MakeOnlinePlayer(kSessionAtExit);
+    auto& original = tlsEcs.actorRegistry.emplace_or_replace<PlayerOwnerEpochComp>(player);
+    original.epoch = 7;
+    original.handoffFence = "7|explicit-test-scene|1|"+std::string(32,'a')+"|H|"+std::string(32,'b');
     TestLocalNodeInfo().set_zone_id(kReplyTestZone);
     return MarkPersisted(player);
 }
@@ -2175,8 +2178,8 @@ TEST(TravelPersistEcs, LandedCallbackWithMissingComponentReachesMarkGate)
     muduo::Logger::setOutput(WriteLogToStdout);
 
     ASSERT_TRUE(tlsEcs.actorRegistry.valid(player));
-    EXPECT_FALSE((tlsEcs.actorRegistry.any_of<PlayerTravelHandoffComp, PlayerFrozenComp>(player)));
-    EXPECT_EQ(travel_handoff_stats::Read().aborted, before.aborted + 1);
+    EXPECT_TRUE((tlsEcs.actorRegistry.all_of<PlayerTravelHandoffComp, PlayerFrozenComp>(player)));
+    EXPECT_EQ(travel_handoff_stats::Read().aborted, before.aborted);
     EXPECT_EQ(g_handoffMarkComponentRefusedLines, 0);
     EXPECT_EQ(g_handoffMarkRedisDisconnectedLines, 1);
     EXPECT_EQ(travel_handoff_stats::Read().handoffFastpathForced, before.handoffFastpathForced);
@@ -2290,9 +2293,9 @@ TEST(EnterSceneReplyEcs, SceneChange18StillStartsSameZoneHandoff)
     EXPECT_EQ(after.started, before.started + 1) << "号匹配的 18 起同 zone 交接";
     EXPECT_FALSE(tlsEcs.actorRegistry.any_of<PlayerSceneChangeInFlightComp>(player));
     // 宿主里没有 owner_epoch(按 0):BeginTravelHandoff 就地 Abort,交接与冻结成对摘掉。
-    EXPECT_EQ(after.aborted, before.aborted + 1);
-    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<PlayerTravelHandoffComp>(player));
-    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<PlayerFrozenComp>(player));
+    EXPECT_EQ(after.aborted, before.aborted);
+    EXPECT_TRUE(tlsEcs.actorRegistry.any_of<PlayerTravelHandoffComp>(player));
+    EXPECT_TRUE(tlsEcs.actorRegistry.any_of<PlayerFrozenComp>(player));
 }
 
 TEST(EnterSceneReplyEcs, LegacySceneChange18StillStartsHandoff)
@@ -2713,7 +2716,7 @@ TEST(TravelFreezeCapEcs, UnstampedFreezeIsStampedNotExpired)
     EXPECT_EQ(Stats().freezeUnstamped, before.freezeUnstamped + 1) << "只补记一次";
 }
 
-TEST(TravelFreezeCapEcs, MarkNeverSentUnfreezesWithoutWithdrawal)
+TEST(TravelFreezeCapEcs, UnconfirmedRevocationAtCapDestroysWithoutPersisting)
 {
     const auto player = MakeFrozenHandoffPlayer(kCapSelfZone + 1, /*requestedAtMs=*/0, /*markEpoch=*/0, kT0);
     const auto before = Stats();
@@ -2721,13 +2724,10 @@ TEST(TravelFreezeCapEcs, MarkNeverSentUnfreezesWithoutWithdrawal)
     PlayerLifecycleSystem::EnforceTravelFreezeCaps(kT0 + tfc::kFreezeCap);
 
     const auto after = Stats();
-    ASSERT_TRUE(tlsEcs.actorRegistry.valid(player)) << "SET 没发出:不可能已被放行,解冻而不是销毁";
-    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<PlayerTravelHandoffComp>(player));
-    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<PlayerFrozenComp>(player));
+    EXPECT_FALSE(tlsEcs.actorRegistry.valid(player)) << "撤资格未确认，硬上限不存盘销毁而不解冻";
     EXPECT_EQ(after.freezeCapReached, before.freezeCapReached + 1);
     EXPECT_EQ(after.aborted, before.aborted + 1);
     EXPECT_EQ(after.markSentDestroyed, before.markSentDestroyed);
-    EXPECT_FALSE(PlayerLifecycleSystem::IsSceneChangeBusy(player)) << "没发过标记,不登记撤回";
 }
 
 TEST(TravelFreezeCapEcs, MarkSentDestroysWithoutPersistingAndResetsClient)
@@ -2786,7 +2786,7 @@ TEST(TravelFreezeCapEcs, ExitingEntityPastCapIsDestroyedWithoutKick)
     EXPECT_EQ(after.markSentClientReset, before.markSentClientReset) << "退出中不踢";
 }
 
-TEST(TravelFreezeCapEcs, BeginTravelHandoffPastDispatchWindowAbortsWithoutMark)
+TEST(TravelFreezeCapEcs, PastDispatchWindowRequiresRevocationBeforeUnfreeze)
 {
     // 关键证据是 dispatch_window_closed:没有这道闸时代码会走到"zone redis 未连接"分支,那条分支同样让 aborted +1,
     // 但不会动 dispatch_window_closed。时间只用 steady 时钟的相对偏移,余量 1s,结果确定。
@@ -2799,12 +2799,12 @@ TEST(TravelFreezeCapEcs, BeginTravelHandoffPastDispatchWindowAbortsWithoutMark)
 
     const auto after = Stats();
     ASSERT_TRUE(tlsEcs.actorRegistry.valid(player));
-    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<PlayerTravelHandoffComp>(player));
-    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<PlayerFrozenComp>(player));
+    EXPECT_TRUE(tlsEcs.actorRegistry.any_of<PlayerTravelHandoffComp>(player));
+    EXPECT_TRUE(tlsEcs.actorRegistry.any_of<PlayerFrozenComp>(player));
     EXPECT_EQ(after.dispatchWindowClosed, before.dispatchWindowClosed + 1);
-    EXPECT_EQ(after.aborted, before.aborted + 1);
+    EXPECT_EQ(after.aborted, before.aborted);
     EXPECT_EQ(after.sqlBarrierExpired, before.sqlBarrierExpired) << "没等过 SQL ACK,不算这一类";
-    EXPECT_FALSE(PlayerLifecycleSystem::IsSceneChangeBusy(player)) << "SET 没发出,不登记撤回";
+    EXPECT_TRUE(PlayerLifecycleSystem::IsSceneChangeBusy(player)) << "原资格未确认撤销，不解冻";
 }
 
 TEST(TravelFreezeCapEcs, BeginTravelHandoffPastWindowWhileWaitingForSqlAcksCountsSqlBarrierExpiry)
@@ -2821,14 +2821,14 @@ TEST(TravelFreezeCapEcs, BeginTravelHandoffPastWindowWhileWaitingForSqlAcksCount
     PlayerLifecycleSystem::BeginTravelHandoff(kCapPlayerId);
 
     const auto after = Stats();
-    ASSERT_TRUE(tlsEcs.actorRegistry.valid(player)) << "SET 没发出:解冻,不销毁";
-    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<PlayerTravelHandoffComp>(player));
-    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<PlayerFrozenComp>(player));
+    ASSERT_TRUE(tlsEcs.actorRegistry.valid(player)) << "无Redis撤资格确认，仍保持冻结";
+    EXPECT_TRUE(tlsEcs.actorRegistry.any_of<PlayerTravelHandoffComp>(player));
+    EXPECT_TRUE(tlsEcs.actorRegistry.any_of<PlayerFrozenComp>(player));
     EXPECT_EQ(after.dispatchWindowClosed, before.dispatchWindowClosed + 1);
     EXPECT_EQ(after.sqlBarrierExpired, before.sqlBarrierExpired + 1);
-    EXPECT_EQ(after.aborted, before.aborted + 1);
+    EXPECT_EQ(after.aborted, before.aborted);
     EXPECT_EQ(after.sqlBarrierWaited, before.sqlBarrierWaited) << "等待计数只在回调里第一次等待时加,这里不动";
-    EXPECT_FALSE(PlayerLifecycleSystem::IsSceneChangeBusy(player)) << "SET 没发出,不登记撤回";
+    EXPECT_TRUE(PlayerLifecycleSystem::IsSceneChangeBusy(player)) << "原资格未确认撤销，不解冻";
 }
 
 TEST(TravelFreezeCapEcs, BeginTravelHandoffInsideWindowIsNotRefusedByTheGate)
@@ -2842,8 +2842,8 @@ TEST(TravelFreezeCapEcs, BeginTravelHandoffInsideWindowIsNotRefusedByTheGate)
 
     const auto after = Stats();
     ASSERT_TRUE(tlsEcs.actorRegistry.valid(player));
-    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<PlayerTravelHandoffComp>(player));
-    EXPECT_EQ(after.aborted, before.aborted + 1);
+    EXPECT_TRUE(tlsEcs.actorRegistry.any_of<PlayerTravelHandoffComp>(player));
+    EXPECT_EQ(after.aborted, before.aborted);
     EXPECT_EQ(after.dispatchWindowClosed, before.dispatchWindowClosed);
 }
 
@@ -2870,15 +2870,15 @@ TEST(TravelFreezeCapEcs, LateMarkSetErrorOfOlderGenerationLeavesNewHandoffFrozen
     PlayerLifecycleSystem::HandleTravelMarkWriteRejected(kCapPlayerId, /*requestedAtMs=*/456, "READONLY");
 
     ASSERT_TRUE(tlsEcs.actorRegistry.valid(player));
-    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<PlayerTravelHandoffComp>(player));
-    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<PlayerFrozenComp>(player));
-    EXPECT_EQ(Stats().aborted, before.aborted + 1);
-    EXPECT_FALSE(PlayerLifecycleSystem::IsSceneChangeBusy(player)) << "markEpoch 已清 0:不登记撤回";
+    EXPECT_TRUE(tlsEcs.actorRegistry.any_of<PlayerTravelHandoffComp>(player));
+    EXPECT_TRUE(tlsEcs.actorRegistry.any_of<PlayerFrozenComp>(player));
+    EXPECT_EQ(Stats().aborted, before.aborted);
+    EXPECT_TRUE(PlayerLifecycleSystem::IsSceneChangeBusy(player)) << "mark缺席也必须先撤资格";
 
     // 实体已不在时同样 no-op(不崩、不计数)。
     tlsEcs.Clear();
     PlayerLifecycleSystem::HandleTravelMarkWriteRejected(kCapPlayerId, /*requestedAtMs=*/456, "READONLY");
-    EXPECT_EQ(Stats().aborted, before.aborted + 1);
+    EXPECT_EQ(Stats().aborted, before.aborted);
 }
 
 // ============================================================================
@@ -2921,9 +2921,9 @@ TEST(TravelFreezeCapEcs, SaveWatchdogAbortWhileWaitingForSqlAcksCountsSqlBarrier
 
     const auto after = Stats();
     ASSERT_TRUE(tlsEcs.actorRegistry.valid(player));
-    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<PlayerTravelHandoffComp>(player));
+    EXPECT_TRUE(tlsEcs.actorRegistry.any_of<PlayerTravelHandoffComp>(player));
     EXPECT_EQ(after.sqlBarrierExpired, before.sqlBarrierExpired + 1);
-    EXPECT_EQ(after.aborted, before.aborted + 1);
+    EXPECT_EQ(after.aborted, before.aborted);
     EXPECT_EQ(after.dispatchWindowClosed, before.dispatchWindowClosed) << "不是晚发闸收的口";
 }
 
@@ -2938,9 +2938,9 @@ TEST(TravelFreezeCapEcs, AbortWithMarkWriteInFlightIsNotSqlBarrierExpiry)
     PlayerTravelOutcomeTestAccess::Abort(kCapPlayerId, "test abort while the mark write is in flight");
 
     const auto after = Stats();
-    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<PlayerTravelHandoffComp>(inFlight));
+    EXPECT_TRUE(tlsEcs.actorRegistry.any_of<PlayerTravelHandoffComp>(inFlight));
     EXPECT_EQ(after.sqlBarrierExpired, before.sqlBarrierExpired);
-    EXPECT_EQ(after.aborted, before.aborted + 1);
+    EXPECT_EQ(after.aborted, before.aborted);
 }
 
 
@@ -3195,7 +3195,7 @@ TEST(TravelOwnership, JudgeRevokesOriginalHolderBeforeReadingOwnership)
     EXPECT_LT(lua.find("if not types3()"), lua.find("redis.call('HSET'"));
     EXPECT_LT(lua.find("raw~=ARGV[1] and raw~=ARGV[2] and raw~=ARGV[3]"), lua.find("redis.call('HSET'"));
     EXPECT_LT(lua.find("redis.call('HSET'"), lua.find("redis.call('DEL'"));
-    EXPECT_LT(lua.find("redis.call('DEL'"), lua.find("return {redis.call('GET'"));
+    EXPECT_LT(lua.find("redis.call('DEL'"), lua.find("return {owner"));
     EXPECT_EQ(lua.find("DEL',KEYS[1]"), std::string::npos) << "不删owner";
     EXPECT_EQ(lua.find("DEL',location"), std::string::npos) << "不删location";
 }
@@ -6829,7 +6829,7 @@ TEST(MirrorCreateInFlightEcs, CommittedHandoffPermanentlyCancelsOldMirror)
               PlayerLifecycleSystem::kTravelAccepted);
 
     EXPECT_EQ(travel_handoff_stats::Read().started, before.started + 1);
-    EXPECT_EQ(travel_handoff_stats::Read().aborted, before.aborted + 1)
+    EXPECT_EQ(travel_handoff_stats::Read().aborted, before.aborted)
         << "沿用无 owner_epoch 宿主的就地 Abort,旧镜像资格仍不得恢复";
     ASSERT_TRUE(tlsEcs.actorRegistry.valid(player));
     EXPECT_FALSE(HasMirrorCreate(player));
