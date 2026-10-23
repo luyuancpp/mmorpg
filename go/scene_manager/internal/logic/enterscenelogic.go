@@ -1373,43 +1373,7 @@ func (l *EnterSceneLogic) resolveScene(sceneId uint64, sceneConfId uint64, zoneI
 		}
 		// Validate the mapped node is still alive; reassign if dead.
 		if !IsNodeAlive(l.svcCtx, zoneId, nodeId) {
-			// 再入屏障:节点刚从 etcd 消失不代表它已经停笔。C++ 老节点丢租约后
-			// 还有 kDrainBudget(15s)的 emergency relocate,期间仍在
-			// SavePlayerToRedis。此刻改写 scene:{id}:node 并让新节点
-			// CreateScene + load,就是同一玩家双写 / 回档。
-			// 屏障没走完时**一个字节都不改**,返回可重试错误让上游带着同样的
-			// scene_conf_id 退避重试。见 docs/design/scene-owner-reentry-barrier.md §3.2。
-			if reentryBarrierBlocks(l.svcCtx, zoneId, nodeId, barrierSiteResolveScene) {
-				return 0, "", fmt.Errorf("scene %d 的属主节点 %s 刚判死,再入屏障未到: %w",
-					sceneId, nodeId, ErrReentryBarrierPending)
-			}
-			// Pick a replacement of the correct purpose so a world scene
-			// never gets moved onto an instance-only node (C++ EnterScene
-			// would then reject the request on type mismatch).
-			// 拿不到 scene_conf_id 就发不出 CreateScene（见下面的 if），
-			// 那样只会改写映射而不建实体 —— 同样是造幽灵场景。宁可拒绝本次请求，
-			// 让上游带着 conf id 重试，也不要留下一条指向空节点的映射。
-			if sceneConfId == 0 {
-				return 0, "", fmt.Errorf("scene %d is on dead node %s and cannot be recreated without scene_conf_id", sceneId, nodeId)
-			}
-			purpose := constants.NodePurposeInstance
-			if IsWorldConf(sceneConfId) {
-				purpose = constants.NodePurposeWorld
-			}
-			newNodeId, err := GetBestNodeForPurpose(l.ctx, l.svcCtx, zoneId, purpose)
-			if err != nil {
-				return 0, "", fmt.Errorf("scene %d mapped to dead node %s and no live nodes for purpose %d: %w", sceneId, nodeId, purpose, err)
-			}
-			l.Logger.Infof("resolveScene: scene %d was on dead node %s, reassigning to %s (purpose=%d)", sceneId, nodeId, newNodeId, purpose)
-			l.svcCtx.Redis.Set(key, newNodeId)
-			nodeId = newNodeId
-
-			// Ensure the new node creates the ECS scene entity.
-			if sceneConfId != 0 {
-				if _, err := RequestNodeCreateScene(l.ctx, l.svcCtx, zoneId, nodeId, uint32(sceneConfId), sceneId); err != nil {
-					l.Logger.Errorf("resolveScene: CreateScene on new node %s for scene %d failed: %v", nodeId, sceneId, err)
-				}
-			}
+			return l.reassignSceneOffDeadNode(sceneId, sceneConfId, zoneId, nodeId)
 		}
 		return sceneId, nodeId, nil
 	}
@@ -1429,6 +1393,112 @@ func (l *EnterSceneLogic) resolveScene(sceneId uint64, sceneConfId uint64, zoneI
 		return 0, "", fmt.Errorf("no available channel for conf %d in zone %d", sceneConfId, zoneId)
 	}
 	return sid, nid, nil
+}
+
+// reassignSceneOffDeadNode 是 resolveScene 的死节点自愈:场景 sceneId 的属主 deadNode 已摘出负载集,
+// 挑一个同用途的活节点,经 reassignSceneNode 的 CAS 把归属改过去。只有 CAS 成功才转移 Agones 名额、
+// 发 CreateScene。
+//
+// deadNode 是调用方读到的属主。读与写之间隔着屏障判定与选节点,期间别的写者可能已经把场景改派走:
+// 另一个副本上的 EnterScene(实例场景只有这一类写者),以及世界频道的 rebalance、
+// initWorldScenesForZone、懒改派。以前这里无条件 SET:后到者覆盖先到者,两个节点各建一份实体,
+// 先到者那份成了孤儿;而且 SET 不动反向索引与 scene_count —— 新属主死时它的收尾快照里没有这个场景
+// (实例泄漏),场景销毁时又从新属主的 scene_count 里减掉一个从没加过的数。
+//
+// 记账口径与 createscenelogic.go allocateScene 一致:属主映射、node:zone:{z}:{n}:scenes、
+// node:zone:{z}:{n}:scene_count 三项随归属走,由 CAS 脚本同批改;active_instances、scene:{id}:zone、
+// 场景人数与镜像索引不随节点变化,不动。
+func (l *EnterSceneLogic) reassignSceneOffDeadNode(sceneId, sceneConfId uint64, zoneId uint32, deadNode string) (uint64, string, error) {
+	// 再入屏障:节点刚从 etcd 消失不代表它已经停笔。C++ 老节点丢租约后
+	// 还有 kDrainBudget(15s)的 emergency relocate,期间仍在
+	// SavePlayerToRedis。此刻改写 scene:{id}:node 并让新节点
+	// CreateScene + load,就是同一玩家双写 / 回档。
+	// 屏障没走完时**一个字节都不改**,返回可重试错误让上游带着同样的
+	// scene_conf_id 退避重试。见 docs/design/scene-owner-reentry-barrier.md §3.2。
+	if reentryBarrierBlocks(l.svcCtx, zoneId, deadNode, barrierSiteResolveScene) {
+		return 0, "", fmt.Errorf("scene %d 的属主节点 %s 刚判死,再入屏障未到: %w",
+			sceneId, deadNode, ErrReentryBarrierPending)
+	}
+	// Pick a replacement of the correct purpose so a world scene
+	// never gets moved onto an instance-only node (C++ EnterScene
+	// would then reject the request on type mismatch).
+	// 拿不到 scene_conf_id 就发不出 CreateScene,那样只会改写映射而不建实体 ——
+	// 同样是造幽灵场景。宁可拒绝本次请求,让上游带着 conf id 重试,
+	// 也不要留下一条指向空节点的映射。
+	if sceneConfId == 0 {
+		return 0, "", fmt.Errorf("scene %d is on dead node %s and cannot be recreated without scene_conf_id", sceneId, deadNode)
+	}
+	purpose := constants.NodePurposeInstance
+	if IsWorldConf(sceneConfId) {
+		purpose = constants.NodePurposeWorld
+	}
+	newNodeId, err := GetBestNodeForPurpose(l.ctx, l.svcCtx, zoneId, purpose)
+	if err != nil {
+		return 0, "", fmt.Errorf("scene %d mapped to dead node %s and no live nodes for purpose %d: %w", sceneId, deadNode, purpose, err)
+	}
+	if !reassignSceneNode(l.svcCtx, zoneId, sceneId, deadNode, newNodeId) {
+		return l.adoptOwnerAfterLostReassign(sceneId, sceneConfId, zoneId, deadNode, newNodeId)
+	}
+	l.Logger.Infof("resolveScene: scene %d was on dead node %s, reassigned to %s (purpose=%d)", sceneId, deadNode, newNodeId, purpose)
+
+	// Agones 名额跟着场景走,与 initWorldScenesForZone 的死节点改派同一口径:实例与世界频道
+	// 都在建场景时占过名额(scene:{id}:agones_gs),不在新节点上占一份,rooms Counter 少算,
+	// FleetAutoscaler 欠配。占不到时 TransferAgonesRoomForScene 保留旧名额并打日志,
+	// 与 init 路径一样交给 reconcile 暴露漂移,不拦本次进场。Agones 未启用时是 no-op。
+	TransferAgonesRoomForScene(l.ctx, l.svcCtx, sceneId, newNodeId, zoneId)
+
+	// Ensure the new node creates the ECS scene entity.
+	if _, err := RequestNodeCreateScene(l.ctx, l.svcCtx, zoneId, newNodeId, uint32(sceneConfId), sceneId); err != nil {
+		l.Logger.Errorf("resolveScene: CreateScene on new node %s for scene %d failed: %v", newNodeId, sceneId, err)
+	}
+	return sceneId, newNodeId, nil
+}
+
+// adoptOwnerAfterLostReassign 处理 reassignSceneOffDeadNode 的 CAS 落空。reassignSceneNode 返回 false
+// 时本次调用什么都没写(Redis 出错除外,见下),此刻属主是谁只能重读;只重读一次,不再改派。
+//
+// 不为落空另开一个可重试错误码:落空的常见原因是别的写者刚刚完成了同一件事,答案已经在 Redis 里,
+// 让玩家多绕一圈重试拿到的也是这一次重读的结果。
+//
+//   - 属主是活节点:别的写者已接手。与晚到一步、直接读到新属主的请求一样直接用它,不发 CreateScene ——
+//     那是改派成功的写者的职责(rebalance 先建后改,其余写者改完即建)。
+//     例外是属主恰好就是本次挑中的 triedNode:可能是并发的另一个 EnterScene 挑了同一个最低负载节点,
+//     也可能是 Redis 报错而本次脚本其实已执行 —— 后一种没有别人会去建实体,所以补发一次 CreateScene
+//     (按 scene_id 幂等)。Agones 名额转移不幂等(重复转移会在新节点上多占一份),这里不转移;
+//     若确是本次脚本执行了,名额留在死节点的 GameServer 上,与 TransferAgonesRoomForScene 占不到新名额时
+//     同样交给 reconcile 暴露漂移。
+//   - 属主仍是 deadNode:不是被抢,是脚本没跑成 —— reassignSceneNode 内的第二道屏障拦下,或 Redis 出错 /
+//     计数键损坏。屏障此刻仍未到就回可重试的 ErrReentryBarrierPending,否则按查找失败拒绝。
+//   - 映射没了:场景已被销毁(死节点收尾 / 空闲回收),与入口处「查无此场景」同一处理。
+//   - 属主是身份歧义节点或另一个死节点:拒绝本次请求,不连环改派;下一次请求按当时的属主重新判定。
+func (l *EnterSceneLogic) adoptOwnerAfterLostReassign(sceneId, sceneConfId uint64, zoneId uint32, deadNode, triedNode string) (uint64, string, error) {
+	owner, err := l.svcCtx.Redis.Get(sceneNodeKey(sceneId))
+	if err != nil {
+		return 0, "", fmt.Errorf("scene %d: reassign off dead node %s did not apply and owner re-read failed: %w", sceneId, deadNode, err)
+	}
+	switch {
+	case owner == "":
+		return 0, "", fmt.Errorf("scene %d does not exist (destroyed while being reassigned off dead node %s)", sceneId, deadNode)
+	case owner == deadNode:
+		// 只取判定、不走 reentryBarrierBlocks:第二道屏障拦下时 reassignSceneNode 已经记过日志与指标。
+		if allowed, _ := CanReclaimDeadNode(l.svcCtx, zoneId, deadNode); !allowed {
+			return 0, "", fmt.Errorf("scene %d 的属主节点 %s 刚判死,再入屏障未到: %w",
+				sceneId, deadNode, ErrReentryBarrierPending)
+		}
+		return 0, "", fmt.Errorf("scene %d: reassign off dead node %s to %s did not apply; ownership unchanged", sceneId, deadNode, triedNode)
+	case isKnownNodeIdentityAmbiguous(zoneId, owner):
+		return 0, "", fmt.Errorf("scene %d maps to ambiguous node identity zone=%d node=%s", sceneId, zoneId, owner)
+	case !IsNodeAlive(l.svcCtx, zoneId, owner):
+		return 0, "", fmt.Errorf("scene %d was moved off dead node %s to %s by another writer, and %s is not alive either", sceneId, deadNode, owner, owner)
+	}
+
+	if owner == triedNode {
+		if _, err := RequestNodeCreateScene(l.ctx, l.svcCtx, zoneId, owner, uint32(sceneConfId), sceneId); err != nil {
+			l.Logger.Errorf("resolveScene: CreateScene on %s for scene %d (owner already %s after lost reassign) failed: %v", owner, sceneId, owner, err)
+		}
+	}
+	l.Logger.Infof("resolveScene: scene %d reassign %s -> %s lost the CAS; current owner %s adopted", sceneId, deadNode, triedNode, owner)
+	return sceneId, owner, nil
 }
 
 func (l *EnterSceneLogic) resolveSceneForEnter(sceneId uint64, sceneConfId uint64, zoneId uint32) (uint64, string, bool, error) {

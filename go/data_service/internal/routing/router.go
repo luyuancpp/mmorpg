@@ -641,23 +641,32 @@ func (r *Router) AcquirePlayerLock(ctx context.Context, dataClient goredis.Cmdab
 	}
 	token = hex.EncodeToString(buf)
 
+	// 任一把锁没拿到,都把「可能已经落在服务端」的锁按 token 释放掉,再返回:
+	//   - SETNX 报错不等于没写入:命令可能已在服务端执行、只是回包丢了;
+	//   - 回 false 也不一定是别人持锁:客户端对断连自动重试时,第二次会撞上第一次已写入的自己的 token。
+	// 这两种情况不释放,锁要挂到 PlayerLockTTLSec 过期,期间该玩家的写全部 LockConflict。
+	// token 校验保证只删自己的,别人持有的锁不受影响;代价是锁冲突时多一次释放往返。
+	// 请求 ctx 已超时 / 取消也照常释放(lockReleaseContext)。
 	ok, err = r.mappingRedis.SetnxExCtx(ctx, mappingPlayerLockKey(playerID), token, r.lockTTLSec)
 	if err != nil || !ok {
-		return "", ok, err
+		return "", false, lockAcquireFailure(err, r.releaseMappingLock(ctx, playerID, token))
 	}
 
 	ttl := time.Duration(r.lockTTLSec) * time.Second
 	ok, err = dataClient.SetNX(ctx, PlayerDataLockKey(playerID), token, ttl).Result()
 	if err != nil || !ok {
-		// 第二把锁失败时必须释放第一把；token 校验保证不会误删后来者。
-		// 第二把锁失败的常见原因正是请求 ctx 已超时 / 取消,释放走 lockReleaseContext。
-		releaseErr := r.releaseMappingLock(ctx, playerID, token)
-		if err == nil && releaseErr != nil {
-			err = releaseErr
-		}
-		return "", ok, err
+		return "", false, lockAcquireFailure(err, r.ReleasePlayerLock(ctx, dataClient, playerID, token))
 	}
 	return token, true, nil
+}
+
+// lockAcquireFailure 决定拿锁失败时返回的错误:拿锁本身的错误优先;拿锁只是没抢到(acquireErr == nil)
+// 而回滚释放失败时返回释放错误 —— 锁可能还挂在服务端,不能当成普通的锁冲突。
+func lockAcquireFailure(acquireErr, releaseErr error) error {
+	if acquireErr != nil {
+		return acquireErr
+	}
+	return releaseErr
 }
 
 // writeRoute 是写门禁读到的路由快照,home 与合服围栏同一瞬间读出(GetPlayerHomeZoneAndMergeFence)。

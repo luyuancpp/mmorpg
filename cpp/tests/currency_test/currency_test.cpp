@@ -122,6 +122,9 @@ struct MessageAsyncClientTestPeer
     {
         return {client.save_script_.source, client.guard_script_.source, client.barrier_script_.source};
     }
+
+    // 严格屏障脚本在当前连接上的 SHA:空 = 还没 SCRIPT LOAD,存盘发 EVAL(带全文);非空发 EVALSHA。
+    static const std::string& BarrierScriptSha(const Client& client) { return client.barrier_script_.sha1; }
 };
 
 // ---------------------------------------------------------------------------
@@ -444,7 +447,7 @@ TEST(CurrencyTest, AttachDebtRefusesToMergeIntoDebtWithUnknownFields)
     auto &runtime = tlsEcs.actorRegistry.get<PlayerCurrencyComp>(player);
     runtime.LoadFromProto(persisted);
 
-    // 只读谓词与原语同口径:调用方(收件箱执行器)靠它先判、回延后,不拿通用码 kFeatureUnavailable 反推。
+    // 只读谓词与原语同口径:调用方(收件箱执行器)靠它先判、回版本错位(kVersionSkew),不拿通用码 kFeatureUnavailable 反推。
     EXPECT_TRUE(CurrencySystem::DebtCarriesUnknownFields(player, kCurrencyGold));
     EXPECT_FALSE(CurrencySystem::DebtCarriesUnknownFields(player, kCurrencyDiamond)) << "没有这种币种的欠款";
     EXPECT_FALSE(CurrencySystem::DebtCarriesUnknownFields(player, kCurrencyMax)) << "越界币种";
@@ -1130,7 +1133,10 @@ TEST(CurrencyTest, RedisCommitBarrierSchemaWarnedIsCommitEvidence)
     Client::HiredisPtr hiredis;
     Client client(hiredis);
     std::vector<int> events;
-    client.SetSaveSchemaWarnedCallback([&](Guid, const std::string&) { events.push_back(1); });
+    client.SetSaveSchemaWarnedCallback([&](Guid, const std::string&, const std::string& writer) {
+        EXPECT_EQ("writer-unit-test", writer) << "计数回调带上这份写入的写方令牌,供按写方去重";
+        events.push_back(1);
+    });
     client.SetSaveCallback([&](Guid, CurrencyComp&) { events.push_back(3); });
     int rejected = 0;
     client.SetSaveSchemaRejectedCallback([&](Guid, const std::string&, const std::string&) { ++rejected; });
@@ -1164,7 +1170,7 @@ TEST(CurrencyTest, RedisSchemaRepliesOnNonBarrierSavesAreNotEvidence)
         int schemaRejected = 0;
         int ownerRejected = 0;
         client.SetSaveCallback([&](Guid, CurrencyComp&) { ++saved; });
-        client.SetSaveSchemaWarnedCallback([&](Guid, const std::string&) { ++warned; });
+        client.SetSaveSchemaWarnedCallback([&](Guid, const std::string&, const std::string&) { ++warned; });
         client.SetSaveSchemaRejectedCallback([&](Guid, const std::string&, const std::string&) { ++schemaRejected; });
         client.SetSaveRejectedCallback([&](Guid, const std::string&, const std::string&) { ++ownerRejected; });
         const auto guarded = Peer::TrackGuardedSave(client, kPlayerId, "player:10027:owner_epoch", "7");
@@ -1329,6 +1335,47 @@ TEST(CurrencyTest, RedisCommitBarrierCarriesAndValidatesSchemaArguments)
     EXPECT_NE(tokenA, tokenB);
 }
 
+// 同 key 还有未落定的存盘时加载先挂起(设计 §13 第 9 条):前任实体被不存盘销毁时它的存盘可能还在排队重试,同落点重连
+// 加载出的新实体若先读,会读到那笔存盘之前的父快照。挂起期间在途 / 重试 / 再次 AsyncLoad 都不发 GET;存盘落定(成功)后
+// 下一拍 RetryDuePending 放行;别的 key 不受影响。未连接的客户端:放行后的加载进 pending_retry_queue_ 等重连。
+TEST(CurrencyTest, RedisLoadWaitsForUnsettledSaveOfTheSameKey)
+{
+    using Client = MessageAsyncClient<Guid, CurrencyComp>;
+    using Peer = MessageAsyncClientTestPeer<Guid, CurrencyComp>;
+    Client::HiredisPtr hiredis; // 未连接
+    Client client(hiredis);
+    constexpr Guid kPlayerId = 10040;
+    constexpr Guid kOtherPlayerId = 10041;
+
+    const auto predecessorSave = Peer::TrackSave(client, kPlayerId, MarkedCurrency(1)); // 前任实体的存盘在途
+    client.AsyncLoad(kPlayerId);
+    EXPECT_EQ(1u, client.awaiting_save_load_count());
+    EXPECT_EQ(0u, client.pending_load_count()) << "挂起期间不进普通重试队列,不会被重连一并发出";
+    EXPECT_TRUE(client.HasPendingLoad(kPlayerId)) << "调用方看到的仍是\"加载未完成\"";
+    client.AsyncLoad(kPlayerId);
+    EXPECT_EQ(1u, client.awaiting_save_load_count()) << "重复调用并进同一个挂起项";
+
+    client.AsyncLoad(kOtherPlayerId);
+    EXPECT_EQ(1u, client.pending_load_count()) << "别的 key 不受影响(未连接:照常进重试队列)";
+
+    // 存盘失败转入重试:仍未落定,继续挂起。
+    auto error = ErrorReply();
+    Peer::DeliverSaved(client, &error, predecessorSave);
+    client.RetryDuePending();
+    EXPECT_EQ(1u, client.awaiting_save_load_count());
+
+    // 重试成功、没有更新值:落定。下一拍放行。
+    const auto retried = Peer::IssuePendingForTest(client, kPlayerId);
+    ASSERT_NE(nullptr, retried);
+    auto ok = IntegerReply(1);
+    Peer::DeliverSaved(client, &ok, retried);
+    ASSERT_FALSE(client.HasUnsettledSave(kPlayerId));
+    client.RetryDuePending();
+    EXPECT_EQ(0u, client.awaiting_save_load_count());
+    EXPECT_EQ(2u, client.pending_load_count()) << "放行后的加载走正常路径(未连接:进重试队列等重连)";
+    EXPECT_TRUE(client.HasPendingLoad(kPlayerId));
+}
+
 // 部署键 PersistSchemaRegressionMode 的归一化:缺键 / 空串 = warn;只认两个字面量(区分大小写);其余拒绝启动。
 TEST(CurrencyTest, PersistSchemaRegressionModeNormalization)
 {
@@ -1339,6 +1386,37 @@ TEST(CurrencyTest, PersistSchemaRegressionModeNormalization)
     for (const std::string_view bad : {"Warn", "ENFORCE", " warn", "enforce ", "off", "true", "0"})
     {
         EXPECT_EQ(std::nullopt, Normalize(bad)) << "'" << bad << "'";
+    }
+}
+
+// 真走 readBaseDeployConfig:缺键、空串、YAML 空值(Null 节点,yaml-cpp 会把它变成 "null")都得到 warn,enforce 原样。
+// 非法值走 LOG_FATAL(abort),不在单测里跑。临时文件用唯一文件名,用完删除。
+TEST(CurrencyTest, ReadBaseDeployConfigNormalizesPersistSchemaRegressionMode)
+{
+    const auto dir = std::filesystem::temp_directory_path();
+    std::random_device entropy;
+    const std::string unique = std::to_string((static_cast<uint64_t>(entropy()) << 32) | entropy());
+    const std::vector<std::pair<std::string, std::string>> cases{
+        {"LogLevel: 1\n", "warn"},
+        {"PersistSchemaRegressionMode:\n", "warn"},
+        {"PersistSchemaRegressionMode: ~\n", "warn"},
+        {"PersistSchemaRegressionMode: ''\n", "warn"},
+        {"PersistSchemaRegressionMode: warn\n", "warn"},
+        {"PersistSchemaRegressionMode: enforce\n", "enforce"},
+    };
+    for (std::size_t i = 0; i < cases.size(); ++i)
+    {
+        const auto path = dir / ("persist_schema_mode_" + unique + "_" + std::to_string(i) + ".yaml");
+        {
+            std::ofstream out(path, std::ios::binary);
+            ASSERT_TRUE(out.good()) << path.string();
+            out << cases[i].first;
+        }
+        BaseDeployConfig config;
+        EXPECT_TRUE(readBaseDeployConfig(path.string(), config)) << cases[i].first;
+        EXPECT_EQ(cases[i].second, config.persist_schema_regression_mode()) << cases[i].first;
+        std::error_code ignored;
+        std::filesystem::remove(path, ignored);
     }
 }
 
@@ -1451,10 +1529,11 @@ TEST(CurrencyTest, PlayerSqlTasksRequireParentCommitSourceContract)
     const auto dispatch = save.substr(hookEnd);
     EXPECT_NE(std::string::npos, dispatch.find("SaveWithCommitBarrier(message, playerId,"));
     EXPECT_NE(std::string::npos, dispatch.find("\"player:{\" + playerIdStr + \"}:save_barrier\", version, commitIntent, schemaGen, std::move(publishDbTasks)"));
-    // 覆盖世代参数:输出世代取统一入口盖的戳、加载世代取两表加载戳的最小值、写方令牌按实体(混版本持久字段保护 §5.2)。
+    // 覆盖世代参数:输出世代取统一入口盖的戳、加载世代永远是两表加载戳的最小值(C++ 不维护首存 / 已提交状态)、
+    // 写方令牌按实体(混版本持久字段保护 §5.2)。
     EXPECT_NE(std::string::npos, dispatch.find("schemaGen.output_gen = message->player_database_data().persist_schema_gen();"));
     EXPECT_NE(std::string::npos, dispatch.find("schemaGen.load_gen = player_persist::LoadedSchemaGen(player).value_or(0);"));
-    EXPECT_NE(std::string::npos, dispatch.find("schemaGen.writer = PersistWriterToken(player);"));
+    EXPECT_NE(std::string::npos, dispatch.find("schemaGen.writer = player_persist::WriterTokenForSave(player);"));
     EXPECT_NE(std::string::npos, dispatch.find("Save(message, playerId, std::move(publishDbTasks))"));
 }
 
@@ -1716,7 +1795,7 @@ TEST(CurrencyTest, RedisSaveScriptsTouchOnlyDeclaredKeys)
                 "'SAVE_BARRIER invalid bucket'", "'SAVE_BARRIER invalid stored outbox'", "'SAVE_BARRIER same version conflict'",
                 "'player:'", "':owner_epoch'", "'player:{'", "'}:save_barrier'", "'SAVE_BARRIER player key mismatch'",
                 // 覆盖世代校验 C3(混版本持久字段保护 §5.2):hash 字段名、模式字面量、令牌字符集与参数错误文案。
-                "'schema_gen'", "'schema_writer'", "'warn'", "'enforce'", "'^[%w:%-]+$'",
+                "'schema_gen'", "'schema_writer'", "'schema_regressed'", "'warn'", "'enforce'", "'^[%w:%-]+$'",
                 "'SAVE_BARRIER invalid schema argument'",
             };
             if (script == kSaveWithCommitBarrierLuaScript &&
@@ -2252,6 +2331,258 @@ TEST(CurrencyTest, RedisCommitBarrierSchemaGenAgainstRealRedis)
         EXPECT_NE(std::string::npos, lastError.find("SAVE_BARRIER invalid schema argument")) << lastError;
         EXPECT_EQ(parentBefore, sync.Get(parentKey));
         EXPECT_EQ(pendingBefore, field("pending"));
+    }
+}
+
+// warn 判倒退的证据不能随回包丢失而消失(3b 评审):判定那次写入已提交,之后重放同一元素(同版本)或改发同令牌的后继
+// 都跳过 C3,只有 hash 里的 schema_regressed 能把 2 带回来。别的写方写成功也不清证据(只对同令牌起作用,留给值班巡检);
+// enforce 拒写不留证据。
+TEST(CurrencyTest, RedisCommitBarrierSchemaWarnEvidenceSurvivesLostReplyAgainstRealRedis)
+{
+    std::string host;
+    uint16_t port = 0;
+    if (!TestRedisAddr(host, port)) GTEST_SKIP() << "需要专用 MMORPG_TEST_REDIS_ADDR";
+    SyncRedisForTest sync;
+    ASSERT_TRUE(sync.Connect(host, port));
+    const Guid testPlayerId = IsolatedRedisPlayerIdForTest();
+    const std::string member = std::to_string(testPlayerId);
+    const std::string parentKey = "CurrencyComp:" + member;
+    const std::string ownerKey = "player:" + member + ":owner_epoch";
+    const std::string barrierKey = "player:{" + member + "}:save_barrier";
+    const auto intent = CommitIntentForTest(testPlayerId);
+    const std::string& indexKey = intent->index_key;
+    ASSERT_EQ(0LL, sync.Exists(parentKey));
+    ASSERT_EQ(0LL, sync.Exists(ownerKey));
+    ASSERT_EQ(0LL, sync.Exists(barrierKey));
+    struct Cleanup
+    {
+        SyncRedisForTest& sync;
+        const std::string& parent;
+        const std::string& owner;
+        const std::string& barrier;
+        const std::string& index;
+        const std::string& member;
+        ~Cleanup()
+        {
+            sync.Del(parent); sync.Del(owner); sync.Del(barrier);
+            freeReplyObject(redisCommand(sync.context.get(), "ZREM %b %b", index.data(), index.size(), member.data(), member.size()));
+        }
+    } cleanup{sync, parentKey, ownerKey, barrierKey, indexKey, member};
+    using Reply = std::unique_ptr<redisReply, decltype(&freeReplyObject)>;
+    const auto version = [](const std::string& owner, const std::string& seq) {
+        return std::string(20 - owner.size(), '0') + owner + ":" + std::string(20 - seq.size(), '0') + seq;
+    };
+    const auto field = [&](const std::string& name) {
+        Reply reply(static_cast<redisReply*>(redisCommand(sync.context.get(), "HGET %b %b",
+            barrierKey.data(), barrierKey.size(), name.data(), name.size())), &freeReplyObject);
+        return reply != nullptr && reply->type == REDIS_REPLY_STRING ? std::string(reply->str, reply->len) : "(nil)";
+    };
+    const auto setField = [&](const std::string& name, const std::string& value) {
+        Reply reply(static_cast<redisReply*>(redisCommand(sync.context.get(), "HSET %b %b %b",
+            barrierKey.data(), barrierKey.size(), name.data(), name.size(), value.data(), value.size())), &freeReplyObject);
+        ASSERT_NE(nullptr, reply);
+        ASSERT_EQ(REDIS_REPLY_INTEGER, reply->type);
+    };
+    const auto save = [&](const std::string& owner, const std::string& token, const std::string& body,
+        const std::string& outputGen, const std::string& loadGen, const std::string& mode, const std::string& writer) {
+        Reply reply(static_cast<redisReply*>(redisCommand(sync.context.get(), "EVAL %s 4 %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b",
+            kSaveWithCommitBarrierLuaScript, parentKey.data(), parentKey.size(), ownerKey.data(), ownerKey.size(),
+            barrierKey.data(), barrierKey.size(), indexKey.data(), indexKey.size(),
+            body.data(), body.size(), owner.data(), owner.size(), token.data(), token.size(),
+            intent->topic.data(), intent->topic.size(), intent->player_database_task.data(), intent->player_database_task.size(),
+            intent->player_database_1_task.data(), intent->player_database_1_task.size(), member.data(), member.size(),
+            outputGen.data(), outputGen.size(), loadGen.data(), loadGen.size(), mode.data(), mode.size(),
+            writer.data(), writer.size())), &freeReplyObject);
+        if (reply == nullptr) return -99LL;
+        if (reply->type == REDIS_REPLY_ERROR) return -1LL;
+        return reply->type == REDIS_REPLY_INTEGER ? reply->integer : -99LL;
+    };
+    const std::string writerA = "writer-a";
+    const std::string writerB = "writer-b";
+
+    // 前一个写方(已不在)把世代记到了 6;实体 A 接手的却是戳 5 的数据。
+    sync.Set(ownerKey, "5");
+    setField("schema_gen", "6");
+    setField("schema_writer", "writer-gone");
+    ASSERT_EQ(2LL, save("5", version("5", "1"), "a1", "6", "5", "warn", writerA));
+    EXPECT_EQ(writerA, field("schema_regressed"));
+    // 判定那次的回包丢了:重放同一元素(同版本,C3 跳过)仍返回 2。
+    EXPECT_EQ(2LL, save("5", version("5", "1"), "a1", "6", "5", "warn", writerA));
+    // 或者回包丢失后改发同令牌的后继(令牌相同,C3 跳过)仍返回 2;换了 owner 代次也一样。
+    EXPECT_EQ(2LL, save("5", version("5", "2"), "a2", "6", "5", "warn", writerA));
+    sync.Set(ownerKey, "6");
+    EXPECT_EQ(2LL, save("6", version("6", "3"), "a3", "6", "5", "warn", writerA));
+    EXPECT_EQ("a3", sync.Get(parentKey)) << "带着证据照写";
+    // 别的写方没判倒退地写成功:返回 1,它的后继也是 1;旧证据保留(只对令牌 A 起作用),供值班巡检。
+    EXPECT_EQ(1LL, save("6", version("6", "4"), "b4", "6", "6", "warn", writerB));
+    EXPECT_EQ(1LL, save("6", version("6", "5"), "b5", "6", "6", "warn", writerB));
+    EXPECT_EQ(writerA, field("schema_regressed"));
+    // enforce 拒写一个键都不动,也不改证据。
+    setField("schema_writer", "writer-gone");
+    setField("schema_gen", "9");
+    EXPECT_EQ(3LL, save("6", version("6", "6"), "c6", "9", "6", "enforce", "writer-c"));
+    EXPECT_EQ(writerA, field("schema_regressed"));
+    EXPECT_EQ("b5", sync.Get(parentKey));
+}
+
+// 外来写夹在同一实体两次写之间:判据是"上一次屏障写入是不是本实体写的",不是"本实体写过没有"。
+// 实体 A 以加载世代 5 写下 6 → 实体 B 写下 6 → A 再写(加载世代仍是 5):上一次不是 A 写的,照常比较,判倒退。
+// 生产中这条路径由 A2′(目标先核对 epoch 并删标记再建实体)与 owner 守卫排除(设计 §5.2 前提);本用例只钉住判据本身。
+TEST(CurrencyTest, RedisCommitBarrierForeignWriteBetweenSameEntityWritesIsComparedAgainstRealRedis)
+{
+    std::string host;
+    uint16_t port = 0;
+    if (!TestRedisAddr(host, port)) GTEST_SKIP() << "需要专用 MMORPG_TEST_REDIS_ADDR";
+    SyncRedisForTest sync;
+    ASSERT_TRUE(sync.Connect(host, port));
+    const Guid testPlayerId = IsolatedRedisPlayerIdForTest();
+    const std::string member = std::to_string(testPlayerId);
+    const std::string parentKey = "CurrencyComp:" + member;
+    const std::string ownerKey = "player:" + member + ":owner_epoch";
+    const std::string barrierKey = "player:{" + member + "}:save_barrier";
+    const auto intent = CommitIntentForTest(testPlayerId);
+    const std::string& indexKey = intent->index_key;
+    ASSERT_EQ(0LL, sync.Exists(parentKey));
+    ASSERT_EQ(0LL, sync.Exists(ownerKey));
+    ASSERT_EQ(0LL, sync.Exists(barrierKey));
+    struct Cleanup
+    {
+        SyncRedisForTest& sync;
+        const std::string& parent;
+        const std::string& owner;
+        const std::string& barrier;
+        const std::string& index;
+        const std::string& member;
+        ~Cleanup()
+        {
+            sync.Del(parent); sync.Del(owner); sync.Del(barrier);
+            freeReplyObject(redisCommand(sync.context.get(), "ZREM %b %b", index.data(), index.size(), member.data(), member.size()));
+        }
+    } cleanup{sync, parentKey, ownerKey, barrierKey, indexKey, member};
+    using Reply = std::unique_ptr<redisReply, decltype(&freeReplyObject)>;
+    const auto version = [](const std::string& owner, const std::string& seq) {
+        return std::string(20 - owner.size(), '0') + owner + ":" + std::string(20 - seq.size(), '0') + seq;
+    };
+    const auto save = [&](const std::string& token, const std::string& body, const std::string& loadGen,
+        const std::string& mode, const std::string& writer) {
+        const std::string owner = "5";
+        const std::string outputGen = "6";
+        Reply reply(static_cast<redisReply*>(redisCommand(sync.context.get(), "EVAL %s 4 %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b",
+            kSaveWithCommitBarrierLuaScript, parentKey.data(), parentKey.size(), ownerKey.data(), ownerKey.size(),
+            barrierKey.data(), barrierKey.size(), indexKey.data(), indexKey.size(),
+            body.data(), body.size(), owner.data(), owner.size(), token.data(), token.size(),
+            intent->topic.data(), intent->topic.size(), intent->player_database_task.data(), intent->player_database_task.size(),
+            intent->player_database_1_task.data(), intent->player_database_1_task.size(), member.data(), member.size(),
+            outputGen.data(), outputGen.size(), loadGen.data(), loadGen.size(), mode.data(), mode.size(),
+            writer.data(), writer.size())), &freeReplyObject);
+        if (reply == nullptr) return -99LL;
+        if (reply->type == REDIS_REPLY_ERROR) return -1LL;
+        return reply->type == REDIS_REPLY_INTEGER ? reply->integer : -99LL;
+    };
+
+    sync.Set(ownerKey, "5");
+    ASSERT_EQ(1LL, save(version("5", "1"), "a1", "5", "enforce", "writer-a")) << "hash 不存在,不比较";
+    ASSERT_EQ(1LL, save(version("5", "2"), "b2", "6", "enforce", "writer-b")) << "B 加载世代 6 = 记录值,通过";
+    EXPECT_EQ(3LL, save(version("5", "3"), "a3", "5", "enforce", "writer-a")) << "上一次是 B 写的:A 照常比较,5 < 6";
+    EXPECT_EQ("b2", sync.Get(parentKey));
+    EXPECT_EQ(2LL, save(version("5", "3"), "a3", "5", "warn", "writer-a"));
+}
+
+// 严格屏障 11 个 ARGV 的在线格式(3b 评审):上面几条真 Redis 用例各自手写 EVAL 格式串,只验脚本;这里经
+// MessageAsyncClient::SaveWithCommitBarrier 真连 Redis 发出,第一次在 SCRIPT LOAD 回包前(EVAL 带全文),第二次在之后
+// (EVALSHA),两份格式串各走一遍。参数取可区分的值(输出 6 ≠ 加载 5、enforce、专用令牌):两份格式串里任何一处
+// 写错顺序都会让脚本报参数错误或判错倒退,而不是像 output=load=1 那样看不出来。
+TEST(CurrencyTest, RedisCommitBarrierWireFormatThroughClientAgainstRealRedis)
+{
+    std::string host;
+    uint16_t port = 0;
+    if (!TestRedisAddr(host, port)) GTEST_SKIP() << "需要专用 MMORPG_TEST_REDIS_ADDR";
+
+    using Client = MessageAsyncClient<Guid, CurrencyComp>;
+    using Peer = MessageAsyncClientTestPeer<Guid, CurrencyComp>;
+    using Reply = std::unique_ptr<redisReply, decltype(&freeReplyObject)>;
+
+    SyncRedisForTest sync;
+    ASSERT_TRUE(sync.Connect(host, port));
+    const Guid playerId = IsolatedRedisPlayerIdForTest();
+    const std::string member = std::to_string(playerId);
+    const std::string ownerKey = "player:" + member + ":owner_epoch";
+    const std::string barrierKey = "player:{" + member + "}:save_barrier";
+    const auto intent = CommitIntentForTest(playerId);
+
+    muduo::net::EventLoop loop;
+    Client::HiredisPtr connection = ConnectForTest(loop, host, port);
+    ASSERT_TRUE(connection->connected()) << "连不上 " << host << ":" << port;
+    {
+        Client client(connection);
+        const CloseConnectionBeforeClient close{connection};
+        const std::string parentKey = client.full_name() + ":" + member;
+        ASSERT_EQ(0LL, sync.Exists(parentKey));
+        ASSERT_EQ(0LL, sync.Exists(ownerKey));
+        ASSERT_EQ(0LL, sync.Exists(barrierKey));
+        struct Cleanup
+        {
+            SyncRedisForTest& sync;
+            std::string parent, owner, barrier, index, member;
+            ~Cleanup()
+            {
+                sync.Del(parent); sync.Del(owner); sync.Del(barrier);
+                freeReplyObject(redisCommand(sync.context.get(), "ZREM %b %b", index.data(), index.size(), member.data(), member.size()));
+            }
+        } cleanup{sync, parentKey, ownerKey, barrierKey, intent->index_key, member};
+        const auto field = [&](const std::string& name) {
+            Reply reply(static_cast<redisReply*>(redisCommand(sync.context.get(), "HGET %b %b",
+                barrierKey.data(), barrierKey.size(), name.data(), name.size())), &freeReplyObject);
+            return reply != nullptr && reply->type == REDIS_REPLY_STRING ? std::string(reply->str, reply->len) : "(nil)";
+        };
+
+        std::string outcome;
+        int committed = 0;
+        client.SetSaveCallback([&](Guid, CurrencyComp&) { outcome = "saved"; loop.quit(); });
+        client.SetSaveSchemaRejectedCallback([&](Guid, const std::string&, const std::string&) { outcome = "rejected"; loop.quit(); });
+        client.SetSaveFailedCallback([&](Guid, const std::string&, int) { outcome = "failed"; loop.quit(); });
+        const auto saveOnce = [&](const std::shared_ptr<CurrencyComp>& value, const std::string& seq, const std::string& writer) {
+            outcome.clear();
+            RedisSaveSchemaGen schemaGen;
+            schemaGen.output_gen = 6;
+            schemaGen.load_gen = 5;
+            schemaGen.mode = "enforce";
+            schemaGen.writer = writer;
+            const std::string version = std::string(19, '0') + "5:" + std::string(20 - seq.size(), '0') + seq;
+            EXPECT_TRUE(client.SaveWithCommitBarrier(value, playerId, ownerKey, "5", barrierKey, version, intent, schemaGen,
+                                                     [&] { ++committed; }));
+            const auto timeout = loop.runAfter(3.0, [&loop] { loop.quit(); });
+            loop.loop();
+            loop.cancel(timeout);
+            return outcome;
+        };
+
+        sync.Set(ownerKey, "5");
+        Reply seeded(static_cast<redisReply*>(redisCommand(sync.context.get(), "HSET %b schema_gen 5 schema_writer writer-gone",
+            barrierKey.data(), barrierKey.size())), &freeReplyObject);
+        ASSERT_NE(nullptr, seeded);
+
+        // 1. EVAL:SCRIPT LOAD 还没回包。记录世代 5 = 加载世代 5,通过;写入输出世代 6 与令牌。
+        ASSERT_TRUE(Peer::BarrierScriptSha(client).empty()) << "第一次存盘应走 EVAL";
+        const auto first = MarkedCurrency(1);
+        EXPECT_EQ("saved", saveOnce(first, "1", "writer-wire"));
+        EXPECT_EQ(1, committed);
+        EXPECT_EQ(first->SerializeAsString(), sync.Get(parentKey));
+        EXPECT_EQ("6", field("schema_gen"));
+        EXPECT_EQ("writer-wire", field("schema_writer"));
+
+        // 2. EVALSHA:同一写方的后继,令牌相同跳过比较。
+        ASSERT_FALSE(Peer::BarrierScriptSha(client).empty()) << "SCRIPT LOAD 应已回包,第二次存盘走 EVALSHA";
+        const auto second = MarkedCurrency(2);
+        EXPECT_EQ("saved", saveOnce(second, "2", "writer-wire"));
+        EXPECT_EQ(2, committed);
+        EXPECT_EQ(second->SerializeAsString(), sync.Get(parentKey));
+
+        // 3. EVALSHA:另一个写方带着加载世代 5 接手记录世代 6 的数据 → enforce 拒写,走 C3 回调,不准入、不改父快照。
+        EXPECT_EQ("rejected", saveOnce(MarkedCurrency(3), "3", "writer-other"));
+        EXPECT_EQ(2, committed);
+        EXPECT_EQ(second->SerializeAsString(), sync.Get(parentKey));
+        EXPECT_EQ("writer-wire", field("schema_writer"));
     }
 }
 

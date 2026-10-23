@@ -480,7 +480,7 @@ type fenceSaveResult struct {
 - **判据为什么正确**：已落库 epoch 只记录被铸造过、并且有写带着它落了库的值；计数器只升不降（铸造与回滚都用 INCR，`ownerepoch.go` 包注释）。正常运行时任何被铸造的 epoch 都 ≤ 计数器，所以无论两次读的先后顺序如何，都不可能出现「计数器 < 已落库 epoch」。出现就说明计数器倒退了。
 - **残余**：计数器重新追过已落库 epoch 之后，探测失效，倒退期间发出的写与僵尸写无法区分。探测只是检测手段，处置与根治见 §9.1。
 - **依赖**：探测要求 go/db 能读到 owner_epoch 所在的 Redis。今天 go/db 的 Redis 客户端与 scene_manager 是同一个核心实例（本地 `db.yaml` 与 `scene_manager_service.yaml` 都是 127.0.0.1:6379，K8s 的 db RedisClient 也是核心实例）[C]。G4a 拆分第 2 批计划把 `consumer:applied_epoch:*` 迁到 redis-mapping、owner_epoch 留在核心实例（`shared-redis-split-by-purpose.md`），拆分后 go/db 要单独配一个指向核心实例的客户端。**已定**（§14 第 19 条）：go/db 新增只读客户端 `OwnerEpochRedis`，只做 `GET owner_epoch`，`epoch_raise` 共用它；未配置时回落到现有 `RedisClient`（今天两者是同一实例）。两份设计都要登记这条依赖；同时登记 §6.2 令牌发布脚本在拆分后跨实例的问题（§6.4）。
-  - **（2026-10-19 指向注，上条原文保留）** 「`consumer:applied_epoch:*` 迁到 redis-mapping」已被 G4a 2026-10-18 修订稿 §18 取代：控制面改为按 zone 组分实例 `redis-dbctl-g<N>`，不再并入 redis-mapping。该稿 §18.7 盘点了 go/db 三个句柄承载的键全集：`RedisClient` 今天还承载令牌发布脚本、`save_barrier` ACK 与补投工作器，必须就是核心实例；第 2 批要先把它拆成控制面与核心两个句柄（该稿 §25.2 第 2 条）。本条 `OwnerEpochRedis` 的依赖照旧成立，已登记在该稿 §18.7。
+  - **（2026-10-19 指向注，上条原文保留）** 「`consumer:applied_epoch:*` 迁到 redis-mapping」已被 G4a 2026-10-18 修订稿 §18 取代：控制面改为按 zone 组分实例 `redis-dbctl-g<N>`，不再并入 redis-mapping（这是该稿 §18.7 选 A 时的基线；选 B 时按玩家的控制面键随核心闭包进核心 Cluster、带 `{pid}`，见该稿 §18.7、§20.3，二选一待 §25.2 第 1 条；本括注 10-22 补）。该稿 §18.7 盘点了 go/db 三个句柄承载的键全集：`RedisClient` 今天还承载令牌发布脚本、`save_barrier` ACK 与补投工作器，必须就是核心实例；第 2 批要先把它拆成控制面与核心两个句柄（该稿 §25.2 第 2 条）。本条 `OwnerEpochRedis` 的依赖照旧成立，已登记在该稿 §18.7。
 - 不采用「`dual` 下 Redis 守卫判 stale 一律进死信」：真僵尸与迟到的退出存盘（K1）本来就是这道守卫的设计对象，全部进死信会把整行载荷堆进 noeviction 的共享 Redis，告警一直是噪声，而且仍然分不出哪条是计数器倒退（§15）。
 
 ### 5.2 游标判过期时让 epoch 说话（G3）
@@ -714,7 +714,7 @@ go/db 盖过围栏的消息原样进缓存，所以缓存值（序列化的 `pla
   - 值封装是单键，不需要 hash tag。
   - §6.2 的脚本同时访问排序锁键、子表缓存键与资产证据键（证据键已用 `{player_id}` 作 tag）；§5.5 的推进脚本同时访问排序锁键、游标键和已落库 epoch 键。今天主 Redis 是单实例，没有问题。按 `{player_id}` 分片后，这些键必须落在同一个 tag 下；排序锁键的改名还要与 `tools/merge_zone/relocate.go` 里的锁键镜像同批改。瓶颈文档 §6.5 的分片修订要把这两条约束算进去。
 - **与 G4a 按用途拆分的冲突**（v0.4 新登记，§14 第 19 条）：G4a 拆分第 2 批让 go/db 的 `RedisClient`（排序锁在这里）指向 redis-mapping，新句柄 `CacheRedis`（子表缓存在这里）留在核心实例（`shared-redis-split-by-purpose.md` §3.2.3）。令牌发布脚本要在同一段 Lua 里读排序锁、写子表缓存与证据，键分到两个实例后无法原子执行。解法二选一：第 2 批之前把缓存栅栏换成本节的值封装（单键，不依赖锁），或让排序锁、子表缓存、证据键留在同一实例。G4a 第 2 批要等这一条解决后才能切；§5.5 的推进脚本三把键都去 redis-mapping，不受影响。G4a 稿要登记这条依赖。
-  - **（2026-10-19 指向注，上条原文保留）** G4a 稿已登记这条依赖，见 `shared-redis-split-by-purpose.md` §18.7。按 2026-10-18 修订稿：排序锁所在的控制面改去 zone 组实例 `redis-dbctl-g<N>`（§18），不再是 redis-mapping；子表缓存去 redis-cache（§19，必做）；令牌发布脚本自 2026-10-17 起还写 `save_barrier` ACK。第 2、3 批的硬前置写成二选一（A 值封装；B 排序锁、子表缓存、证据、`save_barrier` 同实例，Cluster 下同 slot），列为该稿 §25.2 第 1 条待拍板；选 A 时证据与屏障 ACK 是否仍要核令牌，由本线裁决。上句「§5.5 的推进脚本三把键都去 redis-mapping」同此改为：三把键随控制面去组实例，上 Cluster 时同 tag（该稿 §21.6）。
+  - **（2026-10-19 指向注，上条原文保留）** G4a 稿已登记这条依赖，见 `shared-redis-split-by-purpose.md` §18.7。按 2026-10-18 修订稿：排序锁所在的控制面改去 zone 组实例 `redis-dbctl-g<N>`（§18），不再是 redis-mapping；子表缓存去 redis-cache（§19，必做；选 B 时随核心走、不单独成 redis-cache，是否还写缓存另待拍板，10-22 补）；令牌发布脚本自 2026-10-17 起还写 `save_barrier` ACK。第 2、3 批的硬前置写成二选一（A 值封装；B 排序锁、子表缓存、证据、`save_barrier` 同实例，Cluster 下同 slot），列为该稿 §25.2 第 1 条待拍板；选 A 时证据与屏障 ACK 是否仍要核令牌，由本线裁决。上句「§5.5 的推进脚本三把键都去 redis-mapping」同此改为：选 A（§18 基线）时三把键随控制面去组实例；选 B 时随核心闭包进核心 Cluster、带 `{pid}`（该稿 §18.7、§20.3）；两种都要同 tag（该稿 §21.6）。（本句 10-22 订正为条件式。）
 
 ### 6.5 缓存与读结果各自保证什么
 
@@ -1062,7 +1062,15 @@ F-5（§1.2）的成立条件就是上表第 2、5 行：没有旧二进制，�
 | G4a 拆分后核心实例单独回档（**未来**）| 是 | 否（`applied_epoch` 已迁到 redis-mapping）| Redis 守卫 | 死信（§5.1 探测）| `shared-redis-split-by-purpose.md` 的拆分第 2 批；今天两者在同一实例，不成立 |
 | `k8s_zone_rollback.ps1` 带 `-ConfirmFlushSharedRedis` 的 FLUSHDB | 与 FLUSHALL 相同 | | | | 它清的是共享实例的 DB 0，所有 zone 的账号目录一起没。这本身就是事故 |
 
-> **（2026-10-19 指向注，上表原文保留）** 「G4a 拆分后核心实例单独回档」一行的前提按 G4a 2026-10-18 修订稿改为：`applied_epoch` 随控制面迁到 zone 组实例 `redis-dbctl-g<N>`（`shared-redis-split-by-purpose.md` §18），不是 redis-mapping；本行结论（计数器倒退、`applied_epoch` 不同步倒退、在 Redis 守卫被拒）不变。拆分稿的回档 runbook 按 §14 第 19 条引用本节与 §9.2，已登记为该稿 §18.7 硬依赖第 4 条。
+> **（2026-10-19 指向注，上表原文保留）** 「G4a 拆分后核心实例单独回档」一行的前提按 G4a 2026-10-18 修订稿改为：不再是 redis-mapping；该稿 §18.7 选 A（§18 基线）时 `applied_epoch` 随控制面迁到 zone 组实例 `redis-dbctl-g<N>`（`shared-redis-split-by-purpose.md` §18），本行结论（计数器倒退、`applied_epoch` 不同步倒退、在 Redis 守卫被拒）不变；选 B 时 `applied_epoch` 随核心闭包进核心 Cluster，核心单独回档时与计数器同步倒退，按上表第 3 行处理（该稿 §18.7、§20.3，二选一待 §25.2 第 1 条）。§14 第 19 条要求拆分稿的回档 runbook 引用本节；该稿 §18.7 硬依赖第 4 条另加了 §9.2。（本段 10-22 订正为条件式，并更正出处。）
+
+> **（2026-10-22 更正注，上表原文保留）**「恢复时玩家离线」一行的「`dual` 下 S1 被保住」只在一种情形下成立：丢掉的尾巴里含有产出 S1 所用 epoch 的那次铸造，且回退后新铸的 epoch 低于 S1 的 epoch。
+>
+> 更常见的情形是尾巴里只有存盘、没有铸造（S0 与 S1 同为 E 代，只是 seq 不同）。login 快路径载入 S0，下一次进场铸出 E+1，第一次存盘在 SQL 判 advance，整行覆盖 S1。回退后新铸恰好等于 S1 的 epoch 时，按 seq 比较，新进程的 seq 通常更大，同样覆盖。
+>
+> 另一种结局：go/db 在回退后的屏障上把 ACK 推到 S1，高于回退后的 pending，login 永久拒登。
+>
+> §14 第 7 条的墙钟地板只能防重铸同值，防不住这条：新持有者本来就有权越过 SQL 行，错在它载入的是旧内容，只能在加载侧堵。合并处置见 [zone-redis-regression-guard-20261022.md](zone-redis-regression-guard-20261022.md)（G1 身份戳与自动采纳、G2 ACK 高于 pending、G3 铸造持久化）。
 
 备份恢复、AOF 丢尾、主从切换丢尾都只丢末尾一段，计数器与 `applied_epoch` 在恢复点上一致；真正让 `applied_epoch` 高于计数器的，是恢复后仍在流动的高 epoch 在途写，所以「在 Redis 守卫被拒」这一行只在恢复时玩家在线时出现。
 

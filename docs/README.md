@@ -50,7 +50,9 @@ Redis 物理水平扩展的用户目标、当前存盘链问题、源码入口�
 - [ecs-component-access-rules.md](design/ecs-component-access-rules.md) — ECS Component Access Rules
 - [ecs-entt-misuse-audit-20261015.md](design/ecs-entt-misuse-audit-20261015.md) — entt 误用审计（2026-10-15）
 - [data-overwrite-rollback-audit-20261018.md](design/data-overwrite-rollback-audit-20261018.md) — 全仓数据问题与覆盖回档审计（2026-10-18）
+- [data-overwrite-rollback-audit-r2-20261019.md](design/data-overwrite-rollback-audit-r2-20261019.md) — 全仓数据问题与覆盖回档审计·第二轮（2026-10-19 起，进行中：第一至三波与第一轮 low 复核已完成，换视角查找与对抗复核待续）
 - [data-consistency-guarantee-map-20261020.md](design/data-consistency-guarantee-map-20261020.md) — 数据一致性等级核对：各类数据实际做到哪一级、Redis 回退一族与战斗到期结算丢失（2026-10-20）
+- [zone-redis-regression-guard-20261022.md](design/zone-redis-regression-guard-20261022.md) — zone Redis 回退防护：Redis 回退一族 6 条 low 的合并设计（身份戳与自动采纳、ACK 高于 pending、铸造墙钟地板与 WAITAOF；设计稿，未落码，2026-10-22）
 - [onboarding.md](design/onboarding.md) — 开发者上手指南 — MMO Server
 - [root_level_cleanup_findings.md](design/root_level_cleanup_findings.md) — Root Level & Tools Directory Audit (2026-03-24) · [EN](design/root_level_cleanup_findings_en.md) · [中文](design/root_level_cleanup_findings_zh.md)
 - [script_directory_rules.md](design/script_directory_rules.md) — Script Directory Rules · [EN](design/script_directory_rules_en.md) · [中文](design/script_directory_rules_zh.md)
@@ -338,6 +340,7 @@ Redis 物理水平扩展的用户目标、当前存盘链问题、源码入口�
 - [client-rpc-callback-handoff-20261019.md](handoff/client-rpc-callback-handoff-20261019.md) — 交接:客户端请求自带回调(按请求号认领回包),Unity / robot / gate 进度、未提交文件、待拍板的 Java Empty 回包与 scene 早退(2026-10-19)
 - [client-rpc-callback-robot-handoff-20261019.md](handoff/client-rpc-callback-robot-handoff-20261019.md) — 交接:robot 按请求号认领回包——已迁 friend / guild / team / trade,静态复核结论、逐处待迁清单与迁移陷阱(2026-10-19)
 - [global-economy-review-20261021.md](handoff/global-economy-review-20261021.md) — 全球交易与角色归属双版审核交接；区分源码、当前运行证据与未完成验收
+- [global-economy-claude-review-20261022.md](handoff/global-economy-claude-review-20261022.md) — Claude Code 精简审核入口：实现接缝、最新源差异、实际证据与未验清单；整体仍待验收
 - [configurable-templates-handoff-20261019.md](handoff/configurable-templates-handoff-20261019.md) — 交接：战斗策略 / 活动 / 玩法模板可配置化（含玩家自定义模板）——设计 v0.2 已定稿、代码未开工，待授权与拍板后按批落码（2026-10-19）
 - [data-overwrite-audit-r2-20261019/README.md](handoff/data-overwrite-audit-r2-20261019/README.md) — 交接：第二轮数据与覆盖回档审计——第一、二波已完成（3 medium + 22 low），第三、四波与定稿待续，含工作流脚本副本（2026-10-19）
 - [friend-handoff-20260920.md](handoff/friend-handoff-20260920.md) — friend 服务移植 —— 交接文档(2026-09-20)

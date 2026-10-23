@@ -397,13 +397,14 @@ func TestFieldIndexKeyLiteralPinnedForMergeZone(t *testing.T) {
 	assert.Equal(t, "player:{42}:", playerKeyPrefix(42))
 }
 
-// 非规范十进制的版本(前导零)读路径同样 fail-closed,与写侧守卫同一口径。
+// 非规范十进制的版本(前导零、空串)读路径同样 fail-closed,与写侧守卫同一口径。
+// 版本键不存在走 parseVersionReply 的 nil 分支,不经过这里。
 func TestParseVersionValueRejectsNonCanonical(t *testing.T) {
-	for _, val := range []string{"007", "00", "+1", " 1"} {
+	for _, val := range []string{"", "007", "00", "+1", " 1"} {
 		_, err := parseVersionValue(1, val)
 		assert.Error(t, err, "val=%q", val)
 	}
-	for val, want := range map[string]uint64{"": 0, "0": 0, "7": 7, "18446744073709551615": 18446744073709551615} {
+	for val, want := range map[string]uint64{"0": 0, "7": 7, "18446744073709551615": 18446744073709551615} {
 		got, err := parseVersionValue(1, val)
 		require.NoError(t, err, "val=%q", val)
 		assert.Equal(t, want, got, "val=%q", val)

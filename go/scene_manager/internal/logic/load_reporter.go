@@ -423,6 +423,11 @@ func deleteNodeCounters(svcCtx *svc.ServiceContext, zoneID uint32, nodeID string
 // 只销毁实例场景:scene:{id}:node 仍指向本节点、且在 active instances 集合里的
 // 那些。大世界频道留给 rebalance 路径;已经被改派走的陈旧条目静默丢弃。
 //
+// 「仍指向本节点」以销毁脚本里的比较为准(destroyOrphanOfDeadNode,2026-10-22):循环里那次 GET
+// 只是快速过滤。GET 之后、销毁之前,resolveScene 的死节点自愈可能已经用 reassignSceneNode 把实例
+// 改派到活节点并 CreateScene;以前的 force 脚本不比对属主,会把新属主的场景抹掉、向新节点发
+// DestroyScene、扣新节点的计数。现在脚本发现属主已不是死节点就一个键都不动,记进 stale。
+//
 // Why not destroy world channels here:
 //
 //	Rebalance already has the logic to pick a replacement node AND tell
@@ -440,12 +445,12 @@ func reconcileDeadNodeScenes(ctx context.Context, svcCtx *svc.ServiceContext, en
 
 	zoneId := entry.reg.ZoneId
 	activeKey := activeInstancesKey(zoneId)
-	destroyed, skippedWorld, stale := 0, 0, 0
+	destroyed, skippedWorld, stale, failed := 0, 0, 0, 0
 
 	for _, s := range members {
 		// 降级即停,且**不删** setKey:留着集合,新领导者的 fullSync
 		// stale 清理会对同一个死节点重跑本函数,接手剩余成员。
-		// destroyInstanceForce 内部是 Lua 原子认领,即便与新领导者
+		// destroyOrphanOfDeadNode 内部是 Lua 原子认领,即便与新领导者
 		// 短暂并发,每个场景的副作用也只会执行一次。
 		if !isLeader() {
 			logx.Infof("[Reconcile] lost leadership mid-sweep for node %s (zone %d), aborting; successor will re-sweep",
@@ -457,7 +462,8 @@ func reconcileDeadNodeScenes(ctx context.Context, svcCtx *svc.ServiceContext, en
 			continue
 		}
 
-		// Did this scene already get reassigned to a live node?
+		// Did this scene already get reassigned to a live node? 快速过滤;
+		// 权威比较在下面的销毁脚本里(见函数注释)。
 		currentNode, _ := svcCtx.Redis.Get(sceneNodeKey(sceneId))
 		if currentNode != "" && currentNode != entry.nodeID {
 			stale++
@@ -475,8 +481,19 @@ func reconcileDeadNodeScenes(ctx context.Context, svcCtx *svc.ServiceContext, en
 
 		logx.Infof("[Reconcile] Force-destroying orphan instance %d (was on dead node %s, zone %d)",
 			sceneId, entry.nodeID, zoneId)
-		destroyInstanceForce(ctx, svcCtx, zoneId, sceneId, "node_death")
-		destroyed++
+		ok, err := destroyOrphanOfDeadNode(ctx, svcCtx, zoneId, sceneId, entry.nodeID)
+		switch {
+		case err != nil:
+			// 已在 destroyOrphanOfDeadNode 里记了错误;不计入 destroyed,免得指标多报。
+			failed++
+		case !ok:
+			// 上面读属主之后被改派走了(或已被别的路径销毁):脚本比对属主落空,一个键都没动。
+			logx.Infof("[Reconcile] Scene %d no longer owned by dead node %s (zone %d) at destroy time; "+
+				"reassigned after the owner read, skipped", sceneId, entry.nodeID, zoneId)
+			stale++
+		default:
+			destroyed++
+		}
 	}
 
 	// 只摘掉快照里的成员,不 Del 整个集合:屏障窗口里可能有新场景被建到同一个
@@ -494,9 +511,9 @@ func reconcileDeadNodeScenes(ctx context.Context, svcCtx *svc.ServiceContext, en
 
 	metrics.ObserveSceneOrphansReconciled(zoneId, destroyed)
 
-	if destroyed > 0 || stale > 0 || skippedWorld > 0 {
-		logx.Infof("[Reconcile] Node %s (zone %d): total=%d destroyed=%d world_skipped=%d stale=%d",
-			entry.nodeID, zoneId, len(members), destroyed, skippedWorld, stale)
+	if destroyed > 0 || stale > 0 || skippedWorld > 0 || failed > 0 {
+		logx.Infof("[Reconcile] Node %s (zone %d): total=%d destroyed=%d world_skipped=%d stale=%d failed=%d",
+			entry.nodeID, zoneId, len(members), destroyed, skippedWorld, stale, failed)
 	}
 }
 
@@ -852,8 +869,9 @@ func watchAndRefresh(ctx context.Context, svcCtx *svc.ServiceContext, rev int64)
 		case <-loadReporterResync:
 			// 领导权刚变化:返回让外层循环重跑 fullSync。新任领导者借此
 			// 立即补齐跟随者期间跳过的变更动作(补频道 / rebalance / 清理),
-			// 而不是等下一次 watch 中断。
-			logx.Info("[LoadReporter] resync requested (leadership change)")
+			// 而不是等下一次 watch 中断。另一个来源是推迟摘除放弃时(retryDeferredNodeDetaches 的
+			// abandoned 分支),要 fullSync 的陈旧清扫把还留在负载集里的死节点重新推迟。
+			logx.Info("[LoadReporter] resync requested (leadership change or abandoned deferred detach)")
 			return
 		}
 	}
@@ -918,7 +936,8 @@ func handleWatchEvent(ctx context.Context, svcCtx *svc.ServiceContext, ev *clien
 			}
 			if prev.reg.ZoneId != entry.reg.ZoneId {
 				logx.Errorf("[LoadReporter] node %s zone_id changed %d -> %d on etcd PUT "+
-					"(same key %s). Likely a deploy mix-up; old zone load set may leak.",
+					"(same key %s). Likely a deploy mix-up; the old zone identity is retired like a DELETE "+
+					"(death_at + reentry barrier) unless another key still registers it.",
 					entry.nodeID, prev.reg.ZoneId, entry.reg.ZoneId, key)
 			}
 		}
@@ -933,9 +952,17 @@ func handleWatchEvent(ctx context.Context, svcCtx *svc.ServiceContext, ev *clien
 		// Clear stale gRPC connection: endpoint may have changed after restart.
 		RemoveNodeConn(entry.reg.ZoneId, entry.nodeID)
 		if existed && prev.reg.ZoneId != entry.reg.ZoneId {
-			RemoveNodeConn(prev.reg.ZoneId, prev.nodeID)
-			svcCtx.Redis.Zrem(nodeLoadKey(prev.reg.ZoneId), prev.nodeID)
-			svcCtx.Redis.Del(nodeSceneNodeTypeKey(prev.reg.ZoneId, prev.nodeID))
+			// 同一个 etcd 键换了 zone:旧 zone 的 (zone,node) 身份已经从注册表消失,按 watch DELETE 同样收尾。
+			// 以前这里在每个副本上直接 Zrem 旧 zone 负载集、删类型镜像:不写 death_at、不记本地消失时刻、
+			// 不走领导者闸门,也不收孤儿实例。它若是旧 zone 唯一的节点,isZoneGoneFromRegistry(旧 zone) 随即为真,
+			// playerLocationOwnerGone / playerLocationOwnerDead 就会不经再入屏障放行指向它的陈旧位置,而老进程
+			// 可能还在存盘(cross-zone-scene-travel.md §13.9「handleWatchEvent 换 zone」一条,2026-10-22 落码)。
+			if knownNodeIdentityMatchCount(prev.reg.ZoneId, prev.nodeID) == 0 {
+				retireNodeIdentity(ctx, svcCtx, prev)
+			} else {
+				// 旧身份还挂在别的键上(身份歧义,选点与判死都会拒绝它):它没有消失,不判死,只丢掉可能已过期的连接缓存。
+				RemoveNodeConn(prev.reg.ZoneId, prev.nodeID)
+			}
 		}
 
 		updateNodeLoad(svcCtx, entry)
@@ -973,32 +1000,37 @@ func handleWatchEvent(ctx context.Context, svcCtx *svc.ServiceContext, ev *clien
 		if !existed {
 			return
 		}
-		// 每个副本都记(在 leader 闸门之前):见 nodeGoneObservedAt 的注释。
-		noteNodeGoneFromRegistry(entry.reg.ZoneId, entry.nodeID)
-
 		rebuildActiveZones()
+		retireNodeIdentity(ctx, svcCtx, entry)
+	}
+}
 
-		// 进程本地清理每个副本都要做:gRPC 连接缓存与 Prometheus 标签
-		// 是各进程私有的,不清会拿着死节点的 stale endpoint 继续发请求。
-		RemoveNodeConn(entry.reg.ZoneId, entry.nodeID)
-		metrics.ForgetNode(entry.nodeID, entry.reg.ZoneId, entry.reg.SceneNodeType)
+// retireNodeIdentity 把一个已从 etcd 注册表消失的 (zone,node) 身份按「死亡」收尾。调用方有两处:
+// watch DELETE,以及 PUT 里「同一个 etcd 键换了 zone」时的旧 zone 一侧。
+//
+// 每个副本都做(在领导者闸门之前):
+//   - 记下本副本看到它消失的时刻,屏障从这一刻起算,不依赖领导者写的 death_at(见 nodeGoneObservedAt);
+//   - 清进程私有的 gRPC 连接缓存与 Prometheus 标签,不清会拿着死节点的 stale endpoint 继续发请求。
+//
+// 只有领导者做:
+//   - Redis 侧清理(负载集摘除 / 孤儿实例销毁 / 计数删除)。走 removeNodeFromRedis:先写 death_at 再摘负载集,
+//     写不进就推迟(GO-6)。领导者缺位窗口里漏掉的,由新任领导者当选时的 fullSync 补齐(其 stale 清理路径
+//     会跑同一套 reconcile)。
+//   - 世界频道宿主离开时立刻对该 zone rebalance,让映射到它的频道在下一次 EnterScene 就有新家,
+//     而不是等下一个 LoadReportInterval。
+func retireNodeIdentity(ctx context.Context, svcCtx *svc.ServiceContext, gone nodeEntry) {
+	noteNodeGoneFromRegistry(gone.reg.ZoneId, gone.nodeID)
+	RemoveNodeConn(gone.reg.ZoneId, gone.nodeID)
+	metrics.ForgetNode(gone.nodeID, gone.reg.ZoneId, gone.reg.SceneNodeType)
 
-		// Redis 侧清理(负载集摘除 / 孤儿实例销毁 / 计数删除)与 rebalance
-		// 是全局变更,只有领导者做。领导者缺位窗口里漏掉的 DELETE,由新任
-		// 领导者当选时的 fullSync 补齐(其 stale 清理路径会跑同一套 reconcile)。
-		if !isLeader() {
-			return
-		}
-		removeNodeFromRedis(svcCtx, entry)
+	if !isLeader() {
+		return
+	}
+	removeNodeFromRedis(svcCtx, gone)
 
-		// A world-hosting node departed: channels mapped to it are now
-		// unreachable for new players. Rebalance immediately so those
-		// channels find a new home on the next EnterScene, not on the
-		// next LoadReportInterval tick.
-		if constants.IsWorldHostingType(entry.reg.SceneNodeType) {
-			if wids := worldConfIds(); len(wids) > 0 {
-				RebalanceWorldChannelsForZone(ctx, svcCtx, entry.reg.ZoneId, wids)
-			}
+	if constants.IsWorldHostingType(gone.reg.SceneNodeType) {
+		if wids := worldConfIds(); len(wids) > 0 {
+			RebalanceWorldChannelsForZone(ctx, svcCtx, gone.reg.ZoneId, wids)
 		}
 	}
 }

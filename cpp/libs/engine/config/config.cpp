@@ -148,9 +148,10 @@ bool readBaseDeployConfig(const std::string &filename, BaseDeployConfig &baseCon
 	// 在这里一次性归一化:缺键 / 空串 = warn;warn / enforce 原样;其余拒绝启动。运行期只会见到两个字面量,
 	// 非法值不会进 Lua 的 ARGV[10](那会让脚本返回 error_reply、OnSaved 无限重试,全服存不进盘)。
 	{
-		const std::string rawMode = root["PersistSchemaRegressionMode"]
-										? root["PersistSchemaRegressionMode"].as<std::string>()
-										: std::string();
+		// YAML 空值(`PersistSchemaRegressionMode:` 或 `~`)是 Null 节点,yaml-cpp 的 as<std::string>() 会把它变成字面量
+		// "null";与缺键、空串一样按 warn,和 login、start_game.ps1 的口径一致。
+		const YAML::Node modeNode = root["PersistSchemaRegressionMode"];
+		const std::string rawMode = (modeNode && !modeNode.IsNull()) ? modeNode.as<std::string>() : std::string();
 		const auto mode = persist_schema_regression_mode::Normalize(rawMode);
 		if (!mode)
 		{

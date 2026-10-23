@@ -2,6 +2,8 @@ package _go
 
 import (
 	"bytes"
+	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,126 +17,129 @@ import (
 	"protogen/logger"
 
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
-type ServiceData struct {
-	HandlerName  string
-	ResponseType string
-	ImportDir    string
+// robotHandlerTemplatePath 相对 protogen 根目录(生成器的工作目录)。
+const robotHandlerTemplatePath = "internal/template/robot_handler.go.tmpl"
+
+// robotHandlerReservedNames 是推送桩里固定占用的标识符:import 的 gameobject 与两个参数名。
+var robotHandlerReservedNames = map[string]struct{}{"gameobject": {}, "player": {}, "response": {}}
+
+// robotPushHandlerData 是 robot_handler.go.tmpl 的数据:一个 PUSH 方法的类型化桩。
+type robotPushHandlerData struct {
+	HandlerName string // <Service><Method>Handler,注册表按这个名字引用
+	Alias       string // 载荷所在 proto 包的 import 别名
+	ImportPath  string // 载荷所在 proto 包,例如 proto/guild
+	PayloadType string // <Alias>.<Go 类型名>;PUSH 的载荷是方法输入类型
 }
 
-// GoRobotHandlerGenerator generates Go handler files and removes obsolete ones.
+// GoRobotHandlerGenerator 为客户端协议服务的 PUSH 方法补齐 robot/logic/handler/<snake_service_method>.go 类型化桩
+// (docs/design/client-rpc-callback.md §5.5)。
+//
+// 规则:
+//   - 客户端协议服务只按 OptionIsClientProtocolService 判定(internal.ClassifyClientRpcServices),不看服务名;
+//   - 只为 CLIENT_RPC_PUSH 建桩,文件已存在(手写或旧桩)即跳过,从不覆盖。推送 id = 0,只能按 message_id 派发;
+//   - REQUEST / ONE_WAY / SERVER_ONLY 不再建桩:robot 场景改用 robot/generated/rpc 的调用桩(请求自带回调)。
+//     已有的手写 handler 与旧桩不删,注册表照常登记(GoRobotTotalHandlerGenerator),随场景迁移逐个退役。
+//
+// 与 GoRobotTotalHandlerGenerator 同组并行:注册表对 PUSH 按「本轮一定存在」登记,所以这里任何一个桩写失败都 Fatal。
+// 推送 handler 必须放在 <snake_service_method>.go 这个标准文件名里;写在别的文件里会被这里再建一个同名函数。
 func GoRobotHandlerGenerator(wg *sync.WaitGroup) {
-	logger.Global.Info("Generating robot individual handler files",
-		zap.Int("total_service_count", len(internal.GlobalRPCServiceList)),
-	)
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
 
-	for _, service := range internal.GlobalRPCServiceList {
-		wg.Add(1)
-		go func(methods internal.RPCMethods) {
-			defer wg.Done()
+		services, err := internal.ClassifyClientRpcServices(internal.GlobalRPCServiceList, internal.IsSceneTCPMethod)
+		if err != nil {
+			logger.Global.Fatal("Client RPC method kinds failed validation", zap.Error(err))
+			return
+		}
 
-			if !isClientMethodRepliedHandler(&methods) {
-				logger.Global.Debug("Skipping non-client-response service handler generation",
-					zap.Int("method_count", len(methods)),
-				)
-				return
-			}
+		dir := _config.Global.PathLists.MethodHandlerDirectories.Robot
+		created, err := ensureRobotPushHandlers(services, internal.FdSet.GetFile(), dir, robotHandlerTemplatePath)
+		if err != nil {
+			logger.Global.Fatal("Failed to generate robot push handler stubs",
+				zap.String("dir", dir),
+				zap.Error(err),
+			)
+			return
+		}
 
-			for _, method := range methods {
-				serviceName := method.Service()
-
-				if !isRelevantService(method) {
-					logger.Global.Debug("Skipping irrelevant service method handler generation",
-						zap.String("service_name", serviceName),
-						zap.String("method_name", method.Method()),
-					)
-					continue
-				}
-
-				handlerName := serviceName + method.Method() + "Handler"
-				responseType := method.GoResponse()
-				importDir := method.GoResponseImportDir()
-
-				if strings.Contains(responseType, _config.Global.Naming.EmptyResponse) {
-					responseType = method.GoRequest()
-					importDir = method.GoRequestImportDir()
-					logger.Global.Debug("Response type is empty, substituting request type",
-						zap.String("service_name", serviceName),
-						zap.String("method_name", method.Method()),
-						zap.String("original_response_type", method.GoResponse()),
-						zap.String("final_response_type", responseType),
-					)
-				}
-
-				fileName := camelToSnake(serviceName + method.Method())
-				filePath := filepath.Join(_config.Global.PathLists.MethodHandlerDirectories.Robot, fileName+".go")
-
-				if fileExists(filePath) {
-					logger.Global.Debug("Handler file already exists, skipping",
-						zap.String("file_path", filePath),
-						zap.String("service_name", serviceName),
-						zap.String("method_name", method.Method()),
-					)
-					continue
-				}
-
-				err := generateHandlerFile(filePath, handlerName, responseType, importDir)
-				if err != nil {
-					logger.Global.Fatal("生成机器人处理器文件失败",
-						zap.String("file_path", filePath),
-						zap.String("service_name", serviceName),
-						zap.String("method_name", method.Method()),
-						zap.Error(err),
-					)
-					continue
-				}
-
-				logger.Global.Info("Handler file generated",
-					zap.String("file_path", filePath),
-					zap.String("handler_name", handlerName),
-					zap.String("response_type", responseType),
-				)
-			}
-		}(service.Methods)
-	}
-
-	logger.Global.Info("Robot individual handler file generation tasks submitted",
-		zap.Int("service_count", len(internal.GlobalRPCServiceList)),
-	)
+		logger.Global.Info("Robot push handler stubs checked",
+			zap.Int("created_count", len(created)),
+			zap.String("dir", dir),
+		)
+	}()
 }
 
-// generateHandlerFile creates a Go file using the provided handler and response names.
-func generateHandlerFile(fileName, handlerName, responseType, importDir string) error {
-	if fileName == "" {
-		logger.Global.Fatal("Failed to generate handler file: file path is empty")
-	}
-
-	tmpl, err := template.ParseFiles("internal/template/robot_handler.go.tmpl")
+// ensureRobotPushHandlers 为缺少桩文件的 PUSH 方法在 dir 下建桩,返回新建文件的路径。已存在的文件一律不动。
+// 错误(收集全部后返回):载荷类型无法映射、桩文件名会被 Go 工具链特殊对待、模板或写盘失败。
+func ensureRobotPushHandlers(services []internal.ClientRpcService, files []*descriptorpb.FileDescriptorProto,
+	dir, templatePath string) ([]string, error) {
+	tmpl, err := template.ParseFiles(templatePath)
 	if err != nil {
-		logger.Global.Fatal("Failed to parse handler template",
-			zap.String("file_name", fileName),
-			zap.Error(err),
-		)
+		return nil, fmt.Errorf("parse template %s: %w", templatePath, err)
 	}
+	types := newRobotGoTypeIndex(files)
 
-	data := ServiceData{
-		HandlerName:  handlerName,
-		ResponseType: responseType,
-		ImportDir:    importDir,
-	}
-
-	logger.Global.Debug("Executing handler template rendering",
-		zap.String("file_name", fileName),
-		zap.String("handler_name", handlerName),
-		zap.String("response_type", responseType),
+	var (
+		created []string
+		errs    []error
 	)
+	for _, service := range services {
+		for _, classified := range service.Methods {
+			if classified.Kind != internal.ClientRpcPush {
+				continue
+			}
+			method := classified.Method
+			where := method.Service() + "." + method.Method()
+			key := method.KeyName()
+			fileName := robotHandlerFileName(key)
+			if err := checkRobotGoFileName(fileName); err != nil {
+				errs = append(errs, fmt.Errorf("%s: %w", where, err))
+				continue
+			}
+			path := filepath.Join(dir, fileName)
+			if fileExists(path) {
+				continue
+			}
 
-	var content bytes.Buffer
-	if err := tmpl.Execute(&content, data); err != nil {
-		return err
+			payload, err := types.resolve(method.MethodDescriptorProto.GetInputType())
+			if err != nil {
+				errs = append(errs, fmt.Errorf("%s: %w", where, err))
+				continue
+			}
+			alias := robotImportAliases([]string{payload.ImportPath}, robotHandlerReservedNames)[payload.ImportPath]
+			data := robotPushHandlerData{
+				HandlerName: key + "Handler",
+				Alias:       alias,
+				ImportPath:  payload.ImportPath,
+				PayloadType: alias + "." + payload.Name,
+			}
+			var content bytes.Buffer
+			if err := tmpl.Execute(&content, data); err != nil {
+				errs = append(errs, fmt.Errorf("%s: render %s: %w", where, fileName, err))
+				continue
+			}
+			if err := utils.WriteFileIfChanged(path, content.Bytes()); err != nil {
+				errs = append(errs, fmt.Errorf("%s: write %s: %w", where, path, err))
+				continue
+			}
+			created = append(created, path)
+			logger.Global.Info("Robot push handler stub generated",
+				zap.String("file_path", path),
+				zap.String("handler_name", data.HandlerName),
+				zap.String("payload_type", data.PayloadType),
+			)
+		}
 	}
-	return utils.WriteFileIfChanged(fileName, content.Bytes())
+	return created, errors.Join(errs...)
+}
+
+// robotHandlerFileName 是 <Service><Method> 的 handler 文件名;注册表判断 handler 是否存在、推送建桩都用它。
+func robotHandlerFileName(key string) string {
+	return camelToSnake(key) + ".go"
 }
 
 // fileExists checks if a file already exists.

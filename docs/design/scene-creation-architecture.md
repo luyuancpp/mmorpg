@@ -933,7 +933,7 @@ MetricsListenAddr: ":9150"
 | `go/scene_manager/internal/logic/load_refresh.go` | (2026-10-16)领导者按 zone 批量刷新负载分;pipeline 结果按批判定、读失败不按 0 写 |
 | `go/scene_manager/internal/logic/zone_registry.go` | (2026-10-16)zone 登记集合 `scene_manager:zones`,替代 fullSync 里的全库 SCAN |
 | `go/scene_manager/internal/logic/logic_test.go` | Unit tests incl. `TestCreateScene_Mirror_*` co-location suite |
-| `go/scene_manager/internal/logic/world_rebalance.go` | World channel migration. `migrateWorldChannel` uses `reassignSceneNode` to keep `node:zone:{zoneId}:{nodeId}:scenes` in sync with `scene:{id}:node` |
+| `go/scene_manager/internal/logic/world_rebalance.go` | World channel migration. `migrateWorldChannel` uses `reassignSceneNode` to keep `node:zone:{zoneId}:{nodeId}:scenes` in sync with `scene:{id}:node`。2026-10-20 起 `reassignSceneNode`(`world_init.go`)是 Lua CAS:只在属主仍为 oldNode 时同批改归属、两侧反向索引与 scene_count;迁移 CAS 落空时 `destroyUnownedMigrationTarget` 回收 newNode 上预建的实体。`resolveScene` 的死节点自愈仍是无条件 SET,未纳入(2026-10-22 更正:已纳入,`enterscenelogic.go` `reassignSceneOffDeadNode` 改走 `reassignSceneNode`,落空时重读属主;见 PROGRESS 同日「resolveScene 死节点自愈改走 reassignSceneNode CAS」) |
 | `go/scene_manager/internal/logic/orphan_cleanup.go` | Drops world-channel sets whose confId is no longer in the World table; cleans all scene-scoped keys + reverse indexes |
 | `go/scene_manager/internal/metrics/metrics.go` | Prometheus gauges + counters for nodes, mirrors, lifecycle, dedup, source-missing, orphans |
 | `proto/scene/scene.proto` | C++ Scene service (CreateScene, DestroyScene) |

@@ -402,6 +402,14 @@ pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-all-down -ZonesConfigPath de
 - `-NamespacePrefix`: change namespace prefix.
 - `-CentreReplicas`, `-GateReplicas`, `-SceneReplicas`: per-zone replica overrides for `k8s-zone-up`.
 - `-GrpcServerMaxPollers`:**已退役**,默认 `0`。只为兼容旧命令保留:传入大于 `0` 的值只打一条 `Write-Warning`,取值被忽略,任何清单都不再写 `GRPC_SERVER_MAX_POLLERS`(原因见上面 Runtime Behavior)。
+- `-NodeOpenFileLimitMode`(2026-10-22 补登记,已落码、未验证;权威口径是 `tools/scripts/k8s_deploy.ps1` 的参数注释):B0-4 的运维豁免开关,写进 C++ 进程读的环境变量 `NODE_OPEN_FILE_LIMIT_MODE`。
+  - 留空(默认)= 不写,进程按 `enforce`:nofile 软限抬到硬限后仍低于需求就拒启。只收小写 `enforce` / `warn`,大写或拼错在入口就拒。
+  - 写进本次部署的全部 C++ 工作负载:`zone-up` 的 gate(Deployment / external StatefulSet)与 scene(Deployment / Agones Fleet),`infra-up` 的 battle(Deployment / hostPort / Agones Fleet)。
+  - `warn` 只作短时应急,每次部署打一条 `Write-Warning`;代价与首选做法(调低准入上限)见下文「C++ 节点的文件描述符上限」与 runbook §3.1。
+  - **不粘滞**:脚本不从集群读回旧值,以 `warn` 运行的环境下一次部署不传就落回 `enforce`。external gate 是 OnDelete,模板改了还要按 `k8s_gate_drain.ps1` 逐台换 Pod。
+  - `dev_tools.ps1` / `k8s_image.ps1` / `k8s_zone_rollback.ps1` **尚未透传**,要直接调 `k8s_deploy.ps1`。
+    - (2026-10-22 更正,已落码、未验证)三个包装入口已透传同名参数 `-NodeOpenFileLimitMode`:`dev_tools.ps1` 的 `k8s-infra-up` / `k8s-zone-up` / `k8s-all-up`、`k8s-release-*`(经 `k8s_image.ps1`)与 `k8s-zone-rollback`(经 `k8s_zone_rollback.ps1` 的 Step 6),以及直接调 `k8s_image.ps1` / `k8s_zone_rollback.ps1`。写法同 `-GateRouterMode`:包装层默认留空 = 不透传,默认值只在 `k8s_deploy.ps1` 一处;包装层同样只收小写,大写或拼错在包装入口就拒。
+    - 回档时尤其要照传:`k8s_zone_rollback.ps1` 第 0 步不读集群里的这个 env,以 `warn` 运行的 zone 漏传会在 Step 6(已停服、已回档)拒启,只能补上参数重跑 Step 6。详见该脚本 `-NodeOpenFileLimitMode` 参数注释。
 - `-GateServiceType`: `ClusterIP`, `NodePort`, or `LoadBalancer`.
 - `-GateServicePort`: external gate service port.
 - `-OpsProfile`: `managed-cloud`, `bare-metal`, or `custom`.
@@ -1991,10 +1999,13 @@ C++ 节点(gate / scene / battle)连共享 Redis(`redis.<InfraNamespace>:6379`)�
   - external gate(OnDelete)一次坏一台;
   - 全新 zone-up 整区起不来。
   - 所以发布前先读各节点池硬限是硬前置。
+  - (2026-10-22 更正,已落码、未验证)`New-NodeDeploymentYaml` 现在显式写 `maxUnavailable: 0`(maxSurge 仍取缺省 25%):gate / scene / battle 的 Deployment 拒启时只停在滚动中途,上面「scene 先少一台」不再成立。hostPort battle、external gate、Agones Fleet 的行为不变。
+  - (同上)`-WaitReady` 等 gate / scene / battle 失败时,脚本对未就绪 Pod 读 `kubectl logs --previous`(没有上一个实例时读当前实例),把 `FATAL open file limit` 行打印出来。Agones scene 不等待,脚本只打印对应的 logs 命令。
 - **运维豁免 `NODE_OPEN_FILE_LIMIT_MODE=warn`**:只打 WARN、继续启动。
   - 代价:客户端连接可能先占满 fd 表,之后重连与日志滚动也会 EMFILE,节点可能被 etcd 摘除或崩溃。
   - gate / battle 的应急首选是把准入上限调到 ≤ 软限 − 4096,这样检查直接通过。
   - 生成器目前**没有接线**这个变量(没有 ConfigMap / env / 参数)。临时手设用 `kubectl set env`;撤销必须显式写 `NODE_OPEN_FILE_LIMIT_MODE-`,因为 set env 加的变量不在 last-applied 里。
+  - (2026-10-22 更正,已落码、未验证)生成器已接线:`k8s_deploy.ps1 -NodeOpenFileLimitMode enforce|warn`,见上文 Optional Flags。手设过 `kubectl set env` 的工作负载,撤销仍按上一条显式删。
 - **清单不做这件事**:
   - K8s 没有按容器的 ulimit 字段;
   - initContainer 改不了别的进程的限值;
@@ -2427,8 +2438,15 @@ kubectl -n <infra> exec kafka-0 -c kafka -- /bin/sh -c "KAFKA_HEAP_OPTS='-Xms16m
   客户端收到通用的进场失败(不新增 tip)。冷加载不判。模式键 `PersistSchemaRegressionMode` 在 `go/login/etc/login.yaml`,
   `k8s_deploy.ps1` 镜像进 login ConfigMap,生成期只认两个字面量;login 读到其他值拒绝启动。告警 `LoginPersistSchemaRegression`
   在 `persist-schema-alerts.yaml` 的 `login.persist-schema` 组,四条序列起服即以 0 建出。处置同上一条「处置 `PersistSchemaRegression`」。
+- **巡检 `schema_regressed`**(切 enforce 门禁的第三项,设计 §8.1 第 5 步):warn 判倒退的写方会在 `save_barrier` hash 里留下
+  `schema_regressed`(它的写方令牌),之后不随别的写方清除,只有 `save_barrier_restore` 重建时清掉。判倒退那次的回包丢失、写方随即被废黜时,
+  LogQL 与 login 计数都可能漏掉,只有这个字段留着。巡检(只读,按 SCAN 分批,避开高峰;`<redis>` 为父快照所在的共享核心 Redis):
+  ```bash
+  redis-cli -h <redis> --scan --pattern 'player:{*}:save_barrier' --count 1000 | while read -r k; do [ "$(redis-cli -h <redis> HEXISTS "$k" schema_regressed)" = "1" ] && echo "$k"; done
+  ```
+  有输出就不能切 enforce;逐个按上一条「处置 `PersistSchemaRegression`」处理,以 SQL 为准恢复后字段会被清掉。
 - **切 enforce**:改 `bin/etc/base_deploy_config.yaml`(scene)与 `go/login/etc/login.yaml`(login,C4)的 `PersistSchemaRegressionMode`,
-  按正常发布流程滚动;两边可分别切。前提见设计 §8.1 第 5 步:staging 真实升世代演练中 C3 / C4 倒退计数为 0,且线上 warn 观察期计数为 0。
+  按正常发布流程滚动;两边可分别切。前提见设计 §8.1 第 5 步:staging 真实升世代演练中 C3 / C4 倒退计数为 0,且线上 warn 观察期内三项都为 0(C++ `regression_warned`、`login_persist_schema_regression_total`、上一条 `schema_regressed` 巡检);开着 dev 旁路 `AllowUnsafeCrossNodeHandoff` 的环境不切。
 
 ## player_locator 会话对账告警(PrometheusRule,手工 apply;2026-10-18 登记,未在集群上 apply 过)
 

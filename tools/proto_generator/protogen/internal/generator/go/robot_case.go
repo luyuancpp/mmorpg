@@ -2,7 +2,8 @@ package _go
 
 import (
 	"bytes"
-	"strings"
+	"fmt"
+	"path/filepath"
 	"sync"
 	"text/template"
 
@@ -14,6 +15,9 @@ import (
 	"go.uber.org/zap"
 )
 
+// robotHandlerTotalTemplatePath 相对 protogen 根目录(生成器的工作目录)。
+const robotHandlerTotalTemplatePath = "internal/template/robot_handler_total.go.tmpl"
+
 type HandlerCase struct {
 	MessageID    string
 	FunctionCall string
@@ -23,43 +27,30 @@ type CasesData struct {
 	Cases []HandlerCase
 }
 
-// isClientMethodRepliedHandler checks if this is a client method replied handler.
-func isClientMethodRepliedHandler(methodList *internal.RPCMethods) bool {
-	firstMethodInfo := (*methodList)[0]
-	return internal.IsClientProtocolService(firstMethodInfo.ServiceDescriptorProto)
-}
-
+// GoRobotTotalHandlerGenerator 重写 robot/logic/handler/message_body_handler.go:id = 0 的消息(推送,以及迁移前
+// 旧场景用 SendRequest 发出的请求的回包)按 message_id 派发的注册表(docs/design/client-rpc-callback.md §5.5)。
+// 登记规则见 robotHandlerCases;判定 handler 文件是否存在只看磁盘,理由同那里的注释。
 func GoRobotTotalHandlerGenerator(wg *sync.WaitGroup) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
 
-		handlerCases := make([]HandlerCase, 0)
-		for _, service := range internal.GlobalRPCServiceList {
-			if !isClientMethodRepliedHandler(&service.Methods) {
-				logger.Global.Debug("Skipping non-client-response service",
-					zap.String("service_name", service.Service()),
-				)
-				continue
-			}
-
-			for _, method := range service.Methods {
-				if !isRelevantService(method) {
-					logger.Global.Debug("Skipping irrelevant service method",
-						zap.String("service_name", method.Service()),
-						zap.String("method_name", method.Method()),
-					)
-					continue
-				}
-				handlerCases = generateHandlerCases(method, handlerCases)
-			}
+		services, err := internal.ClassifyClientRpcServices(internal.GlobalRPCServiceList, internal.IsSceneTCPMethod)
+		if err != nil {
+			logger.Global.Fatal("Client RPC method kinds failed validation", zap.Error(err))
+			return
 		}
+
+		handlerDir := _config.Global.PathLists.MethodHandlerDirectories.Robot
+		handlerCases := robotHandlerCases(services, _config.Global.Naming.MessageId, func(fileName string) bool {
+			return fileExists(filepath.Join(handlerDir, fileName))
+		})
 
 		logger.Global.Info("Generating robot message handler file",
 			zap.Int("handler_case_count", len(handlerCases)),
 		)
 
-		err := generateTotalHandlerFile(_config.Global.Paths.RobotMsgBodyHandlerFile, handlerCases)
+		err = generateTotalHandlerFile(_config.Global.Paths.RobotMsgBodyHandlerFile, handlerCases, robotHandlerTotalTemplatePath)
 		if err != nil {
 			logger.Global.Fatal("生成机器人消息处理器文件失败",
 				zap.Error(err),
@@ -74,49 +65,50 @@ func GoRobotTotalHandlerGenerator(wg *sync.WaitGroup) {
 	}()
 }
 
-// generateHandlerCases creates the cases for the handler map based on the method.
-func generateHandlerCases(method *internal.MethodInfo, cases []HandlerCase) []HandlerCase {
-	handlerCase := HandlerCase{
-		MessageID:    method.Service() + method.Method() + _config.Global.Naming.MessageId,
-		FunctionCall: method.Service() + method.Method() + "Handler",
+// robotHandlerCases 计算注册表条目(纯函数)。服务与方法保持分类结果的顺序(GlobalRPCServiceList 顺序、proto 声明顺序),
+// 所以已有条目的相对次序不变。客户端协议服务只按 OptionIsClientProtocolService 判定。
+//
+// 登记规则:
+//   - CLIENT_RPC_PUSH:一律登记。GoRobotHandlerGenerator 在同一轮里保证桩存在(缺了就建,失败即 Fatal)。
+//     两者在同一并行组里跑,这里不能去磁盘看那个 goroutine 是否已写出桩,所以按「本轮一定存在」处理。
+//   - REQUEST / ONE_WAY / SERVER_ONLY:只在 handler 文件(robotHandlerFileName)存在时登记。生成器不再为它们建桩,
+//     注册表引用不存在的函数会编不过;已有的手写 handler 与旧桩带着副作用(登录握手、压测主循环、AI 循环、
+//     robot 场景的 callDispatch 都靠它们),照常登记,id = 0 路径的行为不变。本轮没有任何生成器写这类文件,
+//     所以 handlerFileExists 在生成期间任何时刻的答案都等于生成开始时磁盘上的状态。
+//
+// handlerFileExists 收 handler 文件名(不含目录)。
+func robotHandlerCases(services []internal.ClientRpcService, messageIDSuffix string,
+	handlerFileExists func(fileName string) bool) []HandlerCase {
+	cases := make([]HandlerCase, 0)
+	for _, service := range services {
+		for _, classified := range service.Methods {
+			key := classified.Method.KeyName()
+			if classified.Kind != internal.ClientRpcPush && !handlerFileExists(robotHandlerFileName(key)) {
+				continue
+			}
+			cases = append(cases, HandlerCase{
+				MessageID:    key + messageIDSuffix,
+				FunctionCall: key + "Handler",
+			})
+		}
 	}
-
-	logger.Global.Debug("Generated handler case",
-		zap.String("service_name", method.Service()),
-		zap.String("method_name", method.Method()),
-		zap.String("message_id", handlerCase.MessageID),
-		zap.String("function_call", handlerCase.FunctionCall),
-	)
-
-	cases = append(cases, handlerCase)
 	return cases
 }
 
-// generateHandlerFile creates a new handler file with the specified parameters.
-func generateTotalHandlerFile(fileName string, cases []HandlerCase) error {
+// generateTotalHandlerFile 用 templatePath 渲染注册表并写入 fileName(内容不变不落盘)。
+func generateTotalHandlerFile(fileName string, cases []HandlerCase, templatePath string) error {
 	if fileName == "" {
-		logger.Global.Fatal("Failed to generate handler file: file path is empty")
+		return fmt.Errorf("robot message handler file path is empty")
 	}
 
-	tmpl, err := template.ParseFiles("internal/template/robot_handler_total.go.tmpl")
+	tmpl, err := template.ParseFiles(templatePath)
 	if err != nil {
-		logger.Global.Fatal("Failed to parse handler template",
-			zap.Error(err),
-		)
-	}
-
-	data := CasesData{
-		Cases: cases,
+		return fmt.Errorf("parse template %s: %w", templatePath, err)
 	}
 
 	var content bytes.Buffer
-	if err := tmpl.Execute(&content, data); err != nil {
-		logger.Global.Fatal("Failed to execute handler template",
-			zap.String("file_name", fileName),
-			zap.Int("case_count", len(cases)),
-			zap.Error(err),
-		)
-		return err
+	if err := tmpl.Execute(&content, CasesData{Cases: cases}); err != nil {
+		return fmt.Errorf("render %s: %w", fileName, err)
 	}
 	if err := utils.WriteFileIfChanged(fileName, content.Bytes()); err != nil {
 		return err
@@ -126,20 +118,5 @@ func generateTotalHandlerFile(fileName string, cases []HandlerCase) error {
 		zap.String("file_name", fileName),
 		zap.Int("case_count", len(cases)),
 	)
-
 	return nil
-}
-
-// isRelevantService checks if the service name is relevant.
-func isRelevantService(method *internal.MethodInfo) bool {
-	isRelevant := strings.Contains(method.Service(), "GamePlayer") || strings.Contains(method.Service(), "ClientPlayer")
-
-	if !isRelevant {
-		logger.Global.Debug("Service method is irrelevant, skipping",
-			zap.String("service_name", method.Service()),
-			zap.String("method_name", method.Method()),
-		)
-	}
-
-	return isRelevant
 }

@@ -69,7 +69,7 @@ func EnsurePlayerAllDataInRedisAsync(
 
 	// 预检与最终发布都复核归属和 SQL 提交屏障；Redis 故障不能按缓存未命中继续。
 	cacheCheckStart := time.Now()
-	snapshot, snapshotErr := beginParentLoad(ctx, rc, parentKey, playerId, regressionMode)
+	snapshot, snapshotErr := beginParentLoad(ctx, rc, defaultParentLoadScripts, parentKey, playerId, regressionMode)
 	hitLabel := "miss"
 	if snapshotErr == nil && snapshot.raw != "" {
 		hitLabel = "hit"
@@ -205,7 +205,7 @@ func EnsurePlayerAllDataInRedisAsync(
 				}
 				mu.Unlock()
 			}
-			if validationErr := snapshot.validateSQLSub(p.sub, playerId); validationErr != nil {
+			if validationErr := validateSQLRowIdentity(p.sub, playerId); validationErr != nil {
 				errStr := fmt.Sprintf("task %s: %v", p.taskID, validationErr)
 				firstErr.CompareAndSwap(nil, &errStr)
 			}

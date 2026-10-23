@@ -45,6 +45,11 @@ deploy/k8s/
 - **包装入口透传**:`dev_tools.ps1` / `k8s_image.ps1` 的 `-GateRouterMode`、`-GateServiceType` 与集群外入口参数一律留空 = 不覆盖,默认值只在 `k8s_deploy.ps1`。
   `k8s_image.ps1` 只透传 gate / battle 侧 6 个参数 + `-GateRouterMode` / `-AllowDisruptiveSwitch` / `-RequireClientEndpoint`;`-Gateway*` 与 `-LoginDevPasswordAuth`
   经 `k8s-image-*` / `k8s-release-*` 给了即报错(它不部署 Go / Java 服务)。完整清单见 `README.md`「包装入口的透传口径」。
+- **C++ 启动壳不加 `ulimit`(B0-4,负责人 2026-10-17 拍板;2026-10-22 经负责人确认写入)**:gate / scene / battle 在 `Node::Initialize` 自己把 nofile 软限抬到硬限,
+  抬完仍不够就缺省拒启(`cpp/libs/engine/core/node/system/node/open_file_limit.h`)。在 `/bin/sh -lc` 启动壳、镜像或 initContainer 里再加 `ulimit -n`,
+  是同一件事的第二份实现,不要加。硬限只能在节点运行时改(containerd / dockerd 的 `LimitNOFILE`,或 CRI 的 rlimits),K8s 清单声明不了。
+  应急豁免用 `k8s_deploy.ps1 -NodeOpenFileLimitMode warn`,gate / battle 首选调低准入上限;见 `docs/ops/gate-kernel-tuning-runbook.md` §3.1。
+  Kafka broker 的 `ulimit -n` 薄壳(`manifests/infra/kafka.yaml`)是 broker 自己的事,不在此列。
 - **kind**:一律 `kind create cluster --name mmorpg --config deploy/k8s/kind-config.yaml --kubeconfig "$env:TEMP\kind-mmorpg.kubeconfig"`(kind 钉 v0.33.0),
   所有命令 fail-closed 点名 context:`k8s_deploy.ps1 -KubeContext kind-mmorpg -KubeConfig <同一文件>`、helm `--kube-context kind-mmorpg --kubeconfig <同一文件>`、
   kubectl `--context kind-mmorpg`。不要再写不带 `--config` 的 `kind create cluster`(会切走默认 current-context);改 `kind-config.yaml` 只追加,不重写。

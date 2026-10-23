@@ -98,6 +98,14 @@
     # Go 服务、碰不到 match,不转发它。
     [ValidateSet("", "0", "1")]
     [string]$MatchRatingSnapshotPublish = "",
+    # B0-4 运维豁免开关(NODE_OPEN_FILE_LIMIT_MODE),透传给 k8s_deploy.ps1 -NodeOpenFileLimitMode(k8s-infra-up / k8s-zone-up /
+    # k8s-all-up)、k8s_image.ps1(k8s-release-*)与 k8s_zone_rollback.ps1(k8s-zone-rollback,由它的 Step 6 转给 k8s-zone-up)。
+    # 取值语义、覆盖范围(zone-up 的 gate / scene,infra-up 的 battle)与 warn 的代价见 k8s_deploy.ps1 同名参数注释。
+    # 写法同 -GateRouterMode:默认留空 = 不透传,由 k8s_deploy.ps1 接管(那边留空 = 不写 env、进程按 enforce),默认值只留在那一处。
+    # 与下游同一 ValidateSet,同样区分大小写(C++ 只认小写):大写或拼错在本入口就拒,不拖到 k8s_image.ps1 推完镜像、
+    # 或回滚已停服之后才由下游拒。⚠ 不粘滞:以 warn 运行的环境经本入口重新部署却不传,会落回 enforce,硬限仍不够就再次拒启。
+    [ValidateSet("", "enforce", "warn", IgnoreCase = $false)]
+    [string]$NodeOpenFileLimitMode = "",
     # 集群外客户端入口,透传给 k8s_deploy.ps1(k8s-infra-up / k8s-zone-up / k8s-all-up)、k8s_image.ps1(k8s-release-*)
     # 或 k8s_zone_rollback.ps1(k8s-zone-rollback,由它的 Step 6 转给 k8s-zone-up),语义见 k8s_deploy.ps1 同名参数与
     # docs/design/k8s-client-entry.md(集群外入口 D80 / D88 / D89 / D91)。
@@ -439,9 +447,11 @@
     [string]$MergeZoneTakeOverFence = "",
     # ── D1 映射开关,透传给 k8s_deploy.ps1 同名参数(k8s-infra-up / k8s-zone-up / k8s-all-up)──
     # 语义、组合门禁与粘滞核对(线上现状与本次参数不一致且没带 -ConfirmRouteSwitchChange 即拒绝)都只在 k8s_deploy.ps1 一处,
-    # 本入口只透传:-RouteStoreMode 非空才传,五个 switch 只在被指定时传,默认值只留在下游(redis / false)。
-    # 集群切 db_first 之后,经本入口部署必须照传线上现状(粘滞核对的报错给出照传串),否则在任何写操作之前被拒。
-    # k8s_image.ps1 不部署 Go 服务,k8s-image-* / k8s-release-* 显式给了即拒绝。k8s-zone-rollback 的 Step 6 透传由回滚脚本负责(R9)。
+    # 本入口只透传:-RouteStoreMode 非空才传,五个 switch 只在被指定时传,默认值只留在下游(2026-10-21 起 k8s_deploy 缺省
+    # db_first / 全 true = 全球默认,部署 Go 服务时入口闸只许这一组值)。线上仍是旧值(redis / false)的集群经本入口部署会被
+    # 粘滞核对拒绝,确认升级时加 -ConfirmRouteSwitchChange;读方前提(本次不部署的 zone 必须已 db_first + Arm)不受它豁免。
+    # k8s_image.ps1 不部署 Go 服务,k8s-image-* / k8s-release-* 显式给了即拒绝。k8s_zone_rollback.ps1 不声明这六个参数,
+    # 它的 Step 6 按 k8s_deploy 缺省重建 zone;k8s-zone-rollback 显式给了即在调用回档脚本之前拒绝(不静默丢掉)。
     # 追加在参数块末尾,理由同上(字符串参数按声明顺序占位置)。
     [ValidateSet("", "redis", "db_first")]
     [string]$RouteStoreMode = "",
@@ -945,6 +955,10 @@ function Invoke-K8sDeploy {
     if (-not [string]::IsNullOrWhiteSpace($MatchRatingSnapshotPublish)) {
         $args.MatchRatingSnapshotPublish = $MatchRatingSnapshotPublish
     }
+    # 同上:留空不传,k8s_deploy.ps1 留空即不写 NODE_OPEN_FILE_LIMIT_MODE(进程按 enforce)。
+    if (-not [string]::IsNullOrWhiteSpace($NodeOpenFileLimitMode)) {
+        $args.NodeOpenFileLimitMode = $NodeOpenFileLimitMode
+    }
     # 集群外入口参数同一口径:字符串非空才传,GateNodePortBase 非 -1 才传,switch 只在被指定时传。
     # 不抽成共用函数:契约测试按 AST 单独取出本函数执行,依赖外部函数会让它找不到命令。
     if (-not [string]::IsNullOrWhiteSpace($ClientEntryMode)) { $args.ClientEntryMode = $ClientEntryMode }
@@ -1186,6 +1200,10 @@ function Invoke-K8sImage {
     }
     if (-not [string]::IsNullOrWhiteSpace($GateRouterMode)) {
         $args.GateRouterMode = $GateRouterMode
+    }
+    # B0-4 豁免开关同一口径:留空不传,k8s_image.ps1 同样留空不传,最终由 k8s_deploy.ps1 接管。
+    if (-not [string]::IsNullOrWhiteSpace($NodeOpenFileLimitMode)) {
+        $args.NodeOpenFileLimitMode = $NodeOpenFileLimitMode
     }
     # 集群外入口参数,口径同 Invoke-K8sDeploy(k8s_image.ps1 原样转给 k8s_deploy.ps1)。
     # -Gateway* / -LoginDevPasswordAuth / 第三方登录的 -Login* 与 -ConfirmLoginAuthProviderChange 不在此列,已在函数开头拒绝
@@ -1617,7 +1635,19 @@ function New-MergeZoneExePath {
 function Invoke-MergeZoneGo {
     param([Parameter(Mandatory = $true)][string]$MergeCommand)
     $repoRoot = (Resolve-Path (Join-Path $ScriptDir "..\..")).Path
-    $goArgs = @(Get-MergeZoneCommandArgs -MergeCommand $MergeCommand -RepoRoot $repoRoot)
+    try {
+        $goArgs = @(Get-MergeZoneCommandArgs -MergeCommand $MergeCommand -RepoRoot $repoRoot)
+    }
+    catch {
+        #   4) merge-zone-capability-check 的 1 是业务结论(有 missing)。参数没给齐(漏 -MergeDbCapabilityZones 等)时一个标记都没查,
+        #      属于「没查成」,按 2 退出,不与 1 混用(09-28 遗留;已 grep 全部调用方,没有依赖这里退出 1 的,runbook §8 Step 6 按 2 处理)。
+        #      其余命令的参数错误仍照旧往上抛(pwsh -File 下为 1 = 拒绝、什么都没做),语义不变。
+        if ($MergeCommand -eq "merge-zone-capability-check") {
+            [Console]::Error.WriteLine("ERROR: $($_.Exception.Message); the tool was NOT run, no capability marker was checked (exit 2)")
+            exit 2
+        }
+        throw
+    }
     # Get-MergeZoneCommandArgs 仍以 "run", "." 开头(契约测试按这个形状钉 flag);执行时去掉这个前缀。
     if ($goArgs.Count -lt 2 -or [string]$goArgs[0] -ne "run" -or [string]$goArgs[1] -ne ".") {
         throw "Invoke-MergeZoneGo: unexpected argument shape for '$MergeCommand' (must start with 'run', '.')"
@@ -1666,13 +1696,21 @@ function Get-K8sRouteToolArgs {
 
 # Invoke-K8sRouteTool 调 k8s_route_tool.ps1 并**以它的退出码结束当前脚本**:route-tool 容器的 0 干净 / 1 要人工处理 / 2 失败 /
 # 3 有生效的合服围栏,必须原样到达调用方(`pwsh -File dev_tools.ps1 ...` 在脚本正常结束时进程退出码恒为 0,见 Invoke-MergeZoneGo)。
+# 本入口自己的失败(没给子命令、k8s_route_tool.ps1 参数绑定失败、未捕获的异常)一律 2,与 k8s_route_tool.ps1「本脚本自己失败一律 2」
+# 同口径:异常往上冒时 pwsh -File 的退出码是 1,会与「完成但需要人工处理」撞号(review B3-7 / OPS-5)。
 function Invoke-K8sRouteTool {
-    if (@($RouteToolArgs).Count -eq 0) {
-        throw "k8s-route-tool requires -RouteToolArgs <subcommand and its arguments>, e.g. -RouteToolArgs @('audit', '-frozen-recovery') (use the -Command form of pwsh for arrays)"
+    try {
+        if (@($RouteToolArgs).Count -eq 0) {
+            throw "k8s-route-tool requires -RouteToolArgs <subcommand and its arguments>, e.g. -RouteToolArgs @('audit', '-frozen-recovery') (use the -Command form of pwsh for arrays)"
+        }
+        $rtArgs = Get-K8sRouteToolArgs
+        $global:LASTEXITCODE = 0
+        & (Join-Path $ScriptDir "k8s_route_tool.ps1") @rtArgs
     }
-    $rtArgs = Get-K8sRouteToolArgs
-    $global:LASTEXITCODE = 0
-    & (Join-Path $ScriptDir "k8s_route_tool.ps1") @rtArgs
+    catch {
+        [Console]::Error.WriteLine("ERROR: k8s-route-tool: $($_.Exception.Message) (exit 2)")
+        exit 2
+    }
     exit $LASTEXITCODE
 }
 
@@ -1747,8 +1785,11 @@ Other common commands:
         k8s-infra-up / k8s-zone-up / k8s-all-up pass the D1 route switches through to
         k8s_deploy.ps1 unchanged: [-RouteStoreMode redis|db_first] [-RouteReconcileArm]
         [-RouteReadRequiresReady] [-DbPlacementRequireRouteReady] [-GuildRequireRouteReady]
-        [-ConfirmRouteSwitchChange]. They are sticky: once the cluster runs db_first, pass the
-        live values (the refusal prints them) or the deploy is refused before any write.
+        [-ConfirmRouteSwitchChange]. k8s_deploy.ps1 defaults to db_first with every switch on
+        (the global default; deploying Go services accepts nothing else). They are sticky: a
+        cluster still on redis / off is refused before any write unless -ConfirmRouteSwitchChange
+        is given; zones not deployed in this run must already be db_first + Arm (use k8s-all-up).
+        k8s-zone-rollback refuses these switches (its Step 6 redeploys with the defaults).
     -Command k8s-exposure-preflight
     -Command k8s-stage-runtime
     -Command k8s-image-preflight | k8s-build-image | k8s-push-image | k8s-release-zone | k8s-release-all
@@ -2037,6 +2078,18 @@ switch ($Command) {
         if (-not [string]::IsNullOrWhiteSpace($DbConsumerGroup)) {
             throw "k8s-zone-rollback 不支持 -DbConsumerGroup:回档的 Step 6 固定使用 zone(回档后落到 zone 组的最终形状),给的 '$DbConsumerGroup' 不会生效。去掉该参数重跑;尚未做任何操作。"
         }
+        # D1 映射开关同理:k8s_zone_rollback.ps1 不声明它们,Step 6 按 k8s_deploy 缺省(db_first / 全 true)重建 zone。
+        # 尤其 -ConfirmRouteSwitchChange 被静默丢掉时,Step 6 要到 namespace 已删、库已回档之后才被粘滞核对拒绝(review B3-1 / OPS-3)。
+        $rollbackRouteSwitches = @()
+        if (-not [string]::IsNullOrWhiteSpace($RouteStoreMode)) { $rollbackRouteSwitches += '-RouteStoreMode' }
+        if ($RouteReconcileArm) { $rollbackRouteSwitches += '-RouteReconcileArm' }
+        if ($RouteReadRequiresReady) { $rollbackRouteSwitches += '-RouteReadRequiresReady' }
+        if ($DbPlacementRequireRouteReady) { $rollbackRouteSwitches += '-DbPlacementRequireRouteReady' }
+        if ($GuildRequireRouteReady) { $rollbackRouteSwitches += '-GuildRequireRouteReady' }
+        if ($ConfirmRouteSwitchChange) { $rollbackRouteSwitches += '-ConfirmRouteSwitchChange' }
+        if ($rollbackRouteSwitches.Count -gt 0) {
+            throw "k8s-zone-rollback 不支持 $($rollbackRouteSwitches -join ', '):回档脚本不透传 D1 映射开关,Step 6 按 k8s_deploy.ps1 缺省(db_first / 全 true)重建 zone,给的值不会生效。线上 D1 开关不是全球默认的集群先用 k8s-all-up 切好再回档;去掉这些参数重跑;尚未做任何操作。"
+        }
         # 必须 hashtable splatting:数组 splatting 会按**位置**绑定,
         # "-ZoneName" 这个字符串本身会被绑到 ZoneName、"$ZoneName" 绑到 [int]$ZoneId,
         # 于是灾难回滚脚本连第一步都进不去。
@@ -2080,6 +2133,8 @@ switch ($Command) {
         if ($AllowDisruptiveSwitch)                                        { $rbArgs.AllowDisruptiveSwitch = $true }
         if ($RollbackConfirmNoGatewayIngress)                              { $rbArgs.ConfirmNoGatewayIngress = $true }
         if (-not [string]::IsNullOrWhiteSpace($GateRouterMode))            { $rbArgs.GateRouterMode = $GateRouterMode }
+        # B0-4 豁免开关同一口径,回滚脚本只转给 Step 6;以 warn 运行的 zone 回滚时照传(漏传的后果见 k8s_zone_rollback.ps1 同名参数)。
+        if (-not [string]::IsNullOrWhiteSpace($NodeOpenFileLimitMode))     { $rbArgs.NodeOpenFileLimitMode = $NodeOpenFileLimitMode }
         if (-not [string]::IsNullOrWhiteSpace($ClientEntryMode))           { $rbArgs.ClientEntryMode = $ClientEntryMode }
         if (-not [string]::IsNullOrWhiteSpace($ClientPublicHost))          { $rbArgs.ClientPublicHost = $ClientPublicHost }
         if (-not [string]::IsNullOrWhiteSpace($GateClientHostTemplate))    { $rbArgs.GateClientHostTemplate = $GateClientHostTemplate }

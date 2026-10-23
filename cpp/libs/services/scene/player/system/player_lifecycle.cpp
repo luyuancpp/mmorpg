@@ -831,18 +831,6 @@ namespace
 		return std::string(*mode);
 	}
 
-	// 严格屏障的写方令牌(ARGV[11]):本实体第一次走严格屏障存盘时生成,之后不变(player_persist_writer_comp.h)。
-	// 运行时派生数据,存盘写入口懒建。
-	const std::string &PersistWriterToken(entt::entity player)
-	{
-		auto &writer = tlsEcs.actorRegistry.get_or_emplace<PlayerPersistWriterComp>(player);
-		if (writer.token.empty())
-		{
-			writer.token = player_persist_writer::NewToken();
-		}
-		return writer.token;
-	}
-
 	// 为一次确定要写的存盘发 save_seq(db-write-fencing-mysql.md §7.2)。进程级发号器 Next;该玩家挂着个人下限
 	// (PlayerSaveSeqFloorComp,加载时种子超界才有)时再取 max(进程 Next, 个人下限 + 1),并把个人下限推进到发出的值。
 	// 饱和(进程水位或个人下限到了 UINT64_MAX)返回 nullopt:调用方拒绝本次存盘,不回绕。
@@ -2206,7 +2194,8 @@ void PlayerLifecycleSystem::HandlePlayerAsyncLoaded(Guid playerId, const PlayerA
 
 void PlayerLifecycleSystem::HandlePlayerAsyncSaved(Guid playerId, PlayerAllData &message)
 {
-	LOG_INFO << "HandlePlayerAsyncSaved: Saving complete for player: " << playerId;
+	// 每次存盘落地都会走到这里,2026-10-20 起降为 DEBUG(演练取证见 cross-zone-failure-test-runbook §3.1)。
+	LOG_DEBUG << "HandlePlayerAsyncSaved: Saving complete for player: " << playerId;
 
 	// TODO: When should session be deleted?
 
@@ -4591,24 +4580,22 @@ PlayerLifecycleSystem::SaveResult PlayerLifecycleSystem::SavePlayerToRedisImpl(
 		sendTask(commitIntent->player_database_task);
 		sendTask(commitIntent->player_database_1_task);
 		DbTaskDispatchSystem::FinishSave(playerId, saveGeneration, allDbTasksQueued);
-		// 收尾这行 INFO 按是否全部入队分两种文案:只有两张子表都同步入队才写 "DB write tasks enqueued"
-		// (cross-zone-failure-test-runbook 按它核对 home_zone 的 topic),没全入队时不能再报这句,否则日志等于自报一次假的成功。
-		// 注意即使全部入队,也只是进了 librdkafka 的本地队列,不等于 acks=all;W 是否真到 broker 以分区契约文档冷读冒烟第 2 步
-		// (broker 侧 end offset + 抽样复核器)为准,不以这行为准。
+		// 收尾只打一行:全部同步入队打 DEBUG "DB write tasks enqueued",没全入队只打汇总 ERROR,不再补一条重复的 INFO。
+		// 2026-10-20 起成功行降为 DEBUG:每次真写盘都打会把 INFO 刷满;演练手册要按它核对 home_zone 的 topic 时把 scene 调到
+		// DEBUG(cross-zone-failure-test-runbook §3.1)。即使全部入队,也只是进了 librdkafka 的本地队列,不等于 acks=all;
+		// W 是否真到 broker 以分区契约文档冷读冒烟第 2 步(broker 侧 end offset + 抽样复核器)为准,不以这行为准。
 		if (allDbTasksQueued)
 		{
-			LOG_INFO << "[SavePlayerToRedis] Player " << playerId << " saved to Redis, DB write tasks enqueued"
-					 << " (topic=" << dbTaskTopic << ", home_zone=" << homeZoneId
-					 << ", owner_epoch=" << ownerEpoch << ", save_seq=" << saveSeq << ")";
+			LOG_DEBUG << "[SavePlayerToRedis] Player " << playerId << " saved to Redis, DB write tasks enqueued"
+					  << " (topic=" << dbTaskTopic << ", home_zone=" << homeZoneId
+					  << ", owner_epoch=" << ownerEpoch << ", save_seq=" << saveSeq << ")";
 		}
 		else
 		{
 			LOG_ERROR << "[SavePlayerToRedis] player " << playerId << ": not every DB write task was queued to Kafka (topic="
-					  << dbTaskTopic << "); MySQL awaits durable outbox replay or a later full save"
+					  << dbTaskTopic << ", home_zone=" << homeZoneId << ", owner_epoch=" << ownerEpoch
+					  << ", save_seq=" << saveSeq << "); MySQL awaits durable outbox replay or a later full save"
 					  << " (metric=db_task_produce_rejected)";
-			LOG_INFO << "[SavePlayerToRedis] Player " << playerId
-					 << " saved to Redis, DB write tasks NOT all queued (see the ERROR above)"
-					 << " (topic=" << dbTaskTopic << ", owner_epoch=" << ownerEpoch << ", save_seq=" << saveSeq << ")";
 		}
 	};
 	if (ownerEpoch != 0)
@@ -4621,11 +4608,12 @@ PlayerLifecycleSystem::SaveResult PlayerLifecycleSystem::SavePlayerToRedisImpl(
 		// 覆盖世代校验 C3 的参数(docs/design/mixed-version-persist-field-protection.md §5.2):
 		// 输出世代就是统一入口刚盖在两张表上的戳;加载世代取两表加载戳的最小值(marshal 已成功,Carry 组件必在,
 		// 万一缺失按 0 交给 SaveWithCommitBarrier 拒绝);模式读部署配置;写方令牌按实体懒建、实体生命期内不变。
+		// ARGV[9] 永远是真实加载世代,C++ 不维护"首存 / 已提交"状态:本实体的后续写入由令牌让 Lua 跳过比较。
 		RedisSaveSchemaGen schemaGen;
 		schemaGen.output_gen = message->player_database_data().persist_schema_gen();
 		schemaGen.load_gen = player_persist::LoadedSchemaGen(player).value_or(0);
 		schemaGen.mode = PersistSchemaRegressionModeForSave();
-		schemaGen.writer = PersistWriterToken(player);
+		schemaGen.writer = player_persist::WriterTokenForSave(player);
 		if (!tlsRedisSystem.GetPlayerDataRedis()->SaveWithCommitBarrier(message, playerId,
 			player_ownership::OwnerEpochRedisKey(playerId), epochText,
 			"player:{" + playerIdStr + "}:save_barrier", version, commitIntent, schemaGen, std::move(publishDbTasks)))
@@ -4708,10 +4696,29 @@ void PlayerLifecycleSystem::HandlePlayerSaveRejected(Guid playerId, const std::s
 	DestroyDeposedPlayer(playerId, "stale_owner_write_rejected");
 }
 
-void PlayerLifecycleSystem::HandlePlayerSaveSchemaWarned(Guid playerId, const std::string &redisKey)
+void PlayerLifecycleSystem::HandlePlayerSaveSchemaWarned(Guid playerId, const std::string &redisKey,
+														 const std::string &writer)
 {
+	// 同一写方被判过倒退之后,它的每次写入都会再返回 2(证据留在 Redis 的 schema_regressed,防判定那次的回包丢失)。
+	// 按写方令牌去重:当前实体就是这个写方且已经报过,只打 DEBUG。令牌对不上(另一个加载实体留下的在途写)照常计数,
+	// 不动当前实体的去重标记。读路径不建组件(令牌由存盘写入口懒建,能返回 2 的实体必然已有)。
+	const auto playerEntity = tlsEcs.GetPlayer(playerId);
+	auto *writerComp = tlsEcs.actorRegistry.valid(playerEntity)
+						   ? tlsEcs.actorRegistry.try_get<PlayerPersistWriterComp>(playerEntity)
+						   : nullptr;
+	const bool sameWriter = writerComp != nullptr && writerComp->token == writer;
+	if (sameWriter && writerComp->regressionWarnReported)
+	{
+		LOG_DEBUG << "[PersistSchema] save of player " << playerId << " still carries the regression evidence of its writer"
+				  << " (already reported) key=" << redisKey;
+		return;
+	}
+	if (sameWriter)
+	{
+		writerComp->regressionWarnReported = true;
+	}
 	persist_schema_stats::IncRegressionWarned();
-	// 逐次一行,LogQL 按 metric=persist_schema_regression 计数(C++ 节点没有 Prometheus 出口)。正常应恒 0:
+	// 每个被判倒退的写方一行,LogQL 按 metric=persist_schema_regression 计数(C++ 节点没有 Prometheus 出口)。正常应恒 0:
 	// 非 0 说明这名玩家加载到的数据比屏障记录的世代旧(链路上某一跳截断过),warn 模式下照写了。
 	LOG_ERROR << "[PersistSchema] save committed although the loaded data is older than the recorded schema generation"
 			  << " for player " << playerId << " key=" << redisKey
@@ -4737,6 +4744,13 @@ void PlayerLifecycleSystem::HandlePlayerSaveSchemaRejected(Guid playerId, const 
 	}
 	if (exiting)
 	{
+		// 排空 / 疏散发起的退出,客户端可能还连着:先回 tip 并踢线,否则它挂在一个已经没有实体的节点上。必须在销毁之前:
+		// DestroyDeposedPlayer 会摘会话,之后两条都发不出去。客户端已断开(会话不再绑定)时不踢。
+		if (const auto *session = tlsEcs.actorRegistry.try_get<PlayerSessionSnapshotComp>(playerEntity);
+			session != nullptr && player_exit::IsBoundSession(session->gate_session_id()))
+		{
+			SendTipAndKickToClient(playerEntity, kEnterSceneFailed);
+		}
 		// 退出存盘被拒就不会有落地回调,退出永远收不了尾。与"持久组件缺失拒存"同一处置:不存盘丢弃。
 		DestroyDeposedPlayer(playerId, "exit_save_refused_persist_schema");
 		return;

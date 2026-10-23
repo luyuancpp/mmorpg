@@ -7982,7 +7982,8 @@ Test-Case 'D1 1b-3 粘滞核对:读全部 zone 的 data-service(含本 zone 已�
     Assert-Match -Text $refused.Message -Pattern 'data-service\(namespace=mmorpg-zone-z2\)' -Because '点名是哪个 zone 的现状'
     Assert-Match -Text $refused.Message -Pattern '-RouteStoreMode 线上 db_first,本次 redis' -Because '逐键列出不一致'
     Assert-Match -Text $refused.Message -Pattern '-RouteReconcileArm 线上 true,本次 false' -Because '逐键列出不一致'
-    Assert-Match -Text $refused.Message -Pattern '要保持现状请照传 -RouteStoreMode db_first -RouteReconcileArm' -Because '给出照传现状的参数串'
+    Assert-Match -Text $refused.Message -Pattern '线上现状对应的参数是 -RouteStoreMode db_first -RouteReconcileArm:\$true' -Because '给出线上现状对应的参数串(布尔值显式写出)'
+    Assert-NotMatch -Text $refused.Message -Pattern '要保持现状请照传|布尔开关不给 = false' -Because '全球默认 true 之后「不给 = false」不成立,入口闸也不许照传 redis / false 保持现状(review OPS-9)'
     Assert-Match -Text $refused.Message -Pattern '-ConfirmRouteSwitchChange' -Because '点名确认开关'
     Assert-NotMatch -Text $refused.Message -Pattern 'other-zone-x' -Because '只认 -NamespacePrefix 下的 zone'
     Assert-Equal -Expected 2 -Actual $refused.Calls.Count -Because '读一次全部 namespace 的 data-service,再读本 zone 的 db'
@@ -8001,7 +8002,7 @@ Test-Case 'D1 1b-3 粘滞核对:读全部 zone 的 data-service(含本 zone 已�
     )
     $dbRefused = Invoke-RouteSwitchClusterCase -Rules $dbRules
     Assert-Match -Text $dbRefused.Message -Pattern 'db\(namespace=mmorpg-zone-contract-test\):-DbPlacementRequireRouteReady 线上 true,本次 false' -Because 'db 的读方开关逐 zone 粘滞:漏传会把已打开的门禁静默关掉'
-    Assert-Match -Text $dbRefused.Message -Pattern '要保持现状请照传 -DbPlacementRequireRouteReady' -Because '给出照传参数'
+    Assert-Match -Text $dbRefused.Message -Pattern '线上现状对应的参数是 -DbPlacementRequireRouteReady:\$true' -Because '给出线上现状对应的参数'
 
     $weirdRules = @((New-RouteSwitchDataServiceListRule -Items @(New-RouteSwitchConfigMap -Name 'go-svc-data-service-config' -Namespace 'mmorpg-zone-z2' -ConfigFile 'data_service.yaml' -Yaml (New-RouteSwitchDataServiceYaml -Mode 'DB_FIRST'))), (New-RouteSwitchOneRule -Name 'go-svc-db-config' -Namespace 'mmorpg-zone-contract-test' -ConfigFile 'db.yaml' -Absent))
     $weirdRefused = Invoke-RouteSwitchClusterCase -Rules $weirdRules
@@ -8035,6 +8036,102 @@ Test-Case 'D1 1b-3 粘滞核对 fail-closed:列 ConfigMap 失败、ConfigMap 没
     )
     $refused = Invoke-RouteSwitchClusterCase -Rules $notReady -Mode 'db_first' -Arm $true -GuildRequire $true -ZoneNames @() -DeploysZoneGoSvc $false -DeploysGuild $true
     Assert-Match -Text $refused.Message -Pattern '-RouteStoreMode 线上 redis,本次 db_first' -Because 'guild 读方的前提是全服真的已 db_first:参数里声明了不算数'
+}
+
+# review OPS-2(a) / B3-2:-ConfirmRouteSwitchChange 只放行「本次要改的值」;读方前提(本次渲染了读方开关时,本次不部署的 zone 的
+# data-service 必须已是 db_first + Arm=true)不受它豁免。2026-10-21 起 k8s_deploy 的 D1 缺省是 db_first / 全 true(全球默认),
+# zone-up / all-up / infra-up 每次都会渲染读方,所以这条前提在每次真实部署上都生效:不能误拒已切好的集群,也不能放过半切的集群。
+Test-Case 'D1 读方前提不受 -ConfirmRouteSwitchChange 豁免:本次不部署的 zone 必须已是 db_first + Arm=true;本次部署的 zone 自己、已切好的集群、全新集群都放行' {
+    $ds = {
+        param([string]$Namespace, [string]$Mode = '', [string]$Arm = '', [string]$Ready = '')
+        New-RouteSwitchConfigMap -Name 'go-svc-data-service-config' -Namespace $Namespace -ConfigFile 'data_service.yaml' -Yaml (New-RouteSwitchDataServiceYaml -Mode $Mode -Arm $Arm -Ready $Ready)
+    }
+    $dbAbsent = New-RouteSwitchOneRule -Name 'go-svc-db-config' -Namespace 'mmorpg-zone-contract-test' -ConfigFile 'db.yaml' -Absent
+    # 全球默认:zone-up 渲染 db_first + Arm + 两个读方。
+    $on = @{ Mode = 'db_first'; Arm = $true; Ready = $true; DbRequire = $true }
+
+    # (a) infra-up 第一次打开 guild:guild 线上显式 false(必有漂移、必须带 Confirm),而 zone 的 data-service 还是 redis。
+    $guildFirstOpen = @(
+        (New-RouteSwitchOneRule -Name 'go-svc-guild-config' -Namespace 'contract-infra' -ConfigFile 'guild.yaml' -Yaml "MergeMarkerRedis:`n  RequireRouteReady: false")
+        (New-RouteSwitchDataServiceListRule -Items @((& $ds 'mmorpg-zone-z2')))
+    )
+    $r = Invoke-RouteSwitchClusterCase -Rules $guildFirstOpen -Mode 'db_first' -Arm $true -GuildRequire $true -Confirm $true -ZoneNames @() -DeploysZoneGoSvc $false -DeploysGuild $true
+    Assert-Match -Text $r.Message -Pattern 'D1 读方开关的前提不满足\(1 个 zone\),-ConfirmRouteSwitchChange 不豁免这一条' -Because '以前前提核对与 guild 自己的漂移走同一个 Confirm 分支,第一次打开 guild 时必带 Confirm,前提也就跟着被放行'
+    Assert-Match -Text $r.Message -Pattern 'data-service\(namespace=mmorpg-zone-z2\):[^\n]*线上 RouteStore\.Mode=redis、Reconcile\.ArmReadyMarker=false[^\n]*本次要打开 -GuildRequireRouteReady' -Because '点名哪个 zone、线上是什么、本次要开哪个读方'
+    Assert-NotMatch -Text $r.Message -Pattern 'guild\(namespace=contract-infra\)' -Because 'guild 自己由 false 改 true 是本次要改的值,带了 Confirm 就不进拒绝清单'
+    $r = Invoke-RouteSwitchClusterCase -Rules $guildFirstOpen -Mode 'db_first' -Arm $true -GuildRequire $true -ZoneNames @() -DeploysZoneGoSvc $false -DeploysGuild $true
+    Assert-Match -Text $r.Message -Pattern '另有线上现状与本次参数不一致\(1 处\):[\s\S]*guild\(namespace=contract-infra\):-GuildRequireRouteReady 线上 false,本次 true' -Because '不带 Confirm 时前提与漂移一次报全'
+
+    # (b) zone-up 一个 zone,其它 zone 一个是 db_first 但 Arm=false、一个还是 redis:带 Confirm 也拒绝,提示改用 all-up。
+    $halfSwitched = @(
+        (New-RouteSwitchDataServiceListRule -Items @((& $ds 'mmorpg-zone-z2' 'db_first' 'false'), (& $ds 'mmorpg-zone-z3' 'redis')))
+        $dbAbsent
+    )
+    $r = Invoke-RouteSwitchClusterCase -Rules $halfSwitched @on -Confirm $true
+    Assert-Match -Text $r.Message -Pattern 'D1 读方开关的前提不满足\(2 个 zone\)' -Because 'z2 的副本当选 leader 就撤标记(M4),本 zone 的 go/db 随即暂停存盘消费;z3 不挂标记'
+    Assert-Match -Text $r.Message -Pattern 'data-service\(namespace=mmorpg-zone-z2\):[^\n]*-RouteReconcileArm 线上 false,本次 true[^\n]*本次要打开 -RouteReadRequiresReady / -DbPlacementRequireRouteReady' -Because '点名 Arm 未开的 zone'
+    Assert-Match -Text $r.Message -Pattern 'data-service\(namespace=mmorpg-zone-z3\):[^\n]*线上 RouteStore\.Mode=redis' -Because '点名仍是 redis 的 zone'
+    Assert-Match -Text $r.Message -Pattern '改用 all-up 一次部署全部 zone' -Because '多 zone 首次切换只能一次切全部 zone'
+
+    # (c) all-up 覆盖全部 zone:每个 zone 都是本次渲染的,线上旧值只是本次要改的值,Confirm 放行。
+    $allZones = @(
+        (New-RouteSwitchDataServiceListRule -Items @((& $ds 'mmorpg-zone-z2' 'db_first' 'false')))
+        $dbAbsent
+        (New-RouteSwitchOneRule -Name 'go-svc-db-config' -Namespace 'mmorpg-zone-z2' -ConfigFile 'db.yaml' -Absent)
+    )
+    $r = Invoke-RouteSwitchClusterCase -Rules $allZones @on -Confirm $true -ZoneNames @('contract-test', 'z2')
+    Assert-Equal -Expected '' -Actual $r.Message -Because 'all-up 一次渲染全部 zone:不违反前提'
+    Assert-Match -Text $r.Output -Pattern 'precondition_refused=0' -Because '摘要行带前提拒绝数'
+    Assert-Match -Text $r.Output -Pattern '\[RouteSwitch\]Confirmed:[^\r\n]*data-service\(namespace=mmorpg-zone-z2\)' -Because '本次要改的值仍按漂移告警'
+
+    # (d) 单 zone 升级:唯一的 data-service 就是本次部署的 zone,不算前提;漂移照常要 Confirm。
+    $selfOnly = @((New-RouteSwitchDataServiceListRule -Items @((& $ds 'mmorpg-zone-contract-test'))), $dbAbsent)
+    $r = Invoke-RouteSwitchClusterCase -Rules $selfOnly @on -Confirm $true
+    Assert-Equal -Expected '' -Actual $r.Message -Because '本次部署的 zone 自己的旧值是本次要改的值'
+    $r = Invoke-RouteSwitchClusterCase -Rules $selfOnly @on
+    Assert-Match -Text $r.Message -Pattern 'D1 映射开关的线上现状与本次参数不一致' -Because '没带 Confirm 按漂移拒绝'
+    Assert-NotMatch -Text $r.Message -Pattern '前提不满足' -Because '不是前提问题'
+
+    # (e) 已切好的集群(全部 db_first / true):不带 Confirm 直接放行,不误拒。
+    $switched = @((New-RouteSwitchDataServiceListRule -Items @((& $ds 'mmorpg-zone-z2' 'db_first' 'true' 'true'))), $dbAbsent)
+    $r = Invoke-RouteSwitchClusterCase -Rules $switched @on
+    Assert-Equal -Expected '' -Actual $r.Message -Because '全球默认部署到已切好的集群必须放行'
+    Assert-Match -Text $r.Output -Pattern 'drifts_refused=0 [^\r\n]*precondition_refused=0' -Because '没有漂移、没有前提问题'
+
+    # (f) 全新集群 infra-up 先于任何 zone:一个 data-service 都没有,不算违反(guild 在第一个 zone 挂标记之前 fail-closed,不写错)。
+    $fresh = @(
+        (New-RouteSwitchOneRule -Name 'go-svc-guild-config' -Namespace 'contract-infra' -ConfigFile 'guild.yaml' -Absent)
+        (New-RouteSwitchDataServiceListRule -Items @())
+    )
+    $r = Invoke-RouteSwitchClusterCase -Rules $fresh -Mode 'db_first' -Arm $true -GuildRequire $true -ZoneNames @() -DeploysZoneGoSvc $false -DeploysGuild $true
+    Assert-Equal -Expected '' -Actual $r.Message -Because '全新集群先 infra-up 再 zone-up 是常规流程,不能误拒'
+}
+
+Test-Case 'D1 调用点与参数一致:k8s_deploy.ps1 对本节函数的每次调用只用被调函数 param 块声明过的参数名' {
+    # 2026-10-20 Read-LiveRouteSwitchFacts 的 -DbZoneNames 改成 -ReadDb 而调用点没跟上:每次非 DryRun 部署 Go 服务都在参数绑定处 throw,
+    # DryRun 不走粘滞核对,产物用例全绿。这里按 AST 钉住调用点与 param 块逐字一致(PowerShell 的参数名缩写也不许用)。
+    $d1Functions = @('Get-RouteStoreWaitAOFNumReplicas', 'Get-RouteStoreDeploySettings', 'Get-RouteSwitchParamErrors', 'ConvertFrom-RouteSwitchLiveYaml',
+        'Get-RouteSwitchDrift', 'Get-RouteSwitchKeepArgs', 'Read-LiveRouteSwitchFacts', 'Assert-RouteSwitchClusterState')
+    $declared = @{}
+    foreach ($fn in $deadlineDeployAst.FindAll({ param($a) $a -is [System.Management.Automation.Language.FunctionDefinitionAst] }, $true)) {
+        if ($d1Functions -notcontains $fn.Name) { continue }
+        $names = @()
+        if ($null -ne $fn.Body.ParamBlock) { $names = @($fn.Body.ParamBlock.Parameters | ForEach-Object { $_.Name.VariablePath.UserPath }) }
+        $declared[$fn.Name] = $names
+    }
+    Assert-Equal -Expected $d1Functions.Count -Actual $declared.Count -Because '夹具前提:本节函数都在 k8s_deploy.ps1 里'
+    $checked = 0
+    foreach ($call in $deadlineDeployAst.FindAll({ param($a) $a -is [System.Management.Automation.Language.CommandAst] }, $true)) {
+        $name = $call.GetCommandName()
+        if ([string]::IsNullOrEmpty($name) -or -not $declared.ContainsKey($name)) { continue }
+        foreach ($element in @($call.CommandElements | Where-Object { $_ -is [System.Management.Automation.Language.CommandParameterAst] })) {
+            Assert-True -Condition ($declared[$name] -contains $element.ParameterName) -Because "第 $($call.Extent.StartLineNumber) 行调用 $name 给了 -$($element.ParameterName),它的 param 块没有这个参数(声明的是 $($declared[$name] -join ' / '))"
+            $checked++
+        }
+    }
+    Assert-True -Condition ($checked -ge 10) -Because "夹具前提:应当核到本节函数的全部命名参数(实际 $checked 个)"
+    $readCalls = @($deadlineDeployAst.FindAll({ param($a) $a -is [System.Management.Automation.Language.CommandAst] -and $a.GetCommandName() -eq 'Read-LiveRouteSwitchFacts' }, $true))
+    Assert-Equal -Expected 1 -Actual $readCalls.Count -Because '线上现状只在 Assert-RouteSwitchClusterState 里读一次'
 }
 
 Test-Case 'D1 1b-3 mapping Redis 启动参数:redis.yaml 的两条 exec、redis-ha.yaml 的 redis-server、docker-compose 的 redis 都显式 --enable-debug-command no' {
@@ -8276,6 +8373,284 @@ Test-Case '落点告警 player-placement-alerts.yaml:PrometheusRule 形状;设�
         Assert-Match -Text $body -Pattern '(?s)\bor\b.*\bunless\b[^\n]*\boffset 10m\b.*\)\s*>\s*0' -Because "$name 要用 unless … offset 10m 把 10 分钟内新出现的序列也算进来,并以 > 0 过滤(以后预置 0 时不误报)"
     }
     Assert-Match -Text $text -Pattern 'NewPlayerSeed' -Because '文件头写明它是打开 NewPlayerSeed 的前置(种子 §9 第 3 条)'
+}
+
+# ─────────────────────────────────────────────────────────────────
+# B0-4 部署侧(2026-10-20):NODE_OPEN_FILE_LIMIT_MODE 接线、C++ Deployment 的 maxUnavailable 0、-WaitReady 失败时捞拒启行
+# ─────────────────────────────────────────────────────────────────
+# 进程侧是 cpp/libs/engine/core/node/system/node/open_file_limit.h:软限抬到硬限后仍不够就缺省拒启,NODE_OPEN_FILE_LIMIT_MODE=warn 豁免
+# (负责人 2026-10-17 拍板)。生成侧钉住:不传参数时五套 C++ 模板一个字都不写;给了值就写进本次部署的全部 C++ 工作负载,
+# 每个只写一次、值原样小写;大写或拼错在入口就拒(C++ 只认小写,大写会被进程静默当成 enforce)。五套模板 = 本脚本的
+# Deployment(gate / scene / battle)与 scene Fleet,加 lib 的 gate StatefulSet / battle Fleet / battle hostPort Deployment ——
+# 只改其中几套正是本仓踩过的坑。默认值复用上文的 $devOut / $agonesOut / $zoneRedisEntryRun / $battleInfraRun / $battleZoneRedisFleetRun。
+$OpenFileLimitEnvName = 'NODE_OPEN_FILE_LIMIT_MODE'
+$oflZoneWarnRun = Invoke-DeployDryRun -Arguments ($BaseArgs + @('-SkipGoSvc', '-SkipJavaSvc', '-NodeOpenFileLimitMode', 'warn'))
+$oflZoneEntryEnforceRun = Invoke-DeployDryRun -Arguments ($BaseArgs + @('-SkipGoSvc', '-SkipJavaSvc', '-SceneOrchestrator', 'agones',
+    '-ClientEntryMode', 'external', '-GateServiceType', 'NodePort', '-GateNodePortBase', '30000', '-ClientPublicHost', '127.0.0.1', '-NodeOpenFileLimitMode', 'enforce'))
+$oflBattleWarnRun = Invoke-DeployDryRun -Arguments ($BattleInfraArgs + @('-NodeOpenFileLimitMode', 'warn')) -Env $BattleTestEnv
+# external + 缺省 -BattleOrchestrator deployment = battle 的 hostPort 形态(lib New-BattleHostPortDeploymentYaml)。
+$oflBattleHostPortWarnRun = Invoke-DeployDryRun -Arguments ($BattleInfraArgs + @('-ClientEntryMode', 'external', '-NodeOpenFileLimitMode', 'warn')) -Env $BattleTestEnv
+$oflBattleFleetEnforceRun = Invoke-DeployDryRun -Arguments ($BattleInfraArgs + @('-BattleOrchestrator', 'agones', '-ClientEntryMode', 'external',
+    '-ClientPublicHost', '127.0.0.1', '-NodeOpenFileLimitMode', 'enforce')) -Env $BattleTestEnv
+
+# DryRun 输出里的 C++ 工作负载块:只有 C++ 模板挂 /app/bin/etc(Go / Java 清单与 infra 都不挂)。返回 { Key = kind/name; Block }。
+function Get-CppWorkloadBlocks {
+    param([Parameter(Mandatory = $true)][AllowEmptyString()][string]$Output)
+    foreach ($block in (Get-ManifestBlocks -Output $Output)) {
+        if ($block -notmatch 'mountPath: /app/bin/etc') { continue }
+        $kind = [regex]::Match($block, '(?m)^kind:[ ]*(?<v>\S+)[ ]*$').Groups['v'].Value
+        $name = [regex]::Match($block, '(?m)^  name:[ ]*(?<v>\S+)[ ]*$').Groups['v'].Value
+        [pscustomobject]@{ Key = "$kind/$name"; Block = $block }
+    }
+}
+
+# 工作负载里 NODE_OPEN_FILE_LIMIT_MODE 的取值:没有返回 $null;必须按「- name / value」成对写出且最多一处,否则 throw
+# (重复的 env 键以哪条为准不该交给 kubelet;只写名字不写值会被当成空串,进程按 enforce)。
+function Get-OpenFileLimitModeEnvValue {
+    param(
+        [Parameter(Mandatory = $true)][string]$Block,
+        [Parameter(Mandatory = $true)][string]$Label
+    )
+    $pairs = [regex]::Matches($Block, '(?m)^[ ]+- name: ' + $OpenFileLimitEnvName + '[ ]*\n[ ]+value: "(?<v>[^"\n]*)"[ ]*$')
+    $mentions = [regex]::Matches($Block, [regex]::Escape($OpenFileLimitEnvName)).Count
+    if ($mentions -ne $pairs.Count) { throw "${Label}:$OpenFileLimitEnvName 出现 $mentions 处,按「- name / value」成对写出的只有 $($pairs.Count) 处" }
+    if ($pairs.Count -gt 1) { throw "${Label}:$OpenFileLimitEnvName 应最多写一处,实际 $($pairs.Count) 处" }
+    if ($pairs.Count -eq 0) { return $null }
+    return $pairs[0].Groups['v'].Value
+}
+
+# 一次 DryRun 的全部 C++ 工作负载都带(或都不带)这个变量、取值一致,并且恰好覆盖预期的那几套模板。
+function Assert-OpenFileLimitModeRendered {
+    param(
+        [Parameter(Mandatory = $true)]$Run,
+        [Parameter(Mandatory = $true)][string]$Label,
+        [Parameter(Mandatory = $true)][string[]]$ExpectedWorkloads,
+        [AllowNull()][string]$ExpectedValue
+    )
+    Assert-Equal -Expected 0 -Actual $Run.ExitCode -Because "${Label}:DryRun 应当成功。输出: $($Run.Output)"
+    $workloads = @(Get-CppWorkloadBlocks -Output $Run.Output)
+    Assert-Equal -Expected ((@($ExpectedWorkloads) | Sort-Object) -join ',') -Actual ((@($workloads | ForEach-Object { $_.Key }) | Sort-Object -Unique) -join ',') -Because "${Label}:这次 DryRun 要覆盖的 C++ 模板(夹具前提)"
+    foreach ($workload in $workloads) {
+        $actual = Get-OpenFileLimitModeEnvValue -Block $workload.Block -Label "$Label $($workload.Key)"
+        if ([string]::IsNullOrEmpty($ExpectedValue)) {
+            Assert-True -Condition ($null -eq $actual) -Because "${Label} $($workload.Key):不传 -NodeOpenFileLimitMode 时不得写 $OpenFileLimitEnvName(进程按 enforce,模板与引入开关之前逐字相同)"
+        }
+        else {
+            Assert-True -Condition ($actual -ceq $ExpectedValue) -Because "${Label} $($workload.Key):$OpenFileLimitEnvName 必须原样写成 '$ExpectedValue'(实际 '$actual');漏了这一套模板,运维以为全开了豁免,这一种形态仍会拒启"
+        }
+    }
+    foreach ($block in (Get-ManifestBlocks -Output $Run.Output)) {
+        if ($block -match 'mountPath: /app/bin/etc') { continue }
+        Assert-NotMatch -Text $block -Pattern $OpenFileLimitEnvName -Because "${Label}:只有 C++ 进程读这个变量,其它工作负载不写"
+    }
+}
+
+Test-Case 'B0-4:不传 -NodeOpenFileLimitMode 时五套 C++ 模板都不写 NODE_OPEN_FILE_LIMIT_MODE,也不打豁免告警' {
+    foreach ($case in @(
+        @{ Label = 'zone-up 缺省'; Run = $devRun; Expected = @('Deployment/gate', 'Deployment/scene') }
+        @{ Label = 'zone-up Agones scene'; Run = $agonesRun; Expected = @('Deployment/gate', 'Fleet/scene') }
+        @{ Label = 'zone-up external gate + Agones scene'; Run = $zoneRedisEntryRun; Expected = @('StatefulSet/gate', 'Fleet/scene') }
+        @{ Label = 'infra-up battle Deployment'; Run = $battleInfraRun; Expected = @('Deployment/battle') }
+        @{ Label = 'infra-up battle Agones Fleet'; Run = $battleZoneRedisFleetRun; Expected = @('Fleet/battle') }
+    )) {
+        Assert-OpenFileLimitModeRendered -Run $case.Run -Label $case.Label -ExpectedWorkloads $case.Expected -ExpectedValue $null
+        Assert-NotMatch -Text $case.Run.Output -Pattern '-NodeOpenFileLimitMode warn:' -Because "$($case.Label):没开豁免就不该打豁免告警"
+    }
+}
+
+Test-Case 'B0-4:-NodeOpenFileLimitMode warn / enforce 写进本次部署的全部 C++ 工作负载(五套模板),每个恰好一次、取值原样;只有 warn 打告警' {
+    foreach ($case in @(
+        @{ Label = 'zone-up warn'; Run = $oflZoneWarnRun; Expected = @('Deployment/gate', 'Deployment/scene'); Value = 'warn' }
+        @{ Label = 'zone-up external gate + Agones scene enforce'; Run = $oflZoneEntryEnforceRun; Expected = @('StatefulSet/gate', 'Fleet/scene'); Value = 'enforce' }
+        @{ Label = 'infra-up battle Deployment warn'; Run = $oflBattleWarnRun; Expected = @('Deployment/battle'); Value = 'warn' }
+        @{ Label = 'infra-up battle hostPort warn'; Run = $oflBattleHostPortWarnRun; Expected = @('Deployment/battle'); Value = 'warn' }
+        @{ Label = 'infra-up battle Agones Fleet enforce'; Run = $oflBattleFleetEnforceRun; Expected = @('Fleet/battle'); Value = 'enforce' }
+    )) {
+        Assert-OpenFileLimitModeRendered -Run $case.Run -Label $case.Label -ExpectedWorkloads $case.Expected -ExpectedValue $case.Value
+        if ($case.Value -ceq 'warn') {
+            Assert-Match -Text $case.Run.Output -Pattern '-NodeOpenFileLimitMode warn:' -Because "$($case.Label):warn 只作短时应急,每次部署都要打一行告警,免得被当成常态配置"
+        }
+        else {
+            Assert-NotMatch -Text $case.Run.Output -Pattern '-NodeOpenFileLimitMode warn:' -Because "$($case.Label):enforce 不是豁免,不打豁免告警"
+        }
+    }
+    $hostPort = Select-CppWorkloadBlock -Output $oflBattleHostPortWarnRun.Output -Kind 'Deployment' -Name 'battle' -Label 'infra-up battle hostPort warn'
+    Assert-Match -Text $hostPort -Pattern 'hostPort: 20000' -Because '夹具前提:external + deployment 渲染的是 hostPort 形态,不是 New-NodeDeploymentYaml 的 battle'
+}
+
+Test-Case '负向:-NodeOpenFileLimitMode 只收小写 enforce / warn,大写与其它值在入口被拒、先于任何资源变更' {
+    foreach ($bad in @('WARN', 'off')) {
+        $run = Invoke-DeployDryRun -Arguments ($BaseArgs + @('-SkipGoSvc', '-SkipJavaSvc', '-NodeOpenFileLimitMode', $bad))
+        Assert-True -Condition ($run.ExitCode -ne 0) -Because "'$bad' 必须在脚本入口被拒:C++ 只认小写 enforce / warn,其余值按 enforce 处理,原样写进 env 等于运维以为开了豁免、进程照样拒启"
+        Assert-Match -Text $run.Output -Pattern 'NodeOpenFileLimitMode' -Because '不能把其他执行错误误判为参数校验成功'
+        Assert-NotMatch -Text $run.Output -Pattern '\[dry-run\] kubectl' -Because '参数校验必须先于任何资源变更'
+    }
+}
+
+Test-Case 'B0-4:C++ Deployment(gate / scene / battle)显式 maxUnavailable 0、maxSurge 留缺省;battle hostPort 仍是 maxSurge 0 / maxUnavailable 1' {
+    # scene 缺省 4 副本,K8s 缺省 25% 向下取整 = 先缩 1 台旧 scene;新 Pod 因 nofile 硬限不够拒启时,这份容量一直缺到回滚。
+    foreach ($case in @(
+        @{ Label = 'gate'; Output = $devOut; Name = 'gate' }
+        @{ Label = 'scene'; Output = $devOut; Name = 'scene' }
+        @{ Label = 'battle'; Output = $battleInfraRun.Output; Name = 'battle' }
+    )) {
+        $block = Select-CppWorkloadBlock -Output $case.Output -Kind 'Deployment' -Name $case.Name -Label $case.Label
+        Assert-Match -Text $block -Pattern '(?m)^  strategy:\n    type: RollingUpdate\n    rollingUpdate:\n      maxUnavailable: 0[ ]*$' -Because "$($case.Label):新 Pod 就绪之前不缩旧 Pod,B0-4 拒启只让滚动停住"
+        Assert-NotMatch -Text $block -Pattern 'maxSurge' -Because "$($case.Label):maxSurge 留 K8s 缺省 25%(至少 1 个新 Pod),滚动节奏与改动前相同"
+    }
+    $hostPort = Select-CppWorkloadBlock -Output $oflBattleHostPortWarnRun.Output -Kind 'Deployment' -Name 'battle' -Label 'battle hostPort'
+    Assert-Match -Text $hostPort -Pattern '(?m)^  strategy:\n    type: RollingUpdate\n    rollingUpdate:\n      maxSurge: 0\n      maxUnavailable: 1[ ]*$' -Because 'hostPort 独占同一节点端口(D86):新 Pod 不能与旧 Pod 抢端口,保持先删后起'
+}
+
+# -WaitReady 失败诊断:Write-CppOpenFileLimitRefusals 按 AST 抽出直接调用(同上文各守卫),用假 kubectl 喂回包,不碰集群。
+$oflDiagFnAst = $deadlineDeployAst.Find({ param($a) $a -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $a.Name -eq 'Write-CppOpenFileLimitRefusals' }, $true)
+if ($null -eq $oflDiagFnAst) { throw 'k8s_deploy.ps1 缺少函数 Write-CppOpenFileLimitRefusals(-WaitReady 的 B0-4 拒启诊断被删了?后续断言无意义)' }
+Set-Item -Path 'Function:script:Write-CppOpenFileLimitRefusals' -Value $oflDiagFnAst.Body.GetScriptBlock()
+
+Test-Case 'B0-4 -WaitReady 失败诊断:只读未就绪 Pod,先 --previous、没有上一个实例才读当前实例,只打印拒启行;kubectl 失败只告警不 throw,DryRun 不碰集群' {
+    # 假 kubectl:函数优先于外部程序,被测函数里的 `& kubectl` 解析到这里(按动态作用域)。按命令回应 $fake,记下每次调用的参数。
+    function Build-KubectlBaseArgs { return , @() }
+    $calls = [System.Collections.Generic.List[string]]::new()
+    function kubectl {
+        $line = $args -join ' '
+        $calls.Add($line)
+        $reply = $null
+        if ($line -match '^get pods ') { $reply = $fake.Pods }
+        elseif ($line -match '^logs (?<pod>\S+) .*--previous$') { $reply = $fake.Previous[$Matches['pod']] }
+        elseif ($line -match '^logs (?<pod>\S+) ') { $reply = $fake.Current[$Matches['pod']] }
+        if ($null -eq $reply) { $reply = @{ Exit = 1; Out = @() } }
+        $global:LASTEXITCODE = [int]$reply.Exit
+        return $reply.Out
+    }
+    $refusal = 'FATAL open file limit config: role=gate soft=1024 hard=1024 required=24096 (GateMaxConnections=20000 + reserve 4096) shortfall=23072 raise=none'
+    # gate-ok 已就绪(旧 Pod,不读);gate-crash 在 CrashLoop(读 --previous);gate-fresh 刚崩第一次、没有上一个实例(改读当前实例);
+    # gate-init 还没有容器状态(Init 卡住,两次都读不到,跳过)。
+    $podsJson = '{"items":[' +
+        '{"metadata":{"name":"gate-ok"},"status":{"containerStatuses":[{"name":"gate","ready":true,"restartCount":0}]}},' +
+        '{"metadata":{"name":"gate-crash"},"status":{"containerStatuses":[{"name":"gate","ready":false,"restartCount":4}]}},' +
+        '{"metadata":{"name":"gate-fresh"},"status":{"containerStatuses":[{"name":"gate","ready":false,"restartCount":0}]}},' +
+        '{"metadata":{"name":"gate-init"},"status":{}}]}'
+    $DryRun = $false
+    try {
+        $fake = @{
+            Pods     = @{ Exit = 0; Out = $podsJson }
+            Previous = @{ 'gate-crash' = @{ Exit = 0; Out = @('[open_file_limit] role=gate verdict=insufficient mode=enforce required=24096', $refusal) } }
+            Current  = @{ 'gate-fresh' = @{ Exit = 0; Out = @('starting', $refusal) } }
+        }
+        $calls.Clear()
+        $text = (Write-CppOpenFileLimitRefusals -Namespace 'contract-ns' -WorkloadName 'gate' 6>&1 3>&1 | Out-String)
+        Assert-Match -Text $text -Pattern ([regex]::Escape("pod=gate-crash (previous): $refusal")) -Because 'CrashLoop 的 Pod 拒启行在上一个容器实例里'
+        Assert-Match -Text $text -Pattern ([regex]::Escape("pod=gate-fresh (current): $refusal")) -Because '没有上一个实例(Agones GameServer 不重启、或刚崩第一次)时读当前实例'
+        Assert-NotMatch -Text $text -Pattern 'verdict=insufficient' -Because '只打印拒启行,启动行与其它日志不往部署输出里倒'
+        Assert-Match -Text $text -Pattern 'refused to start' -Because '命中后要给出处置方向(调低准入上限 / 改运行时 LimitNOFILE / 短时 warn)'
+        $joined = $calls -join "`n"
+        Assert-Match -Text $joined -Pattern '(?m)^get pods -n contract-ns -l app=gate -o json$' -Because '按工作负载标签列 Pod'
+        Assert-NotMatch -Text $joined -Pattern 'logs gate-ok ' -Because '已就绪的旧 Pod 不读日志,失败路径上的耗时只花在可疑 Pod 上'
+        Assert-Match -Text $joined -Pattern '(?m)^logs gate-crash -n contract-ns -c gate --tail 200 --previous$' -Because '指定容器名(原生 sidecar 也在 Pod 里)、只拉尾部、先读上一个实例'
+        Assert-Equal -Expected 1 -Actual (@($calls | Where-Object { $_ -like 'logs gate-crash *' }).Count) -Because '上一个实例读到了就不再读当前实例'
+        Assert-Equal -Expected 2 -Actual (@($calls | Where-Object { $_ -like 'logs gate-init *' }).Count) -Because '两次都读不到就跳过,不 throw'
+
+        # 都读到了但没有拒启行:明确说「排除了」,运维不必再去翻。
+        $fake.Previous = @{ 'gate-crash' = @{ Exit = 0; Out = @('connect etcd failed') } }
+        $fake.Current = @{ 'gate-fresh' = @{ Exit = 0; Out = @('starting') } }
+        $text = (Write-CppOpenFileLimitRefusals -Namespace 'contract-ns' -WorkloadName 'gate' 6>&1 3>&1 | Out-String)
+        Assert-Match -Text $text -Pattern ([regex]::Escape("no 'FATAL open file limit' line in the logs of 3 not-ready pod(s) (app=gate, 3 not ready of 4)")) -Because '没命中也要打一行,说明查过哪些 Pod'
+
+        # 未就绪 Pod 很多时最多读 10 个。
+        $manyPods = @(1..12 | ForEach-Object { '{"metadata":{"name":"gate-' + $_ + '"},"status":{"containerStatuses":[{"name":"gate","ready":false}]}}' })
+        $fake = @{ Pods = @{ Exit = 0; Out = ('{"items":[' + ($manyPods -join ',') + ']}') }; Previous = @{}; Current = @{} }
+        $calls.Clear()
+        $text = (Write-CppOpenFileLimitRefusals -Namespace 'contract-ns' -WorkloadName 'gate' 6>&1 3>&1 | Out-String)
+        Assert-Equal -Expected 10 -Actual (@($calls | Where-Object { $_ -like 'logs * --previous' }).Count) -Because '失败路径上最多读 10 个 Pod'
+        Assert-Match -Text $text -Pattern ([regex]::Escape('of 10 not-ready pod(s) (app=gate, 12 not ready of 12)')) -Because '截断要在输出里看得出来'
+
+        # 列 Pod 失败、回包不是 JSON:只告警、不 throw(调用方随后照常抛等待超时)。
+        foreach ($broken in @(
+            @{ Why = 'kubectl get pods 失败'; Pods = @{ Exit = 1; Out = '' }; Pattern = 'open file limit check skipped' }
+            @{ Why = '回包不是 JSON'; Pods = @{ Exit = 0; Out = 'not json' }; Pattern = 'open file limit check failed' }
+        )) {
+            $fake = @{ Pods = $broken.Pods; Previous = @{}; Current = @{} }
+            $calls.Clear()
+            $message = ''
+            $text = ''
+            try { $text = (Write-CppOpenFileLimitRefusals -Namespace 'contract-ns' -WorkloadName 'gate' 6>&1 3>&1 | Out-String) } catch { $message = $_.Exception.Message }
+            Assert-Equal -Expected '' -Actual $message -Because "$($broken.Why):诊断是尽力而为,不能 throw 把原本的等待失败盖掉"
+            Assert-Match -Text $text -Pattern $broken.Pattern -Because "$($broken.Why):要告警说明没查成"
+            Assert-Equal -Expected 1 -Actual $calls.Count -Because "$($broken.Why):列不出 Pod 就不读日志"
+        }
+
+        # DryRun 不碰集群。
+        $DryRun = $true
+        $calls.Clear()
+        Write-CppOpenFileLimitRefusals -Namespace 'contract-ns' -WorkloadName 'gate' 6>&1 3>&1 | Out-Null
+        Assert-Equal -Expected 0 -Actual $calls.Count -Because 'DryRun 下不调 kubectl'
+    }
+    finally {
+        # 假 kubectl 改过全局退出码;复位,免得影响后面按 $LASTEXITCODE 判断的用例。
+        $global:LASTEXITCODE = 0
+    }
+}
+
+Test-Case 'B0-4 -WaitReady 接线:gate / scene / battle 的五个等待点失败时都捞拒启行(Deployment 带 -CppNode,StatefulSet / Fleet 在 catch 里捞完原样抛出),Go / Java 服务不捞' {
+    $cppTargets = @('"gate"', '$sceneDeployment', "'battle'")
+    $deploymentSites = 0
+    $wrappedSites = 0
+    foreach ($fnName in @('Wait-ForZoneReady', 'Apply-BattlePool')) {
+        $fn = $deadlineDeployAst.Find({ param($a) $a -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $a.Name -eq $fnName }, $true)
+        Assert-True -Condition ($null -ne $fn) -Because "k8s_deploy.ps1 里应当有 $fnName"
+        foreach ($cmd in @($fn.Body.FindAll({ param($a) $a -is [System.Management.Automation.Language.CommandAst] }, $true))) {
+            $commandName = $cmd.GetCommandName()
+            $elements = @($cmd.CommandElements)
+            if ($commandName -eq 'Wait-ForDeploymentReady') {
+                $target = ''
+                for ($i = 1; $i -lt $elements.Count - 1; $i++) {
+                    if ($elements[$i] -is [System.Management.Automation.Language.CommandParameterAst] -and $elements[$i].ParameterName -eq 'DeploymentName') { $target = $elements[$i + 1].Extent.Text }
+                }
+                $hasSwitch = @($elements | Where-Object { $_ -is [System.Management.Automation.Language.CommandParameterAst] -and $_.ParameterName -eq 'CppNode' }).Count -eq 1
+                if ($cppTargets -contains $target) {
+                    Assert-True -Condition $hasSwitch -Because "$fnName 等 C++ Deployment $target 必须带 -CppNode,否则 B0-4 拒启时运维只看到 rollout 超时"
+                    $deploymentSites++
+                }
+                else {
+                    Assert-True -Condition (-not $hasSwitch) -Because "$fnName 等的 $target 不是 C++ 节点,不该去捞 C++ 的拒启行"
+                }
+            }
+            elseif ($commandName -in @('Wait-ForGateStatefulSetReady', 'Wait-ForFleetReady')) {
+                $try = $cmd.Parent
+                while ($null -ne $try -and $try -isnot [System.Management.Automation.Language.TryStatementAst]) { $try = $try.Parent }
+                Assert-True -Condition ($null -ne $try) -Because "$fnName 的 $commandName 必须包在 try 里:库函数超时即 throw,诊断只能在 catch 里做"
+                $catchText = (@($try.CatchClauses | ForEach-Object { $_.Body.Extent.Text })) -join "`n"
+                Assert-Match -Text $catchText -Pattern 'Write-CppOpenFileLimitRefusals -Namespace' -Because "$fnName 的 $commandName 失败时要捞拒启行"
+                Assert-Match -Text $catchText -Pattern '(?m)^\s*throw\s*$' -Because "$fnName 的 $commandName:诊断之后必须原样抛出,不能把等待失败吞掉"
+                $wrappedSites++
+            }
+        }
+    }
+    Assert-Equal -Expected 3 -Actual $deploymentSites -Because 'gate Deployment、scene 池、battle Deployment(含 hostPort 形态)三个调用点'
+    Assert-Equal -Expected 2 -Actual $wrappedSites -Because 'external gate StatefulSet 与 battle Agones Fleet 两个调用点'
+    $waitFn = $deadlineDeployAst.Find({ param($a) $a -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $a.Name -eq 'Wait-ForDeploymentReady' }, $true)
+    Assert-Match -Text $waitFn.Body.Extent.Text -Pattern '(?s)if \(\$CppNode\) \{\s*Write-CppOpenFileLimitRefusals -Namespace \$Namespace -WorkloadName \$DeploymentName\s*\}\s*throw "Deployment rollout failed' -Because 'Wait-ForDeploymentReady 在失败分支、throw 之前捞拒启行'
+}
+
+Test-Case 'B0-4 lib 纵深防御:Get-ClientEntryNodeBaseEnv 只写小写 enforce / warn,大写或其它值在渲染时 throw;留空或 PodCommon 缺这个成员时不写' {
+    . (Join-Path (Get-ToolsScriptsDir) 'lib' 'k8s_client_entry.ps1')
+    $common = @{ Image = 'registry.invalid/test/mmorpg-node:0123456789ab'; ImagePullPolicy = 'IfNotPresent'; SnowflakeCacheDir = '/app/snowflake-cache'; LogVolumeSizeLimit = '2Gi' }
+    $baseNames = 'POD_IP,RPC_PORT,SNOWFLAKE_CACHE_DIR'
+    $entries = Get-ClientEntryNodeBaseEnv -PodCommon (New-ClientEntryPodCommon @common) -RpcPort 20000
+    Assert-Equal -Expected $baseNames -Actual (@($entries | ForEach-Object { $_.Name }) -join ',') -Because '不传 -OpenFileLimitMode:不写,三个生成器与引入开关之前逐字相同'
+    $entries = Get-ClientEntryNodeBaseEnv -PodCommon ([pscustomobject]@{ SnowflakeCacheDir = '/app/snowflake-cache' }) -RpcPort 20000
+    Assert-Equal -Expected $baseNames -Actual (@($entries | ForEach-Object { $_.Name }) -join ',') -Because '手拼的 PodCommon 没有这个成员 = 不写'
+    foreach ($good in @('enforce', 'warn')) {
+        $entries = Get-ClientEntryNodeBaseEnv -PodCommon (New-ClientEntryPodCommon @common -OpenFileLimitMode $good) -RpcPort 20000
+        $mode = @($entries | Where-Object { $_.Name -eq $OpenFileLimitEnvName })
+        Assert-Equal -Expected 1 -Actual $mode.Count -Because "${good}:写且只写一次"
+        Assert-True -Condition ([string]$mode[0].Value -ceq $good) -Because "${good}:值原样写出(实际 '$($mode[0].Value)')"
+    }
+    foreach ($bad in @('WARN', 'Enforce', 'off', ' warn')) {
+        $message = ''
+        try { Get-ClientEntryNodeBaseEnv -PodCommon (New-ClientEntryPodCommon @common -OpenFileLimitMode $bad) -RpcPort 20000 | Out-Null } catch { $message = $_.Exception.Message }
+        Assert-Match -Text $message -Pattern 'OpenFileLimitMode 只收小写' -Because "'$bad' 必须在渲染时 throw:C++ 只认小写,其余值会被进程静默当成 enforce"
+    }
 }
 
 exit (Complete-TestRun -SuiteName "k8s_deploy contract")

@@ -184,8 +184,8 @@ docker exec redis redis-cli --no-raw GET "player:${P}:location"   # 二进制,�
 |---|---|---|
 | `[ZoneTravel] rejected: bad target zone` / `… scene_config_id is not a world map` / `… in battle` / `… in team` / `… scene change busy` | 同步拒绝,未改状态 | :1459 / :1475 / :1485 / :1495 / :1506 |
 | `[ZoneTravel] handoff started for player <P> target_zone=<Z> (cross-zone)`(同 zone 为 `(same-zone cross-node)`)| 已冻结、已发起存盘 | :1602 |
-| `[SavePlayerToRedis] Player <P> saved to Redis, DB write tasks enqueued (topic=db_task_zone_<home>, home_zone=<home>, owner_epoch=<E>, save_seq=<S>)` | 存盘已发;**topic 必须是 home_zone 的**,访客区也一样(CZ-2)。(2026-10-17,R7;已落码,未编译、未测试,待 Codex 验证)只在两条 DBTask 都同步入队时才打,且只说明进了 librdkafka 本地队列、不等于 acks=all。**发送失败时这一行不出现**,改为依次出现 ERROR `[SavePlayerToRedis] Kafka send failed: player=<P> topic=… err=…`、汇总 ERROR `[SavePlayerToRedis] player <P>: not every DB write task was queued to Kafka (topic=…); … (metric=db_task_produce_rejected)`,再加 INFO `[SavePlayerToRedis] Player <P> saved to Redis, DB write tasks NOT all queued (see the ERROR above) (topic=…, owner_epoch=<E>, save_seq=<S>)`;看到这几行就按"发送失败"记录,不要拿 `NOT all queued` 那行当作存盘已发。核对 home_zone 的 topic 时 `NOT all queued` 那行同样带 `topic=` | `SavePlayerToRedisImpl` 末尾(`publishDbTasks`)、`constants/player.h` 的 `GetDbTaskTopic` |
-| `HandlePlayerAsyncSaved: Saving complete for player: <P>` | 存盘落地 | :339 |
+| `[SavePlayerToRedis] Player <P> saved to Redis, DB write tasks enqueued (topic=db_task_zone_<home>, home_zone=<home>, owner_epoch=<E>, save_seq=<S>)` | 存盘已发;**topic 必须是 home_zone 的**,访客区也一样(CZ-2)。(2026-10-17,R7;已落码,未编译、未测试,待 Codex 验证)只在两条 DBTask 都同步入队时才打,且只说明进了 librdkafka 本地队列、不等于 acks=all。**发送失败时这一行不出现**,改为依次出现 ERROR `[SavePlayerToRedis] Kafka send failed: player=<P> topic=… err=…`、汇总 ERROR `[SavePlayerToRedis] player <P>: not every DB write task was queued to Kafka (topic=…); … (metric=db_task_produce_rejected)`,再加 INFO `[SavePlayerToRedis] Player <P> saved to Redis, DB write tasks NOT all queued (see the ERROR above) (topic=…, owner_epoch=<E>, save_seq=<S>)`;看到这几行就按"发送失败"记录,不要拿 `NOT all queued` 那行当作存盘已发。核对 home_zone 的 topic 时 `NOT all queued` 那行同样带 `topic=`。**(2026-10-20 更正,已落码,未编译、未测试)**:成功这行降为 DEBUG,本地默认 INFO 看不到,取证见 §3.1 第 7 条;`NOT all queued` 那行 INFO 已删,发送失败只剩上面两种 ERROR,汇总 ERROR 现在带 `topic=` / `home_zone=` / `owner_epoch=` / `save_seq=`,核对 topic 改看它 | `SavePlayerToRedisImpl` 末尾(`publishDbTasks`)、`constants/player.h` 的 `GetDbTaskTopic` |
+| `HandlePlayerAsyncSaved: Saving complete for player: <P>` | 存盘落地。**(2026-10-20)降为 DEBUG**,本地默认 INFO 看不到,调级方法与替代证据见 §3.1 第 7 条 | :339(行号已漂,在 `HandlePlayerAsyncSaved` 开头) |
 | `[ZoneTravel] requested EnterScene for player <P> target_zone=…` | 标记已写、EnterScene 已发 | :1884 |
 | `[ZoneTravel] handoff granted for player <P> -> gate <ip>:<port>; destroying source-side entity` + `[travel_redirect] local entity for player <P> destroyed without persisting (ownership handed over)` | 跨 zone 放行,源实体销毁 | :2126、:1405 |
 | `[ZoneTravel] same-zone handoff granted for player <P>: owner_epoch <E> -> <E'> (<ownership>); destroying source-side entity` + `[scene_handoff_granted] …` | 同 zone 跨节点放行。GO-2 起 `<E'>` 后多了 `(<ownership>)`(`travel_outcome::OwnershipName`,放行一支取 `moved_elsewhere` / `returned_to_self` / `location_unknown`),整行比对要带上 | `JudgeTravelOutcomeReply` |
@@ -386,6 +386,11 @@ gate 收到 RoutePlayerEvent 后,先判断"这条 scene 链路是否已连上**�
    - Go:`run\logs\go_services\<instanceKey>.stdout.log` / `.stderr.log`(`go_services.ps1:574-575`)。
    - instanceKey:`z1_scene`(单实例)/ `z1_scene_1`、`z1_scene_2`(多实例),`z1_scene_manager`、`z2_db` …;PID 在 `run\pids\cpp_nodes.pid.json`、`run\pids\go_services.pid.json`。
 6. **第一条腿打在哪个 scene_manager 上拿不准**:scene 选 scene_manager 是 `player_id % 已发现的 SM 数`(`cpp/libs/engine/core/network/node_utils.cpp:15-35`),没有按 zone 过滤;scene 是否只发现本 zone 的 SM **未核对**。所以找第一条腿的日志 / 指标时,**两个 zone 的 scene_manager 都要看**。
+7. **(2026-10-20)存盘的两行日志已降为 DEBUG**(已落码,未编译、未测试,待 Codex 验证):`[SavePlayerToRedis] Player <P> saved to Redis, DB write tasks enqueued (…)` 与 `HandlePlayerAsyncSaved: Saving complete for player: <P>` 从 INFO 降为 DEBUG(每次真写盘都打两条,会把 INFO 刷满)。没全入队时,原先跟在汇总 ERROR 后面的 INFO `… DB write tasks NOT all queued (see the ERROR above) …` 已删,只剩逐条 ERROR `[SavePlayerToRedis] Kafka send failed: …` 与汇总 ERROR `… not every DB write task was queued to Kafka (topic=…, home_zone=…, owner_epoch=…, save_seq=…); …`。本地 `bin/etc/base_deploy_config.yaml` 默认 `LogLevel: 2` 是 INFO,看不到这两行。本文凡是拿它们取证的期望(§2.4 两行、场景 A / B / C / E / F / Z 等处的 `Saving complete` 与 `DB write tasks enqueued`),二选一:
+   - **调级(推荐;B3a 的 GO-2 验收点第 6 条要看强制存盘那行的 `owner_epoch=<E+2>`)**:跑本 runbook 前**临时**把 `LogLevel` 改成 `1` 再启动 C++ 节点;测完还原,**不要提交**。这个数直接按 muduo 的 `Logger::LogLevel` 枚举解释(`0=TRACE 1=DEBUG 2=INFO 3=WARN 4=ERROR 5=FATAL`,`node.cpp` 的 `InitLogSystem` 直接强转),同文件注释里「0=DEBUG,1=INFO,2=WARN…」的对照是错的。只在启动时读一次,改完要重启节点;本机所有 C++ 节点共用这一份文件,gate / battle 也会一起变成 DEBUG,日志量明显变大,只在演练时开。
+   - **不调级时的替代证据**:
+     - **存盘已发、topic 是 home_zone 的**:存盘前后各读一次两个 zone 的 `db_task_zone_<N>` 的 broker end offset(`kafka-get-offsets.sh --time -1`,做法同 [分区契约文档](../design/db-task-kafka-partition-contract.md)冷读冒烟第 2 步),只有 home_zone 那个增长;Kafka 被 pause 的场景等 unpause 之后再读。发送失败看上面两种 ERROR,以及 30s 一次、有变化才打的 `[DbTaskDispatch] produce_rejected=…` 是否增长。落库以 db 侧日志为准(如 B3a 第 6 条的 `owner-epoch advance … taskEpoch=<E+2>`)。
+     - **存盘落地**:交接链上 `[ZoneTravel] requested EnterScene` 只在存盘落地回调之后才发,可代替它前面的 `Saving complete`;退出链上 `Player marked for unregistration`(同样在落地回调里打)同理。「之后还会被周期存盘」这类期望改看 30s 一次的 `[DirtySave] total=… skipped=…`:两次之间 `total − skipped` 的增量就是真写盘次数(进程级,不分玩家)。
 
 ### 3.2 注入工具箱
 
@@ -554,6 +559,7 @@ cd robot
 - **注入**:`'\[travel-smoke\] at home' = { docker pause kafka }`(KF-PAUSE),不动 Redis。**保持 pause 到 robot 退出之后**(robot 打出 `TRAVEL_SMOKE_FAIL` 时源端必已取证完),先按下面核对,再 `docker unpause kafka`;提前 unpause 就滑进 B3c。
 - **期望(scene_manager,第一条腿;落在哪个 SM 上不确定,G9,两个 zone 的都要看)**:`Cross-zone detected: … place=true mint=true` →(约 5s,Kafka 写超时)`Failed to push redirect to gate (placed=true), rolling back location/epoch: …` → `[RouteRollback] outcome=rolled_back mode=bump player=<P> epoch=<E+1>-><E+2> receipt="<E>:<t>" forwarded="<E+2>:<t>"`。**没有** `Cross-zone handoff released`。指标:`scene_manager_enter_scene_rollback_total{outcome="rolled_back"}` +1,其余 outcome 不动。
 - **期望(scene z1,按序)**:`handoff started … (cross-zone)` → `Saving complete` → `requested EnterScene … corr=<N>` →(约 5–8s 后)`[ZoneTravel] EnterScene rejected for player <P> code=7 msg=redirect to gate failed: … owner_epoch_after_rollback=<E+2> corr=<N> correlated=1` → WARN `[ZoneTravel][RollbackAdopt] player <P> handoff was rolled back to this node (receipt=<E>:<t>, scene_manager rejected, evidence=failed): owner_epoch <E> -> <E+2>; adopting and unfreezing (metric=rolled_back_adopted)` → `[ZoneTravel] handoff aborted for player <P>: scene_manager rejected; unfreezing and keeping player on this node` → `[SavePlayerToRedis] Player <P> saved to Redis, DB write tasks enqueued (topic=db_task_zone_1, owner_epoch=<E+2>)` → `HandlePlayerAsyncSaved: Saving complete for player: <P>`。
+  - **(2026-10-20 更正)**:序列里的两个 `Saving complete` 与 `DB write tasks enqueued` 已降为 DEBUG,本场景请按 §3.1 第 7 条把 `LogLevel` 调到 `1` 再跑。不调级时:第一个 `Saving complete` 以紧随其后的 `requested EnterScene … corr=<N>` 为凭;采纳之后的强制存盘以下面第 6 条的 db 侧 `owner-epoch advance … taskEpoch=<E+2>`(unpause 之后)和 `db_task_zone_1` 的 end offset 在 unpause 后增长为凭,`owner_epoch=<E+2>` 本身以采纳行的 `-> <E+2>` 与第 3 条的 `GET player:${P}:owner_epoch` 为凭。
   - **应答丢失的形态**(docker pause 下 kafka-go 的元数据查询不受 5s 写超时约束,可能拖过 zrpc 的 8s 服务端超时;同样算对):没有 `EnterScene rejected` 行,先是 `[ZoneTravel] handoff EnterScene transport failure … outcome unknown …`(gRPC deadline 10s,只记日志),`requested EnterScene` 之后约 30s 才出现 `[RollbackAdopt] … (receipt=<E>:<t>, EnterScene reply timed out, evidence=no_reply): …`,随后的 abort reason 是 `EnterScene reply timed out`。回滚已执行、源端还没取证的这段时间里,`GET player:${P}:handoff` 读到的是转写标记 `"<E+2>:<t>"`。
   - `[TravelHandoff]` 增量:`started+1 started_cross_zone+1 rolled_back_adopted+1 aborted+1`(应答丢失的形态另有 `reply_watchdog_fired+1`);`granted` / `granted_without_reply` / `granted_client_reset` / `mark_sent_destroyed` / `returned_after_grant` / `rollback_receipt_anomaly` **不变**;`frozen_ms_max` ≈ 5000–8000(应答丢失时 ≈ 30000)。
 - **期望(robot)**:`TRAVEL_SMOKE_FAIL step=travel-out reason=…受理后失败 SendTipToClient tip=3027…`(这条路径上文案里的"scene 已解冻"是对的);**不出现** `kicked by server`。Kafka 仍暂停时 robot cleanup 的 LeaveGame 可能超时,属预期噪声。
@@ -563,7 +569,7 @@ cd robot
   3. **epoch 多 2**:采纳行里是 `owner_epoch <E> -> <E+2>`;`GET player:${P}:owner_epoch` = `$E+2`(铸造 +1、回滚再 +1)。读到 `$E` = scene_manager 是 GO-2 之前的二进制;读到 `$E+1` = 回滚没执行,按 B3b 判。
   4. **location 带回执**:旁路采样(或 Unity 下直查)里,回滚之后的 `--no-raw GET player:${P}:location` 输出含本次标记原文 `<E>:<t>` 这串字符。采不到时以第 1 条的日志为准(采纳行只有在取证脚本读到这份回执时才会打)。
   5. **转写标记已被取证脚本删掉**:采纳之后、玩家退出之前,`GET player:${P}:handoff` 为 nil —— 既不是原标记 `"<E>:<t>"`,也不是转写标记 `"<E+2>:<t>"`。robot 退出后键重新出现为 `"<E+2>:<t'>"`(`<t'>` ≠ `<t>`,对应源 scene 的 `[ExitRelease] mark written player=<P> mark=<E+2>:<t'> site=exit_release`)是 A1′,不是没删掉;这行 `mark written` 本身也是旁证 —— A1′ 是按 owner_epoch 条件写的,写成功说明实体缓存的 epoch 已是 E+2。**读到的恰是 `"<E+2>:<t>"`(毫秒与原标记相同)才是转写标记残留**,保留证据。
-  6. **强制存盘与落库**:采纳之后有 `[SavePlayerToRedis] … owner_epoch=<E+2>`;全程无 `HandlePlayerSaveRejected`、无 `[OwnerEpoch]` 行。unpause 之后 db(z1)出现 `owner-epoch advance: key=<P> … taskEpoch=<E+2> appliedEpoch=<E>`,`db_owner_epoch_guard_total{outcome="advance"}` 有增量(每个 msgType 各记一次,**首跑核对**),`{outcome="stale"}` 与 `db_stale_owner_write_rejected_total` 不动。
+  6. **强制存盘与落库**:采纳之后有 `[SavePlayerToRedis] … owner_epoch=<E+2>`(2026-10-20 起是 DEBUG,看不到时按上面「2026-10-20 更正」取证);全程无 `HandlePlayerSaveRejected`、无 `[OwnerEpoch]` 行。unpause 之后 db(z1)出现 `owner-epoch advance: key=<P> … taskEpoch=<E+2> appliedEpoch=<E>`,`db_owner_epoch_guard_total{outcome="advance"}` 有增量(每个 msgType 各记一次,**首跑核对**),`{outcome="stale"}` 与 `db_stale_owner_write_rejected_total` 不动。
   7. **玩家还在原地、能动**:Unity 客户端下收到失败提示后仍能移动 / 操作(不是哑连接);robot 下以 cleanup 之后源 scene 走完正常退出链(`HandleExitGameNode: Player <P> is exiting the scene node (cause=…)` → `Destroying player: <P>`)为旁证。恢复后基线重跑 OK,金币 = 本轮出发值(没回档,也没重复加)。
 - **判读(出现下面的形态时)**:
   - scene_manager 是 `outcome=marker_gone`、scene 是 `… was granted although … (moved_elsewhere)` + `[ZoneTravel][ClientReset]`:回滚晚于源端取证(Kafka 写卡过了 30s 看门狗)。结局自洽(不解冻、踢回重登),记为"未命中 B3a",如实记录回滚与取证的先后。
@@ -815,7 +821,7 @@ Z1 = 真写盘的正常断线退出不销毁实体(僵尸)。**必须先用修�
 - **重登**:30s 内同一节点重登 → `[ExitRelease][InheritClear] player=<P> epoch=<E> result=inherit_deleted_exact` → `HandlePlayerAsyncLoaded: Loading player <P>`(从 Redis 重载,不再复用旧实体)→ handoff 键为 nil;金币 = 退出前的值。
 - **通过标准**:✅ Z-pre 出现 `ignoring stale UnregisterPlayer` 且无 `Destroying`;✅ Z-post 出现 `Destroying player` 与 `[ExitRelease] mark written`;✅ Z-post 全程**不出现** `ignoring stale UnregisterPlayer`(出现 = 跑的是旧二进制)与 `superseded by a newer session`;✅ 重登后数据不回档。
 - **v2.9 补充观测点(2026-10-20,静态核对 HEAD `c35e1133d`)**:混版本持久字段保护落地后,退出存盘多了一个出口。persist schema 在 enforce 模式下拒存时,不再走 Z1 的"收敛才销毁",而是直接不存盘销毁(`HandlePlayerSaveSchemaRejected`)。日志依次为 ERROR `[PersistSchema] save refused: the loaded data is older than the recorded schema generation … exiting=1 …` 和 WARN `[exit_save_refused_persist_schema] local entity for player <P> destroyed without persisting (local state abandoned)`。
-  - Z-post 里出现这两行,说明这名玩家本次会话的进度没有落盘。这不算 Z1 修复失败,要单独记录,并核对屏障世代的来源。
+  - Z-post 里出现这两行,说明这名玩家本次会话的进度没有落盘。这不算 Z1 修复失败,要单独记录,并核对屏障世代的来源。*(2026-10-22 补)* 这条出口不写 A1′:没有 `[ExitRelease] mark written`,handoff 键为 nil,重登读到的是上次落盘的数据,也就是回到本次会话之前。对这名玩家,Z-post 的这两条通过标准不适用。这条出口只在 `PersistSchemaRegressionMode=enforce` 时可达;`bin/etc/base_deploy_config.yaml` 默认是 `warn`,warn 下看到的是 ERROR `[PersistSchema] save committed although the loaded data is older than the recorded schema generation …`,照写、不销毁,不影响 Z1 判据。
   - 若交接还没写标记,同一拒存会走 `AbortTravelHandoff`,原因串是 `handoff save refused by persist schema regression check`。这是交接的新中止来源,B 类场景里看到它也要记下。
 - **附加(可选)**:`SCENE_EXIT_RELEASE_MARK=0` 启动 scene 重做 Z-post → 开关日志 `[ExitRelease] SCENE_EXIT_RELEASE_MARK=0 -> off`,仍有 `Destroying player`,汇总行 `skip_disabled` +1,**没有** handoff 键(Z1 修复与 A1′ 相互独立)。M1 注入:R-PAUSE 撑住退出存盘时让另一个仍在线的会话 / GM 对该玩家发背包操作 → `exit_client_msg_rejected` +1;战斗结算期间退出 → 结算走离线暂存、不销账。
 
@@ -1029,6 +1035,8 @@ Z1 = 真写盘的正常断线退出不销毁实体(僵尸)。**必须先用修�
 | D-2(**修复已落码 2026-09-28,未编译未验证**;场景 **H** 即验证)| 冻结没有服务端上限:Redis 不可用时 `ResolveTravelOutcome` 无限重挂 30s 看门狗,玩家只能靠断线("退出优先")脱身。修法:70s 单调时钟硬上限(`EnforceTravelFreezeCaps`,1s 扫描)+ 35s 晚发闸 +「SET 已发出」统一收口为 tip + 踢线 34 + 不存盘销毁(`ConcludeHandoffAfterMarkSent`)+ 两道看门狗按单调时钟复核 + 快路径补查未落地存盘;设计文档「交接冻结硬上限 + 晚发闸 +『标记已发出』统一收口」一节 | `ResolveTravelOutcome` / `JudgeTravelOutcomeReply` 的三处重挂(Redis 未连接 / 取证脚本失败或应答形状不对 / 命令发不出去)与取证 EVAL 发出后不挂定时器(GO-2 之前是 `DEL`+`MGET` 两条命令,同样不挂),现由 `player_lifecycle.cpp` `EnforceTravelFreezeCaps` 封顶 | **H**(F3 在 robot 下由退出优先先收尾,不打到上限)|
 | GO-3(**本轮不落**,需用户拍板;设计见设计文档 §12.3 GO-3 行)| 死节点的 node_id 被新进程复用后,属主接管永不触发:C++ 节点启动时取全局最小空号(`node_allocator.cpp` `AcquireNode`),死节点租约一到期它的号就能被新进程拿走;scene_manager 的注册表镜像只按 (zone, node_id) 记,同号新进程一注册,`playerLocationOwnerDead` 就恒为假 → 请求回 18(解析到别的节点时),或被派给同号的新进程(解析回原节点时,不铸造)。性质是活性问题(回可重试的 18,不引入数据风险;玩家断线约 31s 不重登时,player_locator 的断线租约到期会 `LeaveScene` 删掉遗留 location,真正卡住的是间隔 <30s 持续重试的客户端,见设计文档 §12.3 GO-3 行)。推迟原因:根治方案的设计残余 R1 —— 滞留在 Kafka / gate 里的路由事件可能在同号新进程注册之后才投递,让一个健康的活进程在没发 handoff SET 的情况下被判"已替换"而丢掉归属,违反交接不变量;根治要改 C++ 与路由协议 | `enterscenelogic.go` `playerLocationOwnerDead`、`load_reporter.go` 注册表镜像 | 场景 A / E / E2 / SE 的"补节点":备用节点一律在死节点租约到期**之前**起 |
 
+**覆盖缺口(v2.9,2026-10-22 补记)**:没有任何场景专门制造交接快路径的强制存盘分支,即 `[ZoneTravel] handoff of player <P> matches its last persisted snapshot but still has an unsettled save; forcing a real save before writing the handoff mark`(计数 `handoff_fastpath_forced`)。H2 遇到它判 SKIP,F1 只附注它可能出现;C++ 单测宿主里 `HasUnsettledPlayerSave` 恒为 false,也覆盖不到。帮会资产通道 C6 的正确性依赖这一支(`docs/design/guild-phase2/04-asset-channel.md` C6 行)。可以补的场景形态是:让一名有存盘在 Redis 退避重试中的玩家发起交接,期望 `handoff_fastpath_forced` +1,且 handoff 标记写在这次强制存盘落地之后。
+
 **已接受的残余(v2.5,冻结上限带来的;不计入通过,遇到如实记录)**
 
 | # | 残余 | 现象 / 对应场景 |
@@ -1194,20 +1202,24 @@ Go 侧的两条(`DbStaleOwnerWriteRejected`、`DbOwnerEpochLegacyZero`)是可部
 
 ## Changelog
 
+- **2026-10-20(存盘日志降级,不单独升版本,与同日 v2.9 是两条独立改动)**:`player_lifecycle.cpp` 的 `DB write tasks enqueued` 与 `Saving complete` 从 INFO 降为 DEBUG,`NOT all queued` 那行 INFO 删掉、字段并进汇总 ERROR(已落码,未编译、未测试)。新增 §3.1 第 7 条(调级方法与不调级时的替代证据),§2.4 两行与场景 B3a 加了指向注;其余场景的 `Saving complete` 引用统一按 §3.1 第 7 条处理,正文不逐处改。
 - **2026-10-20 v2.9**(只读核对 + 文档订正;没有实跑任何场景):
   - **补登 10-18 两次未登记的正文改动**。两次都没升版本、没记 Changelog,这里补上:
     - `e7bb46070` 改了四处:
       - `watchdog_early_fire` 的含义:muduo 定时器 10-16 起按单调时钟到期,这个计数应恒为 0;
-      - `[SavePlayerToRedis] … saved to Redis …` 的原文多了 `home_zone=` 和 `save_seq=`;
+      - `[SavePlayerToRedis] … saved to Redis …` 的原文多了 `home_zone=` 和 `save_seq=`,并补了 R7 发送失败的判读:这一行只在两条 DBTask 都同步入队时才打,发送失败时改为依次出现 ERROR `[SavePlayerToRedis] Kafka send failed…`、汇总 ERROR、INFO `… NOT all queued …`;出处列改为按函数名(*2026-10-22 补*);
       - 晚发闸 / 看门狗两行的说明随之改写;
       - FC-1(墙钟回拨推迟上限)划掉。
-    - `8b9592de3` 改了两处:
-      - 不存盘销毁的日志尾巴从 `(ownership moved away)` 改为 `(local state abandoned)`;
-      - `SceneManager.EnterScene error` 一行的说明改为"每次调用完成回调先分发应答、后打这一行"(2026-10-17 契约勘误)。
+    - `8b9592de3` 改了三类(*2026-10-22 补全*):
+      - 不存盘销毁的日志尾巴从 `(ownership moved away)` 改为 `(local state abandoned)`,共 6 处;
+      - §2.4 transport failure 行与 §3.2 K-SM 行按 2026-10-17 契约改为"每次调用回调";
+      - `SceneManager.EnterScene error` 一行的说明改为"每次调用完成回调先分发应答、后打这一行"(同一次契约勘误)。
   - **验证状态**:
     - 单测已绿,但跑的是合并前的源码:`cross_zone_test` 313/313、`routing_identity_test` 113/113、`go/scene_manager` 与 `go/login` 全量单测。出处与"HEAD 本身未构建"的限定见设计文档 §13 开头的 2026-10-20 回填。
     - 本文所有故障场景(A–F、B3a–d、H、SE / SE2、V、Z、R、E2)仍**没有任何实跑记录**,§7 的结果模板没填过。
     - 唯一的实跑是 PROGRESS「2026-10-17 附件/交易到账与 SQL 围栏双区闭环补验」里的严格交接往返 1/1(robot,1 区 → 2 区 → 回家,`AllowUnsafeCrossNodeHandoff` 未开)。它只相当于 §3.3 基线里 robot 那一半,§3.3 要求核对的日志序列(z2 存盘 topic、每腿 epoch +1、各 `[TravelHandoff]` 计数为 0 等)没有记录,**不能记成基线 PASS**。
+    - *2026-10-22 补*:之后又有回执——10-20 在 `206647611` 上 `game.sln` 全量构建退出 0(只跑定向用例);10-22 的 29 个 C++ 测试 EXE 共 2624 PASS(`cross_zone_test` 339/339、`routing_identity_test` 140/140)、`go/scene_manager` 742/0/0、`go/login` 1000 过,Unity `CityTravelRequestTests` 27/27、`GateTcpClientLifecycleTests` 10/10。出处见设计文档 §13 开头的回填。本文的故障场景仍零实跑。
+    - *2026-10-22 补*:scene_manager 同日新落两处代码(未编译):同一 etcd 键换 zone 时旧 zone 身份按 DELETE 收尾,这时会写旧 zone 的 death_at、记本地消失时刻,换 zone 那条 ERROR 的尾巴改为 `the old zone identity is retired like a DELETE …`;推迟摘除放弃后主动请求 fullSync,随后出现 INFO `[LoadReporter] resync requested (leadership change or abandoned deferred detach)`。
   - **场景 Z**:补了混版本持久字段保护带来的新出口的观测点,见场景 Z 通过标准之后的"v2.9 补充观测点"。
   - **§0**:两处已漂移的行号,改为按注释原文 grep。
   - **场景 H**:还是只能用 Unity 客户端跑。robot travel-smoke 的单跳预算仍写死为 60s;改成可配置且 ≥75s 归 robot 属主,该文件目前有别的会话在途改动。

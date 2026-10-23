@@ -216,6 +216,11 @@ C++ 发送路径；**以后若加「从 yaml 透传 librdkafka 参数」的能�
    再打 INFO `saved to Redis, DB write tasks NOT all queued (see the ERROR above)`，不再出现 `DB write tasks enqueued`。
    全部入队也只说明进了 librdkafka 本地队列、不等于 acks=all，所以第 2 步仍以 Kafka 侧的 end offset 与抽样复核为准，不变。
    已落码，未编译、未测试，待 Codex 验证。
+   **2026-10-20 更正（存盘日志降级）**：成功那行 `saved to Redis, DB write tasks enqueued` 与 `HandlePlayerAsyncSaved: Saving complete` 已从 INFO 降为 DEBUG
+   （每次真写盘都打两条，会把 INFO 刷满）；没全入队时那行 INFO `DB write tasks NOT all queued (see the ERROR above)` 已删，只剩逐条 ERROR `Kafka send failed`
+   与汇总 ERROR `not every DB write task was queued to Kafka (topic=…, home_zone=…, owner_epoch=…, save_seq=…)`，原 INFO 里的字段并进了汇总 ERROR。
+   本地 `bin/etc/base_deploy_config.yaml` 默认 `LogLevel: 2`（muduo 枚举，2=INFO、1=DEBUG），要看成功那行须临时调到 `1` 并重启 scene。
+   第 2 步本来就以 Kafka 侧 end offset 为准，判据不变。已落码，未编译、未测试，待 Codex 验证。
 
 ---
 
@@ -283,7 +288,7 @@ C++ 发送路径；**以后若加「从 yaml 透传 librdkafka 参数」的能�
 
 1. 优雅停掉 go/db；robot 登录、改状态、下线。
 2. **在 Kafka 侧确认写 W 已到 broker**：登出前记下该玩家所在分区 p = `DBTaskPartition(key, N)` 的 end offset（`kafka-get-offsets.sh --time -1`）；
-   登出、看到存盘日志后确认这个 end offset 增长了；再用 console consumer `--partition p --offset <旧 end>` 抽到 key=<id>、op=write 的那条
+   登出、看到存盘日志后确认这个 end offset 增长了（2026-10-20 起存盘日志是 DEBUG，scene 不调到 `LogLevel: 1` 时不等日志，直接按 end offset 增长判断）；再用 console consumer `--partition p --offset <旧 end>` 抽到 key=<id>、op=write 的那条
    （复用上面的抽样复核器解析）；同时确认该玩家没有 "Kafka send failed" 日志。以上都满足才允许删键。
 3. 从父键解出 W 的 `test_seq`；删掉父键与两个子表键（父键见 login dataloader `go/login/internal/logic/pkg/dataloader/data_loader.go` 的 `buildParentKey`，子表键见 `go/db/internal/kafka/key_ordered_consumer.go` 的 `buildCacheKey`，格式 `{MsgType}:{key}`），不要删 `consumer:applied*` 键。
 4. robot 再次登录（login 日志出现 "LoadSync: sending … DB read tasks"），2 秒内拉起 go/db。

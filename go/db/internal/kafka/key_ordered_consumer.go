@@ -1277,6 +1277,9 @@ func NewKeyOrderedKafkaConsumer(
 	// 读方门禁的两半:逐条选库 / 复核用的读(所有 worker 共用同一个 placementRouter),与进程级就绪闸。
 	c.placement.ready = routeReader
 	c.routeGate = routeGate
+	// 落点选库与按需开库的计数器以 0 建出全部序列(封闭 label 集合):「出现一次就报」的告警用 increase(),序列从无到 1
+	// 时会漏掉第一次(deploy/k8s/player-placement-alerts.yaml)。go/db 的消费者一律按落点选库,装配到这里即启用。
+	metrics.PrimePlacement()
 	for i := int32(0); i < cfg.ServerConfig.Kafka.PartitionCnt; i++ {
 		c.workers[i] = c.buildWorker(i)
 	}
@@ -2362,7 +2365,10 @@ func (w *worker) handleTask(task *workerTask, isOfflineExpand bool) {
 		}
 		// 存储不可用(L-04)时每条任务都会失败一次,逐条 ERROR 会刷屏;由 deferFailedTask 按原因限速记录。
 		// 世代超前(C1)同理:go/db 回滚或违反发布顺序时同一 key 的每次存盘都会走到这里。
-		if !logsAsStoreOutage(err) && !errors.Is(err, errSchemaTooNew) {
+		// 复核时副本不可信(errRouteNotReady,包在 errPlacementMoved 里)同理:Redis 重启 / 切主 / 标记被撤期间已派进 worker
+		// 的每条任务都会走到这里;逐条不打 ERROR(重试来源的在 deferFailedTask 打 DEBUG),汇总由 confirm 里的 noteRouteNotReady
+		// 每分钟一条 INFO。
+		if !logsAsStoreOutage(err) && !errors.Is(err, errSchemaTooNew) && !errors.Is(err, errRouteNotReady) {
 			logx.Errorf("worker process task failed: partition=%d, cost=%v, err=%v",
 				w.partition, time.Since(startTime), err)
 		}
@@ -2578,7 +2584,9 @@ func (h *consumerGroupHandler) ConsumeClaim(session sarama.ConsumerGroupSession,
 		}
 		// 读方就绪闸(route_ready_gate.go,D1 第 3 批):闸关着时 messages 为 nil(这一路永不就绪 = 不取新消息、不 track、
 		// 不派发,位点停在已完成的前缀,消息留在 Kafka),等 recheck(下一次刷新完成)醒来再判;其余各路照常,停机、再平衡、
-		// 交接让出与失败收尾都不受影响。闸为 nil(开关关着)时 messages 恒为 claim.Messages()、recheck 恒为 nil。
+		// 交接让出与失败收尾都不受影响。闸放行时 recheck 也是刷新通道:刷新把闸关上时 select 立即醒来、回到循环顶停在闸前,
+		// 空闲分区上等消息的 claim 不会在闸关之后漏取下一条;代价是每个 claim 每个刷新间隔空转一圈(见 gatedMessages)。
+		// 闸为 nil(开关关着)时 messages 恒为 claim.Messages()、recheck 恒为 nil。
 		messages, recheck := h.consumer.gatedMessages(claim)
 		select {
 		case <-recheck:

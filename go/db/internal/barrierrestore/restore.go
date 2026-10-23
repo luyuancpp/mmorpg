@@ -218,7 +218,7 @@ func (r Restorer) prepareOne(ctx context.Context, p Plan, id string) (Player, er
 		}
 		row.Target = savebarrier.Version(n, 1)
 	}
-	if err := r.inspect(ctx, p, row, false, row.Original == row.Target, schemaFloor(rows)); err != nil {
+	if err := r.inspect(ctx, p, row, false, row.Original == row.Target, restoredSchemaGen(rows)); err != nil {
 		return Player{}, err
 	}
 	return row, nil
@@ -264,7 +264,7 @@ func (r Restorer) ApplyOne(ctx context.Context, p Plan, index int) error {
 	if err := match(row, current); err != nil {
 		return err
 	}
-	if err := r.inspect(ctx, p, row, false, savebarrier.Version(current[0].epoch, current[0].seq) == row.Target, schemaFloor(current)); err != nil {
+	if err := r.inspect(ctx, p, row, false, savebarrier.Version(current[0].epoch, current[0].seq) == row.Target, restoredSchemaGen(current)); err != nil {
 		return err
 	}
 	if savebarrier.Version(current[0].epoch, current[0].seq) != row.Target {
@@ -300,7 +300,7 @@ func (r Restorer) ApplyOne(ctx context.Context, p Plan, index int) error {
 			return errors.New("已提交围栏在重锁期间改变")
 		}
 	}
-	if err := r.inspect(ctx, p, row, true, true, schemaFloor(current)); err != nil {
+	if err := r.inspect(ctx, p, row, true, true, restoredSchemaGen(current)); err != nil {
 		return err
 	}
 	// 本事务只有锁定读。Redis 已确认真实提交的 SQL，结束读事务不改变资产结局。
@@ -313,16 +313,23 @@ type sqlRow struct {
 	digest     string
 }
 
-// 恢复的是保守上界而非玩家加载世代：取同一事务已点锁两行的最大戳，未盖戳0按1。
-// 世代仍来自SQL原件且纳入原全列摘要；它不进入可编辑计划，也不修改SQL列。
-func schemaFloor(rows [2]sqlRow) uint32 {
-	floor := uint32(1)
+// 恢复以 SQL 为准，屏障 hash 的 schema_gen 写成恢复之后玩家实际会加载到的数据的世代：同一事务已点锁两行的
+// 最小戳，未盖戳 0 按 1。与 scene C3、login C4 的"加载世代 = 两表戳最小值"同一口径
+// (docs/design/mixed-version-persist-field-protection.md §3.3、§13 第 8 条)：取最大值的话，两行戳不同(单表进过死信)
+// 时冷加载出的数据加载世代低于 hash，恢复后的第一次进游戏与存盘都会被判倒退，enforce 下这名玩家既进不来也存不了。
+// 世代仍来自 SQL 原件且纳入原全列摘要；它不进入可编辑计划，也不修改 SQL 列。
+func restoredSchemaGen(rows [2]sqlRow) uint32 {
+	gen := uint32(0)
 	for _, row := range rows {
-		if row.schemaGen > floor {
-			floor = row.schemaGen
+		effective := row.schemaGen
+		if effective == 0 {
+			effective = 1
+		}
+		if gen == 0 || effective < gen {
+			gen = effective
 		}
 	}
-	return floor
+	return gen
 }
 
 func readPair(ctx context.Context, tx *sql.Tx, schema, id string) ([2]sqlRow, error) {
@@ -479,7 +486,7 @@ func recoveryKeys(zone uint32, id uint64) []string {
 	return keys
 }
 
-func (r Restorer) inspect(ctx context.Context, p Plan, row Player, publish, committed bool, floor uint32) error {
+func (r Restorer) inspect(ctx context.Context, p Plan, row Player, publish, committed bool, schemaGen uint32) error {
 	id, _ := positive(row.ID)
 	write := "0"
 	if publish {
@@ -496,7 +503,7 @@ func (r Restorer) inspect(ctx context.Context, p Plan, row Player, publish, comm
 		}
 		keys = keys[:72]
 	}
-	n, err := restoreScript.Run(ctx, r.Redis, keys, p.MaintenanceID, row.Owner, row.Target, write, allowExisting, row.HomeZone, row.Placement, strconv.FormatUint(uint64(floor), 10)).Int()
+	n, err := restoreScript.Run(ctx, r.Redis, keys, p.MaintenanceID, row.Owner, row.Target, write, allowExisting, row.HomeZone, row.Placement, strconv.FormatUint(uint64(schemaGen), 10)).Int()
 	if err != nil {
 		return fmt.Errorf("维护屏障检查拒绝: %w", err)
 	}

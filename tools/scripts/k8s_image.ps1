@@ -113,7 +113,14 @@ param(
     # 同名参数,语义见那边参数注释。非 0 才透传。只有 release-all(不带 -SkipInfra)会 apply 共享 Redis;本脚本不部署 Go 服务,
     # 不渲染 WAITAOF,release-zone 给了也只影响入口打印的那一行。追加在末尾,理由同上方"新参数一律追加在末尾"。
     [ValidateRange(0, 3)]
-    [int]$RedisReplicas = 0
+    [int]$RedisReplicas = 0,
+    # B0-4 运维豁免开关(NODE_OPEN_FILE_LIMIT_MODE),透传给 k8s_deploy.ps1 -NodeOpenFileLimitMode,取值语义与 warn 的代价见那边参数注释。
+    # 生效范围:release-zone 改 gate / scene,release-all(不带 -SkipInfra)还有 battle。
+    # 写法同 -GateRouterMode:默认留空 = 不透传,由 k8s_deploy.ps1 接管(留空 = 不写 env、进程按 enforce),非空才透传。
+    # 与 dev_tools.ps1 同一 ValidateSet 且区分大小写:大写或拼错在本脚本入口就拒,不等镜像构建推送完才由下游拒。
+    # 不粘滞:以 warn 运行的环境经本脚本发版却不传,会落回 enforce。追加在末尾,理由同上方"新参数一律追加在末尾"。
+    [ValidateSet("", "enforce", "warn", IgnoreCase = $false)]
+    [string]$NodeOpenFileLimitMode = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -419,6 +426,10 @@ function Invoke-K8sDeploy {
     }
     if (-not [string]::IsNullOrWhiteSpace($GateRouterMode)) {
         $args.GateRouterMode = $GateRouterMode
+    }
+    # B0-4 豁免开关同一口径:留空不传,k8s_deploy.ps1 留空即不写 NODE_OPEN_FILE_LIMIT_MODE。
+    if (-not [string]::IsNullOrWhiteSpace($NodeOpenFileLimitMode)) {
+        $args.NodeOpenFileLimitMode = $NodeOpenFileLimitMode
     }
     # 集群外入口参数同一口径:字符串非空才传,GateNodePortBase 非 -1 才传。
     if (-not [string]::IsNullOrWhiteSpace($ClientEntryMode)) { $args.ClientEntryMode = $ClientEntryMode }

@@ -112,11 +112,13 @@ type Paths struct {
 	PersistSchemaCppHeaderFile string `yaml:"persist_schema_cpp_header_file"`
 	PersistSchemaGoFile        string `yaml:"persist_schema_go_file"`
 
+	// RobotRpcDir 是 robot 类型化调用桩目录(docs/design/client-rpc-callback.md §5.5),生成器整写这一层。
+	RobotRpcDir string `yaml:"robot_rpc_dir"`
+
 	// Unity client output paths.
-	UnityClientDir           string `yaml:"unity_client_dir"`
-	UnityRpcDir              string `yaml:"unity_rpc_dir"`
-	UnityHandlerDir          string `yaml:"unity_handler_dir"`
-	UnityHandlerRegistryFile string `yaml:"unity_handler_registry_file"`
+	// UnityRpcDir 是类型化调用桩目录(docs/design/client-rpc-callback.md §5.3);旧的每消息 Handler 与注册表已退役,不再有对应配置。
+	UnityClientDir string `yaml:"unity_client_dir"`
+	UnityRpcDir    string `yaml:"unity_rpc_dir"`
 
 	// paths from original config
 	EventHandlerSourceDirectory    string `yaml:"event_handler_source_directory"`

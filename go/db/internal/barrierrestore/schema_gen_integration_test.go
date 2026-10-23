@@ -26,10 +26,12 @@ func TestIntegrationBarrierRestoreSchemaGeneration(t *testing.T) {
 		first, second  uint32
 		existing, want string
 	}{
-		{"legacy_zero_floor", 0, 0, "", "1"},
-		{"locked_sql_maximum", 4, 7, "", "7"},
-		{"existing_fourth_field_not_lowered", 4, 7, "9", "9"},
-		{"uint32_maximum_preserved", 4294967295, 1, "", "4294967295"},
+		// 恢复以 SQL 为准:schema_gen = 两行戳最小值(0 按 1),覆盖 hash 里已有的值(混版本持久字段保护 §13 第 8 条)。
+		{"legacy_zero", 0, 0, "", "1"},
+		{"locked_sql_minimum", 4, 7, "", "4"},
+		{"existing_higher_index_overwritten", 4, 7, "9", "4"},
+		{"one_table_unstamped", 0, 7, "", "1"},
+		{"uint32_maximum_preserved", 4294967295, 4294967295, "", "4294967295"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			id, first, second := f.player(t, 8, 90)

@@ -166,7 +166,8 @@ namespace owner_epoch_stats
 // 与 owner_epoch_stats 同一套写法(relaxed atomic、不接 Prometheus;C++ 节点没有 Prometheus 出口),由 core/system/redis.cpp
 // 每 30s 打成一行 [PersistSchema] 日志(有计数才打,级别 WARN)。逐次另有一条带 metric=persist_schema_regression 的日志
 // 供 LogQL 查询(deploy/k8s/README.md「玩家持久 schema 世代」小节)。两项正常都应恒 0:
-//   regression_warned    warn 模式下判定倒退(加载世代 < 屏障记录的世代,或记录值损坏)但照写的次数。非 0 就不能切 enforce。
+//   regression_warned    warn 模式下判定倒退(加载世代 < 屏障记录的世代,或记录值损坏)但照写的写方数(同一写方之后的写入
+//                        还会返回 2,按写方令牌去重只记一次;回包丢失也不会漏)。非 0 就不能切 enforce。
 //   regression_rejected  enforce 模式下判定倒退、拒写的次数。该玩家本次在线进度不落盘。
 namespace persist_schema_stats
 {
@@ -1021,6 +1022,7 @@ public:
 	// 由 MessageAsyncClient::SetSaveSchemaWarnedCallback / SetSaveSchemaRejectedCallback 接线(core/system/redis.cpp)。
 	//
 	// Warned(脚本返回 2,warn 模式):已照写、照常提交,这里只计数 regression_warned 并打一条 metric 日志。
+	// 同一写方被判过倒退后每次写入都会再返回 2(防判定那次回包丢失),按写方令牌去重:当前实体就是 writer 且已报过只打 DEBUG。
 	// 在提交钩子之前同步调用,不得重入存盘。
 	//
 	// Rejected(脚本返回 3,enforce 模式):这份数据被判为截断过,Redis 一个键都没动,也不会有落地回调。
@@ -1029,7 +1031,7 @@ public:
 	//   交接中且标记未发(requestedAtMs=0) → AbortTravelHandoff 解冻回 tip(SET 还没发,解冻安全);
 	//   其余                            → 保留实体、打 ERROR、本次不落盘;之后每次存盘仍会被比较、仍会被拒。
 	// 计数 regression_rejected。
-	static void HandlePlayerSaveSchemaWarned(Guid player_id, const std::string& redisKey);
+	static void HandlePlayerSaveSchemaWarned(Guid player_id, const std::string& redisKey, const std::string& writer);
 	static void HandlePlayerSaveSchemaRejected(Guid player_id, const std::string& redisKey, const std::string& guardExpected);
 
 	// 存盘连续失败达到告警阈值后的通知。底层仍保留最新 payload 继续重试。

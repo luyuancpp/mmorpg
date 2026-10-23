@@ -1522,7 +1522,7 @@ void BattleRoomManager::PumpResultCommits()
         if (!room || !room->resultCommit) { resultRooms_.erase(battleId); continue; }
         const auto instant = turnbattle::ResultCommit::Clock::now();
         // 个人结算没落完 pending 之前不发结果(ResultCommit 的发送前置条件,CanSend 同样把关)。
-        // 落库轮次用尽的房间由 OnPersonalSettlementsStaged 移出 resultRooms_,不会再走到这里。
+        // 落库到总跨度上限的房间由 StagePersonalSettlements 判用尽时移出 resultRooms_,不会再走到这里。
         if (!room->resultCommit->PersonalSettlementsDurable())
         {
             StagePersonalSettlements(*room, instant);
@@ -1556,36 +1556,38 @@ void BattleRoomManager::StopResultCommits()
 
 void BattleRoomManager::StagePersonalSettlements(BattleRoom &room, const turnbattle::ResultCommit::Clock::time_point now)
 {
+    auto &commit = *room.resultCommit;
+    // 总跨度先判,放在 Redis 连通性检查之前:Redis 一直断着也要到点收手、出告警(turnbattle::kMaxStagingSpan 的说明)。
+    if (commit.ExhaustStagingIfOverdue(now))
+    {
+        RetireExhaustedStaging(room);
+        return;
+    }
     if (!RedisReady()) return;
-    const uint64_t attempt = room.resultCommit->BeginStaging(now);
+    const uint64_t attempt = commit.BeginStaging(now);
     if (attempt == 0) return;
     // 本节点开始往积压索引里写了,报数定时器随之常驻(与 DispatchSettlementDurably 同口径)。
     EnsureSettlementBacklogReporter();
 
     // 本轮只写还没落定的成员(审计 r2-battle#1):上一轮已写进去的成员,scene 可能已经应用并销账
     // (删 pending 与锁、摘账本),再写一次 pending 就会复活,玩家下次登录重复领奖。
-    // 集合在本轮回复到齐之前不变(ResultCommit 的约定)。这里抄一份遍历:最后一名成员同步失败(命令没发出)时,
-    // onReply 会当场经 FinishStaging 改写待写集合,遍历副本不受影响。
-    const std::set<uint64_t> members = room.resultCommit->UnstagedMembers();
-
-    // 本轮回复计数。回调只捕获值与 weak_ptr<自己>(AGENTS.md §11.7);房间按 battle_id 重查。
-    struct StagingRound
-    {
-        std::size_t remaining = 0;
-        std::set<uint64_t> settled; // 本轮拿到确定结论(写入 / 本局早先已写 / 已被别的局取代)的成员
-    };
-    const auto round = std::make_shared<StagingRound>();
-    round->remaining = members.size();
+    // 本轮成员在开轮时定下,整轮不变(StagingRoundTally::Members):最后一名成员同步失败(命令没发出)时,
+    // onReply 会当场经 FinishStaging 改写 ResultCommit 的待写集合,遍历的是 tally 自己那份,不受影响。
+    // 回调只捕获值与 weak_ptr<自己>(AGENTS.md §11.7);房间按 battle_id 重查。
+    const auto round = std::make_shared<turnbattle::StagingRoundTally>(commit.UnstagedMembers());
     const uint64_t battleId = room.battleId;
     const uint64_t enqueuedAtMs = TimeSystem::NowMillisecondsUTC();
     const auto onReply = [weakSelf = WeakSelf(), round, battleId, attempt](const uint64_t playerId, const bool settled)
     {
-        if (settled) round->settled.insert(playerId);
-        if (--round->remaining != 0) return;
+        if (!round->Record(playerId, settled)) return;
         if (const auto self = weakSelf.lock())
-            self->OnPersonalSettlementsStaged(battleId, attempt, std::move(round->settled));
+            self->OnPersonalSettlementsStaged(battleId, attempt, round->Settled());
     };
-    for (const uint64_t playerId : members)
+    // 落库标记要活过整个落库阶段,一轮开出时它才一定还在(kMaxStagingSpan 的推导,留 4 倍余量)。
+    static_assert(turnbattle::kMaxStagingSpan * 4 <=
+                      std::chrono::seconds(battle_settlement::kStagedSettlementMembersTtlSec),
+                  "staged-settlement marker TTL must outlive the whole staging span with margin");
+    for (const uint64_t playerId : round->Members())
     {
         const auto payload = room.personalSettlementPayloads.find(playerId);
         if (payload == room.personalSettlementPayloads.end())

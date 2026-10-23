@@ -697,10 +697,11 @@ func parseVersionReply(playerID uint64, raw interface{}) (uint64, error) {
 	return parseVersionValue(playerID, val)
 }
 
+// parseVersionValue 解读版本键**存在**时的值;「键不存在」只由 parseVersionReply 的 nil 分支表达。
+// 空串同样按损坏处理:saveFieldsScript 只经 INCR 写版本、守卫也拒绝空串,空串只可能是带外写坏的。
+// 读成 0 并回成功违反 LoadPlayerData 的 fail-closed 契约:调用方看到「无版本」,下一次存盘才被写侧守卫拒掉,
+// 故障被推迟到写路径,原因也被掩盖。
 func parseVersionValue(playerID uint64, val string) (uint64, error) {
-	if val == "" {
-		return 0, nil
-	}
 	v, err := strconv.ParseUint(val, 10, 64)
 	if err != nil {
 		return 0, fmt.Errorf("corrupt version value %q for player %d: %w", val, playerID, err)

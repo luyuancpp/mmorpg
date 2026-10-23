@@ -47,6 +47,8 @@ package main
 // F 之后、M 之前的拒绝:首跑时本次什么都没写,正常释放围栏、非零退出(mergeFence.refuseAndRelease);
 // 续跑(清单已存在且步骤 7 未标记完成)时上一次运行可能已写到一半,围栏保留、走 fenceKeptAbortMessage。
 // M 之后的失败:围栏保留在本次 run_id 上,按打印的指引核对 → DEL → 用原命令续跑(fenceKeptAbortMessage)。
+// 以上「DEL」只适用于 -route-source=redis;db 源的围栏真源是全局库 zone_merge_fence,镜像不能删,续跑用原命令加
+// -take-over-fence <run_id>(routeFenceKeptAbortMessage,fence.go「-route-source=db:库围栏」)。
 //
 // 1 必须在 5 之前:mapping 一改,玩家就被路由到目标区,而他的行还在源库。
 // 5 一旦跑完,collectPlayerIDsWithHomeZone 再也找不到这批人 —— 这正是清单
@@ -372,7 +374,11 @@ func main() {
 	flag.StringVar(&o.takeOverFenceRunID, "take-over-fence", "",
 		"-route-source=db, -mode merge / unmerge only: resume after an abort by taking over the merge fence that the aborted run "+
 			"<run_id> left in zone_merge_fence, in one DB transaction (the zones are never unfenced). Pass the run_id printed by the "+
-			"abort message, and only after confirming that no merge_zone process of that run is alive")
+			"abort message with the same -manifest-path and zone pair (both are checked against the fence), and only after confirming "+
+			"that no merge_zone process of that run is alive: a live old process has its next mapping batch refused by the DB, but its "+
+			"other writes (rows, blobs, guild, trade, rank, hot state, manifest file) only stop at its next renewal (up to "+
+			routeFenceRenewMaxInterval.String()+" later). "+
+			"If the take-over itself fails half-way, the fence is kept, never released")
 
 	flag.Parse()
 	o.sourceZone = uint32(*srcZone)

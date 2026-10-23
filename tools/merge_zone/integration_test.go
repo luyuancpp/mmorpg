@@ -304,6 +304,19 @@ func itOpen(t *testing.T) *sql.DB {
 	return db
 }
 
+// itOpenRouteDB 为直接 SQL 断言与持锁事务打开独立强读连接，不穿透路由后端接口。
+func itOpenRouteDB(t *testing.T) *sql.DB {
+	t.Helper()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	db, err := openCurrentTiDB(ctx, itRouteDSN())
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = db.Close() })
+	return db
+}
+
 func itRedis(t *testing.T, dbIndex int) *redis.Client {
 	t.Helper()
 	c := redis.NewClient(&redis.Options{Addr: itRedisAddr, DB: dbIndex})
@@ -2427,12 +2440,13 @@ func TestIT_Audit_OnlineGateActuallyBlocks(t *testing.T) {
 func itAssertNoFence(t *testing.T, why string) {
 	t.Helper()
 	m := itRedis(t, itMappingRD)
-	rb := itFixtureBackend(t)
+	itFixtureBackend(t)
+	db := itOpenRouteDB(t)
 	for _, z := range []uint32{itSrcZone, itDstZone} {
 		if n, _ := m.Exists(context.Background(), mergeFenceKey(z)).Result(); n != 0 {
 			t.Errorf("%s left the merge fence for zone %d behind", why, z)
 		}
-		itAssertSQLFence(t, rb.db.db, z, false, "")
+		itAssertSQLFence(t, db, z, false, "")
 	}
 }
 
@@ -2441,7 +2455,8 @@ func itAssertNoFence(t *testing.T, why string) {
 func itAssertFenceKept(t *testing.T, out, why string) string {
 	t.Helper()
 	m := itRedis(t, itMappingRD)
-	rb := itFixtureBackend(t)
+	itFixtureBackend(t)
+	db := itOpenRouteDB(t)
 	runID := ""
 	for _, z := range []uint32{itSrcZone, itDstZone} {
 		raw, err := m.Get(context.Background(), mergeFenceKey(z)).Result()
@@ -2456,7 +2471,7 @@ func itAssertFenceKept(t *testing.T, out, why string) string {
 			t.Errorf("%s: the two fences belong to different runs (%s / %s)", why, runID, v.RunID)
 		}
 		runID = v.RunID
-		itAssertSQLFence(t, rb.db.db, z, true, runID)
+		itAssertSQLFence(t, db, z, true, runID)
 	}
 	if runID == "" || !strings.Contains(out, "run_id="+runID) {
 		t.Errorf("%s: the abort message does not name the run_id %q that holds the fence:\n%s", why, runID, out)

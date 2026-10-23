@@ -549,10 +549,10 @@ return 1
 // reassignSceneNode 把场景归属从 oldNode 原子地改到 newNode:scene:{id}:node、两侧的
 // node:zone:{zoneId}:{nodeId}:scenes 反向索引、两侧的 scene_count 在一个 Lua 脚本里一起改。
 //
-// 这是**所有权改写的收口点**:全模块改写 scene:{id}:node 的路径都应经过它。
-// 例外是 enterscenelogic.go resolveScene 的死节点自愈:屏障判定同源,但写入至今仍是
-// 无条件 SET、不同步反向索引与计数,不受这里的 CAS 保护(已登记残留,见
-// docs/handoff/handoff-launch-line-remaining-20261019.md §3 第 6 项)。
+// 这是**所有权改写的收口点**:全模块改写已有场景的 scene:{id}:node 的路径都经过它
+// (建场景时的首次写入不算改写,见 createscenelogic.go allocateScene 与本文件的频道补建)。
+// 2026-10-22 起 enterscenelogic.go resolveScene 的死节点自愈也走这里
+// (reassignSceneOffDeadNode),落空时重读属主而不是覆盖。
 // 再入屏障在这里再判一次 —— 调用方在计划阶段判过的那次可能已经隔了几个
 // RPC,期间老节点的死亡时刻才刚写进 Redis。
 //

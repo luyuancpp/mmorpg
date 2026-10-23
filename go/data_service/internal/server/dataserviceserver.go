@@ -156,9 +156,14 @@ func (s *DataServiceServer) RegisterPlayerZone(ctx context.Context, req *data_se
 // 时多一种失败,**gRPC code 的集合不变**:缓存不可信、回源全局库又失败 → Unavailable + ErrCodeRouteStoreError(码 30,与
 // mapping Redis 的码 1 分开,值班一眼分清是全局库坏了)。库里没有这名玩家 → 照旧 NotFound(那是库的权威缺席)。
 // 判定顺序是先 ErrRouteReadUnavailable 再 NotFound:一次库故障绝不能被报成「这名玩家没有归属」。
+// 再之前先看调用方是否已放弃(ctx 取消 / 超时,M1-2,2026-10-21):如实回它的取消原因(Canceled / DeadlineExceeded),
+// 不报成 Unavailable + 码 1 / 30 —— 那是本服务或全局库的故障口径,调用方自己的截止时间不该触发它(同 logic/persisted_player_database.go)。
 func (s *DataServiceServer) GetPlayerHomeZone(ctx context.Context, req *data_service.GetPlayerHomeZoneRequest) (*data_service.GetPlayerHomeZoneResponse, error) {
 	zoneID, merging, err := s.svcCtx.Router.GetPlayerHomeZoneAndMergeFence(ctx, req.GetPlayerId())
 	if err != nil {
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			return nil, status.FromContextError(ctxErr).Err()
+		}
 		if errors.Is(err, routing.ErrRouteReadUnavailable) {
 			return nil, status.Errorf(codes.Unavailable, "error_code=%d: %v", constants.ErrCodeRouteStoreError, err)
 		}
@@ -176,10 +181,13 @@ func (s *DataServiceServer) GetPlayerHomeZone(ctx context.Context, req *data_ser
 // 会把一个正常状态升级成整批失败;单查只有一个 id,没有"部分"可言,所以那边用 NotFound。
 // 值畸形与单查同口径,整批回 Unavailable(2026-10-12 起;此前畸形值被当成缺席静默跳过)。
 // ReadRequiresReady=true 时缓存不可信的块回源全局库,任一块回源失败整批 Unavailable + ErrCodeRouteStoreError(码 30),
-// 不回半份结果(半份会被调用方当成「这些人没有归属」)。
+// 不回半份结果(半份会被调用方当成「这些人没有归属」)。调用方已放弃(ctx 取消 / 超时)时同单查,回它的取消原因(M1-2)。
 func (s *DataServiceServer) BatchGetPlayerHomeZone(ctx context.Context, req *data_service.BatchGetPlayerHomeZoneRequest) (*data_service.BatchGetPlayerHomeZoneResponse, error) {
 	mapping, err := s.svcCtx.Router.BatchGetPlayerHomeZone(ctx, req.PlayerIds)
 	if err != nil {
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			return nil, status.FromContextError(ctxErr).Err()
+		}
 		if errors.Is(err, routing.ErrRouteReadUnavailable) {
 			return nil, status.Errorf(codes.Unavailable, "error_code=%d: %v", constants.ErrCodeRouteStoreError, err)
 		}

@@ -176,21 +176,46 @@ func cleanupZoneIdleInstances(ctx context.Context, svcCtx *svc.ServiceContext, z
 // "source_migrated" and is used as a Prometheus label on
 // scene_manager_instance_destroyed_total.
 func destroyInstance(ctx context.Context, svcCtx *svc.ServiceContext, zoneId uint32, sceneId uint64) {
-	destroyInstanceInternal(ctx, svcCtx, zoneId, sceneId, false, "idle")
+	destroyInstanceInternal(ctx, svcCtx, zoneId, sceneId, false, "", "idle")
 }
 
-// destroyInstanceForce is used by the node-death reconciliation path to
-// sweep orphan scenes even if their player_count is still non-zero
-// (the C++ node holding those players is gone; clamping the residual
-// on the per-node counter is the best we can do).
+// destroyInstanceForce force-destroys a scene even if its player_count is
+// still non-zero, whoever owns it now. Used by explicit / cascade /
+// source_migrated / source_scaled_in teardowns. Node-death reconciliation
+// does NOT use it: it must only destroy scenes still owned by the dead node,
+// see destroyOrphanOfDeadNode.
 func destroyInstanceForce(ctx context.Context, svcCtx *svc.ServiceContext, zoneId uint32, sceneId uint64, reason string) {
 	if reason == "" {
 		reason = "explicit"
 	}
-	destroyInstanceInternal(ctx, svcCtx, zoneId, sceneId, true, reason)
+	destroyInstanceInternal(ctx, svcCtx, zoneId, sceneId, true, "", reason)
 }
 
-func destroyInstanceInternal(ctx context.Context, svcCtx *svc.ServiceContext, zoneId uint32, sceneId uint64, force bool, reason string) {
+// destroyOrphanOfDeadNode 是死节点收尾(reason=node_death)专用的 force 销毁:不看人数(持有这些玩家的
+// C++ 进程已经没了,节点计数上的残留只能钳掉),但只有 scene:{id}:node 仍等于 deadNode 时才销毁。
+//
+// 期望属主必须在原子脚本里比:收尾读到「属主是死节点」之后、销毁之前,resolveScene 的死节点自愈
+// (reassignSceneOffDeadNode → reassignSceneNode)可能已经把实例改派到活节点并 CreateScene。不比对时
+// 收尾照样抹掉新属主的场景、向新节点发 DestroyScene、扣新节点的计数,玩家刚进的场景被拆掉。
+//
+// 返回 (true, nil):销毁执行了,副作用(级联、计数、Agones 归还)也已执行,且只由本次执行。
+// 返回 (false, nil):属主已不是 deadNode(读完之后被改派,或已被别的路径销毁),一个键都没动。
+// 返回 (false, err):Redis 出错(结论未知),或 deadNode 为空(什么都没做);两种都已记日志。
+// deadNode 为空时拒绝而不是照常销毁:空串在脚本里表示「不比对」,会退化成修复前的无条件销毁。
+func destroyOrphanOfDeadNode(ctx context.Context, svcCtx *svc.ServiceContext, zoneId uint32, sceneId uint64, deadNode string) (bool, error) {
+	if deadNode == "" {
+		err := fmt.Errorf("destroyOrphanOfDeadNode: empty dead node for scene %d (zone %d)", sceneId, zoneId)
+		logx.Errorf("[InstanceLifecycle] %v; refusing to force-destroy without an expected owner", err)
+		return false, err
+	}
+	return destroyInstanceInternal(ctx, svcCtx, zoneId, sceneId, true, deadNode, "node_death")
+}
+
+// destroyInstanceInternal 返回本次是否真的执行了销毁(认领成功并跑完副作用)。false 且 err 为 nil 时
+// 什么都没做:非 force 时场景里来了人;force 时场景已被别的进程抹掉,或属主已不是 expectedOwner。
+//
+// expectedOwner 只对 force 生效(非 force 路径以人数 CAS 认领,不涉属主),空串表示不比对属主。
+func destroyInstanceInternal(ctx context.Context, svcCtx *svc.ServiceContext, zoneId uint32, sceneId uint64, force bool, expectedOwner, reason string) (bool, error) {
 	sceneIdStr := fmt.Sprintf("%d", sceneId)
 
 	// Snapshot everything we need BEFORE the atomic wipe:
@@ -221,7 +246,7 @@ func destroyInstanceInternal(ctx context.Context, svcCtx *svc.ServiceContext, zo
 		atomicNode, atomicGs, err := AtomicDestroyIfIdle(svcCtx, zoneId, sceneId)
 		if err != nil {
 			logx.Errorf("[InstanceLifecycle] AtomicDestroy failed for scene %d: %v", sceneId, err)
-			return
+			return false, err
 		}
 		if atomicNode == "" {
 			// Scene picked up a player between our check and the script;
@@ -242,14 +267,15 @@ func destroyInstanceInternal(ctx context.Context, svcCtx *svc.ServiceContext, zo
 		// 窗口里新旧领导者清理同一死节点)会各自拿到非空快照,把节点
 		// scene_count 双减、Agones 名额双还。改成 Lua 原子认领:读与删同
 		// 脚本,只有赢家拿到非空返回并执行副作用,输家静默退出。
-		atomicNode, atomicGs, atomicResidual, err := AtomicDestroyForce(svcCtx, zoneId, sceneId)
+		atomicNode, atomicGs, atomicResidual, err := AtomicDestroyForce(svcCtx, zoneId, sceneId, expectedOwner)
 		if err != nil {
 			logx.Errorf("[InstanceLifecycle] AtomicDestroyForce failed for scene %d: %v", sceneId, err)
-			return
+			return false, err
 		}
 		if atomicNode == "" && atomicGs == "" {
-			// 别的进程已抢先抹掉并负责了级联/计数/归还 —— 本次是重复销毁。
-			return
+			// 别的进程已抢先抹掉并负责了级联/计数/归还 —— 本次是重复销毁;
+			// 或者带了期望属主而属主已不是它 —— 场景归别人了,一个键都没动。
+			return false, nil
 		}
 		nodeId = atomicNode
 		agonesGs = atomicGs
@@ -257,7 +283,7 @@ func destroyInstanceInternal(ctx context.Context, svcCtx *svc.ServiceContext, zo
 	}
 
 	if !destroyed {
-		return
+		return false, nil
 	}
 
 	// Cascade destroy: any mirror whose source is this scene has to die with
@@ -291,7 +317,7 @@ func destroyInstanceInternal(ctx context.Context, svcCtx *svc.ServiceContext, zo
 		logx.Infof("[InstanceLifecycle] Cascade-destroying mirror %d (source %d)", childId, sceneId)
 		// Force-destroy: the source is going away, "still has players"
 		// doesn't rescue the mirror.
-		destroyInstanceInternal(ctx, svcCtx, uint32(childZone), childId, true, "cascade")
+		destroyInstanceInternal(ctx, svcCtx, uint32(childZone), childId, true, "", "cascade")
 	}
 	// Drop the mirrors index for this scene now that its children are gone.
 	svcCtx.Redis.Del(sceneMirrorsKey(sceneId))
@@ -342,6 +368,7 @@ func destroyInstanceInternal(ctx context.Context, svcCtx *svc.ServiceContext, zo
 	}
 
 	metrics.ObserveInstanceDestroyed(zoneId, kind, reason)
+	return true, nil
 }
 
 // IncrInstancePlayerCount increments both the per-scene and per-node player

@@ -124,7 +124,8 @@ type travelSmokeRecord struct {
 	body        []byte
 }
 
-// travelSmokeProgress 是重定向 / 重登的进度快照,与留底在同一把锁下读出,保证两者互相一致。
+// travelSmokeProgress 是重定向 / 重登的进度快照(连同没回显请求号的 TravelToZone 回包诊断),
+// 与留底在同一把锁下读出,保证两者互相一致。零值 = 什么都还没发生(ownership_fault_fullstack_test.go 用字面量构造机器人)。
 type travelSmokeProgress struct {
 	// msg 124 的分发(含整个 pkg.FollowRedirect)已经返回的次数。
 	redirectsHandled int
@@ -132,6 +133,75 @@ type travelSmokeProgress struct {
 	reloginStarted  int
 	reloginFinished int
 	reloginErr      error
+	// uncorrelatedTravel 只用于超时诊断,不参与判定;取窗口内的部分用 since。
+	uncorrelatedTravel travelSmokeUncorrelatedReplies
+}
+
+// travelSmokeUncorrelatedReplies 累计 onMessage 收到的、没带请求号(id = 0)的 TravelToZone 回包。
+// 服务端没回显 ClientRequest.id 时(例如直连模式的 gate 缺 10-19 rpc_reply_bridge 修复),回包认领不到在途调用,
+// 只能在 onMessage 丢弃(smokeDropUncorrelatedReply),调用随后以超时收场。丢弃前记在这里,超时文案才能说出
+// "回包其实到了、而且可能是拒绝",而不是"回包与 124 都没到"。判定仍只按 Call 的结局,这里不改变任何结论。
+// 零值 = 没收到过;由 onMessage 持 b.mu 写,mark / snapshot 随进度一起读出。
+type travelSmokeUncorrelatedReplies struct {
+	count int
+	// 最近一条的信封 tip(gate 信封拒绝,此时回包体为空)与回包体 tip(scene 写进 TravelToZoneResponse.error_message
+	// 的同步拒绝码,0 = 受理)。lastBodyUndecodable 表示回包体解不开,此时 lastBodyTip 为 0。
+	lastEnvelopeTip     uint32
+	lastBodyTip         uint32
+	lastBodyUndecodable bool
+}
+
+// note 记下一条没带请求号的 TravelToZone 回包。msg 必须是 TravelToZone 消息号上 id = 0 的消息。
+func (u *travelSmokeUncorrelatedReplies) note(msg *base.MessageContent) {
+	u.count++
+	u.lastEnvelopeTip = msg.GetErrorMessage().GetId()
+	// 信封拒绝时回包体为空,解出来是 tip=0,不影响上面的信封 tip。
+	tip, err := travelToZoneRejectTip(msg.GetSerializedMessage())
+	u.lastBodyTip, u.lastBodyUndecodable = tip, err != nil
+}
+
+// since 返回 before 之后新到的部分(before 取自等待开始前的 mark)。窗口内一条都没有时返回零值:
+// 那时"最近一条"属于更早的等待,不能拿来解释这一次。
+func (u travelSmokeUncorrelatedReplies) since(before travelSmokeUncorrelatedReplies) travelSmokeUncorrelatedReplies {
+	if u.count <= before.count {
+		return travelSmokeUncorrelatedReplies{}
+	}
+	u.count -= before.count
+	return u
+}
+
+// describe 把诊断写成一句话(拼进超时原因);count 为 0 返回空串。
+// 信封拒绝时回包体为空,不写 body tip 与图例:否则「body tip=0 / 0 = accepted」会被读成 scene 已受理,
+// 与信封提示「请求没到 scene」自相矛盾。图例只在真正写出 body tip 时才附上。
+func (u travelSmokeUncorrelatedReplies) describe() string {
+	if u.count == 0 {
+		return ""
+	}
+	var last string
+	switch {
+	case u.lastEnvelopeTip != 0:
+		last = fmt.Sprintf("envelope tip=%d%s, body empty (envelope rejection)",
+			u.lastEnvelopeTip, travelSmokeEnvelopeHint(u.lastEnvelopeTip))
+	case u.lastBodyUndecodable:
+		last = "envelope tip=0, body undecodable"
+	default:
+		last = fmt.Sprintf("envelope tip=0, body tip=%d; body tip 0 = accepted, non-zero = the scene's synchronous rejection code",
+			u.lastBodyTip)
+	}
+	return fmt.Sprintf("received %d TravelToZone reply(ies) without a request id (last one: %s): the server did not echo ClientRequest.id, "+
+		"so the call could not claim the reply (direct mode needs a gate with the 2026-10-19 rpc_reply_bridge fix; "+
+		"on the scene TCP path check set_id in scene_handler.cpp)",
+		u.count, last)
+}
+
+// travelSmokeUncorrelatedCause 返回传送等待超时时应优先给出的「回包没回显请求号」原因,不适用时返回空串。
+// 只在调用没见到回包、也没见到 msg 124 时适用:那时通用提示是"都没到",而回包其实到了,只是认领不到。
+// uncorrelated 必须已按等待窗口截取(since)。travel-smoke 与 sync-smoke 的超时文案共用。
+func travelSmokeUncorrelatedCause(scan travelSmokeScan, uncorrelated travelSmokeUncorrelatedReplies) string {
+	if scan.hop != nil || scan.replySeen {
+		return ""
+	}
+	return uncorrelated.describe()
 }
 
 // travelSmokeHop 是一跳传送落地后留下的证据。
@@ -507,7 +577,7 @@ func travelSmokeIsRecorded(messageId uint32) bool {
 }
 
 // travelSmokeIsCallReply:本场景用 gc.Call 发出的请求消息号。它们的回包带请求号、不会走到 onMessage;
-// 走到 onMessage 的(id = 0)说明服务端没回显请求号,只能丢弃。
+// 走到 onMessage 的(id = 0)说明服务端没回显请求号,只能丢弃(TravelToZone 的先记诊断,见 onMessage)。
 func travelSmokeIsCallReply(messageId uint32) bool {
 	switch messageId {
 	case travelToZoneMessageId,
@@ -521,6 +591,8 @@ func travelSmokeIsCallReply(messageId uint32) bool {
 // onMessage:推送先留底,再转发给通用分发。
 //   - 请求消息号上 id = 0 的消息(travelSmokeIsCallReply)交给 smokeDropUncorrelatedReply 丢弃,不进通用分发:
 //     信封拒绝落进生成的 handler 会被解成全零响应,看上去像受理;对应的那次调用将以超时收场。
+//     TravelToZone 的丢弃前持 b.mu 记一条诊断(含回包体里的同步拒绝码,travelSmokeUncorrelatedReplies),
+//     超时文案据此说出"回包到了但没回显请求号",判定不变。
 //   - 其余无条件转发:NotifyEnterScene 靠通用 handler 放行首登的 WaitSceneReady;msg 124 在转发里同步完成整个搬迁
 //     (pkg.FollowRedirect),期间 RecvLoop goroutine 一直被占用。
 //   - 转发时**绝不能持有 b.mu**:FollowRedirect 末尾的 ReplayDeferred 会在同一个 goroutine 里重入本函数
@@ -529,6 +601,11 @@ func (b *travelSmokeBot) onMessage(client *pkg.GameClient, msg *base.MessageCont
 	b.stats.MsgRecv()
 	messageId := msg.GetMessageId()
 	if travelSmokeIsCallReply(messageId) {
+		if messageId == travelToZoneMessageId {
+			b.mu.Lock()
+			b.progress.uncorrelatedTravel.note(msg)
+			b.mu.Unlock()
+		}
 		smokeDropUncorrelatedReply(b.account, msg)
 		return
 	}
@@ -809,19 +886,27 @@ func (b *travelSmokeBot) travelTo(targetZone, sceneConfigId uint32) (*travelSmok
 			}
 		}
 		if !time.Now().Before(deadline) {
-			return nil, fmt.Errorf("TravelToZone{zone=%d}: %s", targetZone, b.describeTimeout(scan, progress, before))
+			return nil, fmt.Errorf("TravelToZone{zone=%d}: %s", targetZone, travelSmokeDescribeTimeout(scan, progress, before, b.gateAddr()))
 		}
 		time.Sleep(travelSmokePollInterval)
 	}
 }
 
-// describeTimeout 把一跳超时的现场写成一句话:走到了哪一步、下一步该去看哪里的日志。
-func (b *travelSmokeBot) describeTimeout(scan travelSmokeScan, progress, before travelSmokeProgress) string {
+// travelSmokeDescribeTimeout 把一跳超时的现场写成一句话:走到了哪一步、下一步该去看哪里的日志。
+// progress / before 是超时那一圈与等待开始前的进度快照,gate 是当前连着的 gate。
+// 窗口内收到过没回显请求号的 TravelToZone 回包、而调用既没见到回包也没见到 124 时,优先报它
+// (travelSmokeUncorrelatedCause):回包其实到了(还可能是同步拒绝),"都没到"会把排查指向错误的方向。
+// 写成纯函数是为了单测各分支的提示(sync_smoke_scenario_test.go)。
+func travelSmokeDescribeTimeout(scan travelSmokeScan, progress, before travelSmokeProgress, gate string) string {
 	redirectSeen := scan.hop != nil
 	reloginStarted := progress.reloginStarted > before.reloginStarted
 	reloginDone := progress.reloginFinished > before.reloginFinished
+	uncorrelated := progress.uncorrelatedTravel.since(before.uncorrelatedTravel)
+	uncorrelatedCause := travelSmokeUncorrelatedCause(scan, uncorrelated)
 	var hint string
 	switch {
+	case uncorrelatedCause != "":
+		hint = uncorrelatedCause
 	case !redirectSeen && !scan.replySeen:
 		hint = "回包与 msg 124 都没到:gate / scene 没换上带 TravelToZone 的新二进制,或请求在 scene 被静默丢弃"
 	case !redirectSeen:
@@ -835,8 +920,8 @@ func (b *travelSmokeBot) describeTimeout(scan travelSmokeScan, progress, before 
 		hint = "重登成功但没等到目标 zone 的 NotifyEnterScene:第二条腿的 EnterScene / RoutePlayerEvent 没把人送进场景" +
 			"(看目标 zone 的 scene_manager 与 scene 日志)"
 	}
-	return fmt.Sprintf("等待超时(%s):reply_seen=%t redirect_seen=%t relogin_started=%t relogin_done=%t arrived=%t 当前 gate=%s late_tips=%v。%s",
-		travelSmokeRedirectTimeout, scan.replySeen, redirectSeen, reloginStarted, reloginDone, scan.arrived, b.gateAddr(), scan.lateTips, hint)
+	return fmt.Sprintf("等待超时(%s):reply_seen=%t uncorrelated_replies=%d redirect_seen=%t relogin_started=%t relogin_done=%t arrived=%t 当前 gate=%s late_tips=%v。%s",
+		travelSmokeRedirectTimeout, scan.replySeen, uncorrelated.count, redirectSeen, reloginStarted, reloginDone, scan.arrived, gate, scan.lateTips, hint)
 }
 
 // travelSmokeScanHop 判一跳传送窗口的现状:先看 TravelToZone 调用的结局(reply,判据见 travelSmokeJudgeTravelReply),
@@ -1009,9 +1094,10 @@ func (b *travelSmokeBot) verifyUndisturbed(since int, wantGate string) error {
 // 用 gc.Call 异步发出而不是阻塞等回包:等待期间还要盯着留底里的 msg 124。每圈先取调用结局、再数 124 ——
 // 124 的留底在 FollowRedirect 换连接之前追加,所以结局是 ErrRPCDisconnected 时这一圈一定数得到它,报的是重定向。
 // 被受理的回包先于 124 到达时报「回包 tip=0」,与改造前按到达顺序判的结论相同。
+// 有结局后才读没回显请求号的回包诊断:超时结局要等满认领窗口,窗口内落到 onMessage 的那条此时已经记下。
 func (b *travelSmokeBot) expectTravelRejected(targetZone, sceneConfigId uint32) (uint32, error) {
 	b.pace()
-	since, _ := b.mark()
+	since, before := b.mark()
 	call, err := travelSmokeStartTravel(b.gc, b.stats, targetZone, sceneConfigId, travelSmokeRpcTimeout)
 	if err != nil {
 		return 0, fmt.Errorf("send TravelToZone{zone=%d}: %w", targetZone, err)
@@ -1025,7 +1111,8 @@ func (b *travelSmokeBot) expectTravelRejected(targetZone, sceneConfigId uint32) 
 			return 0, fmt.Errorf("TravelToZone{zone=%d} 本该被拒,却触发了 msg 124 重定向", targetZone)
 		}
 		if reply.settled {
-			return travelSmokeJudgeRejection(targetZone, reply)
+			_, progress := b.snapshot(since)
+			return travelSmokeJudgeRejection(targetZone, reply, progress.uncorrelatedTravel.since(before.uncorrelatedTravel))
 		}
 		time.Sleep(travelSmokePollInterval)
 	}
@@ -1033,7 +1120,9 @@ func (b *travelSmokeBot) expectTravelRejected(targetZone, sceneConfigId uint32) 
 
 // travelSmokeJudgeRejection 判 expectTravelRejected 那次调用的结局:回包体拒绝码非 0 才通过并返回该码;
 // 受理(tip=0)、信封拒绝(请求没到 scene)、认领窗口内没回包、其余错误都返回 error。reply 必须已有结局。
-func travelSmokeJudgeRejection(targetZone uint32, reply travelSmokeReplyOutcome) (uint32, error) {
+// uncorrelated 是等待窗口内没回显请求号的 TravelToZone 回包(已按窗口截取),只改写超时分支的原因:
+// 那时回包其实到了(回包体里可能正是要等的拒绝码),但认领不到,判定仍是失败。
+func travelSmokeJudgeRejection(targetZone uint32, reply travelSmokeReplyOutcome, uncorrelated travelSmokeUncorrelatedReplies) (uint32, error) {
 	var tipErr *pkg.ServerTipError
 	switch {
 	case !reply.settled:
@@ -1049,9 +1138,12 @@ func travelSmokeJudgeRejection(targetZone uint32, reply travelSmokeReplyOutcome)
 		}
 		return tip, nil
 	case errors.As(reply.err, &tipErr):
-		return 0, fmt.Errorf("TravelToZone{zone=%d} 被 gate 信封拒绝 tip=%d:请求没到 scene,不能算业务拒绝"+
-			"(gate 没换上认识该消息号的新二进制,或被限流)", targetZone, tipErr.Tip)
+		return 0, fmt.Errorf("TravelToZone{zone=%d} 被 gate 信封拒绝 tip=%d%s:不是 scene 业务逻辑给的拒绝码,不能算业务拒绝",
+			targetZone, tipErr.Tip, travelSmokeEnvelopeHint(tipErr.Tip))
 	case errors.Is(reply.err, pkg.ErrRPCTimeout):
+		if cause := uncorrelated.describe(); cause != "" {
+			return 0, fmt.Errorf("TravelToZone{zone=%d}: no claimable reply within %s: %s", targetZone, travelSmokeRpcTimeout, cause)
+		}
 		return 0, fmt.Errorf("TravelToZone{zone=%d} %s 内没有回包(同步拒绝必须有回包;gate / scene 没换新二进制?)",
 			targetZone, travelSmokeRpcTimeout)
 	default:

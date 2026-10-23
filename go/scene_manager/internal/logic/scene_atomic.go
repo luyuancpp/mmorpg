@@ -154,8 +154,19 @@ return {nodeId, agonesGs}
 // 名额归还 / 镜像级联这些副作用因此恰好执行一次。这是 force 分支在
 // 多副本(空闲清理 vs 死节点 reconcile,或领导者降级窗口里新旧领导者
 // 清理同一批场景)下不双减计数、不双还名额的关键。
+//
+// KEYS 与 luaAtomicDestroyInstance 相同。
+// ARGV[1] = sceneId(ZREM 用)
+// ARGV[2] = 期望属主;空串表示不比对(空闲 / 级联 / source_migrated 等路径,语义同前)。
+// 非空时只有 scene:{id}:node 仍等于它才抹,否则一个键都不动,返回 {'', '', '0'}。
+// 死节点收尾靠它(2026-10-22):收尾读到「属主是死节点」之后,resolveScene 的死节点自愈可能已经
+// 用 reassignSceneNode 把实例改派到活节点并 CreateScene;不比对的话,这里会把新属主的场景抹掉、
+// 向新节点发 DestroyScene、扣新节点的计数。比较必须和删除在同一个脚本里,收尾自己的读挡不住这个窗口。
 const luaAtomicDestroyInstanceForce = `
 local nodeId = redis.call('GET', KEYS[1])
+if ARGV[2] ~= nil and ARGV[2] ~= '' and nodeId ~= ARGV[2] then
+    return {'', '', '0'}
+end
 local agonesGs = redis.call('GET', KEYS[7])
 local pc = redis.call('GET', KEYS[2])
 redis.call('DEL', KEYS[1], KEYS[2], KEYS[4], KEYS[5], KEYS[6], KEYS[7])
@@ -175,7 +186,11 @@ return {nodeId, agonesGs, pc}
 // AtomicDestroyForce 原子认领并抹掉一个场景的全部 Redis 键(不看人数)。
 // 返回抹除前的 (nodeId, agonesGs, playerCount)。三者全空/零说明别的进程
 // 已抢先抹掉 —— 调用方必须跳过一切副作用(计数、归还、级联、RPC)。
-func AtomicDestroyForce(svcCtx *svc.ServiceContext, zoneId uint32, sceneId uint64) (string, string, int64, error) {
+//
+// expectedOwner 非空时只在 scene:{id}:node 仍等于它时才抹;不等(含映射已不存在)时什么都不动,
+// 返回值同样全空/零。认领成功时返回的 nodeId 必然等于 expectedOwner,所以调用方仍按「全空即未认领」判断。
+// 空串表示不比对。
+func AtomicDestroyForce(svcCtx *svc.ServiceContext, zoneId uint32, sceneId uint64, expectedOwner string) (string, string, int64, error) {
 	keys := []string{
 		sceneNodeKey(sceneId),
 		fmt.Sprintf(InstancePlayerCountKey, sceneId),
@@ -185,7 +200,7 @@ func AtomicDestroyForce(svcCtx *svc.ServiceContext, zoneId uint32, sceneId uint6
 		sceneZoneKey(sceneId),
 		sceneAgonesGsKey(sceneId),
 	}
-	raw, err := svcCtx.Redis.Eval(luaAtomicDestroyInstanceForce, keys, fmt.Sprintf("%d", sceneId))
+	raw, err := svcCtx.Redis.Eval(luaAtomicDestroyInstanceForce, keys, fmt.Sprintf("%d", sceneId), expectedOwner)
 	if err != nil {
 		return "", "", 0, err
 	}

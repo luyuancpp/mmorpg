@@ -359,7 +359,7 @@ uint32_t CurrencySystem::AttachDebt(entt::entity player, CurrencyType type, int6
     // 本原语只负责 fail-closed 拒绝、不合并。这是版本错位,不是确定性拒绝:调用方必须先用
     // DebtCarriesUnknownFields 判定,按版本错位处理(不执行、不记终态拒绝,之后重新取一次处置再判),
     // 不能按本地副本原地重试 —— 这笔欠款在会话内可能被还清删除,错位随之消失,而那条处置可能已被作废
-    // (收件箱执行器 GmSanctionInboxExecutor::AttachCurrencyDebt 回 kVersionSkew,收件箱停用本域、下次落地重拉)。
+    // (收件箱执行器 GmSanctionInboxExecutor::AttachCurrencyDebt 回 kVersionSkew,收件箱停用本域,实体重建后重拉(退出完成后再登录,或换节点);退出保留期内重登会复用实体,不重拉)。
     if (DebtCarriesUnknownFields(player, type))
     {
         LOG_ERROR << "CurrencySystem::AttachDebt: existing debt carries fields unknown to this version, refusing to merge"

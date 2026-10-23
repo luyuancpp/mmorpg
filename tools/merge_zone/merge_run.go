@@ -186,8 +186,9 @@ func runMerge(o options) {
 		return nil
 	}
 	// 首跑:只读、先于围栏,拒绝时什么都没动,也没有需要保护的半截状态。
-	// 续跑的三项清单校验(模式 / 表集合 / C)挪到围栏之后(见 F 段下方):运维此时已照中止文案 DEL 了上一次的
-	// 围栏,两个 zone 处于半合服状态;围栏之前 log.Fatalf 等于让它们在没有围栏的情况下一直敞着。
+	// 续跑的三项清单校验(模式 / 表集合 / C)挪到围栏之后(见 F 段下方):redis 源时运维此时已照中止文案 DEL 了上一次的
+	// 围栏,两个 zone 处于半合服状态;围栏之前 log.Fatalf 等于让它们在没有围栏的情况下一直敞着。(db 源的库围栏不 DEL,
+	// 续跑以 -take-over-fence 接手;挪到围栏之下对它同样成立:拒绝走 abortKeepingFence,围栏留在本次 run_id 上。)
 	if existing == nil && o.playerRowsMode == playerRowsModePin {
 		if err := checkPinCapability(); err != nil {
 			log.Fatal(err)
@@ -198,8 +199,12 @@ func runMerge(o options) {
 	// 收集与预检都得在围栏之下做:之前的顺序是「收集 → 预检 → 立围栏」,收集与立围栏之间 RegisterPlayerZone
 	// 进来的新号既不在清单里、又没被挡住,改映射时被漏在源区。
 	// db 源:库围栏(zone_merge_fence)提交 → 两区镜像 + WAITAOF 确认之后才返回(规格 §6.3 W12),之后才收集。
+	// resumedFence:清单已存在且步骤 7 未标记完成 = 上一次运行可能已写到一半(理由见下面 refuse)。db 源的获取之后失败(镜像确认不了、
+	// 获取结果不明)同样不释放库围栏(keepOnFailure,B1-1):释放 = 在半合服状态下解封。redis 源不看它,逐字不变。
+	resumedFence := existing != nil && !existing.stepDone(stepPostMerge)
 	fence, err := acquireRunFence(ctx, rb, mapRdb, routeFenceParams{src: src, dst: dst, runID: runID, purpose: routeFencePurposeMerge,
-		manifestPath: manifestPath, runTimeout: o.timeout, dryRun: o.dryRun, takeOverRunID: o.takeOverFenceRunID})
+		manifestPath: manifestPath, runTimeout: o.timeout, dryRun: o.dryRun, takeOverRunID: o.takeOverFenceRunID,
+		keepOnFailure: resumedFence})
 	if err != nil {
 		log.Fatalf("merge fence: %v", err)
 	}
@@ -236,7 +241,7 @@ func runMerge(o options) {
 	//   - 例外:清单已标记步骤 7 完成 = 上一次已跑完全程,此时 dst 可能已经开服,保留围栏只会挡住 dst,照常释放。
 	//   - -take-over-fence(只有 db 源)一律算续跑:接手的前提就是上一次写到一半、围栏故意留着;本次刚接手的围栏若在拒绝出口释放,
 	//     就是在半合服状态下解封。与清单在不在、是否标记了步骤 7 都无关(清单路径已由接手事务按 holder_json 核对)。
-	resumedFence := existing != nil && !existing.stepDone(stepPostMerge)
+	// (resumedFence 在 F 段立围栏之前算好。)
 	halfDone := resumedFence || o.takeOverFenceRunID != ""
 	refuse := func(format string, args ...any) {
 		if halfDone {
@@ -554,7 +559,8 @@ func runMerge(o options) {
 	if !o.skipGuild && !m.stepDone(stepGuildMySQL) {
 		// 重名断言已挪到清单落盘之前(上面 N 段,A4):它的意义是「冲突时一个字节都不写」。
 		// 只改清单里的 id,逐条主键点更新(锁序理由见 migrateGuildZone)。锁冲突重试耗尽 / 其他写失败时
-		// 已有一部分公会搬过去了,与 3b 复查中止同理**不提前释放围栏**,文案给出核对 run_id → DEL → 重跑。
+		// 已有一部分公会搬过去了,与 3b 复查中止同理**不提前释放围栏**,文案给出核对 run_id → DEL → 重跑
+		// (redis 源;db 源是 routeFenceKeptAbortMessage 的 -take-over-fence 续跑)。
 		// db 源:每个 guild_id 的单行事务之前查 gate(规格 §6.3「不碰映射的步骤每批之前查失权」)。
 		rows, gerr := migrateGuildZoneGated(ctx, db, o.guildSchema, m.GuildIDs, src, dst, o.dryRun, gate)
 		if gerr != nil {
@@ -612,7 +618,7 @@ func runMerge(o options) {
 		// 中止且**不 persist**:重跑时本步骤仍未完成,清单阶段会先把它们并进清单再搬。
 		// 只打 WARN 继续是 fail-open —— 步骤一旦标记完成就不会再收集,那几条既搬不走、也撤不回。
 		// log.Fatal 不跑 defer:围栏留在本次 run_id 上,且**故意不提前释放**(理由见
-		// tradeResidualAbortMessage),文案里写明核对 run_id → DEL → 重跑。
+		// tradeResidualAbortMessage),文案里写明核对 run_id → DEL → 重跑(redis 源;db 源见下面 rb != nil 分支)。
 		if !o.dryRun {
 			left, cerr := countTradeListingsInZone(ctx, db, o.tradeSchema, src)
 			if cerr != nil {
@@ -825,10 +831,10 @@ func guardPlayerSet(ctx context.Context, rows playerIDSource, mapped mappingPres
 			o.sourceZone, o.mappingAddr, o.mappingDB, defaultMappingRedisDB, o.sourceZone)
 	}
 
-	// mappingTerm 是文案里「有归属」的说法:redis 源是 player:zone 键,db 源是 player_route 的 home_zone。
+	// 保留既有诊断前缀供运维定位；db 源同时注明归属真源，避免误以为补 Redis 镜像即可修复。
 	mappingTerm := "player:zone mapping"
 	if dbSource {
-		mappingTerm = "home_zone in player_route"
+		mappingTerm = "player:zone mapping (authoritative player_route.home_zone)"
 	}
 	srcTable := zoneDBName(o.sourceZone) + ".player_database"
 	scan, err := findUnmappedPlayers(ctx, rows, mapped)
@@ -1663,7 +1669,8 @@ const (
 	fencedOpUnmerge                 // -mode unmerge:runUnmerge 的 3b' / 3'
 )
 
-// fenceKeptAbortMessage 是「写到一半中止、合服围栏故意留着」的统一中止文案:合服清单落盘之后任何一步的
+// fenceKeptAbortMessage 是「写到一半中止、合服围栏故意留着」的统一中止文案(redis 源专用:下面的 GET / DEL 步骤在 db 源下是错的,
+// db 源走 fence.go 的 routeFenceKeptAbortMessage,续跑用 -take-over-fence):合服清单落盘之后任何一步的
 // 失败(步骤 1~6 的写失败、复查失败、缓存失效失败、清单更新失败、改映射人数对不上);撤销 3' / 3b' 的
 // 写失败与 5' 之后的标记 / 缓存失效失败;以及续跑(清单已存在)或半撤销状态下、第一次写之前的拒绝 —— 那时
 // 上一次运行已写到一半(见 runMerge / runUnmerge 的 refuse)。首跑在清单落盘之前的拒绝不走这里,走 mergeFence.refuseAndRelease。

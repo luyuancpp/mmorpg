@@ -275,10 +275,15 @@ param(
 	# **粘滞(防翻转)**:这几个值不能「每次部署按参数重写、漏传就落回缺省」—— 漏传一次就把 db_first 静默降回 redis,
 	# zone 回档的 Step 6 重建 namespace 时尤其如此。所以非 DryRun 时写路径入口在任何写操作之前读线上现状(Assert-RouteSwitchClusterState):
 	# data-service 读**全部** zone namespace(Mode / Arm / ReadRequiresReady 是全服单值:所有 zone 共用同一个全局库与 mapping Redis),
-	# db 读本次部署的 zone,guild 读 infra namespace;与本次参数不一致就整条拒绝,报错给出照传现状的参数串。
-	# 确要切换时加 -ConfirmRouteSwitchChange。包装入口:dev_tools.ps1 的 k8s-infra-up / k8s-zone-up / k8s-all-up 同名透传这六个参数
+	# db 读本次部署的 zone,guild 读 infra namespace;与本次参数不一致就整条拒绝,报错给出线上现状对应的参数串。
+	# 确要切换时加 -ConfirmRouteSwitchChange。它不豁免读方前提:本次渲染了读方开关,而本次不部署的 zone 的 data-service 线上
+	# 不是 db_first + Arm=true 时一律拒绝(多 zone 首次切换只能 all-up 一次切全部 zone,见 Assert-RouteSwitchClusterState)。
+	# 包装入口:dev_tools.ps1 的 k8s-infra-up / k8s-zone-up / k8s-all-up 同名透传这六个参数
 	# (2026-10-19,留空不传);k8s_image.ps1 不部署 Go 服务,dev_tools 的 k8s-image-* / k8s-release-* 显式给了即拒绝;
-	# k8s_zone_rollback.ps1 的 Step 6 尚未透传(R9 重写中):集群已切 db_first 之后经它重建 zone 会被粘滞核对拒绝。
+	# k8s_zone_rollback.ps1 不声明这六个参数,Step 6 按本脚本缺省(db_first / 全 true)重建 zone:线上已是全球默认的集群照常通过,
+	# 线上仍是旧值的多 zone 集群在 Step 6 被粘滞核对拒绝(先 all-up 切好再回档);单 zone 集群删掉 namespace 后读不到任何现状,
+	# Step 6 会按缺省直接切到 db_first(跳过存量导入 / audit),旧集群先按首次切换顺序切好再回档。
+	# dev_tools 的 k8s-zone-rollback 显式给了这些开关即拒绝。
 	# ValidateSet 不分大小写,参数绑定后规范成小写(data_service 的 Mode 区分大小写,`DB_FIRST` 会被它拒启)。
 	[ValidateSet("redis", "db_first")]
 	[string]$RouteStoreMode = "db_first",
@@ -7267,9 +7272,8 @@ function Get-RouteSwitchKeepArgs {
 	  只认名字以 "<-NamespacePrefix>-" 开头的 namespace(与 Read-PlayerInboxGateLiveFacts 同一口径;用别的前缀部署的 zone 看不到)。
 	  读全部 zone 而不只读本次部署的 zone:Mode / Arm / ReadRequiresReady 是全服单值,本 zone 的 namespace 刚被删掉重建
 	  (zone 回档 Step 1)或是新 zone 时,只读它自己等于不核对。
-	- -ReadDb:同样一次 --all-namespaces 读全部 zone 的 go-svc-db-config(前缀过滤相同)。Placement.RequireRouteReady 逐 zone 打开,
-	  粘滞比对只比本次部署的 zone(由 Assert-RouteSwitchClusterState 按 Namespace 分);其它 zone 的值用来兜住「本 zone 的
-	  namespace 刚被删掉重建、ConfigMap 不在」与回退顺序(关 Arm / 切 redis 之前其它 zone 的读方必须已关)。
+	- -DbZoneNames:逐个读这些 zone 的 go-svc-db-config(Placement.RequireRouteReady 逐 zone 打开,只核对本次部署的 zone)。
+	  ConfigMap 不存在(新 zone、namespace 被删)= 没有现状,不比对。
 	- -ReadGuild:读 infra namespace 的 go-svc-guild-config;不存在 = 没有现状。
 	kubectl 失败、输出不是 JSON、ConfigMap 在却没有服务 yaml 那个数据键,一律 throw:读不到不等于没开(fail-closed,同 Read-LiveDbConfigMapYaml)。
 	Invoke-ClientEntryKubectl 不看 $DryRun,DryRun 判断由调用方(Assert-RouteSwitchPreflight)负责。
@@ -7277,7 +7281,7 @@ function Get-RouteSwitchKeepArgs {
 function Read-LiveRouteSwitchFacts {
 	param(
 		[bool]$ReadDataService,
-		[bool]$ReadDb,
+		[AllowEmptyCollection()][string[]]$DbZoneNames = @(),
 		[bool]$ReadGuild
 	)
 	$facts = New-Object System.Collections.Generic.List[object]
@@ -7310,28 +7314,28 @@ function Read-LiveRouteSwitchFacts {
 		return [pscustomobject]@{ Scope = $Scope; Namespace = $Namespace; Values = (ConvertFrom-RouteSwitchLiveYaml -Scope $Scope -Text $yaml) }
 	}
 
-	# 一次 --all-namespaces 读全部 zone 的同名 ConfigMap,只认 "<-NamespacePrefix>-" 开头的 namespace。
-	$readAllZones = {
-		param($Info, [string]$Scope)
-		$result = Invoke-ClientEntryKubectl -KubectlArgs @('get', 'configmap', '--all-namespaces', '--field-selector', "metadata.name=$($Info.ConfigMap)", '-o', 'json') `
+	if ($ReadDataService) {
+		$info = $GoSvcCatalogue['data-service']
+		$result = Invoke-ClientEntryKubectl -KubectlArgs @('get', 'configmap', '--all-namespaces', '--field-selector', "metadata.name=$($info.ConfigMap)", '-o', 'json') `
 			-KubeContext $KubeContext -KubeConfig $KubeConfig -CaptureOutput -AllowFailure
 		if ($result.ExitCode -ne 0) {
-			throw "读取各 zone 线上的 ConfigMap $($Info.ConfigMap) 失败(kubectl 退出码 $($result.ExitCode)):$($result.Stderr)。fail-closed:读不到不等于还是 redis 模式 / 读方没开,$failClosed"
+			throw "读取各 zone 线上的 ConfigMap $($info.ConfigMap) 失败(kubectl 退出码 $($result.ExitCode)):$($result.Stderr)。fail-closed:读不到不等于还是 redis 模式,$failClosed"
 		}
 		try { $list = ([string]$result.Stdout) | ConvertFrom-Json -ErrorAction Stop }
-		catch { throw "各 zone 线上 ConfigMap $($Info.ConfigMap) 的 kubectl 输出不是合法 JSON,$failClosed$($_.Exception.Message)" }
+		catch { throw "各 zone 线上 ConfigMap $($info.ConfigMap) 的 kubectl 输出不是合法 JSON,$failClosed$($_.Exception.Message)" }
 		$prefix = "$NamespacePrefix-"
 		foreach ($item in @($list.items)) {
 			if ($null -eq $item) { continue }
 			$namespace = [string]$item.metadata.namespace
 			if (-not $namespace.StartsWith($prefix, [System.StringComparison]::Ordinal)) { continue }
-			$yaml = & $configFileText $item $Info.ConfigFile "namespace $namespace 的 ConfigMap $($Info.ConfigMap)"
-			$facts.Add([pscustomobject]@{ Scope = $Scope; Namespace = $namespace; Values = (ConvertFrom-RouteSwitchLiveYaml -Scope $Scope -Text $yaml) })
+			$yaml = & $configFileText $item $info.ConfigFile "namespace $namespace 的 ConfigMap $($info.ConfigMap)"
+			$facts.Add([pscustomobject]@{ Scope = 'data-service'; Namespace = $namespace; Values = (ConvertFrom-RouteSwitchLiveYaml -Scope 'data-service' -Text $yaml) })
 		}
 	}
-
-	if ($ReadDataService) { & $readAllZones $GoSvcCatalogue['data-service'] 'data-service' }
-	if ($ReadDb) { & $readAllZones $GoSvcCatalogue['db'] 'db' }
+	foreach ($dbZoneName in @($DbZoneNames | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })) {
+		$fact = & $readOne (Get-ZoneNamespace -Name $dbZoneName) $GoSvcCatalogue['db'] 'db'
+		if ($null -ne $fact) { $facts.Add($fact) }
+	}
 	if ($ReadGuild) {
 		$fact = & $readOne $InfraNamespace $GoSvcCatalogue['guild'] 'guild'
 		if ($null -ne $fact) { $facts.Add($fact) }
@@ -7351,6 +7355,11 @@ function Read-LiveRouteSwitchFacts {
 	    而不部署 zone(infra-up)时,另读全部 zone 的 data-service,只比 Mode 与 Arm —— guild 读方的前提是全服已 db_first 且 Arm=true,
 	    参数里声明了不算数,要线上真是这样。
 	给了 -ConfirmRouteSwitchChange 只打 [RouteSwitch]Confirmed 警告放行。任何 kubectl 失败都 throw(Read-LiveRouteSwitchFacts)。
+	**读方前提不受 -ConfirmRouteSwitchChange 豁免**(review OPS-2(a) / B3-2):本次渲染的 ConfigMap 里有读方开关为 true
+	(zone 的 ReadRequiresReady / Placement.RequireRouteReady,或 guild)时,本次**不**渲染的 zone 的 data-service 线上必须是
+	Mode=db_first 且 Arm=true(认不出也算不满足);否则那个 zone 的副本当选 leader 就撤标记(规格 M4),读方全部 fail-closed
+	(go/db 暂停存盘消费、guild 全拒)。这一条单独 throw:Confirm 只放行「本次要改的值」,放行不了「改完之后全服处于读方无标记可依的状态」。
+	一个 data-service 都读不到(全新集群,infra-up 先于任何 zone)不算违反:guild 在第一个 zone 的 leader 挂上标记之前 fail-closed,不写错。
 	-ZoneNames 与 Assert-ClientEntryClusterState 同一份(zone-up 一个,all-up 取 zones 配置,infra-up 为空):all-up 逐 zone 部署,
 	必须在第一个写操作之前把全部 zone 判完,不留「前几个 zone 已翻过去、后面的才被拒」的半截部署。
 #>
@@ -7374,16 +7383,37 @@ function Assert-RouteSwitchClusterState {
 	if ($DeploysZoneGoSvc) { $dbZones = @($ZoneNames) }
 	$facts = @(Read-LiveRouteSwitchFacts -ReadDataService ($DeploysZoneGoSvc -or $guildPrecondition) -DbZoneNames $dbZones -ReadGuild $DeploysGuild)
 
+	# 读方前提(见 DESCRIPTION):本次渲染出的读方开关,与本次渲染的 zone namespace。guild 读方为 true 时 $guildPrecondition 或
+	# $DeploysZoneGoSvc 必有一个成立,所以有读方要核时全部 zone 的 data-service 都已读到。
+	$renderedReaders = @()
+	if ($DeploysZoneGoSvc -and $desired.RouteReadRequiresReady -ceq 'true') { $renderedReaders += '-RouteReadRequiresReady' }
+	if ($DeploysZoneGoSvc -and $desired.DbPlacementRequireRouteReady -ceq 'true') { $renderedReaders += '-DbPlacementRequireRouteReady' }
+	if ($DeploysGuild -and $desired.GuildRequireRouteReady -ceq 'true') { $renderedReaders += '-GuildRequireRouteReady' }
+	$renderedNamespaces = @()
+	if ($DeploysZoneGoSvc) {
+		$renderedNamespaces = @($ZoneNames | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | ForEach-Object { Get-ZoneNamespace -Name $_ })
+	}
+
 	$problems = @()
+	$preconditionProblems = @()
 	foreach ($fact in $facts) {
 		$compare = $desired
 		if ($fact.Scope -ceq 'data-service' -and -not $DeploysZoneGoSvc) {
 			$compare = [ordered]@{ RouteStoreMode = $desired.RouteStoreMode; RouteReconcileArm = $desired.RouteReconcileArm }
 		}
 		$drifts = @(Get-RouteSwitchDrift -Live $fact.Values -Desired $compare)
+		if ($fact.Scope -ceq 'data-service' -and $renderedReaders.Count -gt 0 -and -not ($renderedNamespaces -ccontains $fact.Namespace) -and
+			($fact.Values.RouteStoreMode -cne 'db_first' -or $fact.Values.RouteReconcileArm -cne 'true')) {
+			# 本次不渲染它,Confirm 改不了它的值;这一条只进不可豁免的前提清单,不再进下面可确认的漂移清单(避免同一个 zone 报两遍)。
+			$driftText = if ($drifts.Count -gt 0) { ($drifts -join ';') + ';' } else { '' }
+			$preconditionProblems += ("data-service(namespace=$($fact.Namespace)):${driftText}线上 RouteStore.Mode=$($fact.Values.RouteStoreMode)、" +
+				"Reconcile.ArmReadyMarker=$($fact.Values.RouteReconcileArm),本次部署不渲染它,而本次要打开 $($renderedReaders -join ' / ')")
+			continue
+		}
 		if ($drifts.Count -eq 0) { continue }
 		$keep = Get-RouteSwitchKeepArgs -Live $fact.Values
-		$keepText = if ($null -eq $keep) { '线上取值认不出(见上面带 ? 的值),先人工核对该 ConfigMap' } elseif ($keep -eq '') { '要保持现状请不带这几个开关' } else { "要保持现状请照传 $keep(布尔开关不给 = false)" }
+		# 只描述线上现状,不写「照传即可保持」:全球正式部署的入口闸只许 db_first 与全部开关为 true,照传线上的 redis / false 会在入口被拒(review OPS-9)。
+		$keepText = if ($null -eq $keep) { '线上取值认不出(见上面带 ? 的值),先人工核对该 ConfigMap' } else { "线上现状对应的参数是 $keep" }
 		$text = "$($fact.Scope)(namespace=$($fact.Namespace)):" + ($drifts -join ';') + ";$keepText"
 		if ($ConfirmRouteSwitchChange) {
 			Write-Warning "[RouteSwitch]Confirmed:-ConfirmRouteSwitchChange supplied; allowed: $text"
@@ -7395,10 +7425,22 @@ function Assert-RouteSwitchClusterState {
 	$dataServiceZones = @($facts | Where-Object { $_.Scope -ceq 'data-service' }).Count
 	$dbZonesLive = @($facts | Where-Object { $_.Scope -ceq 'db' }).Count
 	$guildLive = @($facts | Where-Object { $_.Scope -ceq 'guild' }).Count
-	Write-Host "Route switch live state: data_service_zones=$dataServiceZones db_zones=$dbZonesLive guild=$guildLive drifts_refused=$($problems.Count) confirm_change=$(([bool]$ConfirmRouteSwitchChange))"
+	Write-Host "Route switch live state: data_service_zones=$dataServiceZones db_zones=$dbZonesLive guild=$guildLive drifts_refused=$($problems.Count) confirm_change=$(([bool]$ConfirmRouteSwitchChange)) precondition_refused=$($preconditionProblems.Count)"
+	if ($preconditionProblems.Count -gt 0) {
+		$text = "D1 读方开关的前提不满足($($preconditionProblems.Count) 个 zone),-ConfirmRouteSwitchChange 不豁免这一条,未做任何写操作:`n  - " + ($preconditionProblems -join "`n  - ") +
+			"`n读方(data-service ReadRequiresReady / go/db Placement.RequireRouteReady / guild)只认对账 leader 挂的就绪标记:任一 zone 的 data-service 仍是 redis 或 Arm=false," +
+			"leader 落到那里就撤标记(规格 M4),读方全部 fail-closed(go/db 暂停存盘消费、guild 全拒)。" +
+			"改用 all-up 一次部署全部 zone(zones 配置要覆盖上面列出的 namespace,不再使用的 zone 先 zone-down);" +
+			"infra-up 的 guild 读方排在全部 zone 之后(只想先部署 infra 的其它组件可带 -SkipGoSvc)。"
+		if ($problems.Count -gt 0) {
+			$text += "`n另有线上现状与本次参数不一致($($problems.Count) 处):`n  - " + ($problems -join "`n  - ")
+		}
+		throw $text
+	}
 	if ($problems.Count -gt 0) {
 		throw ("D1 映射开关的线上现状与本次参数不一致($($problems.Count) 处),未做任何写操作:`n  - " + ($problems -join "`n  - ") +
-			"`n确要切换请加 -ConfirmRouteSwitchChange(顺序见 -RouteStoreMode 参数注释:P2 Mode=db_first → P3 全部 zone Arm=true → P5 读方逐个打开,回退反过来)。")
+			"`n确要按本次参数改动请加 -ConfirmRouteSwitchChange。全球正式部署的入口闸只许 db_first 与全部开关为 true,线上旧值(redis / false)不能照传保持;" +
+			"首次切换顺序见 -RouteStoreMode 参数注释(先迁移与存量导入 / audit,再对账与就绪标记,最后读方)。")
 	}
 }
 

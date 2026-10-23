@@ -21,20 +21,25 @@
 //  1. 租约:leader 每 RenewInterval 续约;非 leader 只 Peek,看起来过期才 Renew(副本多时不抢同一行锁);未持有 → 结束本拍;
 //  2. 读身份(INFO server / replication / stats + CONFIG GET maxmemory-policy / enable-debug-command);出错或 role≠master 记
 //     redis_error,连续超过 RedisFailureReleaseMs 让出租约;
-//  3. 读三把控制键(ready / warm / watermark,一次 MGET + TYPE ready + TYPE watermark);WRONGTYPE 无条件 DEL、畸形 CAD、版本更新只记日志;
+//  3. 读三把控制键(ready / warm / watermark,一次 MGET + TYPE ready + TYPE watermark);WRONGTYPE 无条件 DEL、畸形 CAD、版本更新只记日志
+//     (水位键:不是 string 的 DEL 后当拍重建,畸形的记 ERROR 后提交时覆盖,版本更新的记 ERROR,见 settleWatermarkShape);
 //     三把都不在而本任期见过 = 被 rewarm / FLUSH 清掉:解除 armingBlocked、重取 evicted_keys 基线;
-//     「副本对账到哪」的证据没了(三把都不在,或 Arm=false 下水位键不在)→ cvm 作废(本拍 AdvanceReconcile 写 0,见下面「偏离规格」);
+//     「副本对账到哪」的证据没了(三把都不在,或 Arm=false 下水位键不在)→ cvm 作废(本拍 AdvanceReconcile 写 0,见下面「偏离规格」),
+//     本拍不起增量;Arm=false 时撤现存标记(M4,只要 Redis 与仍有效的本地租约,所以放在库内部分之前);
 //  4. AdvanceReconcile(水位键 + 世代 + 容差;cvm 按完成任务的起点写);冻结 → 停推送、身份不符 / 淘汰异常时撤标记;
 //     未冻结 → 标记世代 ≠ 库世代即冻结(scout D4 保留的那条),否则单调推进水位键(GET → 判 → CAS / SET NX);
 //  5. 淘汰策略 / evicted_keys / enable-debug-command 自检:异常时撤标记、禁止挂标记;
 //  6. 围栏镜像双向对账(库生效的补 / 续;库里有片行的 zone 按名单 MGET,Redis 有而库已不生效的复读库后按完整值 CAD;
 //     名单之外的镜像靠跨拍增量 SCAN 发现;解不出 fence_epoch 的不删、计 foreign_fence);
-//  7. Arm=false:撤现存标记;VI 为空(或身份变了)排追平(catch_up,设新令牌);
+//  7. Arm=false:VI 为空(或身份变了)排追平(catch_up,设新令牌,起点 max(0, 库里的 cvm − RepairLookbackMs));
 //  8. Arm=true:标记在且身份相等 → VI = 当前身份,CAS 把标记水位推进到 cvm;标记在而身份不等 → CAD、排修补(起点
 //     max(0, min(标记水位, cvm) − RepairLookbackMs));标记不在 → **一律**全量预热(armingBlocked 除外),预热 / 修补完成且无阻塞
 //     → 挂标记;
 //  9. 距上次增量满 IncrementalInterval 且没有任务 → 排增量(起点 max(0, cvm − IncrementalOverlapMs),并复读未决行);
 //  10. 自检(RouteReadyReadScript 不带映射键)并写 leader 观测型 gauge。
+//
+// 第 5、6、7 / 8 步开始前与写水位键、SET 预热令牌之前各复核一次本地租约(核实意见 LR-10):一拍可能被慢 Redis / 慢库拖过本地截止,
+// 之后的 Redis 写不受库侧租约谓词保护;过点即降级、结束本拍。
 //
 // cache_verified_ms(cvm)的语义(规格 §4.2 must-2):「updated_at_ms < cvm − IncrementalOverlapMs 的行都已推过,且期间 Redis 身份未变」。
 // 一个任务从它开始时的库时钟 S 完整跑完、首尾身份相同(带令牌的任务还要令牌仍是自己的)才把 cvm 写成 S;新 leader 的首次增量从
@@ -48,6 +53,14 @@
 //     下一次追平就退化成 cvm − Lookback,被清掉的映射再也补不回。在途任务除「带令牌、从 0 起」的(FLUSH / rewarm 会换掉令牌,
 //     它们由令牌自证)之外一律取消,已收的 pendingCvm 丢弃。水位键照旧当拍重建:M3、merge_zone 的 -route-source 成对核对、
 //     barrierrestore 都要它在。Arm=false 下身份变化后的追平起点仍按 max(0, cvm − RepairLookbackMs)。
+//     (2026-10-22 落码,见 checkCacheEvidence:不论本任期见没见过控制键都判;不是 string 的水位键不算「不在」;证据刚丢的那一拍不起增量;
+//     冻结的拍库里不写 0,水位键也不重建,解冻后第一拍再判。代价:Arm=false 下有人只删了水位键也会触发一次全量增量。)
+//   - Arm=false 的撤标记(M4)挪到库内部分之前(核实意见 LR-12),库故障的拍里照撤;于是 Arm=false 下不再拿将撤的标记做
+//     「标记世代 ≠ 库世代」的冻结判据(Arm=false 本不该有标记,库被重建由水位键 M3 与 cache_ahead 发现)。
+//   - 未决行溢出(超过 ArmingBlockedReportLimit)不再算挂标记的阻塞原因(核实意见 A1-3 / LR-3):记下的 id 全部解决后闩锁解除,
+//     丢掉记不全的候选、重新全量预热;记下的还没解决时照旧闩住、不重跑预热。
+//   - cache_ahead 的冻结不随任务被取消而回滚(核实意见 A1-2):push 里用 context.WithoutCancel;被取消的任务若冻结没做成,
+//     证据转成 cacheAheadPending 由循环每拍重试。
 //   - 围栏镜像对账不成功(列库 / 写镜像出错、镜像的 fence_epoch 比库新)与 foreign_fence 一样阻止挂标记,事件记 arming_refused_unresolved
 //     (规格的事件集合里没有单独的 fence 拒绝事件)。
 //   - 围栏镜像不再每拍 SCAN 整个 mapping 库(核实意见 A1-4 / LR-1,偏离规格 §13.1 第 3 条的「每拍 SCAN」):删本方案写的过期镜像只按
@@ -218,6 +231,8 @@ type Cache interface {
 	CompareAndDeleteReady(ctx context.Context, old string) (bool, error)
 	// DeleteReadyWrongType 无条件 DEL 就绪标记键,只给「键在但不是 string」用。
 	DeleteReadyWrongType(ctx context.Context) error
+	// DeleteWatermarkWrongType 无条件 DEL 水位键,只给「键在但不是 string」用(核实意见 A1-8)。
+	DeleteWatermarkWrongType(ctx context.Context) error
 	// AdvanceWatermark:prev 为 nil 时 SET NX,否则按原值 CAS 成 next。
 	AdvanceWatermark(ctx context.Context, prev *string, next string) (bool, error)
 	Push(ctx context.Context, rows []store.RouteRow) ([]PushRowResult, error)
@@ -415,6 +430,10 @@ type Reconciler struct {
 	pendingCvm         *uint64
 	pendingCvmIdentity placement.RedisInstanceIdentity
 	cacheAheadPending  bool
+	// cacheEvidenceLost:上一拍判过「副本对账到哪」的证据已丢(checkCacheEvidence),只用来让 ERROR 日志按变化打一次。
+	cacheEvidenceLost bool
+	// lastWatermarkShape:上一次记过日志的畸形 / 版本更新水位键(种类 + 原值),同一值只记一次(settleWatermarkShape)。
+	lastWatermarkShape string
 
 	generation string
 	cvm        uint64
@@ -594,6 +613,9 @@ type task struct {
 	fenceScanAfterRound uint64
 	// pending:incremental 顺带复读的未决 player_id。
 	pending []uint64
+	// pendingSet:任务开始时 leader 记下的未决 player_id(预热为 nil:startTask 先清空了未决表)。任务只对其中的 id 记 resolved
+	// (核实意见 LR-8):applyTaskResult 只拿 resolved 去删未决表,记全表每一行只会让 leader 内存随表长到 O(行数)。
+	pendingSet map[uint64]struct{}
 }
 
 type taskResult struct {
@@ -654,6 +676,11 @@ type armLatch struct {
 // startTask 起一个任务(调用方已确认 running == nil)。带令牌的任务先 SET 新令牌(M2):SET 失败就不起。
 func (r *Reconciler) startTask(ctx context.Context, t task) bool {
 	if t.phase.tokened() {
+		if !r.leaseValid() {
+			// 慢拍里本地租约已过点(核实意见 LR-10):SET 令牌不受库侧租约谓词保护,会让接手的新 leader 的任务挂不上标记。
+			logx.Errorf("[RouteReconcile] %s not started: the local lease expired during this tick", t.phase)
+			return false
+		}
 		token, err := newWarmToken(r.rnd)
 		if err == nil {
 			opCtx, cancel := context.WithTimeout(ctx, tickOpTimeout)
@@ -674,6 +701,13 @@ func (r *Reconciler) startTask(ctx context.Context, t task) bool {
 	if t.phase == phaseIncremental {
 		r.lastIncremental = r.clock.Now()
 		t.pending = r.pendingIDs()
+	}
+	t.pendingSet = nil
+	if len(r.pending) > 0 {
+		t.pendingSet = make(map[uint64]struct{}, len(r.pending))
+		for id := range r.pending {
+			t.pendingSet[id] = struct{}{}
+		}
 	}
 	r.taskSeq++
 	t.seq = r.taskSeq
@@ -728,22 +762,36 @@ func (r *Reconciler) collectTaskResult(ctx context.Context) {
 	if rt.aborted != "" {
 		r.obs.Event(metrics.RouteReconcileEventTaskAborted)
 		logx.Infof("[RouteReconcile] %s seq=%d aborted by the leader loop (%s) after %d rows; result discarded", res.phase, res.seq, rt.aborted, res.rows)
+		// 结果整份丢弃,但已确认的 cache_ahead 证据不能跟着丢(核实意见 A1-2)。
+		r.keepCacheAheadEvidence(res)
 		return
 	}
 	r.applyTaskResult(ctx, res, rt.task)
 }
 
+// keepCacheAheadEvidence 处理任务确认过的 cache_ahead(库丢了已提交的写):冻结做成了只计事件;没做成(出错,或结局不是
+// Frozen / AlreadyFrozen)而本副本仍是 leader → cacheAheadPending,之后每拍重试冻结,直到冻结或丢租约(fail-closed)。
+// 证据只在 leader 内存里:增量从 cvm − Overlap 起扫,扫不到回档前的旧行;FLUSH 之后缓存里的超前值也没了,丢了就再也发现不了。
+// 已降级时不置:resetTerm 清掉本任期状态,新任期不替前任背这份证据(push 里的冻结不随任务取消回滚,多半已经做成)。
+func (r *Reconciler) keepCacheAheadEvidence(res taskResult) {
+	if !res.cacheAhead {
+		return
+	}
+	switch {
+	case res.freezeErr == nil && res.freezeOutcome == store.ReconcileTickFrozen:
+		r.obs.Event(metrics.RouteReconcileEventFreezeCacheAhead)
+	case res.freezeErr == nil && res.freezeOutcome == store.ReconcileTickAlreadyFrozen:
+	case r.leader:
+		logx.Errorf("[RouteReconcile] %s seq=%d confirmed cache_ahead but the freeze did not commit (outcome %s, err %v); retrying it every tick",
+			res.phase, res.seq, res.freezeOutcome, res.freezeErr)
+		r.cacheAheadPending = true
+	}
+}
+
 func (r *Reconciler) applyTaskResult(ctx context.Context, res taskResult, t task) {
 	if res.cacheAhead {
 		r.obs.Event(metrics.RouteReconcileEventTaskAborted)
-		switch {
-		case res.freezeErr == nil && res.freezeOutcome == store.ReconcileTickFrozen:
-			r.obs.Event(metrics.RouteReconcileEventFreezeCacheAhead)
-		case res.freezeErr == nil && res.freezeOutcome == store.ReconcileTickAlreadyFrozen:
-		default:
-			// 证据在内存里,冻结没做成:每拍重试,直到冻结或丢租约(fail-closed)。
-			r.cacheAheadPending = true
-		}
+		r.keepCacheAheadEvidence(res)
 		return
 	}
 	if !res.complete {
@@ -999,6 +1047,14 @@ func (run *taskRun) unresolve(id uint64) {
 	run.res.unresolved = append(run.res.unresolved, id)
 }
 
+// resolve 记一行「已解决」:只记任务开始时 leader 记下的未决 id(task.pendingSet;预热为空集,一行都不记)。
+// resolved 唯一的用途是让 applyTaskResult 把它们从未决表删掉,别的 id 记了也是空操作(核实意见 LR-8)。
+func (run *taskRun) resolve(id uint64) {
+	if _, ok := run.t.pendingSet[id]; ok {
+		run.res.resolved = append(run.res.resolved, id)
+	}
+}
+
 // push 推一批行:限速 → Push → superseded 的复读库(库 rev < 缓存 rev 或读不到行 = cache_ahead,冻结并中止)→ 计数。
 func (run *taskRun) push(ctx context.Context, rows []store.RouteRow) error {
 	r := run.r
@@ -1024,12 +1080,13 @@ func (run *taskRun) push(ctx context.Context, rows []store.RouteRow) error {
 			continue
 		case pr.Outcome.unresolved():
 			run.unresolve(pr.PlayerID)
+			// seen 只记打过日志的 id(至多 unresolvedLogSample*10 个):遗留值冲突成片时它不随未决行数长(核实意见 LR-8 同类)。
 			if !run.seen[pr.PlayerID] && len(run.seen) < unresolvedLogSample*10 {
 				logx.Errorf("[RouteReconcile] %s: player %d unresolved (%s): %s", phase, pr.PlayerID, pr.Outcome.label(), pr.Detail)
+				run.seen[pr.PlayerID] = true
 			}
-			run.seen[pr.PlayerID] = true
 		default:
-			run.res.resolved = append(run.res.resolved, pr.PlayerID)
+			run.resolve(pr.PlayerID)
 		}
 		counts[pr.Outcome.label()]++
 	}
@@ -1078,7 +1135,7 @@ func (run *taskRun) push(ctx context.Context, rows []store.RouteRow) error {
 		}
 		// 库 rev >= 缓存 rev:在线写者在我们读库之后提交并发布了更新的版本,正常竞态(更新的库值由写者自己发布,或由下一轮增量补)。
 		counts[metrics.RouteReconcilePushSuperseded]++
-		run.res.resolved = append(run.res.resolved, s.PlayerID)
+		run.resolve(s.PlayerID)
 	}
 	if len(ahead) == 0 {
 		return nil
@@ -1089,7 +1146,10 @@ func (run *taskRun) push(ctx context.Context, rows []store.RouteRow) error {
 	logx.Errorf("[RouteReconcile] %s: CACHE AHEAD of player_route for %s; freezing the route writers (route_meta.writable=0). "+
 		"Recover with route_tool freeze → reconcile-from-cache → audit -frozen-recovery → unfreeze (runbook §9.4)", phase, strings.Join(ahead, ", "))
 	run.res.cacheAhead = true
-	fr, ferr := r.st.FreezeByLeader(ctx, r.leaderID, store.RouteFreezeCacheAhead, r.opts.freezeTimeout)
+	// 冻结是 fail-closed 动作,不随任务被取消而回滚(核实意见 A1-2):TiDB 档冻结要等缓存表读租约(至多 FreezeTimeout),这几秒里
+	// 循环可能因令牌被换 / 身份变化 / 排修补 / 降级取消本任务;用任务 ctx 的话冻结事务跟着回滚,结果又被整份丢弃。
+	// FreezeByLeader 自带 FreezeTimeout 时限与库侧租约谓词(失权回 LeaseLost,不会越权冻结);关停时最多在后台多跑 FreezeTimeout。
+	fr, ferr := r.st.FreezeByLeader(context.WithoutCancel(ctx), r.leaderID, store.RouteFreezeCacheAhead, r.opts.freezeTimeout)
 	run.res.freezeOutcome, run.res.freezeErr = fr.Outcome, ferr
 	if ferr != nil {
 		logx.Errorf("[RouteReconcile] freezing the route writers after cache_ahead failed (the leader loop retries every tick): %v", ferr)
@@ -1224,9 +1284,16 @@ func (r *Reconciler) tick(ctx context.Context) string {
 		r.pendingCvm = nil
 	}
 	ms := r.settleMarkerShape(ctx, ctl)
-	wm := classifyWatermark(ctl.Watermark)
+	wm := r.settleWatermarkShape(ctx, ctl)
 	r.checkControlKeysWiped(ctl, p)
 	r.checkRunningToken(ctl, p)
+	evidenceLost := r.checkCacheEvidence(ctl, p)
+	if !r.opts.arm && (ms.kind == keyValid || ms.kind == keyNewer) && r.leaseValid() {
+		// M4 撤标记只要 Redis 与仍有效的本地租约,放在库内部分之前(核实意见 LR-12):库故障、AdvanceReconcile 出错的拍里也照撤,
+		// 回退规程等的 marker_dropped_disarmed 不被库故障卡住。代价:Arm=false 下不再拿将撤的标记做「标记世代 ≠ 库世代」的冻结判据
+		// (Arm=false 本不该有标记;库被重建由水位键 M3 与推送时的 cache_ahead 发现)。
+		r.dropMarker(ctx, &ms, metrics.RouteReconcileEventMarkerDroppedDisarmed, "ArmReadyMarker=false (M4: disarming withdraws trust)")
+	}
 
 	// 4. 每拍的库内部分。
 	if res, ok := r.advance(ctx, now, wm, &ms, p); !ok {
@@ -1234,11 +1301,11 @@ func (r *Reconciler) tick(ctx context.Context) string {
 	}
 
 	// 5. 淘汰 / DEBUG 自检。
+	if !r.leaseStillHeld("the eviction / debug checks") {
+		return metrics.RouteReconcileTickLeaseLost
+	}
 	evBad, evTaint := r.evictionState(p)
 	dbgBad := p.DebugCommand != "no"
-	if !r.opts.arm && (ms.kind == keyValid || ms.kind == keyNewer) {
-		r.dropMarker(ctx, &ms, metrics.RouteReconcileEventMarkerDroppedDisarmed, "ArmReadyMarker=false (M4: disarming withdraws trust)")
-	}
 	if ms.kind == keyValid && evBad {
 		r.dropMarker(ctx, &ms, metrics.RouteReconcileEventMarkerDroppedEviction,
 			fmt.Sprintf("eviction is possible or happened (maxmemory-policy=%q evicted_keys=%d baseline=%d)", p.MaxmemoryPolicy, p.EvictedKeys, r.evictedBaseline))
@@ -1255,17 +1322,23 @@ func (r *Reconciler) tick(ctx context.Context) string {
 	}
 
 	// 6. 围栏镜像双向对账。
+	if !r.leaseStillHeld("the fence mirror reconciliation") {
+		return metrics.RouteReconcileTickLeaseLost
+	}
 	mirrorOK, foreign := r.reconcileFenceMirrors(ctx)
 
 	// 7 / 8. 标记与任务。
+	if !r.leaseStillHeld("the marker / task decision") {
+		return metrics.RouteReconcileTickLeaseLost
+	}
 	if r.opts.arm {
 		r.decideArmed(ctx, &ms, p, blockers{eviction: evBad, debug: dbgBad, fenceMirror: !mirrorOK || foreign}, evTaint)
 	} else {
-		r.decideDisarmed(ctx, ctl, p)
+		r.decideDisarmed(ctx, p)
 	}
 
-	// 9. 增量。
-	if r.running == nil && !r.startedThisTick && r.queuedRepair == nil && r.clock.Now().Sub(r.lastIncremental) >= r.opts.incrementalInterval {
+	// 9. 增量。证据刚丢的这一拍不起(cvm 刚作废;若水位键也没重建成,下一拍还会再判丢、把它取消),下一拍从 0 起全量。
+	if !evidenceLost && r.running == nil && !r.startedThisTick && r.queuedRepair == nil && r.clock.Now().Sub(r.lastIncremental) >= r.opts.incrementalInterval {
 		r.startTask(ctx, task{phase: phaseIncremental, fromMs: satSub(r.cvm, r.opts.overlapMs), identity: p.Identity})
 	}
 
@@ -1350,9 +1423,20 @@ func (r *Reconciler) demote(reason string) {
 	logx.Errorf("[RouteReconcile] no longer the leader: %s", reason)
 }
 
+// leaseStillHeld 是拍内各步 Redis 写之前的本地租约复核(核实意见 LR-10):拍首判过一次,但一拍可能因 Redis / 库变慢拖过本地截止,
+// 之后的 Redis 写(预热令牌、标记、围栏镜像)不受库侧租约谓词保护,会与已接手的新 leader 打架。过点即降级,调用方结束本拍。
+func (r *Reconciler) leaseStillHeld(before string) bool {
+	if r.leaseValid() {
+		return true
+	}
+	r.demote("the local lease expired during the tick (before " + before + ")")
+	return false
+}
+
 func (r *Reconciler) resetTerm() {
 	r.vi, r.candidate, r.latch, r.queuedRepair = nil, nil, nil, nil
-	r.lastRefusal, r.lastForeignFence = "", ""
+	r.lastRefusal, r.lastForeignFence, r.lastWatermarkShape = "", "", ""
+	r.cacheEvidenceLost = false
 	r.pending = map[uint64]struct{}{}
 	r.pendingOverflow = false
 	r.pendingCvm = nil
@@ -1430,6 +1514,51 @@ func (r *Reconciler) settleMarkerShape(ctx context.Context, ctl Control) markerS
 	return ms
 }
 
+// settleWatermarkShape 处理水位键的形状(核实意见 A1-8;此前三种情形都静默,M3 停摆没人知道):
+//   - 不是 string:记 ERROR、无条件 DEL(计 marker_dropped_malformed),本拍按「不在」交给 advanceWatermarkKey 当拍 SET NX 重建。
+//     不当成 FLUSH(checkCacheEvidence 不把它算「水位键不在」):只是有人把这一把键写坏了,映射键没动,不该触发全量追平;
+//     不删的话 SET NX 每拍都因键在而失败,M3 永久失效。DEL 失败回 keyWrongType,本拍不写水位键;
+//   - 畸形:记 ERROR(带原值)、计 marker_dropped_malformed;AdvanceReconcile 拿不到可判的值,本拍不做 M3,提交后按原值 CAS 覆盖;
+//   - 版本更新:记 ERROR —— 本 leader 的 M3 回档检测停摆(不判也不写),要换新版本二进制。
+//
+// 畸形与版本更新每拍都在(冻结期也不覆盖),同一原值只在第一次见到时记日志与事件,免得刷屏、计数按秒涨。
+func (r *Reconciler) settleWatermarkShape(ctx context.Context, ctl Control) watermarkState {
+	if ctl.WatermarkWrongType {
+		r.lastWatermarkShape = ""
+		opCtx, cancel := context.WithTimeout(ctx, tickOpTimeout)
+		err := r.cache.DeleteWatermarkWrongType(opCtx)
+		cancel()
+		if err != nil {
+			logx.Errorf("[RouteReconcile] %s is not a string (M3 rollback detection cannot run); DEL failed: %v", placement.RouteWatermarkKey, err)
+			return watermarkState{kind: keyWrongType}
+		}
+		r.obs.Event(metrics.RouteReconcileEventMarkerDroppedMalformed)
+		logx.Errorf("[RouteReconcile] %s was not a string (M3 rollback detection skipped this tick); deleted, rebuilt from the database watermark this tick",
+			placement.RouteWatermarkKey)
+		return watermarkState{kind: keyAbsent}
+	}
+	wm := classifyWatermark(ctl.Watermark)
+	switch wm.kind {
+	case keyMalformed, keyNewer:
+		shape := fmt.Sprintf("%d:%s", wm.kind, *wm.raw)
+		if shape == r.lastWatermarkShape {
+			return wm
+		}
+		r.lastWatermarkShape = shape
+		if wm.kind == keyMalformed {
+			r.obs.Event(metrics.RouteReconcileEventMarkerDroppedMalformed)
+			logx.Errorf("[RouteReconcile] %s holds a malformed value %q: M3 rollback detection skipped; it is overwritten with the database watermark after the commit",
+				placement.RouteWatermarkKey, *wm.raw)
+		} else {
+			logx.Errorf("[RouteReconcile] %s has a newer format version than this binary (%q): left untouched; M3 rollback detection is NOT running on this leader "+
+				"(upgrade the data_service replicas)", placement.RouteWatermarkKey, *wm.raw)
+		}
+	default:
+		r.lastWatermarkShape = ""
+	}
+	return wm
+}
+
 // dropMarker 按原值 CAD 就绪标记,成功时计 event(event 为空不计);ms 置为缺席(CAD 输了说明值已被换,下一拍重判)。
 // 返回 false = CAD 本身出错(Redis 故障),标记可能还在,调用方本拍不要据「已撤」往下走。
 func (r *Reconciler) dropMarker(ctx context.Context, ms *markerState, event, why string) bool {
@@ -1458,8 +1587,7 @@ func (r *Reconciler) dropMarker(ctx context.Context, ms *markerState, event, why
 // checkControlKeysWiped:三把控制键都不在,而本任期见过它们 = 被 rewarm(一条 DEL 删三把)或 FLUSHALL / FLUSHDB 清掉。
 // 闩锁、候选、VI 全部作废,重取 evicted_keys 基线(规格 §13.1 第 6 条);在途的带令牌任务也挂不上了,取消。
 func (r *Reconciler) checkControlKeysWiped(ctl Control, p Probe) {
-	present := ctl.Ready != nil || ctl.ReadyWrongType || ctl.Warm != nil || ctl.Watermark != nil
-	if present {
+	if ctl.present() {
 		r.sawControlKeys = true
 		return
 	}
@@ -1497,6 +1625,37 @@ func (r *Reconciler) checkRunningToken(ctl Control, p Probe) {
 	logx.Errorf("[RouteReconcile] cancelling %s seq=%d: %s", rt.task.phase, rt.task.seq, reason)
 	rt.abort(reason)
 	r.vi = nil
+}
+
+// checkCacheEvidence 判「副本对账到哪」的证据还在不在(核实意见 A1-1 / LR-2,包注释「偏离规格」第 1 条)。证据丢了 = 三把控制键都不在
+// (空实例 / FLUSH / rewarm,不论本任期见没见过它们),或 Arm=false 下水位键不在(不是 string 的不算,见 settleWatermarkShape)。
+// 这时「updated_at_ms < cvm − Overlap 的行都已推进缓存」不再成立:
+//   - pendingCvm 换成 0,本拍 AdvanceReconcile 把库里的 cvm 写成 0。写进库,「要从 0 全量追平」才跨拍、跨任务失败、跨换届与滚动重启保留
+//     (追平 / 修补起点都按库里的 cvm 算);写库在当拍 SET NX 重建水位键之前(advance 的顺序),库写失败时水位键不重建、下一拍再判。
+//     冻结的拍库里不写(AlreadyFrozen 零写入),水位键也不重建,证据留在 Redis 里,解冻之后第一拍再判;
+//   - 已收而未写的 pendingCvm(本拍开头刚收的任务结果)一并作废;
+//   - 在途任务除「带令牌、从 0 起」的(预热、从 0 起的追平 / 修补:它们覆盖全表,FLUSH / rewarm 会换掉令牌,已由 checkRunningToken 取消)
+//     之外一律取消 —— 尤其是不带令牌的增量:FLUSH 不改身份,它跑完会把 FLUSH 之前的起点 S 写成 cvm,追平又退化成 S − Lookback。
+//
+// 返回证据是否丢了(第 9 步本拍不起增量)。只有本任期第一次判丢时记 ERROR。
+func (r *Reconciler) checkCacheEvidence(ctl Control, p Probe) bool {
+	if ctl.present() && (r.opts.arm || !ctl.watermarkAbsent()) {
+		r.cacheEvidenceLost = false
+		return false
+	}
+	if !r.cacheEvidenceLost {
+		r.cacheEvidenceLost = true
+		logx.Errorf("[RouteReconcile] the cache verification evidence is gone (ready=%t warm=%t watermark=%t arm=%t): "+
+			"cache_verified_ms %d is reset to 0, so the next catch-up / incremental re-pushes every row from updated_at_ms 0",
+			ctl.Ready != nil, ctl.Warm != nil, !ctl.watermarkAbsent(), r.opts.arm, r.cvm)
+	}
+	zero := uint64(0)
+	r.pendingCvm, r.pendingCvmIdentity = &zero, p.Identity
+	if rt := r.running; rt != nil && rt.aborted == "" && !(rt.task.phase.tokened() && rt.task.fromMs == 0) {
+		logx.Errorf("[RouteReconcile] cancelling %s seq=%d (from_ms=%d): the cache verification evidence is gone", rt.task.phase, rt.task.seq, rt.task.fromMs)
+		rt.abort("cache verification evidence lost")
+	}
+	return true
 }
 
 // advance 是第 4 步。返回 (tick 结果, 是否继续)。冻结时在这里收尾(撤该撤的标记、写观测)。
@@ -1618,13 +1777,14 @@ func (r *Reconciler) onFrozen(ctx context.Context, ms *markerState, p Probe) str
 }
 
 // advanceWatermarkKey 在本拍提交之后单调推进水位键(M3):GET(本拍 MGET 的原值)→ 判 → 按原值 CAS / 缺席时 SET NX。
-// 只增不减、世代不同不写(那种情况 AdvanceReconcile 已冻结);版本更新的值不碰。CAS 输了下一拍再来。
+// 只增不减、世代不同不写(那种情况 AdvanceReconcile 已冻结);版本更新的值不碰、不是 string 而 DEL 失败的不写。CAS 输了下一拍再来。
+// 本地租约过点不写(核实意见 LR-10):过期 leader 迟到的 SET NX 会在 FLUSH 之后替新 leader 重建水位键,把「证据已丢」盖掉。
 func (r *Reconciler) advanceWatermarkKey(ctx context.Context, wm watermarkState, res store.ReconcileTickResult) {
-	if res.WatermarkMs == 0 || res.Generation == "" {
+	if res.WatermarkMs == 0 || res.Generation == "" || !r.leaseValid() {
 		return
 	}
 	switch wm.kind {
-	case keyNewer:
+	case keyNewer, keyWrongType:
 		return
 	case keyValid:
 		if wm.w.Generation != res.Generation || wm.w.WatermarkMs >= res.WatermarkMs {
@@ -1726,8 +1886,11 @@ func (r *Reconciler) reportRefusal(b blockers) {
 		"reasons=%s pending=%d overflow=%t sample=%v", placement.RouteReadyKey, k, len(r.pending), r.pendingOverflow, sample)
 }
 
-// decideDisarmed 是 Arm=false 的第 7 步:VI 为空(或身份变了)排追平。追平起点:水位键不在 = 0(全量),否则 max(0, cvm − RepairLookbackMs)。
-func (r *Reconciler) decideDisarmed(ctx context.Context, ctl Control, p Probe) {
+// decideDisarmed 是 Arm=false 的第 7 步:VI 为空(或身份变了)排追平,起点 max(0, cvm − RepairLookbackMs),cvm 取本拍库里的值。
+// 「水位键不在 = 从 0 全量追平」不在这里按本拍读到的水位键判(那只在发现缺席的一拍里成立:同拍就 SET NX 重建了),而是由
+// checkCacheEvidence 当拍把库里的 cvm 写成 0 —— 追平中途失败、那一拍恰有增量在跑、追平途中换 leader,下一次追平仍从 0 起
+// (核实意见 A1-1 / LR-2)。
+func (r *Reconciler) decideDisarmed(ctx context.Context, p Probe) {
 	if r.vi != nil && *r.vi != p.Identity {
 		logx.Errorf("[RouteReconcile] redis identity changed (run_id %s → %s); catching up", r.vi.RunID, p.Identity.RunID)
 		r.vi = nil
@@ -1735,11 +1898,7 @@ func (r *Reconciler) decideDisarmed(ctx context.Context, ctl Control, p Probe) {
 	if r.vi != nil || r.running != nil || r.startedThisTick {
 		return
 	}
-	from := satSub(r.cvm, r.opts.lookbackMs)
-	if ctl.Watermark == nil {
-		from = 0
-	}
-	r.startTask(ctx, task{phase: phaseCatchUp, fromMs: from, identity: p.Identity})
+	r.startTask(ctx, task{phase: phaseCatchUp, fromMs: satSub(r.cvm, r.opts.lookbackMs), identity: p.Identity})
 }
 
 // decideArmed 是 Arm=true 的第 8 步(规格 §4.3 第 8 步按 §13.1 第 1 条改写)。
@@ -1782,7 +1941,10 @@ func (r *Reconciler) decideArmed(ctx context.Context, ms *markerState, p Probe, 
 		r.startQueuedRepair(ctx, p)
 		return
 	}
-	b.unresolved = len(r.pending) > 0 || r.pendingOverflow
+	// 未决只看记下的 id(核实意见 A1-3 / LR-3):溢出(超过 ArmingBlockedReportLimit、记不全)若也算未决,记下的 id 全部解决之后
+	// 闩锁仍永不解除,下面「解除后全量预热」那一支走不到,只能靠 rewarm / 换届解开。溢出在闩锁解除与候选两支里各自处理:
+	// 记下的还没解决 → 照旧闩住(不重跑预热);都解决了 → 丢掉记不全的候选,全量预热重新发现(startTask 复位溢出)。
+	b.unresolved = len(r.pending) > 0
 	if r.latch != nil {
 		if r.latch.identity != p.Identity {
 			logx.Errorf("[RouteReconcile] redis identity changed while arming was blocked; full prewarm")
@@ -1819,8 +1981,13 @@ func (r *Reconciler) decideArmed(ctx context.Context, ms *markerState, p Probe, 
 				return
 			}
 			r.candidate = nil
-			r.tryArm(ctx, c, p)
-			return
+			if !r.pendingOverflow {
+				r.tryArm(ctx, c, p)
+				return
+			}
+			// 记下的未决都解决了,但溢出过:还有没记下的未决行,这份结果不能拿去挂标记。
+			logx.Infof("[RouteReconcile] the %s result is not usable: unresolved rows overflowed ArmingBlockedReportLimit=%d; full prewarm",
+				c.phase, r.opts.pendingLimit)
 		}
 	}
 	if b.state() {

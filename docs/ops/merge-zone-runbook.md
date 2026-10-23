@@ -139,12 +139,12 @@
 | **判据** | **键存在即封锁**。不看值、不看剩余 TTL。Redis 报错一律按「封锁」处理(fail-closed) |
 | **谁写** | 只有 `tools/merge_zone`(merge 与 unmerge 两种模式都写)。`SETNX`:已经有别人的围栏就**拒绝启动**,并把对方的 JSON 打出来 |
 | **什么时候写** | 合服在 P1 / R / C 之后、**收集玩家之前**立围栏(A2),所以收集与预检都在围栏之下 |
-| **TTL** | `-timeout + 30m`,下限 1 小时。默认 `-timeout=2h` ⇒ **TTL 2h30m**。后台 goroutine 每 `ttl/3` 续期一次 |
+| **TTL** | `-timeout + 30m`,下限 1 小时。默认 `-timeout=2h` ⇒ **TTL 2h30m**。后台 goroutine 每 `ttl/3` 续期一次(redis 源;db 源的库围栏每 `min(ttl/3, 30s)` 续期一次,见 §15.4) |
 | **谁清** | 分三种情况:<br>① **正常结束**:显式 DEL。Lua 先比对 `run_id` 再删,不会误删接手者的围栏。<br>② **首跑时,立围栏之后、清单落盘之前被拒绝**(守卫、P2~P7、公会重名、落点扫描、合走标记等):本次什么都没写,工具**正常释放围栏**后 exit 1,日志 `this run wrote nothing and its merge fence was released`。修好原因后直接重跑。<br>③ **清单落盘之后失败**(步骤 1~6、清单写盘),以及**续跑时在清单落盘之前被拒绝**(见下方说明):**围栏保留**在本次 run_id 上,文案带 `LEFT IN PLACE`,并打印续跑指引:确认没有存活的 merge_zone 进程 → `GET merge:in_progress:<SRC>` 核对 run_id 与中止日志一致 → `DEL merge:in_progress:<SRC> merge:in_progress:<DST>` → 立即用原命令(同一个 `-MergeManifestPath`)重跑。<br>**以上 GET / DEL 只适用于 `-MergeZoneRouteSource redis`**。db 源(§15)下围栏的真源是全局库 `zone_merge_fence`,`merge:in_progress:*` 只是镜像:DEL 镜像只会让 scene_manager / guild 提前放行,重跑照样被库拒绝(`merge fence is held by another run`)。db 源的 ③ 改为:确认没有存活进程 → 原命令加 `-MergeZoneTakeOverFence <中止日志里的 run_id>` 重跑,工具在一个库事务里把围栏接到新 run_id,两区一刻不解封(§15.4)。<br>TTL 是进程被 kill 时的兜底,不是正常清除手段 |
 | **dry-run** | **不写**围栏,但会检查是否撞上别人的;撞上就拒绝 |
 
 > **续跑与半撤销时的拒绝保留围栏**(2026-09-28 修复,未经运行验证):
-> - **合服续跑**:清单已存在、且清单里步骤 7 `post_merge_flag` 还没标记完成时,上一次运行可能已写到一半。此时在「围栏之下、清单落盘之前」被拒绝(续跑校验 R2、守卫、P2~P7、公会重名、落点扫描、合走标记、清单写盘),工具**不释放围栏**,文案以「续跑在清单更新之前被拒」开头,带 `LEFT IN PLACE` 与本次 run_id。按 ③ 处理:修好原因 → 核对 run_id → DEL → 原命令重跑。清单已标记步骤 7 完成时照常释放(上一次已跑完全程)。
+> - **合服续跑**:清单已存在、且清单里步骤 7 `post_merge_flag` 还没标记完成时,上一次运行可能已写到一半。此时在「围栏之下、清单落盘之前」被拒绝(续跑校验 R2、守卫、P2~P7、公会重名、落点扫描、合走标记、清单写盘),工具**不释放围栏**,文案以「续跑在清单更新之前被拒」开头,带 `LEFT IN PLACE` 与本次 run_id。按 ③ 处理:修好原因 → 核对 run_id → DEL → 原命令重跑(db 源不 DEL:原命令加 `-MergeZoneTakeOverFence <本次 run_id>`,§15.4;db 源续跑在获取围栏之后镜像确认不了时同样保留围栏)。清单已标记步骤 7 完成时照常释放(上一次已跑完全程)。
 > - **撤销重跑**:立围栏后先看清单玩家里是否已有人 `player:zone == src`(上一次撤销在 5' 之后中止,半撤销)。是则 P、S 段的拒绝同样保留围栏;读映射失败也按半撤销处理。偏保守的副作用:合服当初带了 `-skip-player-mapping`,或合服在步骤 5 之前停下后改跑撤销,清单玩家都还是 src,撤销的门禁拒绝也会保留围栏,照 ③ 处理即可。
 > - 判断拿到的是哪一种:看最后几行有没有 `LEFT IN PLACE`。有 = 围栏还在,按 ③;没有、且有 `merge fence was released` = 按 ②。
 
@@ -1466,7 +1466,7 @@ go run ./cmd/migrate -f <db.yaml 副本> -storage-id 1000000 -command up -create
 **围栏保留(写到一半中止,库围栏故意留在原 run_id 上)**:每次运行的 run_id 都是新生成的,原样重跑会被库拒绝(`merge fence is held by another run`),直到库时钟过了 `expires_at_ms`。按报文里的续跑步骤:
 
 1. 按报文原因排除故障(锁冲突查 `SHOW ENGINE INNODB STATUS` 与 `information_schema.innodb_trx` 的长事务;Redis 失败先恢复 mapping Redis 连通)。
-2. 确认那次运行的 merge_zone 进程已经不在(本机 / 跳板机 / Job 都查)。**对一个还在运行的 run_id 接手是错的**:旧进程的下一批映射写入会被库拒绝,但它已经发出的非映射写(拷行、帮会、交易)与新进程交错。
+2. 确认那次运行的 merge_zone 进程已经不在(本机 / 跳板机 / Job 都查)。**对一个还在运行的 run_id 接手是错的**:旧进程的下一批映射写入会被库拒绝,但它不碰映射的写(拷行、blob、帮会、交易、榜单、热状态、公告、清单文件)只看本地判据,要到它下一次续期失败才停 —— db 源续期间隔是 `min(ttl/3, 30s)`,所以最长约 30 秒与新进程交错写、互相覆盖同一份清单文件。
 3. 只读核对库里的持有者与报文一致:`SELECT zone_id, run_id, expires_at_ms, fence_epoch FROM zone_merge_fence WHERE zone_id IN (<SRC>, <DST>) AND shard = 63`。
 4. 用**原命令**(同一份 `-MergeManifestPath`、同一份 `<ROUTE_ARGS>`)加 `-MergeZoneTakeOverFence <报文里的 run_id>` 重跑;撤销中止的同理,`merge-zone-unmerge` 加同一个开关:
 
@@ -1478,6 +1478,13 @@ pwsh -File tools/scripts/dev_tools.ps1 -Command merge-zone -MergeSourceZone <SRC
 
 - 工具在**一个**库事务里把两区全部 64 片从旧 run_id 接到本次 run_id(`fence_epoch + 1`),两区在库里一刻不解封;镜像按更大的 `fence_epoch` 覆盖旧值并 WAITAOF 确认之后才继续。日志 `merge fence taken over in zone_merge_fence from run_id=…`。
 - 第三个 run_id 持有任何一片(有人在跑另一次合服 / 撤销)仍拒绝,**停下来查清楚**。库里那次围栏已过期 / 已释放时,这个开关不起作用,按普通获取处理。
+- **接手核对**(2026-10-22 补记,未经运行验证):接手事务在库里逐片核对被接手的分片 —— `src_zone` / `dst_zone` 必须与本次相同(写错 `-MergeSourceZone` / `-MergeTargetZone` 时若照样接手,只有点对的那一区被接走,另一区挂在已死的运行上、过期后在半截状态下解封);`holder_json` 里记着的 `manifest_path` 必须与本次 `-MergeManifestPath` 相同(规整后比较;续跑落到另一份清单会被当成首跑,收集出漏人的清单);每个 zone 要么 64 片全在那个 run_id 名下、要么一片都不在(已过期,按普通获取)。任一不满足报 `route store: invalid argument` 并写明库里与本次的值,事务不写,旧围栏原样保留:改正参数(多半是补上原来的 `-MergeManifestPath`)再接手。不比 purpose:合服中止后改跑 `merge-zone-unmerge` 照样能接手。
+- **接手本身失败时围栏不释放**:接手事务结果不明(提交回包丢了),或接手之后镜像 `WAITAOF` 确认不了(上一次正是 Redis 故障中止时很常见),工具**不释放**库围栏、非零退出 —— 释放就等于在半合服 / 半撤销状态下解封。报文写明围栏此刻归谁:镜像没确认时归**本次**的新 run_id(报文带 `fence_epoch`),修好 mapping Redis 后对这个新 run_id 再接手一次;结果不明时是旧 / 新两个之一,先按第 3 步只读查 `shard = 63` 再对库里那个 run_id 接手。不要等它过期,也不要 DEL 镜像。
+- **合服续跑不带这个开关时同一口径**(2026-10-22 补记,未经运行验证):上一次的围栏已过期 / 已释放、本次以新 run_id 普通获取,但清单已存在且步骤 7 未标记完成(两区可能处在半合服状态)—— 获取之后镜像确认不了、获取事务结果不明,同样**不释放**、非零退出,报文以「续跑」说明并给出本次 run_id 与 `-take-over-fence <本次 run_id>`;结果不明时查 `shard = 63`:是本次就接手,没有生效的围栏就用原命令直接重跑。首跑(没有清单)照旧先清库、报 `this run wrote nothing`。撤销在立围栏之前判断不了半撤销,不走这条(只有带开关时才保留)。
+- 带 `-MergeZoneTakeOverFence` 的运行,在清单落盘之前的任何拒绝(续跑校验、守卫、P2~P7、公会重名、落点扫描、合走标记、清单写盘)一律保留围栏(`LEFT IN PLACE`),与清单在不在、是否标记了步骤 7 都无关;撤销同理按半撤销处理。
+- db 源撤销的 7'(删公告标记)、4'(拿 guild_rank 维护锁、还原 ZSET)、1'(删目标库行)失败同样打 `LEFT IN PLACE` 报文并给出接手命令(之前是一行原始错误、围栏挂到过期)。
+- 不带这个开关重跑撞上残留围栏时,报错(`merge fence is held by another run`)会直接提示 `-take-over-fence <run_id>` 与同一份 `-manifest-path`:仍须先做第 2、3 步,不要见到提示就接手。
+- 映射来源:清单记录 `route_source=db` 的合服,续跑与撤销都必须 `-MergeZoneRouteSource db`;用 redis 源续跑或撤销在立围栏之前就被拒(库里留着的围栏不受影响)。
 - 适用范围由工具判:只 `merge-zone` / `merge-zone-unmerge`、只 `-MergeZoneRouteSource db`、值必须是合法 run_id 且不同于本次;其余命令给了即拒绝(`-take-over-fence only applies to …`)。redis 源仍按 §3 ③ 的 GET / DEL 流程。
 - `-DryRun` 加这个开关只读预判,日志 `[DRY-RUN] would take over the merge fence of zone …`,不写库、不写镜像。
 

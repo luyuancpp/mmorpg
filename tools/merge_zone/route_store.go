@@ -1241,8 +1241,10 @@ func (s *mergeRouteStore) AcquireFence(ctx context.Context, req routeFenceAcquir
 // TakeOverFence 是续跑接手(W12 获取的变体,fence.go 的 -take-over-fence):与 AcquireFence 同一个事务形状,只多放行一种
 // 「生效且 run_id ≠ 本次」—— run_id == previousRunID(运维已确认那次运行的进程不在了)。接手与获取在同一个事务里完成,
 // 两区在库里一刻都不解封(对照 redis 源「DEL 镜像 → 重跑」之间那几秒无围栏的窗口)。旧进程若其实还活着,它的下一个批事务
-// 按 run_id 复核失败(errRouteFenceLost)、下一次续期确定失权,映射写入被拦在库这一层。
-// 生效且属于第三个 run_id 的分片照样 errRouteFenceHeld。previousRunID 必须合法且不同于本次。
+// 按 run_id 复核失败(errRouteFenceLost)、下一次续期确定失权,映射写入被拦在库这一层;它不碰映射的写只靠本地判据,
+// 要到下一次续期失败才停(续期间隔不超过 routeFenceRenewMaxInterval),所以接手的前提仍是运维确认那次运行的进程不在了。
+// 生效且属于第三个 run_id 的分片照样 errRouteFenceHeld;被接手的分片还要过 checkTakeOverShard(zone 对、清单路径),且每个 zone
+// 接手 0 片或全部 64 片,不满足即 errRouteInvalidArgument。previousRunID 必须合法且不同于本次。
 // (前一波原语里没有它:续跑接手是本波接线 db 源的中止 / 续跑流程时补的;AcquireFence 的语义不变,只是与它共用事务体。)
 func (s *mergeRouteStore) TakeOverFence(ctx context.Context, req routeFenceAcquire, previousRunID string) (routeFenceGrant, error) {
 	if !validRunID(previousRunID) || previousRunID == req.RunID {

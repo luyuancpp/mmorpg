@@ -1741,9 +1741,11 @@ $WrapperPairs = @(
             # login 第三方登录(微信 / QQ)与它的防误关确认开关:不粘滞,包装入口漏传 = 重新部署时关掉或改掉线上第三方登录。
             'LoginWeChatAppId', 'LoginWeChatEndpoint', 'LoginWeChatAllowOpenId', 'LoginQQAppId', 'LoginQQEndpoint', 'LoginQQAllowOpenId', 'ConfirmLoginAuthProviderChange',
             # D1 映射开关与它的粘滞确认开关:k8s_deploy 读线上现状防翻转,包装入口漏传 = 集群切 db_first 之后经本入口的部署一律被拒。
-            'RouteStoreMode', 'RouteReconcileArm', 'RouteReadRequiresReady', 'DbPlacementRequireRouteReady', 'GuildRequireRouteReady', 'ConfirmRouteSwitchChange') },
-    @{ Source = 'dev_tools.ps1'; Function = 'Invoke-K8sImage'; Downstream = 'k8s_image.ps1'; Forwarded = $ClientEntryWrapperKeys + @('GateRouterMode') },
-    @{ Source = 'k8s_image.ps1'; Function = 'Invoke-K8sDeploy'; Downstream = 'k8s_deploy.ps1'; Forwarded = $ClientEntryWrapperKeys + @('GateRouterMode') }
+            'RouteStoreMode', 'RouteReconcileArm', 'RouteReadRequiresReady', 'DbPlacementRequireRouteReady', 'GuildRequireRouteReady', 'ConfirmRouteSwitchChange',
+            # B0-4 nofile 豁免开关:不粘滞,包装入口漏传 = 以 warn 运行的环境经包装入口重新部署时落回 enforce、硬限不够即拒启。
+            'NodeOpenFileLimitMode') },
+    @{ Source = 'dev_tools.ps1'; Function = 'Invoke-K8sImage'; Downstream = 'k8s_image.ps1'; Forwarded = $ClientEntryWrapperKeys + @('GateRouterMode', 'NodeOpenFileLimitMode') },
+    @{ Source = 'k8s_image.ps1'; Function = 'Invoke-K8sDeploy'; Downstream = 'k8s_deploy.ps1'; Forwarded = $ClientEntryWrapperKeys + @('GateRouterMode', 'NodeOpenFileLimitMode') }
 )
 foreach ($pair in $WrapperPairs) {
     Test-Case "AST 契约:$($pair.Source)::$($pair.Function) → $($pair.Downstream) 的每个 splat 键都是下游 param 块声明过的参数" {

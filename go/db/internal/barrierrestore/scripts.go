@@ -38,9 +38,9 @@ if t == 'hash' then
     if ARGV[5] ~= '1' then return redis.error_reply('barrier exists before SQL migration') end
     for _,field in ipairs(redis.call('HKEYS',KEYS[8])) do
         -- schema_writer 是 C++ 严格屏障写入的写方令牌(混版本持久字段保护 §5.2),只供 Lua 判"上次是不是本实体写的";
-        -- 恢复不解释也不改写它:恢复要求停写、父缓存已不在,旧令牌只属于已不存在的实体,新实体的令牌不会与之相等。
+        -- schema_regressed 是 warn 下被判倒退的写方令牌(防回包丢失的证据)。两者都接受,写入时清掉(见文末)。
         if field ~= 'pending' and field ~= 'player_database' and field ~= 'player_database_1' and field ~= 'schema_gen'
-            and field ~= 'schema_writer' then
+            and field ~= 'schema_writer' and field ~= 'schema_regressed' then
             return redis.error_reply('barrier or outbox conflicts')
         end
     end
@@ -50,11 +50,8 @@ if t == 'hash' then
         or redis.call('HGET',KEYS[8],'player_database_1') ~= ARGV[3] then
         return redis.error_reply('barrier or outbox conflicts')
     end
-    local stored=redis.call('HGET',KEYS[8],'schema_gen')
-    if stored then
-        if not is_schema_gen(stored) then return redis.error_reply('barrier schema generation invalid') end
-        if #stored > #schema_gen or (#stored == #schema_gen and version_gt(stored,schema_gen)) then schema_gen=stored end
-    end
+    -- 已有的 schema_gen 只是索引不是权威(混版本持久字段保护 §3.3):恢复以 SQL 为准,直接用 ARGV[8](两行戳最小值)
+    -- 覆盖,不保留旧值、也不因旧值格式损坏而拒绝 —— 保留更高的旧值会让恢复后的第一次加载被判倒退(§13 第 8 条)。
 end
 for i=9,72 do
     local kind=redis.call('TYPE',KEYS[i]).ok
@@ -63,6 +60,9 @@ for i=9,72 do
 end
 if ARGV[4] == '1' then
     redis.call('HSET',KEYS[8],'pending',ARGV[3],'player_database',ARGV[3],'player_database_1',ARGV[3],'schema_gen',schema_gen)
+    -- 恢复以 SQL 为准:清掉写方令牌与 warn 倒退证据,下一次任何写方的严格屏障存盘都重新做一次世代比较(fail-closed)。
+    -- 合规流程里恢复时没有在线写方,结果不变;万一还有截断数据的写方在线,它不能凭旧令牌跳过 C3。
+    redis.call('HDEL',KEYS[8],'schema_writer','schema_regressed')
 elseif ARGV[4] ~= '0' then return redis.error_reply('restore mode invalid') end
 return 1
 `)

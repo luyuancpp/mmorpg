@@ -14927,3 +14927,542 @@ Friend原随机自有MySQL库五CLI真实创建F18DCC2C…；原空口令guard/�
 - 2026-10-23 UTC（全球同服验收，仍未完成）：主36已实际尝试；32空数组严格模式、33临时Mail/Rank缺Etcd.Key均有原红保留并作局部夹具修复，Friend临时端口纠正至TiDB24000。34前九条初始化/迁移native0，第十条DataService发现历史角色与空SQL路由而正确拒启，30A4E708…/16家族gone；不清历史、不伪route、不关闭强SQL，正准备正规dry-run/audit和只读计数。35调度恢复字段遗漏导致0native拒绝，旧Cpp根退出；新11956经三根身份与4case实际核通过，Root3D8BC5D1…批准仅Cpp后继并原子release，Go/Java原根不变。Java33实现已冻结066F5D6A…/C3AD4CCD…，独立静态审无确定阻塞，但六helper编译、33进程/真实21玩家/故障均未运行；外部18/33及Go剩余真库仍待。详见handoff§57，最新地图/他人源码保留，原门禁不降，无commit/push/tag。
 - 2026-10-23 UTC（全球同服真实验收继续，未完成）：路由dry-run发现原Redis3候选、SQL0；只读覆盖确认zone存盘3玩家/无遗漏或错落点，global账号目录实际0。进一步查得player发号水位1而既有最高101，已拒建角/写路由/抬计数器，按正式全tag恢复手册选择保旧容器卷、另隔离新验收实例，Kafka仍需fresh只读offset核，不清旧数据。Go Guild126因原临时MySQL64连接不容100路而红，实证后临时160/256且finally核回64/128；完整126 PASS/零skip（43A1E31A…）、原owner库已清C412A340…；assetop9真实MySQL锁等待全PASS/零skip（3F30095B…），清理接续。Java SceneManager14实际全PASS；Team80原76PASS3FAIL1SKIP保红，仅修两测试夹具的显式legacy模式与真实Redis自然83秒过期，保生产/所有断言；正规模块BUILD SUCCESS44秒，末封与真80复验待。详见handoff§58，主36/独立33与其余真库尚待，原门禁不降，不改新地图/他人源码，无commit/push/tag。
 - 2026-10-23 UTC（全球同服运行验收，仍未完成）：保旧四容器卷，新隔离 TiDB/MappingRedis 四实例实际创建434B2059…、协议B8E6E922…及 Root 身份4076972A…通过；原 canonical Kafka522分区 earliest/latest 全零80908CB5…，未reset/delete。新S1 13A84A39…实际四物理连接/七会话变量通过并清随机库。主36 stage15前九初始化/迁移0，首DataService正确因 TiDB默认关CHECK而拒启，CA11DA02…整体红与十族清理保；只读证实开关0/约束未建/route及账号0，后继限本新世界补正式三表八CHECK，保记录与失败random库，业务/SourceAfter仍待。Guild126与assetop9及精确清理已闭合，Go515外测键231接受284待；Mail19092仅完整Prepare绿，原case在短空档接续。独立Java Team正规模块376=280PASS96外skip、真Team80全部PASS/自然TTL83.04秒，与SceneManager14共94真Redis通过，外部20/33完成、剩13TiDB/413展开项。独立33仅source16/Team两JAR的有限纯后继，未javac/业务/故障；详见handoff§59。新地图/他人改动保留，原门禁不降，无commit/push/tag。
+## 2026-10-22 补记:go/db 就绪闸修复的对抗复核结果(Claude,只读复核 + 用例小修;未编译、未测试,待 Codex 验证)
+
+- **承接**:2026-10-20「go/db 就绪闸停机与退避接缝核对」。那次的 `gatedMessages` 修复与 9 条用例已被保存提交收进 HEAD,不在工作区。对它们又跑了一轮三视角复核(编译 / 语义 / 用例确定性),每条发现 2 票反驳。复核期间文件被并行会话保存提交多次,结论按复核结束时的代码给出。
+- **结论**:
+  - 编译视角没发现问题(只读核对标识符、签名与导入,没编译);
+  - 语义视角确认修复正确,闸为 nil 时行为逐字节不变;
+  - 「闸放行路径每条消息都拿一次 `g.mu`」被 2 票驳回,不算问题。
+- **已修**(都在 `route_ready_gate_shutdown_test.go`,已随保存提交入库):
+  - (minor)`gateClosingEnqueue` 原来先记请求、后关闸。`TestConsumeClaim_RouteReadyGateClosedDurabilityFailureArmsRejoinBackoff` 看到请求后立即断言闸已关,两步之间有窗口,会偶发假红。改为先关闸、再记请求。
+  - (nit)`TestStop_RouteReadyGateClosedRetryLoopPausedReturnsPromptly` 的红证据改写为「等待计数处 Condition never satisfied」。原来写的「畸形收据进死信、ready 断言失败」不准:D1 已在两路认领循环里加了拍中途的 `opened()` 检查。
+- **已改文档**:G6(`docs/design/db-task-pipeline-bottlenecks.md`)原来写「闸关之后不会再漏取一条」,说绝了。改为:空闲分区不漏取;忙分区在关闸那一刻,每个 claim 至多多取一条,由逐条判兜住。上一条 PROGRESS 的「刷新关闸时 claim 立即醒来、停在闸前」按此理解。
+- **转给 D1**(就绪闸那几行归「D1映射持久化交接文档」会话,已发消息):
+  - `key_ordered_consumer.go` ConsumeClaim 调 `gatedMessages` 处的注释仍是旧语义,没写闸放行时也带刷新通道;
+  - `recheck()` 已没有生产调用方,只剩 `route_ready_gate_test.go` 在用。删掉它,或注明只供单测。
+  - D1 已回复:waits 口径与那 9 条用例照现定义守住,Codex 验证单写 `route_ready_gate_shutdown_test.go`。`saveoutbox/replay.go` 直接 GET home_zone 是否算第 3 批读方,由 D1 在提案 §13.5 定。
+- **红证据口径更正**:上一条「交 Codex」第 5 步的红跑仍以 `TestConsumeClaim_RouteReadyGateClosingWakesIdleClaim` 为准,要在修复之前的提交 `9a9390035` 上跑。`TestConsumeClaim_RouteReadyGateClosedShutdownMarksInFlight` 在旧写法上通常红、偶尔绿,不作红证据。
+- **交 Codex**:命令同上一条「交 Codex 的验证」1–4 步,在当前工作区跑。不要单独检出 `49b1aa889` 跑,那个提交里 `routeReadyGateStateReadError` 改名只改了一半,编译不过,后续提交已补齐。
+- **Java 版(AGENTS §12)**:不适用。对应 Java 版本号无,不登记 PARITY。
+
+## 2026-10-22 scene_manager `reassignSceneNode` 改为 Lua CAS,修 rebalance 与 init 把同一频道改派到两个节点(Claude,代码 10-20 落地;本会话未编译、未测试)
+
+- **起因**:交接 `handoff-launch-line-remaining-20261019.md` §3 第 6 项。`reassignSceneNode` 先过再入屏障,然后无条件 `SET scene:{id}:node`,再 SREM / SADD 反向索引。写它的两方不共用锁:领导者的 `RebalanceWorldChannelsForZone → migrateWorldChannel` 不持 zone 的 world-init 锁;`initWorldScenesForZone` 持锁,但可以在任意副本上跑。两边选新节点的哈希输入不同(sceneId 对 confId*1000+序号),都判定老节点已死时,会把同一频道派给两个节点。后果是两边各建一份实体、留下孤儿,scene_count 双减或漏改,Agones 名额被转移两次。
+- **改动**:
+  - `go/scene_manager/internal/logic/world_init.go`:
+    - 新增 `luaReassignSceneNode`;`reassignSceneNode` 改成调用它。脚本只在 `GET scene:{id}:node == oldNode` 时才写(oldNode 为空串时表示期望映射不存在)。归属、两侧反向索引、两侧 scene_count 在一个脚本里一起改,返回是否落地。
+    - 新节点的 INCR 排在所有写之前:Lua 中途报错不回滚已执行的写。老节点的计数只在 > 0 时才减,不会再把 `deleteNodeCounters` 删掉的键重建成 -1。
+    - `newNode` 为空或等于 `oldNode` 时直接返回 false。
+    - Redis 出错时返回 false,但这种 false 的结论未知,注释写明调用方回收实体前要先重读。
+    - init 的两处改派调用点只补了注释:它们原本就是「失败即跳过 Agones 名额转移与 CreateScene」,现在 CAS 落空也走这条路。
+    - `GetBestWorldChannel` 与 `ReserveBestWorldChannelForEnter` 的懒改派原先也是无条件 SET,同属一类写者,改为经 `reassignSceneNode`。
+  - `go/scene_manager/internal/logic/world_rebalance.go`:
+    - `migrateWorldChannel` 在 CAS 失败(屏障、归属已变、Redis 错误)时调用新增的 `destroyUnownedMigrationTarget`,对自己先 CreateScene 的 newNode 补一次尽力而为的 DestroyScene。
+    - 销毁前重读归属:读失败,或归属恰好就是 newNode(另一写者选了同一节点,那个实体是活场景),就不销毁。
+    - 删掉「改写后回读核对」:CAS 成功即全部落地,事后回读只会把合法的后续改派误判成失败、漏记计数。
+    - 调用方不再自己调 scene_count;leader 检查处的注释同步更新。
+  - `go/scene_manager/internal/logic/reassign_cas_test.go`(新增,7 条):
+    - 单元 3 条:`TestReassignSceneNode_StaleSecondWriterChangesNothing`、`…EmptyOldNodeClaimsOnlyUnmappedScene`、`…UnincrementableCounterLeavesOwnershipUntouched`。
+    - 集成 4 条(bufconn 假节点 + miniredis,用真实的 Plan / migrate / init,不靠 goroutine 抢跑):
+      - `TestWorldChannelRace_InitCommitsFirst_StaleRebalanceBacksOut`;
+      - `…RebalanceCommitsFirst_StaleInitSkips`:经老节点的拨号钩子,把整次 rebalance 插进 init 判死之前;
+      - `…DuplicateRebalanceCountsOnceAndKeepsLiveEntity`;
+      - `…BarrierAfterPlanReclaimsPreCreatedEntity`。
+    - 10-22 补:单元用例换成不与别的用例重名的节点号(8810/8820/8830),两处断言补失败信息。
+  - `docs/design/scene-creation-architecture.md` 文件表 `world_rebalance.go` 一行补了 CAS 说明。
+- **行为变化**:
+  - init 与懒改派改派频道时,现在会挪 scene_count(新节点 +1,老节点 >0 时 -1)。以前 init 改派完全不记账,新节点长期少算,Agones 对账显示漂移。
+  - 屏障拦下的迁移现在会回收 newNode 上预建的实体。以前注释说「留到下一拍复用」,但下一拍先跑的 init 可能把频道派给别的节点,那份实体就没人认领了。
+  - 新节点 scene_count 是非整数时,改派会失败(fail-closed),以前照常改写。
+- **提交情况**:代码不是本会话提交的。`206647611`(10-20 03:35 的保存提交)带走了两个 .go 文件的主体,`6ecf275fa` 带走了 `world_init.go` 的一处注释和测试文件。本条、交接注、设计文档那一行、测试文件的 10-22 小修都还没提交。
+- **已有运行证据**:上面 10-21「服务器全部分支整合:最终必要验证」一条写了「scene_manager 的所有权 CAS、WorldChannelRace 与 TestIntegration_ 定向组通过」。那一条没写用例数,证据目录 `build/verification/work-cleanup-20261020/` 不在本机,本会话没有核到原始输出。修复前红也没有记录。所以下面按完整口径再交一次。
+- **没做 / 残留**:
+  - `enterscenelogic.go` `resolveScene` 的死节点自愈(约 1385 行 `l.svcCtx.Redis.Set(key, newNodeId)`)仍是无条件 SET,不同步反向索引与计数,不受 CAS 保护,是同类的第三个写者。修它要先定 CAS 落空时回给客户端的码:现有只有 `ErrSceneReentryBarrier` / `ErrNoAvailableNode`,新码要走 Tip.xlsx。该文件也是热文件,本项没碰,`reassignSceneNode` 的注释里已登记。
+  - 懒改派成功后仍不转移 Agones 名额(既有缺口;init 与 rebalance 会转移)。
+  - `destroyUnownedMigrationTarget` 有残余窗口:重读之后、DestroyScene 到达之前,若别的写者恰好改到 newNode 并先完成 CreateScene,会被拆掉。窗口只有一次 RPC 长;fullSync 每轮 init 对全部频道补发 CreateScene,可以自愈。
+  - CAS 只比值,没有版本号。ABA 要求死节点以同一 id 复活后又被选为目标,本项不处理。Java 版用令牌 + 版本号。
+  - 脚本跨 `scene:{id}:node` 与 `node:zone:…` 两族键,与现有 `luaReserveBestWorldChannel` 等脚本同一前提(单实例 Redis,`etc` 里 `Type: node`)。G4a 拆 Redis 时要把这几个脚本一起考虑。
+- **交 Codex 的验证**:工作目录 `go/scene_manager`,`GOTOOLCHAIN=local`、`GOPROXY=off`。红了就停下归因,不连续重试,不改用例迁就。
+  1. `gofmt -l internal/logic/world_init.go internal/logic/world_rebalance.go internal/logic/reassign_cas_test.go` 应无输出;`go vet ./internal/logic/`。
+  2. `go test ./internal/logic/ -count=1 -v -run 'TestReassignSceneNode_|TestWorldChannelRace_|TestIntegration_Rebalance_|TestInitWorldScenes_|TestGetBestWorldChannel_'`。通过标准:
+     - 新增 7 条全部 PASS;
+     - 既有的 `TestReassignSceneNode_BlockedWhileDeathMarkDeferred`、6 条 `TestIntegration_Rebalance_*`、`TestInitWorldScenes_*`(含子例)、`TestGetBestWorldChannel_*` 全部 PASS;
+     - 回报实跑条数。
+  3. `go test ./internal/logic/ -count=20 -run 'TestReassignSceneNode_|TestWorldChannelRace_'` 排除顺序与调度依赖;同一正则在 Linux / WSL 加 `-race` 再跑一轮,写明平台。
+  4. `go test ./... -count=1` 跑 scene_manager 全模块,既有失败逐个点名归因。
+  5. **修复前红**:不回退主仓代码,禁止 stash / reset。
+     - 在 `%TEMP%` 下建临时 worktree(按 AGENTS §9 不放仓库根):`git worktree add --detach <tmp> 206647611^`。`206647611^` 的 `go/scene_manager` 与 `10fa5d939` 相同,是修复前代码。
+     - 只把当前的 `go/scene_manager/internal/logic/reassign_cas_test.go` 拷进去。它只用到修复前已有的标识符,能编过。
+     - 在 `<tmp>/go/scene_manager` 跑 `go test ./internal/logic/ -count=1 -v -run 'TestReassignSceneNode_StaleSecondWriter|TestReassignSceneNode_EmptyOldNode|TestReassignSceneNode_Unincrementable|TestWorldChannelRace_'`。
+     - 期望 7 条全 FAIL,失败信息依次含:
+       - 「属主已不是 old,后到的改派必须落空」;
+       - 「映射已被别的懒改派认领,空串期望不得命中」;
+       - 「新节点计数键无法 INCR 时,改派必须整体失败」;
+       - 「计划里的老属主已被 init 改走,这次迁移必须作废」;
+       - 「属主映射必须指向先提交的写者」(RebalanceCommitsFirst);
+       - 「第二次执行同一份计划必须落空」;
+       - 「屏障拦下的迁移也要回收 y 上预建的实体」。
+     - 用完 `git worktree remove --force <tmp>`。
+- **Java 版(AGENTS §12)**:不适用。Java 版已有等价实现(`WorldChannelCoordinator`,令牌 + 版本号 CAS)。这是服务端内部的归属写入,不涉及客户端契约,不往 PARITY 加行。
+
+## 2026-10-22 merge_zone:数据锁拷贝集成用例补 requireIT(t)(Claude,未编译、未测试,待 Codex 验证)
+
+- **来源**:10-19「data_service 路由审计收尾」条目第三批新增的 `tools/merge_zone/blob_lock_integration_test.go`,其中 `TestIT_CopyPlayerStringKeys_RefusesWhileDataLockHeld` 第一句是 `ctx := context.Background()`。已提交的 AST 守卫 `it_guard_test.go` 的 `TestIntegrationTestsCallRequireIT` 不带构建标签,普通 `go test ./...` 就会执行,它要求每个 merge_integration 用例第一句是 `requireIT(t)`。所以那条目给 Codex 的 merge_zone `go test ./... -count=1` 必然出现一条 FAIL。本会话 10-19/20 的只读核对工作流发现此问题,对抗复核确认成立。
+- **改动**:只在该用例函数体第一句插入 `requireIT(t)`,其余不动。静态扫描当前 8 个 merge_integration 文件里的全部 Test*(TestMain 除外),改后都以 `requireIT(t)` 开头。
+- **行为变化**:
+  - 依赖:该用例原先只需要 Redis,现在和模块里其他集成用例一样走 TestMain 的完整探针:受控本机 TiDB 且 CHECK 已启用、Redis ≥7.2 且开了 AOF、DB 9/10/11 原本为空。依赖缺失时 SKIP,`MERGE_ZONE_IT_REQUIRE=1` 时 FAIL。
+  - 默认端口:未设 `MERGE_ZONE_IT_REDIS_ADDR` 时 `itRedisAddr` 是空串,go-redis 会落到默认的 `localhost:6379`。旧写法会直接对本机默认端口上的 Redis 做 DBSize / SET;现在探针不通过就在第一句返回,不再碰默认端口。
+- **未改**:用例里 DB 13/14 非空时仍是 `t.Skipf`,不受 `MERGE_ZONE_IT_REQUIRE=1` 约束(模块里其他用例走 `itMissing`)。负责人只授权补 `requireIT`,这一处留待决定。Codex 验收时要看 `-v` 输出,确认它是 PASS 而不是 SKIP。
+- **协调**:改前通知了「D1映射持久化交接文档」「D1 剩余收尾交接」两个会话,两边都回复没有在途改动、由本会话改。
+- **口径更正**:10-19 条目里 merge_zone 真库那一步用的是 MySQL 3306,已过时。现在的集成夹具只接受真 TiDB(见 `tidb_fixture_integration_test.go` 与 `docs/design/merge-zone-overhaul-20260908.md`「集中验收」),以本条为准。
+- **给 Codex**(工作目录 `tools/merge_zone`;`GOTOOLCHAIN=local`、`GOFLAGS=-p=1`;不需要协议生成;无其他前置清理):
+  1. 静态检查:`gofmt -l .`(期望无输出)→ `go vet ./...` → `go vet -tags merge_integration ./...`。
+  2. 本次修复的直接证据:`go test -count=1 -run TestIntegrationTestsCallRequireIT -v .`,期望 PASS。改前它必然 FAIL,并点名 blob_lock_integration_test.go。
+  3. 普通全量:`go test -count=1 ./...`。
+  4. 真库。环境要自备:
+     - 受控本机 TiDB,`tidb_enable_check_constraint` 已 ON,不能指向有真实数据的实例;
+     - Redis ≥7.2,开 `--appendonly yes`,DB 9/10/11/13/14 原本为空;
+     - 都用一次性容器,不借 codex-* 容器;本机没有镜像、需要拉取时先征得负责人同意。
+
+     显式设置三个环境变量:
+     - `MERGE_ZONE_IT_TIDB_DSN='root@tcp(127.0.0.1:<端口>)/'`:无库名、无参数、数字 loopback。代码不探测默认端口,设计文档里「缺省 4000 端口」的说法与代码不符,以代码为准;
+     - `MERGE_ZONE_IT_REDIS_ADDR='127.0.0.1:<端口>'`;
+     - `MERGE_ZONE_IT_REQUIRE=1`。
+
+     然后执行 `go test -tags merge_integration -count=1 -v ./...`。遇到 Access denied 时,改用 `go test -c -tags merge_integration` 编出测试二进制再运行。
+  - **通过标准**:
+    - 第 1–3 步全部退出 0,第 2 步 PASS;
+    - 第 4 步退出 0、无 SKIP,其中 `TestIT_CopyPlayerStringKeys_RefusesWhileDataLockHeld` 是 PASS 不是 SKIP;
+    - 失败时保留首错、失败用例名与前后 200 行输出,不改断言重跑;
+    - 第 3、4 步若出现与本行改动无关的失败(D1 等并行线还在改 tools/merge_zone),照录并标明所在文件,不算本次回归。
+- **Java 版(AGENTS §12)**:对应 0.1.0-SNAPSHOT,不适用。Java 仓没有 merge_zone 合服工具;本条只改测试,不涉及客户端契约,未改 PARITY.md。
+- **文件**:`tools/merge_zone/blob_lock_integration_test.go`、本条。
+
+- 2026-10-23 UTC（全球同服持续实际验收，仍未完成）：新世界八CHECK实际DDL94A3748D…提交且只读E126FC0C…真实复核通过，正式route audit0；主36 stage23因私有Guild资产secret映射漏项、24因外部59060源端口占用、25因私有CPP目录缺尾斜杠而红，均保原件/全家族清理，只作最小私有修复、不改生产/地图。25确实22核心Go副本就绪；26则14Go后7332380KiB低7G而原门禁拒，538F577F…/38家族全退出，完整业务/故障仍未跑通。Mail144原case真实1PASS零skip BA9A3F87…、145二十二CLI精确owner清理5F72C8CD…，515逐名账现232接受283待（EDA2F296…）。146只读证自有MySQL仅4system库/自身连接后正常stop F330D2D4…，原容器保留/tmpfs丢弃/旧UUID不得借作future；其它项目无操作。随后检测Docker整体退出、四依赖端口全不可连，Root02:18:29Z Hidden恢复既有Desktop，正保卷恢复本任务sameCID实际新epoch，不把内存骤增或旧13A84当当前ready。Java33及余13仍纯准备，authorizer退出传播与dispatcher历史参数接缝正有限收口，无新业务native。详见handoff§60；原门禁不降、新地图/他人源码保留，无commit/push/tag。
+
+## 2026-10-22 更正「2026-10-19 G4a 收尾」与「2026-10-19 更正『2026-10-18 G4a…』」两条:待拍板总数、提交状态、指向注条件与几处日期(Claude,只改注释与文档,未编译、未测试)
+
+- **起因**:本会话对 10-19 两条 G4a 条目的改动做了只读对抗核验:3 名核验者,其中 2 个维度另有反驳者复核;第 3 个维度的反驳者因额度中断,那几条由本会话自己对照代码与 git 历史核实。下面是确认成立的问题及处理。上面两条原文不改。
+- **提交状态**:10-19 两条条目和它们记录的全部改动(3 处注释、各文档指向注、G4a 稿、新交接、两份旧交接、Java PARITY 那一行)都已随 `c35e1133d`(2026-10-20 03:08,他人的整区保存提交,不是本会话提交的)入库。复核请用 `git show -U0 c35e1133d -- <文件>`,不要再用对 HEAD 的 `git diff`。本条的改动在工作区,未提交。
+- **待拍板总数**:G4a §25.2 共 **22 条**待拍板,第 19 条另挂原 §13 的多条。上面「G4a 收尾」条目写的「§25.2 的 12 处待负责人拍板」只是标「2026-10-18 新增」的那部分,不是总数。汇总给负责人时按 §25.2 全表收。
+- **「只追加」的说法要收窄**:
+  - 10-19 对各文档的**指向注**是只追加,原文不动。其中 L-06(tidb)和 gate-load-balancing 两处是行内追加,原文字符全部保留。
+  - 3 处**代码 / 配置注释**(match_service.yaml、k8s_deploy.ps1 friend here-string、deploy/k8s/README.md friend 段)是按 10-16 先例**改写为现状口径**,不是追加。后两处还删掉了别的会话 10-18 加的括注,其内容已并入新正文。
+  - **G4a 稿自身未入库的文字**有 7 处是就地改写:§1 第 3 条下的 10-18 注、§18.7 表与 §21.6 的「围栏 §5.5」、§24 第 0 批 Java 列、§24 末段「容量模型 A6」一句、§26 两句;新交接 §3 第 2 项的「10 项」也是就地改为「12 处」。其中 §24 末段那一句在 10-19 两条条目里都漏写了,这里补记。
+- **本条修正的内容**:
+  - **G4a 稿 `shared-redis-split-by-purpose.md`**:
+    - §2.5 第 5 条后追加 2026-10-22 更正注:3 处注释已改写、随 `c35e1133d` 入库;redis-rank.yaml「字面不错」的判定只对一半成立。
+    - §3.2.1 那条 10-19 SCARD 注的「任一步出错仍返回 StatusError」不准,已改为:`FreeSlots` 先失败才返回 StatusError;`QueueLen` 出错按 0 处理;占位出错转入队,入队也失败才返回 StatusError(`assigngatelogic.go` 的 AssignGate)。
+    - §6.1 表后追加 2026-10-22 注:快速通道实际是 1 次 EVAL(AdmittedCount)、1 次 ZCARD(QueueLen)、1 次 EVAL(占位)。这是 `spec_G4b-G.md:1523` 推给本稿的另一半。
+    - redis-ha 接入日期订正为 origin `43284eb0b`(10-16)接入、本地 10-19 补齐,原写「2026-10-19 接入」。涉及 §1 第 3 条下注、§17、§24 末段、§25.2 第 18 条四处,与 §2.5 第 6 条及 no-single-node §5.1 一致。PROGRESS 10-18 那条里的同一错日期不回头改,以本条为准。
+    - §20.1 里 CZ-2 的行号 `:31` 改为「§3 决策表 CZ-2 行」。
+    - §24 第 0 批 Java 列改为:B0-4 Java 待做;B0-3 第 1 批在 PARITY 有行、状态不适用,作为 ContractSync 同步项保留;P0-E 见 PARITY「共享 Redis 连接上限」两行;B0-1、B0-2、B0-5 不进 PARITY。
+    - §26 改为「按用途拆实例与分片 Java 待做,账号目录 Java 已做、实现不同」。
+  - **`cross-zone-scene-travel.md` CZ-2 注**:原写「跨单元按转区处理」,像已拍板。改为:转区与「逻辑单一」的作用域都未拍板,待 §25.2 第 20 条。D12 注没写转区,不改。
+  - **L-06 注、no-single-node §5 注**:「纯设计,各批未落码」改为「第 1~4 批是设计、未落码;第 0 批 B0-1~B0-5 已落码、未编译未验证」。原写法与 L-06 同格前文「B0-3 第 1、2 批已落码」矛盾。
+  - **`db-write-fencing-mysql.md` 三处注**:原文把「控制面 / 推进脚本三把键 / applied_epoch 去 zone 组实例」写成无条件。改为条件式:G4a §18.7 选 A 时去组实例;选 B 时随核心闭包进核心 Cluster、带 `{pid}`,§9.1 那行随之落到「计数器与 applied_epoch 同步倒退」,二选一待 §25.2 第 1 条。另把「§14 第 19 条要求引用本节与 §9.2」更正为「§14 第 19 条只要求引用本节,§9.2 是 G4a §18.7 第 4 条另加的」。
+  - **`db-task-pipeline-bottlenecks.md` §6.5 注**:补上「首次上线前改名直接以新键名起步」(G4a §20.7 首条、§25.2 第 22 条),停写切换或版本门禁只用于上线后。
+  - **`capacity-model-hok-scale.md` A6 注**:补上路线 C「双读窗口」已由 G4a §20.7 作废;冷卸载条件见 §23.2(候选)。
+  - **`deploy/k8s/manifests/infra/redis-rank.yaml`**:只追加注释,改的是文件头第 5 行后。原句「无 TTL 键在 allkeys-lfu / volatile-lru 库上会被悄悄驱逐」有误:volatile-lru 不淘汰无 TTL 键,共享库也不是淘汰型。不放这两处的实际理由是故障与容量隔离,独立实例 + noeviction 的结论不变。清单内容不变。
+  - **Java 仓 `PARITY.md` 的 G4a 行**:提交栏回填为「随 mmorpg `c35e1133d` 入库」;「转区」改为「若……(未拍板)」。只改这一行,未提交。
+- **10-19 条目里另外两处说法的订正**:
+  - 「全仓 `allkeys-lfu` 只剩…」应限定为 go / cpp / java / tools / deploy 范围。docs 下还有同一过时前提,例如 `leaderboard-system.md` 与 `cross-zone-matchmaking.md`,归各自的维护线,本条不改。
+  - 那条校验命令写在单反引号行内代码里,命令本身也含反引号,Markdown 渲染会截断。正确写法如下(Git Bash,单引号),应无输出、退出码 1。这条正则匹配不到 match_service.yaml 的旧措辞,第三处要单独看 `go/match/etc/match_service.yaml` 的「评分匹配」段:
+
+    ```bash
+    git grep -nE '共享库(现在)?是 `?allkeys-lfu|Redis 是 allkeys-lfu' -- go cpp java tools deploy
+    ```
+
+- **交 Codex**:本条只改注释与文档,不需要协议生成或编译。
+  1. 跑上面那条 `git grep`。
+  2. 在仓库根目录跑 `pwsh -NoProfile -File tools/scripts/tests/k8s_deploy_contract.tests.ps1`。本条没改 k8s_deploy.ps1,这是对 10-19 那次 friend here-string 注释改写的补验。若红,先看失败是否落在 friend ConfigMap 用例上。
+  3. redis-rank.yaml 只加了 `#` 注释行:`git diff -- deploy/k8s/manifests/infra/redis-rank.yaml` 应只有以 `#` 开头的新增行,清单对象不变。
+- **文件**:
+  - 本仓 `docs/design/shared-redis-split-by-purpose.md`、`docs/design/cross-zone-scene-travel.md`、`docs/design/tidb-phase1-and-launch-readiness.md`、`docs/design/no-single-node-horizontal-scaling-20261001.md`、`docs/design/db-write-fencing-mysql.md`、`docs/design/db-task-pipeline-bottlenecks.md`、`docs/design/capacity-model-hok-scale.md`、`deploy/k8s/manifests/infra/redis-rank.yaml`、`docs/PROGRESS.md`(本条);
+  - Java 仓 `PARITY.md`(G4a 那一行)。
+- **G4a 状态**:修订与收尾已完成。剩下的是负责人拍板(§25.2 全部 22 条),以及各批落码。第 1a 批的门禁是「与 L-02 的先后」拍板,即原 §13 第 10 条;改动超过 30 个文件,需授权。
+- **Java 版(AGENTS §12)**:对应 Java 版本 0.1.0-SNAPSHOT;G4a 那一行仍是「Java 待做」,本条只回填提交号与措辞。
+
+## 2026-10-22 B0-4 部署侧后续项:k8s_deploy 接线 NODE_OPEN_FILE_LIMIT_MODE、C++ Deployment maxUnavailable 0、-WaitReady 捞拒启行(Claude,未编译、未测试,待 Codex 验证)
+
+- **背景**:
+  - B0-4 进程侧(10-18 条目)已随 `e7bb46070` / `8b9592de3` 进 main。从 main 出的镜像缺省拒启:节点池 nofile 硬限低于 gate 24096 / battle 8192 / scene 4096 时 CrashLoop,原先只能靠 `kubectl logs --previous` 定位。
+  - 开服线交接 §3 第 5 项列了四条部署侧后续项,10-20 核对都没做。它们应在第一次从 main 出镜像部署到任何集群之前做完。
+- **做法**:
+  1. 新参数 `k8s_deploy.ps1 -NodeOpenFileLimitMode enforce|warn`:
+     - 用 `ValidateSet(..., IgnoreCase = $false)` 校验,只认小写,大写或拼错在入口拒绝。C++ 的 ParseMode 只认小写,其余值按 enforce 处理;如果原样写进 env,运维以为开了豁免,进程照样拒启。
+     - 留空(缺省)= 不写,五套 C++ 模板与改动前逐字相同。
+     - 给了值就写进本次部署的全部 C++ 工作负载:
+       - 本脚本的 `New-NodeDeploymentYaml`(gate / scene / battle 的 Deployment)与 `New-SceneFleetYaml`;
+       - lib 的 `New-GateStatefulSetYaml` / `New-BattleFleetYaml` / `New-BattleHostPortDeploymentYaml`,经 `New-ClientEntryPodCommon -OpenFileLimitMode` → `Get-ClientEntryNodeBaseEnv` 写入,渲染时再按小写校验一次。
+       - env 名与取值登记在 lib 的 `Get-ClientEntryContract`(`NodeOpenFileLimitModeEnv` / `NodeOpenFileLimitModes`)。
+     - warn 每次部署打一条 `Write-Warning`。不粘滞:下一次部署不传就落回 enforce。
+     - **范围说明**:任务原文只点了 Deployment 与 battle hostPort。本会话把 external gate StatefulSet 和两种 Agones Fleet 也接上了,否则运维以为全开了豁免,生产形态(external gate、Agones)仍会拒启。
+  2. `New-NodeDeploymentYaml` 显式写 `strategy: RollingUpdate`,`rollingUpdate.maxUnavailable: 0`。
+     - maxSurge 不写,仍取 K8s 缺省 25%,滚动节奏不变。
+     - 不写时 scene 缺省 4 副本会先缩 1 台;gate / battle 在 4 副本以下按缺省本来就是 0。
+     - battle hostPort 仍是 maxSurge 0 / maxUnavailable 1,没动。
+  3. `-WaitReady` 失败诊断,新函数 `Write-CppOpenFileLimitRefusals`:
+     - 列出 `app=<名字>` 里容器未就绪的 Pod,最多 10 个。先读 `kubectl logs --previous --tail 200 -c <名字>`;没有上一个实例时(Agones GameServer 不重启,或刚崩第一次)改读当前实例。
+     - 打印含 `FATAL open file limit` 的行和处置提示;没命中也打一行。kubectl 失败只告警,不 throw。
+     - 接在五个等待点:
+       - gate / scene / battle 的 `Wait-ForDeploymentReady` 加 `-CppNode`;
+       - external gate 的 `Wait-ForGateStatefulSetReady` 与 battle 的 `Wait-ForFleetReady` 用 try / catch 包住,捞完原样抛出;
+       - Agones scene 本来不等待,只多打印一条 logs 命令。
+  4. `deploy/k8s/AGENTS.md` 加「启动壳不加 ulimit」:AGENTS 文件要负责人确认,本会话没改,建议文案见本会话交付说明。
+- **契约测试**:`tools/scripts/tests/k8s_deploy_contract.tests.ps1` 末尾「B0-4 部署侧」一节,新增 7 个用例,另起 7 个 DryRun 子进程(5 个正向、2 个负向):
+  - 缺省时五套模板都不写这个变量;
+  - warn / enforce 覆盖五套模板,每个恰好一次、取值原样,只有 warn 打告警;
+  - `WARN` / `off` 在入口被拒,先于任何 kubectl;
+  - 三个 Deployment 的 maxUnavailable 0,以及 hostPort 的 0 / 1;
+  - 诊断函数按 AST 抽出,用假 kubectl 驱动(previous / current、跳过已就绪 Pod、10 个上限、kubectl 失败不 throw、DryRun 不碰集群);
+  - 五个等待点的接线(AST);
+  - lib 的渲染期校验。
+- **文档**:
+  - `deploy/k8s/README.md`:Optional Flags 补 `-NodeOpenFileLimitMode`,「C++ 节点的文件描述符上限」一节加两处更正注;
+  - `docs/ops/gate-kernel-tuning-runbook.md` §3.1:两处更正注;
+  - 开服线交接 `handoff-launch-line-remaining-20261019.md` §3 第 5 项 B0-4 加注。
+- **提交状态**:代码改动(`tools/scripts/k8s_deploy.ps1`、`tools/scripts/lib/k8s_client_entry.ps1`)10-20 被整区快照提交 `206647611` 带进 main,不是本会话提交的。测试与文档还在工作区,未提交。
+- **交 Codex 验证**(工作目录为仓库根目录 `D:\luyuan\xuanming-server-mmo-cpp`,pwsh 7,三步在同一个 pwsh 会话里依次执行):
+  1. `Get-ChildItem Env:MMORPG_* | Remove-Item`:清掉会话里残留的密钥与测试接缝变量,契约测试按需自己注入。
+  2. `pwsh -NoProfile -File tools/scripts/tests/k8s_deploy_contract.tests.ps1`
+  3. `pwsh -NoProfile -File tools/scripts/tests/k8s_client_entry_contract.tests.ps1`:lib 改了 PodCommon 与 base env,确认缺省产物不变。
+  - 通过标准:两套都退出 0;新增的 7 个 B0-4 用例 PASS;其余用例与改动前同结果。
+  - 失败时:保留失败用例名、断言原文与子进程输出的前 60 行,不改断言重跑。与本条无关的既有失败(其它会话也在改同一测试文件)照录,并标明所在用例。
+- **未做 / 后续**:
+  - 包装入口还没透传 `-NodeOpenFileLimitMode`:`dev_tools.ps1`(Invoke-K8sDeploy / Invoke-K8sImage)、`k8s_image.ps1`、`k8s_zone_rollback.ps1` 的 Step 6。目前要直接调 `k8s_deploy.ps1`。
+  - 各集群各节点池的 nofile 硬限仍未实测(E11 / 拍板清单 OPS-2);用实测重新核 `kNonClientReserve`。
+  - 诊断输出没有在 kind 的真实 CrashLoop 上跑过。
+- **Java 版(AGENTS §12)**:对应 0.1.0-SNAPSHOT。Java 的 B0-4 仍是待做(PARITY 已登记)。本条只改 C++ 部署脚本,Java 版没有 K8s 生成器,不适用;未改 PARITY.md。
+
+- 2026-10-22（开服线交接 §3 第 6 项两小项：match 旧格式队列兼容删除与存盘日志降级；已落码，未编译、未测试，待 Codex 验证）：
+  - **match（go/match/internal/logic）**：项目未上线、没有存量旧格式队列，整体删掉加 hash tag 之前的兼容。
+    - 删 `matcher.go` 的 `migrateLegacyQueues` / `migrateLegacyQueue` / `legacyQueueSweepInterval`。GlobalMatch 关闭时每个副本每分钟一次的 `SCAN match:queue:*` 随之消失，match 原有代码对 SharedRedis 恢复只读。
+    - 删 `keys.go` 的 `legacyMatchQueueScanPattern` / `legacyMatchQueueKey`，删 `queue.go` 只给迁移用的 `ticketSetQueueKeyScript`，删 `dequeueMemberCtx` 对无 hash tag 键的单 key LREM 分支。
+    - `ticketQueueKeys`（返回新旧两个键）改为 `ticketQueueKey`，只返回票据里的 `queue_key`，缺字段按 `(mode, config)` 的新格式键兜底。调用点 `cancelqueuelogic.go`、`party.go` 的 `leaveQueueForOtherBattle`、`isQueuedTicketInQueue` 跟着改。`team/keys.go` 的头注释同步。
+    - 用例：删 `TestMigrateLegacyQueuesMovesMembersToFront`、`TestMigrateLegacyQueuesWritesRankMirror`、`TestCancelQueueLegacyTicketFallsBack`、`writeLegacyTicket`；删 `keys_test.go`、`pve_team_size_test.go`、`TestJoinQueueStillRejectsLiveTickets` 里的旧键断言；`party_cancel_rejoin_regression_test.go` 的两处「无版本遗留单」子用例删掉，各自收成单一用例。迁移用例后半段的镜像补写断言保留为新用例 `TestMatcherBackfillsMissingRankMirror`，补写路径本身没动。
+    - 这批代码 10-20 写完，已被别的会话的保存提交带进 main（`1b41d8f1e` 等）。`docs/design/cross-zone-matchmaking.md` 的 D2、§4.2、§10、§11.9 追加了 2026-10-20 删除注。
+    - **不支持回滚**到加 hash tag 之前的 match 版本。
+  - **存盘日志（cpp/libs/services/scene/player/system/player_lifecycle.cpp）**：
+    - `publishDbTasks` 的 `saved to Redis, DB write tasks enqueued` 与 `HandlePlayerAsyncSaved` 开头的 `Saving complete` 从 LOG_INFO 降为 LOG_DEBUG。
+    - 没全入队时原先 ERROR 之后还有一条重复的 INFO `… NOT all queued (see the ERROR above) …`，已删；它的 `home_zone` / `owner_epoch` / `save_seq` 并进汇总 ERROR，`not every DB write task was queued to Kafka` 这个前缀不变。
+    - 文档：`docs/ops/cross-zone-failure-test-runbook.md` §3.1 新增第 7 条（演练时把 `bin/etc/base_deploy_config.yaml` 的 `LogLevel` 临时调到 1，或改用 broker end offset、`[DbTaskDispatch]` / `[DirtySave]` 计数、db 侧日志与后续 INFO 行取证），§2.4 两行与场景 B3a 加指向注，Changelog 记一条；`cross-zone-scene-travel.md`、`db-task-kafka-partition-contract.md`、`db-task-delivery-and-retention.md` 追加了带日期的更正注。
+  - **新发现，未处理（另开任务）**：`LogLevel` 按 muduo 枚举解释（0=TRACE、1=DEBUG、2=INFO、3=WARN），`node.cpp` 的 `InitLogSystem` 直接强转。`tools/scripts/k8s_deploy.ps1` 生成的 node ConfigMap 写的是 `LogLevel: 1`，K8s 上所有 C++ 节点实际跑在 DEBUG，所以这次降级在 K8s 上不减日志。`release_preflight.ps1` 的 `debug.cpp.loglevel` 按「0=DEBUG、下限 1」检查，把它放过了；`bin/etc/base_deploy_config.yaml` 第 25 行注释的对照也是错的。
+  - **match 里仍留着的其他混跑兼容（不在本次范围）**：matcher 对评分镜像缺失成员的补写（注释写的是「旧实例只写 list」）、`queue.go` 版本缺失按空串比较、`rating.go` 对旧实例 applied 标记的兼容。项目未上线时都可以再评估是否删。
+  - **Codex 验证**（按顺序；Claude 未跑任何命令）：
+    1. go/match，工作目录 `go/match`：`gofmt -l ./internal`（期望无输出）→ `go vet ./...`（期望退出 0）→ `go test ./internal/logic -run 'TestMatcherBackfillsMissingRankMirror|TestCancelPartyPreservesMemberRequeuedBeforeOldDequeue|TestCancelPartyCleansUnchangedQueueVersions|TestJoinQueueStillRejectsLiveTickets|TestParseQueueKey|TestPerEntityKeysHaveNoHashTag|TestCancelQueueUsesTicketQueueKey|TestSizedQueueKeyRoundTrip' -count=1 -v`（期望全 PASS）→ `go test ./... -count=1`（期望全绿）。`rg -n "migrateLegacy|legacyMatchQueue|ticketQueueKeys|ticketSetQueueKeyScript" go/match` 只应剩 `keys.go` 第 57 行与 `team/keys.go` 的历史注释。失败时保留失败用例名与前 50 行输出。
+    2. C++，仓库根：`msbuild game.sln /m:1 /nr:false /p:Configuration=Debug /p:Platform=x64`（必须串行 `/m:1`），期望退出 0、无新增警告。改动只涉及两条日志宏和一条 ERROR 的拼接，没有 C++ 用例断言这些文案。失败时保留首个错误的前后 30 行。
+    3. 可选冒烟：本地 `LogLevel: 2` 起 scene，登录、下线一次，scene 日志里不应再有 `Saving complete` 与 `DB write tasks enqueued`；`LogLevel` 临时改成 1 重启后两行应重新出现。测完把 `LogLevel` 还原，不要提交。
+  - **Java 版（AGENTS §12）**：match 的旧格式队列兼容不适用（Java 版没有这段）；存盘日志 Java 版已是 DEBUG，无需改。不涉及客户端契约，未改 PARITY.md。
+  - **文件**：`go/match/internal/logic/{matcher,keys,queue,cancelqueuelogic,party}.go`、`go/match/internal/team/keys.go`、`go/match/internal/logic/{crosszone,review_fix,rating_match,keys,pve_team_size,party_cancel_rejoin_regression}_test.go`、`cpp/libs/services/scene/player/system/player_lifecycle.cpp`、上面列的 5 份文档、开服线交接 §3 第 6 项表下的 10-22 注、本条。
+
+## 2026-10-22 B0-4 部署侧第四条:deploy/k8s/AGENTS.md 加「C++ 启动壳不加 ulimit」(Claude,只改文档)
+
+- 补上一条「2026-10-22 B0-4 部署侧后续项」:负责人当天确认后,第四条已写进 `deploy/k8s/AGENTS.md` 的 CONVENTIONS。
+- 内容:
+  - gate / scene / battle 在 `Node::Initialize` 自抬 nofile 软限、不够就拒启。在启动壳、镜像或 initContainer 里再加 `ulimit -n` 是第二份实现,不要加。
+  - 硬限只能在节点运行时改(`LimitNOFILE` / CRI rlimits)。
+  - 应急豁免用 `-NodeOpenFileLimitMode warn`,gate / battle 首选调低准入上限。
+  - Kafka broker 的 ulimit 薄壳不在此列。
+- 开服线交接 §3 第 5 项 B0-4 同步加注。包装入口(dev_tools / k8s_image / k8s_zone_rollback)透传 `-NodeOpenFileLimitMode` 另开会话在做。
+- **Java 版(AGENTS §12)**:0.1.0-SNAPSHOT,不适用(只改本仓 K8s 规范文档);未改 PARITY.md。
+
+## 2026-10-22 zone Redis 回退防护合并设计稿（Claude，只写设计、不落码；未编译、未测试）
+
+- **做了什么**：为[数据一致性等级核对](design/data-consistency-guarantee-map-20261020.md) §2.2「Redis 回退一族」6 条 low 写合并设计 [zone-redis-regression-guard-20261022.md](design/zone-redis-regression-guard-20261022.md)。只读取证，没有改代码，也没有运行任何命令。
+- **结论要点**：
+  - 铸造地板（SQL 或墙钟）只防重铸同值，堵不住「新 epoch 越过 SQL 新行」。新持有者本来就有权越过 SQL 行，问题在于载入了旧内容，只能在加载侧堵。核对稿修复方向第 1 条的说法据此更正。
+  - C++ 存盘 Lua 走 hiredis 单连接，不能加 WAITAOF。WAITAOF 只适合加在 SM 的专用连接、低频的铸造上。
+  - 方案：
+    - G1：登录加载带 Redis 实例身份戳（run_id + master_replid）；身份变化后转冷路径，与 SQL 行围栏交叉校验，SQL 两行同版本且严格更新时自动采纳 SQL。
+    - G2：ACK 高于 pending 判为回退证据，go/db 计数告警，login 转采纳。
+    - G3a：落实围栏设计 §14 第 7 条已定的墙钟地板。
+    - G3b：铸造后先等 WAITAOF 确认再发路由事件，需压测。
+    - G4：C++ 存盘被拒时细分「计数器比缓存小」，只检测；前推修复会让旧内容写穿行围栏，不采用。
+    - G5：资产自动放弃要求 Redis 副本已核验身份。
+  - 建议分批 P1（G1 + G2 + G5）→ P2（G3a + G4 检测码）→ P3（G3b，以压测为准）。
+  - 待负责人拍板 5 项，见设计稿 §13。
+- **顺带更正**：
+  - `db-write-fencing-mysql.md` §9.1 B1 表下加 2026-10-22 更正注：「`dual` 下 S1 被保住」只在丢尾含铸造时成立。
+  - 核对稿 §2.2 加指向注；该稿 §0「全仓只有路由发布用了 WAITAOF」漏了 go/db 的重试、死信入队。
+  - 两处原文都保留。
+- **依赖**：G1 的残余 R-G1-1 与冷登录同源，由 §14 第 15 条「go/db 待落写标记」关闭，该项尚未落码。
+- **Java 版（AGENTS §12）**：不同构。Java 的 owner_epoch 与存档加载真源都在 MySQL `player` 行（`PlayerMapper.claimOwnerEpoch`、`PlayerStore.loadForScene`）；Redis 只存持有者写的位置投影。不登记 PARITY.md。
+- **文件**：新增 `docs/design/zone-redis-regression-guard-20261022.md`；修改 `docs/design/db-write-fencing-mysql.md`（§9.1 加注）、`docs/design/data-consistency-guarantee-map-20261020.md`（§2.2 加注）、`docs/README.md`（登记一行）、本条。
+
+## 2026-10-22 Claude：混版本持久字段保护第 3a′ / 第 5 批落码与两轮对抗复核收尾（未编译、未测试，待 Codex 验证）
+
+- **范围**：接手 [交接](handoff/mixed-version-persist-handoff-20261019.md)。与「混合版本持久化交接文档」会话分工如下：
+  - 本会话：第 3a′ 批、第 5 批，以及 §5.2 的取证与裁决；
+  - 对方：§5.2 修订、第 3b 批、第 4 批（见交接 §11）。
+  - 本会话的记录在交接 §10.1–§10.7。
+- **落码**：这部分代码已随其他会话的整仓提交 `c35e1133d` / `10fa5d939` 入库，均未编译。
+  - **3a′**：
+    - 欠款版本错位：先由只读谓词 `CurrencySystem::DebtCarriesUnknownFields` 判定。收件箱执行器原先回 `kDefer`，对抗复核 A-1 后改为新结局 `kVersionSkew`，收件箱据此停用本域、已定前缀照常确认，实体重建后重拉；
+    - `Bag::AddItems` 的规划改用 `ItemStore::IsIndependentInstance`；
+    - 宝石拆卸预检改为直接调用 `CanStack`。
+  - **第 5 批**：
+    - 越界包类型由 `PlayerBagsComp::unsupportedBagTypes` 原样携带；
+    - 携带记录参与跨包 guid 查重：资产通道入账改用 `PlayerBagsComp::ContainsGuid`（复核 D-1）；
+    - 查不到表的技能保留、不生效：新增 `PlayerSkillSystem::IsActiveSkill`，`HasSkill`、`ListSkills` 只认生效的技能。
+- **对抗复核**：两轮只读复核。第一轮 7 个视角，第二轮续跑 2 个视角，并加 1 个视角复核修正。每条发现由两名复核者尝试驳倒。
+  - 第一轮确认 A-1（中）和 D-1（低），均已修代码并补用例；另确认 B-1、F-1 两条文档问题。
+  - 第二轮确认 11 条文档与注释不一致，没有代码缺陷，已全部订正。涉及：代码注释、设计稿 v0.7、收件箱设计 §7.5 / §7.6、运行手册 §5.2 A′、`bag_quest_mail_data.proto` 的 `capacities` 注释（只改注释）。
+  - 设计 §12 新增两项持久值域内容：
+    - 等级上限压回，确认会删数据，单列一行；
+    - "其他按配置表或代码常量解释的持久值"标为未核对。
+  - 新币种被旧版执行器记成终态，由本会话读码核实，已记入 §12 载荷行。
+- **(a″) 写方令牌**：三路攻击加裁决，结论是可采用。驳回 B5 幽灵写方误报：A2′ 与凭标记回滚互斥，按代码不可达。7 条成立项已转交 3b 会话，落地情况见交接 §11。
+- **运行旁证**：2026-10-20 Codex 在含本主题代码的工作区构建 9 个目标，全部通过，`PersistRoundTripTest.*` 4 条等 0 失败（见当日「客户端消息发送模块命名整理收尾」条目）。
+  - 3a′ 与第 5 批的新用例没有运行；
+  - `currency_test`、`cross_zone_test`、`skill_test` 也没有运行；
+  - 不能据此宣称本主题已验证。
+- **交 Codex**：按交接 §5.2 + §10.4 执行，含 `skill_test`。proto 源只改了注释，下次 `proto-gen-run` 时 Go 绑定里的注释会随之更新。
+- **Java 版（AGENTS §12）**：0.1.0-SNAPSHOT，全部待做。Java 仓 `PARITY.md` 已于 10-19 补登一行「Java 待做」，未提交。
+
+## 2026-10-22 B0-4 部署侧:包装入口透传 -NodeOpenFileLimitMode(Claude,未运行,待 Codex 验证)
+
+- **背景**:上一条「2026-10-22 B0-4 部署侧后续项」只在 `k8s_deploy.ps1` 加了 `-NodeOpenFileLimitMode`,包装入口没透传,运维只能直接调 `k8s_deploy.ps1`。本条补上透传。
+- **做法**:写法照 `-GateRouterMode`。包装层默认留空 = 不透传,非空才透传,默认值只留在 `k8s_deploy.ps1` 一处。包装层的 ValidateSet 与下游相同,都是 `IgnoreCase = $false`,大写或拼错在包装入口就拒:
+  - 拖到 `k8s_image.ps1` 时,镜像已经推完;
+  - 拖到回滚 Step 6 时,zone 已停服、已回档。
+  - 各脚本改动:
+    - `tools/scripts/dev_tools.ps1`:
+      - 参数块新增 `[string]$NodeOpenFileLimitMode = ""`,放在 `-MatchRatingSnapshotPublish` 之后;
+      - `Invoke-K8sDeploy`、`Invoke-K8sImage` 与 `k8s-zone-rollback` 的转发(`$rbArgs`)都是非空才透传。
+    - `tools/scripts/k8s_image.ps1`:参数追加在参数块末尾(本脚本靠声明顺序做位置绑定);`Invoke-K8sDeploy` 非空才透传。
+    - `tools/scripts/k8s_zone_rollback.ps1`:
+      - 参数放在 `-GateRouterMode` 之后;
+      - Step 6 的 `$upArgs` 非空才透传。第 0 步静态预检、Step 6、失败时打印的单步命令和中止路径命令都用同一份 `$upArgs`,自动带上;
+      - 摘要新增 `nofile mode :` 一行,留空时提醒以 warn 运行的 zone 要照传。
+  - 回档场景的后果写在 `k8s_zone_rollback.ps1` 的参数注释里:
+    - Step 1 删掉整个 namespace,所以 warn 不粘滞;
+    - 第 0 步不读集群里的这个 env。漏传后落到的是拒启,不是带病运行;
+    - 以 warn 运行的 zone 漏传时,gate / scene 在 Step 6 拒启。那时已停服、已回档、积压已丢,只能补上参数单独重跑 Step 6;
+    - 显式值不进 `entry-state.json`,同一 rid 重跑时可以改。
+  - 留空时三个入口传给下游的参数与改动前逐字相同。
+- **契约**:`tools/scripts/tests/k8s_client_entry_contract.tests.ps1` 的 `$WrapperPairs` 有三条包装链(dev_tools→k8s_deploy、dev_tools→k8s_image、k8s_image→k8s_deploy),每条的 `Forwarded` 都加了 `NodeOpenFileLimitMode`,删掉任一处透传都会变红。zone-rollback 那条链不在这个 AST 契约里,本条没有给它补新用例。
+- **文档**(只加更正注,不删原文):
+  - `deploy/k8s/README.md`:Optional Flags 里「尚未透传」一条;
+  - `docs/ops/gate-kernel-tuning-runbook.md` §3.1:2026-10-22 更正注里「尚未透传」一条。
+- **静态检查**(PowerShell AST,只解析、不执行):
+  - `dev_tools.ps1`、`k8s_image.ps1`、`k8s_zone_rollback.ps1` 和契约测试文件的解析错误都是 0;
+  - 三个脚本没有重名的顶层函数,也没有重名参数;
+  - 五处转发表(dev 的 `Invoke-K8sDeploy` / `Invoke-K8sImage` / `$rbArgs`、k8s_image 的 `Invoke-K8sDeploy`、rollback 的 `$upArgs`)都含 `NodeOpenFileLimitMode`;
+  - 四个脚本(含 `k8s_deploy.ps1`)都声明了该参数。
+  - 没有运行任何测试。
+- **交 Codex 验证**(工作目录为仓库根 `D:\luyuan\xuanming-server-mmo-cpp`,pwsh 7,在同一个 pwsh 会话里依次执行):
+  1. `Get-ChildItem Env:MMORPG_* | Remove-Item`
+  2. `pwsh -NoProfile -File tools/scripts/tests/k8s_client_entry_contract.tests.ps1`
+  3. `pwsh -NoProfile -File tools/scripts/tests/k8s_deploy_contract.tests.ps1`
+  4. (建议,回归)`pwsh -NoProfile -File tools/scripts/tests/k8s_zone_rollback_gate_router_mode.tests.ps1`:回滚脚本的 `$upArgs` 与摘要行有改动。
+  5. (建议,回归)`pwsh -NoProfile -File tools/scripts/tests/dev_tools_merge_zone_contract.tests.ps1`:`k8s-zone-rollback` 分支的 `$rbArgs` 有改动。
+  - 通过标准:第 2、3 步两套都退出 0;三条「AST 契约:… 的每个 splat 键都是下游 param 块声明过的参数」用例 PASS;其余用例与改动前结果相同。第 4、5 步也应退出 0。
+  - 失败时:保留失败用例名、断言原文和子进程输出的前 60 行,不改断言重跑。与本条无关的既有失败照录,并标明所在用例。
+- **未做 / 后续**:
+  - 开服线交接 `handoff-launch-line-remaining-20261019.md` §3 第 5 项原写「包装入口尚未透传新参数」,已在其后加 10-22 再续注。
+  - 回滚第 0 步要不要读集群现状核对这个 env(仿 `-GateRouterMode` 的 `Assert-ZoneEntryKeptOnRollback`),待负责人定。
+- **Java 版(AGENTS §12)**:对应 0.1.0-SNAPSHOT。不适用:Java 版没有 K8s 生成器。未改 PARITY.md。
+
+## 2026-10-22 Claude：混版本持久字段保护 3b 评审与写方令牌裁决后的修正（未编译、未测试，待 Codex 验证）
+
+- 接 2026-10-20 的 3b / 4 条目。3b 两路只读评审 + 另一接手会话对写方令牌的三路攻击与裁决（结论：(a″) 可以采用）之后修正，细节见交接 §11.7、设计 §5.2 / §8.1 / §13 第 9 条 / §15 v0.6。
+- warn 证据不随回包丢失消失：hash 新字段 `schema_regressed`（被判倒退的写方令牌），同令牌后续写入继续返回 2，别的写方不清，只有 `save_barrier_restore` 清；warned 回调带令牌、scene 按令牌去重计数；切 enforce 门禁改为三项为 0（C++ regression_warned、login 计数、`schema_regressed` 巡检）。
+- 返回 3 时 guard 相同但令牌不同的排队值照发；疏散 / 排空退出遇 3 先 tip + 踢线再销毁；恢复工具接受并清掉 `schema_writer` / `schema_regressed`；令牌取用挪成 `player_persist::WriterTokenForSave` 并配 ECS 用例；屏障 11 参在线格式补真连接端到端用例（EVAL 与 EVALSHA 各一次）。
+- 按裁决撤掉"证实提交后改用输出世代"的加固（B5 幽灵写方按代码不可达，见设计 §5.2"前提"一行；dev 旁路 `AllowUnsafeCrossNodeHandoff` 环境不切 enforce）。
+- 新登记切 enforce 前须落地：前任实体存盘元素活得比实体长（设计 §13 第 9 条）。
+- Codex 验证口径追加见交接 §11.7：真 Redis 用例 `[ SKIPPED ]` 必须为 0，7.2 与 8.10.x 各一轮。
+- Java 版（0.1.0-SNAPSHOT）：待做，`PARITY.md` 那一行不变。
+
+## 2026-10-22 scene_manager `resolveScene` 死节点自愈改走 reassignSceneNode CAS(Claude,未编译、未测试,待 Codex 验证)
+
+- **起因**:上面「`reassignSceneNode` 改为 Lua CAS」条目留下的残留,开服线交接 §3 第 6 项。`resolveScene` 的死节点自愈是改写 `scene:{id}:node` 的第三个写者,原来无条件 `SET`:
+  - 另一个写者在它「读到属主是死节点」与「写入」之间先改派了同一场景时,它照样覆盖,并在自己挑的节点上 CreateScene。先到者那份实体成了孤儿,同一场景的玩家被派到两个节点上。另一个写者可以是另一个副本上的 EnterScene;世界频道还有 rebalance、init 与懒改派。
+  - `SET` 不动反向索引与 scene_count。新属主死时,收尾快照里没有这个实例,实例泄漏;实例销毁时 `destroyInstanceInternal` 按当前属主扣计数,新属主的 scene_count 被减掉一个从没加过的数。
+- **改动**:
+  - `go/scene_manager/internal/logic/enterscenelogic.go`:
+    - 死节点分支抽成 `reassignSceneOffDeadNode`。顺序不变:先判屏障,再要求 conf,然后按用途挑节点;最后一步写入从 `SET` 换成 `reassignSceneNode`。
+    - 只有 CAS 成功才做两件事:先 `TransferAgonesRoomForScene`(新增,见下),再 CreateScene。原来包在 CreateScene 外的 `if sceneConfId != 0` 是死条件,删掉。
+    - CAS 落空交给新增的 `adoptOwnerAfterLostReassign`,规则见下一段。
+  - `world_init.go`:`reassignSceneNode` 的注释删掉「resolveScene 是例外」那段,改成收口点已覆盖全部改写路径。建场景时的首次写入不算改写。
+  - `docs/design/scene-creation-architecture.md`:文件表 `world_rebalance.go` 一行末尾追加更正注。
+- **CAS 落空回什么:选 (a),重读一次属主,不新开错误码**:
+  - 落空的常见原因是别的写者刚做完同一件事,答案已经在 Redis 里。改成可重试错误码,玩家多一轮往返,重试拿到的还是这次重读的结果。
+  - (b) 的代价比交接里写的大,而且不走 Tip.xlsx:
+    - EnterScene 的错误码是 scene_manager 私有数轴(`constants/errors.go` 原注「不是 tip 码」)。
+    - 新码 26 要同批改:C++ `player_lifecycle.h` 的手抄常量与 `SmRejectedBeforeAnyPlacementWrite` 白名单、`scene_manager_service.go` 的故障分类注释,以及 C++ 侧收到新码后的退避处理。两版服务器都要跟。
+  - 回 `ErrNoAvailableNode` 也不对。它在 `FaultCodeSet` 里记为故障,而 CAS 落空不是故障。
+  - 重读还顺带收住 Redis 报错时「脚本其实已执行」的二义性,见下面属主等于本次挑中节点那一种。
+  - 重读之后的五种结果:
+    - 属主是活节点,且不是本次挑中的节点:直接用它,不发 CreateScene。效果与晚一步进来、直接读到新属主的请求相同;建实体是改派成功那一方的职责。
+    - 属主就是本次挑中的节点:补发一次 CreateScene(按 scene_id 幂等)。可能是另一个 EnterScene 挑中了同一个最低负载节点,也可能是 Redis 报错而本次脚本已执行;后一种没有别人会去建实体。
+      - Agones 名额转移不幂等,重复转移会在新节点上多占一份,所以这里不转移。
+      - 若确是本次脚本执行了,名额会留在死节点的 GameServer 上,与 Transfer 占不到新名额时一样交给 reconcile 暴露漂移。
+    - 属主仍是死节点:不是被抢,是脚本没跑成。
+      - 第二道屏障拦下时(重判仍未到)回 `ErrSceneReentryBarrier`(17,可重试)。只调 `CanReclaimDeadNode` 取判定,不重复记屏障日志和指标。
+      - 其余原因(Redis 出错、计数键损坏)回 `ErrNoAvailableNode`,与入口 GET 失败同口径。
+    - 映射没了:场景已被销毁,与入口处「查无此场景」同一处理。
+    - 属主是身份歧义节点,或者是另一个死节点:拒绝,不连环改派。
+- **核对结论**:
+  - **实例记账口径一致**:`createscenelogic.go` `allocateScene` 建场景时做三件事:SET 属主、INCR `node:zone:{z}:{n}:scene_count`、SADD `node:zone:{z}:{n}:scenes`。CAS 脚本同批挪的正是这三项。`active_instances`(zone 级)、`scene:{id}:zone`、场景人数、镜像索引都不随节点变,本条不动。节点 player_count 聚合也不挪,与 rebalance / init 同口径。
+  - **Agones 要转移**:实例在 `createInstance` 占过名额并记 `scene:{id}:agones_gs`,世界频道在 init 占过。不转移的话,新节点不记账,rooms Counter 少算,FleetAutoscaler 欠配。与 init 的死节点改派同口径:CAS 成功后 `TransferAgonesRoomForScene`;占不到时保留旧名额并打日志,不拦进场;Agones 未启用时是 no-op。
+- **回归用例**:`go/scene_manager/internal/logic/resolve_scene_reassign_cas_test.go`,新增 6 条。
+  - 交错的写法与 `reassign_cas_test.go` 单元层相同:先用 `reassignSceneNode` 提交「另一写者」,再拿陈旧的属主观察调用 `reassignSceneOffDeadNode`。`resolveScene` 读属主与提交之间没有可注入的缝。不需要交错的用例从 `resolveScene` 进。
+  - 节点号 8910/8920/8930、场景号 89001~89007 不与别的用例重名,理由同 `reassign_cas_test.go` 的 `casNode*` 常量注释。
+  - 6 条:
+    - `TestResolveScene_DeadOwner_AnotherWriterFirst_AdoptsItsOwner`
+    - `TestResolveScene_DeadOwner_SameTargetTopsUpCreateScene`
+    - `TestResolveScene_DeadOwner_ScriptFailureChangesNothing`
+    - `TestResolveScene_DeadOwner_MovesIndexAndSceneCount`
+    - `TestResolveScene_DeadOwner_BarrierPendingChangesNothing`:屏障判定挪位后的行为守护,修复前后都绿。
+    - `TestResolveScene_DeadOwner_AgonesRoomMovesOnlyWithCommittedReassign`:用 fake allocator,CreateScene 落到 TestMain 的共享桩。
+- **残余(未处理)**:
+  - 落空后采用别的写者的属主时,不替它补 CreateScene。init 与懒改派是「CAS 成功后再建」,中间隔一次 RPC,这个窗口里玩家可能先于实体到达新节点。正常存活分支读到刚改派的属主,也是同一个既有窗口。
+  - 属主等于本次挑中节点时会补发 CreateScene。若同一时刻 rebalance 正把这个频道机会迁移走,并销毁了那个节点上的实体,补发会在那里留一个没有归属的实体。窗口只有一次 RPC,只涉及世界频道(实例没有机会迁移),与 `destroyUnownedMigrationTarget` 登记的残余同形。
+  - **新发现,另开任务**:`load_reporter.go` `reconcileDeadNodeScenes` 先读属主,再 `destroyInstanceForce`;`AtomicDestroyForce` 不带期望属主。读完之后若 `resolveScene` 把实例改派走并 CreateScene,收尾仍会销毁它:DestroyScene 发到新节点,并扣新节点的计数。修复前的无条件 SET 也有这个问题,本条没碰。修法是给 node_death 路径的原子销毁加期望属主。
+  - 新节点 CreateScene 失败仍只打日志、照常放行(修复前就这样),本条保持。
+- **交 Codex 的验证**:工作目录 `go/scene_manager`,`GOTOOLCHAIN=local`、`GOPROXY=off`。红了就停下归因,不连续重试,不改用例迁就。同包里还有跨 zone 收尾会话的在途改动(`load_reporter.go`、`reentry_barrier.go`、`node_detach_deferred_test.go`),失败时先分清是哪边的。
+  1. `gofmt -l internal/logic/enterscenelogic.go internal/logic/world_init.go internal/logic/resolve_scene_reassign_cas_test.go` 应无输出;`go vet ./internal/logic/`。
+  2. `go test ./internal/logic/ -count=1 -v -run 'TestResolveScene_DeadOwner_'`:新增 6 条全部 PASS,回报实跑条数。
+  3. `go test ./internal/logic/ -count=1 -v -run 'TestReassignSceneNode_|TestWorldChannelRace_|TestWorldChannel_Transfer|TestEnterScene_'`:相邻组全部 PASS。
+  4. `go test ./internal/logic/ -count=20 -run 'TestResolveScene_DeadOwner_'`:排除顺序依赖。这些用例会碰包级 knownNodes、连接缓存与 Agones allocator。同一正则在 Linux / WSL 加 `-race` 再跑一轮,写明平台。
+  5. `go test ./... -count=1` 跑 scene_manager 全模块,既有失败逐个点名归因。
+  6. **修复前红**:修复前的代码没有 `reassignSceneOffDeadNode`,新用例编不过,所以按变异取红。不改主仓文件,禁止 stash / reset。
+     - 在 `%TEMP%` 下建临时 worktree,不放仓库根:`git worktree add --detach <tmp> 940ef9746`。该提交的 `enterscenelogic.go` 是修复前代码;新用例只依赖该提交里已有的测试辅助函数。
+     - 把当前的 `internal/logic/enterscenelogic.go` 与 `internal/logic/resolve_scene_reassign_cas_test.go` 拷进 `<tmp>/go/scene_manager/internal/logic/`。
+     - 变异 A:在 `<tmp>` 里把 `reassignSceneOffDeadNode` 中的 `if !reassignSceneNode(...) { return l.adoptOwnerAfterLostReassign(...) }` 三行,换成修复前的 `l.svcCtx.Redis.Set(sceneNodeKey(sceneId), newNodeId)`。
+       - 跑步骤 2 的命令。期望 4 条 FAIL:
+         - `AnotherWriterFirst`:失败信息含「必须用先提交者的节点」;
+         - `ScriptFailureChangesNothing`:在第一个 `require.Error` 处失败(err 为 nil);
+         - `MovesIndexAndSceneCount`:失败信息含「必须在属主 8930 的反向索引里」;
+         - `AgonesRoomMovesOnlyWithCommittedReassign`:在 lostScene 那段的 `require.Equal(t, resolveNodeFirst, nid)` 处失败(nid 为 8930)。
+       - 另 2 条(`SameTargetTopsUpCreateScene`、`BarrierPendingChangesNothing`)PASS。
+     - 变异 B:恢复变异 A,删掉 `adoptOwnerAfterLostReassign` 里 `if owner == triedNode { ... }` 整块。期望只有 `SameTargetTopsUpCreateScene` FAIL,失败信息含「补发一次 CreateScene」。
+     - 跑完 `git worktree remove --force <tmp>`。
+  - 通过标准:第 1 步无输出、无告警;第 2~5 步全绿;第 6 步按上面的红绿分布。回报每步实跑条数和平台。
+- **提交情况**:本条全部改动未提交。
+- **Java 版(AGENTS §12)**:对应 0.1.0-SNAPSHOT。按启动本任务的会话核对的结论,Java 版已有等价实现 `WorldChannelCoordinator`,不往 `PARITY.md` 加行;本会话没有再去 Java 仓核对。
+
+## 2026-10-22 Codex：merge_zone 数据锁拷贝 requireIT 验收遇并行编译阻塞（未提交）
+
+- 接手同日「merge_zone:数据锁拷贝集成用例补 requireIT(t)」条目，只验证，不修改生产源码、测试或断言，不生成协议、不提交。目标 `blob_lock_integration_test.go` 的首句已经是 `requireIT(t)`。
+- 工作目录 `tools/merge_zone`，本机 Go 1.27.2，所有已运行命令显式设置 `GOTOOLCHAIN=local`、`GOFLAGS=-p=1`。
+- 实跑：`gofmt -l .` 退出 0，但输出 `audit_route_db_test.go`、`blob_lock_integration_test.go`、`fence_db_test.go`、`relocate_run.go` 四个文件，未达到“无输出”标准；未自动格式化。
+- 首个编译阻塞：`go vet ./...` 退出 1，原文为 `vet.exe: .\relocate_db_test.go:723:18: undefined: relocateAbortRouteSourceNote`。调用在 `TestRelocateAbortDB_AcrossTheSwitchFollowsTheDB`，函数尚未执行，不算运行期失败用例。只读核实该符号没有定义；该测试期望跨来源撤销 WARN 放行，关联 `relocate_run.go` 当前约定为拒绝，属于并行 B2-1 测试/生产约定不一致，与目标 requireIT 一行无关。
+- 按 AGENTS.md §10.2 在失败后停止、等待决策：带标签 vet、AST 守卫专项、普通全量、真实库全量均未运行，不能宣称直接证据 PASS 或集成无 SKIP。无标签 `relocate_db_test.go` 会参与上述测试包编译，`-run` 或 `go test -c` 也不能绕过该未定义符号；这是静态判断，没有重试证据。
+- 环境：为检查缓存启动了本机 Docker Desktop，缓存已有 TiDB/PD/TiKV 8.5.2 与 Redis 7.2；没有拉镜像，没有创建一次性服务，没有借用或操作 codex-* 容器。现有容器仅列清单，未对其执行数据库命令。
+- 并行输入：验证窗口内 `fence_db_test.go`、`relocate_manifest.go`、`relocate_run.go`、`relocate_test.go`、`unmerge.go` 五个文件哈希变化；目标用例文件哈希未变。不宣称整包输入冻结。
+- 证据：`build/verification/merge-zone-requireit-20261023T023650817Z/summary.json`（目录名为 UTC），含两条命令的独立 stdout/stderr、退出码与时间、前后输入哈希、原有差异、首错源码第 523–923 行（前后各 200 行）。vet 原始 stdout 为空、stderr 仅 3 行，输出已全部保留，没有可补足的前后 200 行。未改断言或源码重跑。
+- Java 版（AGENTS §12）：0.1.0-SNAPSHOT，不适用；Java 没有 merge_zone 工具，本轮只验本仓测试，无客户端契约变更，未改 PARITY.md。
+
+## 2026-10-22 Claude：混版本持久字段保护设计 §13 第 9 条落码（同 key 存盘未落定时推迟加载）与配置空值口径修正（未编译、未测试）
+
+- `MessageAsyncClient::AsyncLoad`：同 key 还有本客户端未落定的存盘时加载挂起，`RetryDuePending` 每拍放行已落定的；不改存盘语义，前任实体那份存盘照常落地或被拒，同落点重连加载出的新实体读到落定之后的状态（防回档与升世代窗口里的永久拒存）。用例 `CurrencyTest.RedisLoadWaitsForUnsettledSaveOfTheSameKey`。
+- 3b 第二路评审唯一发现：YAML 空值被 yaml-cpp 转成 `"null"` 导致 C++ 拒绝启动。`readBaseDeployConfig` 把 Null 节点当缺键，`start_game.ps1` 预检同口径；用例 `CurrencyTest.ReadBaseDeployConfigNormalizesPersistSchemaRegressionMode`。
+- 交接 §11.8；设计 §13 第 9 条现状已改。第 6 批（按数量扣除守卫、新币种终态）由另一接手会话负责（交接 §12）。
+- Java 版（0.1.0-SNAPSHOT）：待做，`PARITY.md` 不变。
+
+## 2026-10-22 第二轮数据与覆盖回档审计：第三波完成、第一轮 low 复核完成，换视角查找与对抗复核待续（Claude，只读审计，只改文档）
+
+- **文档**：[docs/design/data-overwrite-rollback-audit-r2-20261019.md](design/data-overwrite-rollback-audit-r2-20261019.md) §3.6（第三波第一批，基线 `c63b22dca`）、§3.7（第二批，基线 `940ef9746`）、§3.8（第一轮 §4 的 22 条 low 复核）；§6 写了剩余两项与续跑方法。续跑脚本：`docs/handoff/data-overwrite-audit-r2-20261019/audit-workflow-wave34.js`。
+- **第三波新增 medium 6 条**（都还没做对抗复核）：
+  - r2-lc#1 / r2-lc#2：存活探测摘掉旧 Redis 连接后，旧连接上迟到执行的交接标记或 A1′ 等条件写，会在新持有期留下当前代际的有效标记，下一跳换图或断线时回档。缺省可达，要 scene 与 Redis 之间 15–20s 以上的网络分区。
+  - r2-login#1：新号铸了 owner_epoch、首次存盘之前出任一故障（Kafka 推路由失败、客户端在路由到达前断线、scene 崩溃），角色此后永久无法登录，屏障恢复工具也拒收。缺省可达。
+  - r2-guild#1：帮会历练开局后战斗不出结果（battle 停机作废或崩溃），参与者的 ACTIVE 占用永不解除，不能再历练、交易、删除或导入角色。资产通道开启时可达。
+  - r2-match#1（可达性更正）：staging / prod 部署强制开全球匹配，两轮按"缺省关闭"降级的 r2-battle#1/#2/#4、第一轮 social-match-battle#0（仍未修）等在上线配置下缺省可达。**要负责人二选一**：首发开全球匹配（把相关修复与验证列为上线门禁），或改部署脚本允许关闭并把 Redis 兼容路径纳入审计。
+  - r2-rr#5：mapping Redis 一次重启或切主，全服 go/db 关闸停摆，挂标记要等全键空间 SCAN 走完；补投器不看闸、放大 Kafka 积压，超过保留缓冲后停摆早期下线玩家的最后存盘被裁、返场永久拒登。缺省可达，丢版本的门槛取决于键数与负载（估算）。
+- **第三波新增 low 8 条**：r2-mail#1/#2、r2-ps#6~#10、r2-dcc#1。另更正：全球配置下路由默认已是 db_first，r2-rr#1/#4 变为缺省可达（r2-rr#1 基本 fail-closed），r2-rr#2/#3 不可达。
+- **第一轮 22 条 low 复核**：已修复 2、推翻 1、部分成立 3、成立 16，全部维持 low；补 low 2 条（r2-low#1/#2）。
+- **修复会话的落码情况**（2026-10-20 另一会话，代码里有标注，未登记 PROGRESS，均未编译）：r2-battle#1/#4、r2-mz#1、第一轮 go-asset-services#0/#1 已修；r2-ps#1 只改了文档（release-checklist §2.1 ⑦、§6.2）；r2-ds#1/#2、social-match-battle#0 未修。
+- **待续**：换视角查找（最多 5 轮，连续两轮无新发现才停）与上面 6 条 medium 加 r2-ps#1 严重度裁决的对抗复核；之后定稿（r2 文档 §1、§7，第一轮 §7 指向，PROGRESS 定稿条目）。停在 5 小时窗口 89%（与约 10 个会话共用），周额度 24%。
+- **验证**：只读审计，没改代码，不需要交 Codex。代理转录核对过：没有 Edit / Write 调用，没有把 git show 重定向成文件。
+- **文件**：`docs/design/data-overwrite-rollback-audit-r2-20261019.md`、`docs/handoff/data-overwrite-audit-r2-20261019/audit-workflow-wave34.js`（新）、`docs/README.md`（登记 r2 文档一行）、`docs/PROGRESS.md`（本条）。
+- **Java 版（AGENTS §12）**：同类审计不在本会话范围，仍是待办；对应 Java 版本号无。
+
+## 2026-10-22 跨 zone 交接收尾续:GO-WATCH 与 GO-6 补 resync 落码,文档按复核订正(Claude,Go 未编译、未测试,待 Codex 验证)
+
+- **起因**:负责人对 10-20「跨 zone 传送交接收尾核对」一条说"Try again"。那条的完备性批评者和 3 名文档复核者撞上额度没跑完;本次续跑完,并按结果改代码、改文档。
+- **代码(未编译、未测试)**,只动 `go/scene_manager/internal/logic/` 下三个文件,动手前已与改 scene_manager 的三个会话核对过文件不重叠:
+  - `load_reporter.go`:`handleWatchEvent` 遇到同一 etcd 键换了 zone 时,旧 zone 的 (zone,node) 身份改按 watch DELETE 收尾。以前在每个副本上裸 Zrem 旧 zone 负载集、删类型镜像,不写 death_at、不记本地消失时刻、不走领导者闸门,也不收孤儿实例。`c35e1133d` 之后,`playerLocationOwnerGone` 以 `isZoneGoneFromRegistry` 判整 zone 下线,换走的若是旧 zone 唯一的节点,陈旧位置就会不经再入屏障被放行,而老进程可能还在存盘,风险是回档(设计文档 §13.9)。
+    - 修法:DELETE 分支与换 zone 分支共用新抽出的 `retireNodeIdentity`。每个副本都记本地消失时刻、清连接缓存与每节点指标;只有领导者 `removeNodeFromRedis`(先写 death_at 再摘负载集,写不进就推迟,GO-6),世界频道宿主再对旧 zone rebalance。同一身份还挂在别的键上时不判死。
+    - DELETE 分支行为不变,只是 `rebuildActiveZones` 挪到 `noteNodeGoneFromRegistry` 之前,两者互不依赖。
+    - 日志变化:换 zone 那条 ERROR 的尾巴改为 `the old zone identity is retired like a DELETE …`;resync 那条 INFO 改为 `resync requested (leadership change or abandoned deferred detach)`。告警 yaml 只按子串 `resync requested` 引用,不受影响。
+  - `reentry_barrier.go`:`retryDeferredNodeDetaches` 的 abandoned 分支放弃后调 `RequestLoadReporterResync()`(非阻塞、合并信号),fullSync 的陈旧清扫会在负载集里重扫到它、以新的首次观察时刻重新推迟。以前要等 watch 中断、换领导者或重启,期间名下玩家一直回 18(设计文档 §13.4 复审建议)。每个卡住的节点最多每个放弃期限(10 分钟)触发一次 fullSync。
+  - `node_detach_deferred_test.go`:新增 `TestHandleWatchPut_ZoneFlipRetiresOldZoneIdentity`,4 个子用例:
+    - `leader_marks_death_before_detaching`:先写 death_at 后摘负载集;孤儿实例入收尾队列;换走后立刻判 Gone / Dead 都被挡住;逐层撤掉本地记录与 death_at 后照常放行;
+    - `death_mark_failure_defers_detach`:death_at 写失败时推迟,不摘;
+    - `follower_leaves_redis_alone`:跟随者不碰 Redis,但记本地时刻;
+    - `identity_still_registered_elsewhere`:身份仍在别的键上时不判死。
+    - 另在 `abandons_after_give_up` 里断言放弃时发出了 resync 信号,在 `recovers` 里断言摘成时不发。新增两个辅助函数 `takeLoadReporterResyncForTest`、`forgetLocalGoneObservationForTest`。
+- **文档(按复核订正)**:
+  - `docs/design/guild-phase2/04-asset-channel.md`:C6 行与 `PlayerFrozenComp` 行按对抗复核重写论证,结论不变。补了以下几点:冻结内存 ⊇ 已报 durable 的快照的真正理由;写标记前还要等两张子表 SQL ACK(`handoff_sql_barrier`);标记发出后有四种结局(放行 / 不存盘销毁 / B4·B5 解冻 / 退出优先);第 4 批 Redis 分片落码时 C6 必须随多键 Lua 改形重核。另外更正一处说法:场景 H 覆盖不到强制存盘分支,runbook §6 已补这条覆盖缺口。
+  - `docs/design/cross-zone-scene-travel.md`:
+    - §13 开头的回填按复核订正:§13.5 不在 cross / routing 两个工程里;vet 实际范围是 `./internal/...`;合并 `fc3ff045e` 与 `c35e1133d` 带进的改动列全;`HandlePlayerSaveSchemaRejected` 仅 enforce 可达,并补了静态复审结论;
+    - 补上 10-20 之后的回执:10-20 `206647611` 全量构建,10-22 C++ 2624 PASS / Go / Unity;
+    - §13.9 记 GO-WATCH 落码,并补登合服工具 `assertZoneDown` 只看 ZCARD 的风险;§13.4 记 GO-6 resync 落码;§13.6 补登 1003 信封裸编号;
+    - 另三处更正:"GO-3 新字段从 8 起"剩下的两处;§12.7 GO-5"均未运行 / 接线单测够不到"已过时;§12.5.5 asmdef 批注补日志路径,写明那次只编译、未运行。
+  - `docs/handoff/handoff-crosszone-20260920.md`:文件头改为「2026-10-22 现状」一屏版,取代 10-20 版。剩余项按"只差运行 / 要拍板 / 本线推迟项 / 归别的线"四类重分:login Timeout 归 login 线;`RequestTravelEnterScene` 改为本线推迟项;新增 CL-C1 服务端泄漏、交接 SQL 屏障可观测性、CPP-3 跨配置守卫。§4 第 3 条 regen 清单订正四处:台账墓碑第一轮只写 `proto/event_id.txt`;`proto-gen-build` / `-UseGoRun`;robot vendor 挪成 Codex 的独立一步;阻塞原因已解除。09-29 段、规则数、Hiredis 红态各加指向注。
+  - `docs/ops/cross-zone-failure-test-runbook.md`:场景 Z 的补充观测点写明不写 A1′、Z-post 两条标准对这名玩家不适用、默认 warn;Changelog v2.9 补全 `e7bb46070`(R7 发送失败判读)与 `8b9592de3`(三类)的概括,并补 10-22 回执与 scene_manager 新日志;§6 新增覆盖缺口(没有场景专门制造 `handoff_fastpath_forced`)。
+  - 其余:`deploy/k8s/scene-manager-alerts.yaml` 注释挪位并订正(旧号 10-21 起经 `6c7f507cc` 也可达;`home_zone_merging` 由 `player-placement-alerts.yaml` 的 `SceneManagerHomeZoneMerging` 告警);`metrics.go` 注释同步;`currency-crash-window-verification.md` 补本机 `AllowUnsafeCrossNodeHandoff=true` 与 SQL ACK 两个限定;`node-id-overhaul-qa-20260908.md` 改指 `playerLocationOwnerGone` 与收紧后的判据;`ecs-refactor/batch4-external-id.md` 补汇总文件已在 `e76f6f747` 删除;两份进场栅栏文档的状态行改用原文全角标题并补 Go 与 10-22 回执。
+- **订正 10-20 那一条**(只追加,不改旧条):
+  - 标题"代码已无遗留"说过头:09-19 / 09-21 交接里要落的码确已进 main,但 `player_migration_event.proto` 整删,以及本线在设计文档里登记的推迟项都还没落,清单见交接文件头第 3 类。
+  - "旧号本仓已查不到"自 10-21 起不成立:`6c7f507cc` 把旧历史吸收为祖先。一一对应为 `e6b174712`→`586849bed`、`595df64a3`→`d01ca5099`、`9cef7b2ec`→`440fe26b6`、`703d409ad`→`c77452933`。
+  - 其余几处:04 的行号应为 :29 / :301 / :336 / :353;CL-5 没有客户端改动,由服务端 §12.6 A′ / §12.7 GO-5 处理;asmdef 批注在 §12.5.5,不在 §13.6;`HandlePlayerSaveSchemaRejected` 只在 enforce 模式可达;那条及其订正随 `c35e1133d`、`10fa5d939`、`b6d19b858` 入库,03:32 随 `49b1aa889` 推到 origin。
+- **Codex 验证**(工作目录 `go/scene_manager`,依次执行):
+  1. `gofmt -l internal/logic/load_reporter.go internal/logic/reentry_barrier.go internal/logic/node_detach_deferred_test.go internal/metrics/metrics.go`,应无输出。
+  2. `go vet ./internal/...`
+  3. `go test ./internal/logic/ -count=1 -v -run "TestHandleWatchPut_|TestRetryDeferredNodeDetaches_|TestRemoveNodeFromRedis_|TestSweepStaleLoadSetMembers_|TestPlayerLocationOwnerDead_|TestReassignSceneNode_BlockedWhileDeathMarkDeferred|TestInitWorldScenes_DeadNodeStillInLoadSetKeepsOwnership"`。通过标准:`TestHandleWatchPut_ZoneFlipRetiresOldZoneIdentity` 的 4 个子用例与 `abandons_after_give_up`、`recovers` 都实际 PASS。
+  4. `go test ./... -count=1`,全绿;其中 `TestSourceJudgeScriptAndInheritClearCopiesMatchCpp` 要是 PASS,不是 SKIP。
+  5. 可选红态:在 HEAD(`940ef9746` 或当时的 main)的临时 worktree 里,只拷入新的 `node_detach_deferred_test.go`,跑 `-run "TestHandleWatchPut_ZoneFlipRetiresOldZoneIdentity|TestRetryDeferredNodeDetaches_KeepsTaskWhileLoadSetRemovalFails"`。期望 `leader_marks_death_before_detaching`、`death_mark_failure_defers_detach`、`follower_leaves_redis_alone` 与 `abandons_after_give_up` 失败,`identity_still_registered_elsewhere` 与 `recovers` 通过。用完删掉 worktree,不要 stash / reset 主仓。
+  6. 可选:抽出 `deploy/k8s/scene-manager-alerts.yaml` 的 `spec.groups` 跑 `promtool check rules`,期望 `SUCCESS: 25 rules found`(本次只改了注释)。
+- **Java 版(AGENTS §12)**:不适用。Java 版没有 scene_manager 的负载集 / death_at 再入屏障这一套(跨节点交接用 MySQL 交出事务,PARITY「跨节点换图与归属交接」行记为有意不同),不涉及客户端契约。对应 Java 版本号无,不登记 PARITY。
+
+## 2026-10-22 混版本持久字段保护：§12「其他持久值域」逐项核对（Claude，只读代码，只改文档）
+
+- **范围**：scene 加载（`InitPlayerFromAllData` → 两张表的手写 Unmarshal → 各 `InitializeOnLoad`、marshal、`EnterScene`）与存盘（`MarshalPlayerForPersist`）路径上，所有按配置表或代码常量过滤、丢弃或压回持久值的点。
+- **结论**（设计稿 `mixed-version-persist-field-protection.md` §12.1）：
+  - 会删 7 项（D1–D7）：加点维度、加点超额、技能重数压回、技能归属变更、结算账本条数上限；
+  - 会改写 3 项（W1–W3）：装备槽位、坐标、当前 HP / MP；
+  - 不适用 15 项（N1–N15）。
+- **门禁**：§8.3 scene 回滚门禁同步更新。N1–N15 不再限制回滚；D1–D7 修好之前，发布单须逐项写明本版本没有做这些扩展；等级上限仍单列一行。
+- **待拍板**：§12.1 末尾 6 条。D5 改动小，建议先做。
+- **验证**：没有编译、没有测试，也没有回滚场景用例；不改 C++ / Go。交接见 `mixed-version-persist-handoff-20261019.md` §12。
+- **Java 版（AGENTS §12）**：待做，0.1.0-SNAPSHOT；`PARITY.md` 已有的那一行覆盖本主题，没有新增。
+
+## 2026-10-22 Claude：混版本持久字段保护设计 §13 第 8 条落码（恢复工具 schema_gen 改为两行最小值、覆盖旧值；未编译）
+
+- 详见交接 §11.9、设计 §5.4 / §13 第 8 条 / §15 v0.6、运维手册 mysql-backup-pitr-runbook.md 同日小节。Java 版：待做。
+
+## 2026-10-22 Codex：merge_zone 数据锁拷贝 requireIT 全部验收通过（续上条，未提交）
+
+- **授权与范围**：负责人在上条阻塞后要求“做完给我”。本聊天修复阻塞验证的集成夹具与格式问题；真实库全量暴露旧断言与 D1 设计冲突后，负责人又明确选择“允许按现行设计纠正旧断言并完成验收”。仅这条旧断言获准调整，其它业务判据和安全门禁保留；没有协议生成、commit、push 或 tag。
+- **修复与并行边界**：
+  - 上轮 `relocateAbortRouteSourceNote` 未定义已由并行会话修正，本聊天没有补这个函数或撤销跨来源拒绝。
+  - 对 `audit_route_db_test.go`、`blob_lock_integration_test.go`、`fence_db_test.go`、`relocate_run.go` 执行 gofmt。后两文件还含并行 B1-1/B2-1 变更，不能将它们相对快照的全部差异归为本聊天的格式化。目标用例的 DB 13/14 非空改走 `itMissing` 也是并行输入，原件与哈希均保留。
+  - 带标签 vet 发现接口抽取后的夹具残留：三份集成文件七处 `rb.db.db`、一处将 `routeDBOps` 当 `relocateRouteStore`。新增测试专用独立强读 SQL 观察/持锁池 `itOpenRouteDB`；从具体存储工厂 `itFixtureRouteStore` 分别装配角色。原 P1–P5 探针、64 片围栏 SQL、1205 锁等待与 rollback/reacquire 断言不变，不增加生产穿透接口。
+  - 首轮真库全量 439 个顶层测试中 437 PASS、2 FAIL、0 SKIP，目标数据锁用例已 PASS。失败一在 `integration_test.go:2505`：拒绝和围栏释放正确，SQL 文案丢了旧诊断前缀；`merge_run.go` 恢复 `NO player:zone mapping` 兼容片段，同时明示 `authoritative player_route.home_zone`，查询和拒绝判据不变。
+  - 失败二在 `placement_integration_test.go:238`：删除 Redis 落点镜像后仍要求整个审计退出 0，违反现行 D1 缓存不一致必须 BLOCK 的开服门禁。按负责人明确授权改为要求退出 1、恰好一个 BLOCK、SQL 行检查 INFO、缓存检查 BLOCK，且报告 9002 的 SQL 落点仍为 901:1；缺 SQL pin 的反面及后续恢复/续跑/撤销原样保留。生产 `verify:route_cache` 门禁未修改。
+  - 两项修正后先定向实跑，两条均 PASS，命令退出 0；独立只读复核未发现阻塞性正确性、断言弱化或生命周期问题。
+- **最终实跑**：工作目录 `tools/merge_zone`，Go 1.27.2 windows/amd64，显式 `GOTOOLCHAIN=local`、`GOFLAGS=-p=1`，按下列顺序执行，全部退出 0：
+  1. `gofmt -l .` 无输出；`go vet ./...` 无输出；`go vet -tags merge_integration ./...` 无输出。
+  2. `go test -count=1 -run TestIntegrationTestsCallRequireIT -v .`：专项 PASS。
+  3. `go test -count=1 ./...`：PASS。
+  4. `MERGE_ZONE_IT_REQUIRE=1` 下 `go test -tags merge_integration -count=1 -v ./...`：**439 个顶层测试全 PASS，包含 89 个真实库 IT，0 FAIL、0 SKIP**，Go 报告 242.051s。`TestIT_CopyPlayerStringKeys_RefusesWhileDataLockHeld` 为实际 PASS；两条首轮失败项也在最终全量 PASS。没有 Access denied，不需要 test -c 回退。
+- **受控依赖**：全新独占 `mergeit-requireit-024235` TiDB/PD/TiKV 8.5.2 与 Redis 7.2.16；CHECK 读回 ON，Redis AOF 开启且 WAITAOF 可用，DB 9/10/11/13/14 在开测前全空；显式数字 loopback 随机端口 DSN/Redis 地址，没有连接默认共享端口、借用 codex-* 容器或拉取镜像。首轮之后也只读核实五库与固定 schema 均已清空；最终清理结果单独补记。
+- **输入与证据**：最终六条步骤（含三条静态命令）覆盖的 **71 个源码/模块/外部夹具输入**，逐步首尾及从最终 gofmt 前到最终全量后 SHA256 均零变化，不宣称全仓冻结。证据目录 `build/verification/merge-zone-requireit-complete-20261023T024235009Z/`（UTC 命名）：`summary.json`、每步退出码/原始 stdout/stderr、逐步输入哈希、独占依赖准备、原件快照、独立复核，以及前两次编译首错和首轮真库两项失败的前后 200 行；所有旧失败原件保留，没有改判通过或覆盖。
+- **Java 版（AGENTS §12）**：0.1.0-SNAPSHOT，不适用；Java 没有本仓 merge_zone 工具，本次不涉及客户端契约，未改 PARITY.md。
+
+- **2026-10-22 清理补记**：本次独占环境清理已退出 0；清理前 Redis DB 9/10/11/13/14 全为 0，9 个固定测试 schema（含 merge_zone_it_fence_db）及全部应用 schema 残留为 0。四容器、专属网络、三个数据卷与临时 SQL client 已删除，按名称和项目标签核对资源数均为 0；缓存镜像保留，其它环境未操作。证据见同目录 infra/cleanup.json。
+
+## 2026-10-22 Codex：全球同服验收恢复与精简审核入口（仍未整体验收）
+
+- 负责人明确继续当前工作并已释放内存；只读实测初始可用 11725960 KiB，无外部编译。保留全部最新源码、新地图、资源与他人既有改动，没有 commit/push/tag。
+- 新增用户要求的 `docs/handoff/global-economy-claude-review-20261022.md` 并在 `docs/README.md` 登记，包含主要实现接缝、历史实际结果、当前源码差异、未验清单和 Claude 审核顺序。283 个待验原测试键另存被忽略的 `build/verification/global-economy-claude-review-20261022/go-pending-original-283-keys.json`，不把计划映射或 Windows 不适用项算 PASS。
+- 原三语言执行根均已退出；按实际新 PID/创建时间登记新三根，AA39D607CDF57019DDF33A681A789D7AC7EE2207D1AB6BD57474C6C6C7911318 批与真实四例身份组合检查 7169CE2C5878F0E7C1F0CB3FEDF0E1C5A1A29375B9A821A7F1DA1AFC0C8A398E 通过。启动 7340032 KiB、运行 2883584 KiB、2 秒采样及未知进程拒绝均保持。
+- Docker 当前可用，仅恢复本任务原新世界四容器、原 etcd、Kafka 三容器与 Java Redis 共九个固定 CID；11 条原生命令全部退出 0，恢复后不可变身份、配置、镜像、卷与 loopback 端口同，StartedAt 如实更新。原件 `C:/Users/luyua/.codex/tmp/xuanming-global-go-evidence-20261021T233020397Z-4d221b14/owned-nine-infra-recovery-20261023-r1/actual-20261023T031043769Z-98c219d6/proof.json`，SHA 9F5AAADA5E8B810954CB1D343C6357130CCEEFE8FDA075713162D53AC73E7380。仅恢复不等于协议或业务通过；没有清库、降号段、重置 offset、重建容器或操作其它项目。
+- 临时恢复脚本第一阶段在 native 前将同一 Windows 路径的正/反斜杠作原文比较而拒绝，原 exit1 保留且无实际 run 目录；通过原条件复现与新比较的正负例三项后，仅新建路径规范化后继，原脚本不改，后继阶段实际通过。准备阶段 Docker 可选 Tmpfs 元数据与无新 task 标签的原 etcd 也按固定身份核对；没有放宽到任意项目或 PID。
+- C++ 对最新 1868 源双观察、19 个新增差异核对与正式输出检查后，已真正启动完整 118 原生命令构建；MSBuild 仍 `/m:1 /nr:false /p:CL_MPCount=1`。本条没有其最终结果，不能拿旧 2624 PASS 覆盖最新源。
+- Go 5360 去重路径只读审计发现实际新增 shared/savebarrier 与多个服务变更；传递包图保守影响九模块、35 普通目标。生成器当前源 125→127，包含 9 改、5 新、3 删；既有生成输出字节相同不代表当前生成门禁闭合。正式 gen-run 等 C++ 释放生成写窗口，不能并发改其编译输入。
+- 独立 Java 原静态观察将六个缓存路径报缺，后续 .NET 实际逐文件读取 SHA 全等，原时间未变、复制次数 0；纠正原件 9A6B849D56965E7B8A681A5DC2DD42D709687009A632567B920BE529DF5A1149，保留原观察且不猜原因。PARITY.md 的他人最新追加保留；17 个 JAR 与已记录工具保持原 SHA。新 epoch 协议、六工具 javac、剩 13 外测/413 展开项及 33 进程业务仍待。
+- Java 对应 0.1.0-SNAPSHOT；本条不代表两版一致性与双区故障已验收。最终全部结果须再追加，整体仍未完成。

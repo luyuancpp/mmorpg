@@ -106,6 +106,12 @@
 3. 铸造与屏障 Lua 这类关键写加 WAITAOF（`numlocal=1`，HA 下 `numreplicas=1`）。有延迟代价，要按 AGENTS §6 压测后再定。
 4. ACK > pending 时给出自动处置，或至少告警，不要静默永久拒登。
 
+> **（2026-10-22 指向注）** 合并设计稿见 [zone-redis-regression-guard-20261022.md](zone-redis-regression-guard-20261022.md)，有两处修正：
+> - 上面第 1 条说它「能堵住新 epoch 越过 SQL 新行」，不成立。任何铸造地板都只能防重铸同值；越过 SQL 新行要在加载侧堵（设计稿 G1）。
+> - 第 3 条的 WAITAOF 只适用于有专用连接的 Go 侧铸造。C++ 存盘 Lua 走 hiredis 单连接，不能加。
+>
+> §0 里「全仓只有路由发布用了 WAITAOF」也要补一句：go/db 的重试、死信入队同样用了 WAITAOF。
+
 ### 2.3 low · 其他
 
 | 编号 | 问题 | 位置 | 可达性 / 备注 |

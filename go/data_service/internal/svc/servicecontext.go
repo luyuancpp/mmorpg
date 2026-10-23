@@ -20,6 +20,7 @@ import (
 	guildpb "proto/guild"
 	loginpb "proto/login"
 	"shared/accountdirectory"
+	"shared/placement"
 	"shared/serviceauth"
 	"shared/sqlpoolstats"
 
@@ -205,6 +206,21 @@ func (s *ServiceContext) MissingStores() []string {
 		missing = append(missing, "route_reconciler")
 	}
 	return missing
+}
+
+// RouteReadGateUnassembled 返回非 nil = 读方门禁开着(RouteStore.ReadRequiresReady=true)而 route store 没装配起来
+// (启动探针跑不起来、迁移失败、WAITAOF 探针不过、开库失败、空库引导拒绝,原因见此前的 [ServiceContext] / [route-bootstrap] ERROR)。
+// main 据此**无条件**拒启,不看 Store.Required(M1-5,2026-10-22;规格 §13.2 第 2 条「读方开关为 true 时启动探针跑不起来 → 拒启」,
+// 与 go/db、guild 的读方开关同口径)。理由:没有回源读者,缓存不可信时的每一次归属读都回 Unavailable(码 30)、每一次 W1 都
+// fail-closed,本副本也装不起对账 leader —— 这样的实例进了发现池只会把登录分流到必败的副本上;Store.Required=false 的「缺 store
+// 降级启动」是给回档 / 快照这类旁路能力的,不适用于读路径。全球配置(ResolveGlobalAuthority)恒要求 Store.Required=true,
+// 那时 MissingStores 已先拒启,本判据只在 LegacyNonGlobal 的 dev / test 夹具上多拦一道;ReadRequiresReady=false(组件缺省)时恒回 nil。
+func (s *ServiceContext) RouteReadGateUnassembled() error {
+	if !s.Config.RouteStore.ReadRequiresReady || s.PlayerRouteStore != nil {
+		return nil
+	}
+	return errors.New("RouteStore.ReadRequiresReady=true but the route store (the player_route fallback reader) is not assembled: " +
+		"every untrusted home zone read would answer Unavailable and every RegisterPlayerZone would fail closed")
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
@@ -536,8 +552,13 @@ func newPlayerRouteStore(c config.Config, mysqlCfg store.MySQLConfig, schemaRead
 
 // probeRouteReadyReadAtStartup 是第 3 批读方门禁的启动探针(规格 §13.2 第 2 条):ReadRequiresReady=false 时什么都不做、
 // 回 true;true 时在 mapping Redis 上试跑一次读脚本(不带映射键,routing.ProbeRouteReadyRead),跑不起来(INFO 在脚本里
-// 不可用、ACL 拒绝、连不上)回 false —— 调用方不装配 route store,MissingStores 带上 player_route,Store.Required=true 时
-// main 拒启(既有的拒启机制,不另开一条)。跑得起来但标记不可信是启动时的正常状态(leader 预热完才挂),只记日志。
+// 不可用、ACL 拒绝、连不上)回 false —— 调用方不装配 route store,main 据 RouteReadGateUnassembled **无论 Store.Required
+// 取值都拒启**(M1-5,2026-10-22;此前只经 MissingStores 在 Store.Required=true 时拒启)。
+// 跑得起来就照常装配、回 true,只按结论分级记日志(A2-11,2026-10-22):
+//   - not_master / identity_unavailable(routeReadyProbeNeverArms):确定性配置问题 —— 就绪标记对这个实例永远挂不上,
+//     读方会永久回源库。记 ERROR,但**不**拒启、不拒装配:读结果仍然正确(只是每次读多一次库查询),哨兵切主期间启动的 Pod
+//     也可能短暂碰到 not_master,拒启会把「正确但慢」变成故障(核实意见);
+//   - 其余(absent、identity_mismatch、malformed、newer_version、trusted):启动时的正常状态(leader 预热完才挂),记 Info。
 // 放在开库之前:与 WAITAOF 探针同理,配置错误挡在启动期,不让它变成每一次读都回源、每一次回源都多两次失败的 INFO。
 func probeRouteReadyReadAtStartup(c config.Config) bool {
 	if !c.RouteStore.ReadRequiresReady {
@@ -548,12 +569,27 @@ func probeRouteReadyReadAtStartup(c config.Config) bool {
 	verdict, err := routing.ProbeRouteReadyRead(ctx, c.MappingRedis)
 	if err != nil {
 		logx.Errorf("[ServiceContext] route store not assembled (RouteStore.ReadRequiresReady=true but the route ready read script cannot run "+
-			"on the mapping redis; RegisterPlayerZone and every untrusted read will fail closed): %v", err)
+			"on the mapping redis; data_service refuses to start regardless of Store.Required): %v", err)
 		return false
+	}
+	if routeReadyProbeNeverArms(verdict) {
+		logx.Errorf("[ServiceContext] route ready read probe: verdict=%s on mapping redis %s: it is not a master, or the script cannot read "+
+			"run_id / role / master_replid from INFO, so the ready marker can never be trusted on this instance and every home zone read "+
+			"falls back to player_route (correct, one global DB query per read). Check that MappingRedis points at the master "+
+			"(or the haproxy master endpoint) and that ACL allows INFO inside scripts; a brief not_master during a sentinel failover is expected. "+
+			"The route store is assembled as usual", verdict, c.MappingRedis.Host)
+		return true
 	}
 	logx.Infof("[ServiceContext] route ready read probe ok: verdict=%s (anything but trusted is normal until the reconcile leader arms the marker; "+
 		"readers fall back to player_route meanwhile)", verdict)
 	return true
+}
+
+// routeReadyProbeNeverArms:启动探针的结论是 not_master 或 identity_unavailable —— 挂标记脚本同样要求本实例是主、身份取得到,
+// 就绪标记对这个 MappingRedis 永远不会生效(A2-11)。routing.ProbeRouteReadyRead 不论标记在不在都会如实回报这两种
+// (见 routing.probeRouteReadyVerdict),所以首次启动、标记还没挂时也能报出来。纯函数,单测直接测。
+func routeReadyProbeNeverArms(v placement.RouteReadyVerdict) bool {
+	return v == placement.RouteReadyNotMaster || v == placement.RouteReadyIdentityUnavailable
 }
 
 // routeRouterOptions 把装配好的 route store 同时作为写入点(WithRouteStore)与回源读者(WithRouteReader,第 3 批)交给 Router。

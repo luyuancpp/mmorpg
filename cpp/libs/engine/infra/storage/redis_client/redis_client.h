@@ -74,8 +74,11 @@ static constexpr const char* kSaveIfGuardLuaScript = R"(
 //     代次判"是不是自己写的":同一实体会换代次(E→E+1 复用、B5 采纳),同一代次也会先后加载出两个实体(同落点重连)。
 //   - 同版本重放(pending == ARGV[3])显式跳过:同版本分支不提前返回,会落到写入。
 //   - 比较放在 owner / 版本判定之后:已被废黜的旧持有者必须拿到 0(DestroyDeposedPlayer),不能先拿到 3。
-//   - 加载世代 ARGV[9] < 存储值,或存储值不是合法十进制 uint32 = 倒退证据:warn 照写、返回 2;
-//     enforce 不写任何键、返回 3(下一次仍会比较)。hash 或 schema_gen 字段不存在 = 不比较。
+//   - 加载世代 ARGV[9] < 存储值,或存储值不是合法十进制 uint32 = 倒退证据:warn 照写、返回 2,并把写方令牌记进
+//     schema_regressed;enforce 不写任何键、返回 3(下一次仍会比较)。hash 或 schema_gen 字段不存在 = 不比较。
+//   - schema_regressed 等于 ARGV[11] 时(这个写方先前在 warn 下被判过倒退)照写并继续返回 2:判定那次的回包可能丢了,
+//     重放同一元素或改发同令牌的后继都跳过 C3,只靠这个字段把证据带回来。别的写方写成功也不删它(只在等于本令牌时
+//     起作用,令牌全局唯一;只有 save_barrier_restore 以 SQL 为准重建时清掉)。
 //   - 参数非法(世代不是 1..4294967295、ARGV[9] > ARGV[8]、模式不是两个字面量、令牌为空 / 超过 64 字节 /
 //     含字母数字与 ':' '-' 以外的字符)返回 error_reply:那是 C++ 的编程错误,SaveWithCommitBarrier 入队前已校验。
 // 旧二进制自带 7 参旧脚本(ScriptSlot 按脚本文本算 SHA),不受影响;它不写 schema_gen / schema_writer,
@@ -192,19 +195,28 @@ static constexpr const char* kSaveWithCommitBarrierLuaScript = R"(
     local stored_gen = redis.call('HGET', KEYS[3], 'schema_gen')
     local stored_gen_valid = stored_gen and is_u32(stored_gen)
     local stored_writer = redis.call('HGET', KEYS[3], 'schema_writer')
+    local stored_regressed = redis.call('HGET', KEYS[3], 'schema_regressed')
     local regression = false
     if stored_gen and pending ~= ARGV[3] and stored_writer ~= ARGV[11] then
         regression = not stored_gen_valid or num_gt(stored_gen, ARGV[9])
     end
     if regression and ARGV[10] == 'enforce' then return 3 end
+    -- warn 判过倒退的写方,之后的写入(回包丢失后的同版本重放、同令牌的后继)继续返回 2:判定那次的回包可能丢了,
+    -- 证据不能跟着消失。证据记在 schema_regressed(= 被判倒退的写方令牌),别的写方写成功也不清:它只在等于
+    -- ARGV[11] 时起作用而令牌全局唯一,保留对 C3 没有副作用;清掉的话"判倒退后回包丢失、随即被废黜"的那次判定就永远
+    -- 不计数。值班巡检这个字段的存量(deploy/k8s/README.md)作为切 enforce 门禁的第三项。
+    local warned = regression or stored_regressed == ARGV[11]
     local schema_gen = ARGV[8]
     if stored_gen_valid and num_gt(stored_gen, schema_gen) then schema_gen = stored_gen end
     redis.call('SET', KEYS[1], ARGV[1])
     redis.call('HSET', KEYS[3], 'pending', ARGV[3], 'outbox_version', ARGV[3],
         'outbox_topic', ARGV[4], 'outbox_player_database', ARGV[5], 'outbox_player_database_1', ARGV[6],
         'schema_gen', schema_gen, 'schema_writer', ARGV[11])
+    if regression then
+        redis.call('HSET', KEYS[3], 'schema_regressed', ARGV[11])
+    end
     redis.call('ZADD', KEYS[4], 0, ARGV[7])
-    if regression then return 2 end
+    if warned then return 2 end
     return 1
 )";
 
@@ -378,12 +390,13 @@ public:
 	// 严格屏障覆盖世代校验 C3 的两种结局(docs/design/mixed-version-persist-field-protection.md §5.2)。
 	//
 	// 返回 2(warn 模式判定倒退但照写):Redis 已提交,是提交证据,照常执行提交钩子、发布 save_callback_。
-	// SaveSchemaWarnedCallback 只用于计数与日志,在提交钩子之前同步调用,不得重入 Save。
+	// SaveSchemaWarnedCallback 只用于计数与日志,在提交钩子之前同步调用,不得重入 Save。writer 是这份写入的写方令牌:
+	// 同一写方被判过倒退之后每次写入都会再返回 2(证据留在 Redis,防回包丢失),调用方按令牌去重计数。
 	//
 	// 返回 3(enforce 模式拒写,一个键都没动):与 owner 拒绝(0)一样不重试、不执行提交钩子、不发布 save_callback_,
 	// 同 key 排队值的处置也同 0 分支(期望值相同丢弃;不同则照发、不回调)。语义却不同于"已被废黜",
 	// 所以不复用 SaveRejectedCallback(那条会按 epoch 重存而无限循环,或按废黜销毁),由调用方按实体状态分派。
-	using SaveSchemaWarnedCallback = std::function<void(MessageKey, const std::string& redisKey)>;
+	using SaveSchemaWarnedCallback = std::function<void(MessageKey, const std::string& redisKey, const std::string& writer)>;
 	using SaveSchemaRejectedCallback = std::function<void(MessageKey, const std::string& redisKey, const std::string& guardExpected)>;
 
 	using HiredisPtr = std::shared_ptr<hiredis::Hiredis>;
@@ -455,9 +468,36 @@ public:
 						   std::move(committed));
 	}
 
+	// 同 key 还有本客户端未落定的存盘(在途或排队)时,加载先挂起,等这些存盘落定(成功、被拒或被更新值取代后落定)
+	// 再发 GET(ReleaseLoadsAwaitingSaves,由 RetryDuePending 的周期节拍驱动)。
+	//
+	// 为什么(docs/design/mixed-version-persist-field-protection.md §13 第 9 条):前任实体被不存盘销毁时,它的存盘可能还在
+	// 排队重试;同落点重连在同一 owner 代次下加载出的新实体若先读,读到的是那笔存盘之前的父快照,随后那笔存盘落地,
+	// 新实体的下一次存盘就会把它盖回去(回档),升世代窗口里还会被 C3 判倒退而永久拒存。挂起加载不改存盘语义:
+	// 前任那份照常落地或被拒,新实体读到的就是落定之后的状态。不同 key 互不影响;同一连接上已在途的 GET 不受影响。
 	void AsyncLoad(const MessageKey& key, int retry_count = 0)
 	{
 		std::string redis_key = full_name() + ":" + std::to_string(key);
+
+		if (HasUnsettledSave(key) && loading_queue_.find(redis_key) == loading_queue_.end())
+		{
+			auto& parked = loads_awaiting_saves_[redis_key];
+			if (!parked)
+			{
+				parked = std::make_shared<Element>();
+				parked->message_key = key;
+				parked->redis_key = redis_key;
+				LOG_INFO << "AsyncLoad deferred until the pending save of the same key settles: " << redis_key;
+			}
+			parked->retry_count = std::max(parked->retry_count, retry_count);
+			// 同 key 已在等重试的那份并进挂起项,免得两条路各发一次 GET。
+			if (auto pendingIt = pending_retry_queue_.find(redis_key); pendingIt != pending_retry_queue_.end())
+			{
+				parked->retry_count = std::max(parked->retry_count, pendingIt->second->retry_count);
+				pending_retry_queue_.erase(pendingIt);
+			}
+			return;
+		}
 
 		LOG_DEBUG << "AsyncLoad: key=" << redis_key
 				  << " connected=" << (hiredis_ ? hiredis_->connected() : false)
@@ -579,6 +619,8 @@ public:
 	// fires twice for the same key.
 	void RetryDuePending()
 	{
+		// 先放行存盘已落定的挂起加载(AsyncLoad 自己处理未连接:放回 pending_retry_queue_ 等重连)。
+		ReleaseLoadsAwaitingSaves();
 		if (!hiredis_ || !hiredis_->connected())
 		{
 			return;
@@ -604,8 +646,11 @@ public:
 	bool HasPendingLoad(const MessageKey& key) const
 	{
 		const std::string redisKey = full_name() + ":" + std::to_string(key);
-		return loading_queue_.contains(redisKey) || pending_retry_queue_.contains(redisKey);
+		return loading_queue_.contains(redisKey) || pending_retry_queue_.contains(redisKey) ||
+			   loads_awaiting_saves_.contains(redisKey);
 	}
+	// 因同 key 存盘未落定而挂起的加载数(见 AsyncLoad)。
+	size_t awaiting_save_load_count() const { return loads_awaiting_saves_.size(); }
 	// Number of saves waiting in the failure/disconnect retry queue.
 	size_t pending_save_count() const { return pending_save_queue_.size(); }
 	// Number of SETs whose reply has not yet been received.
@@ -632,7 +677,7 @@ public:
 	void LogQueueSnapshot(const char *tag) const
 	{
 		if (in_flight_load_count() == 0 && in_flight_save_count() == 0 &&
-			pending_load_count() == 0 && pending_save_count() == 0)
+			pending_load_count() == 0 && pending_save_count() == 0 && awaiting_save_load_count() == 0)
 		{
 			return;
 		}
@@ -640,7 +685,8 @@ public:
 				 << " in_flight_loads=" << in_flight_load_count()
 				 << " in_flight_saves=" << in_flight_save_count()
 				 << " pending_loads=" << pending_load_count()
-				 << " pending_saves=" << pending_save_count();
+				 << " pending_saves=" << pending_save_count()
+				 << " loads_awaiting_saves=" << awaiting_save_load_count();
 	}
 
 private:
@@ -664,6 +710,33 @@ private:
 			return std::chrono::milliseconds(8000);
 		default:
 			return std::chrono::milliseconds(16000);
+		}
+	}
+
+	// 放行同 key 存盘都已落定的挂起加载(见 AsyncLoad)。先收集再发:AsyncLoad 会改本表。
+	void ReleaseLoadsAwaitingSaves()
+	{
+		if (loads_awaiting_saves_.empty())
+		{
+			return;
+		}
+		std::vector<ElementPtr> released;
+		for (auto it = loads_awaiting_saves_.begin(); it != loads_awaiting_saves_.end();)
+		{
+			if (!HasUnsettledSave(it->second->message_key))
+			{
+				released.push_back(it->second);
+				it = loads_awaiting_saves_.erase(it);
+			}
+			else
+			{
+				++it;
+			}
+		}
+		for (const auto& element : released)
+		{
+			LOG_INFO << "AsyncLoad released after the pending save settled: " << element->redis_key;
+			AsyncLoad(element->message_key, element->retry_count);
 		}
 	}
 
@@ -1146,7 +1219,7 @@ private:
 		{
 			if (save_schema_warned_callback_)
 			{
-				save_schema_warned_callback_(element->message_key, element->redis_key);
+				save_schema_warned_callback_(element->message_key, element->redis_key, element->schema_writer);
 			}
 			else
 			{
@@ -1310,6 +1383,8 @@ private:
 	HiredisPtr& hiredis_;
 	LoadingQueue loading_queue_;
 	LoadingQueue pending_retry_queue_;
+	// 因同 key 存盘未落定而挂起的加载(见 AsyncLoad);RetryDuePending 每拍检查,落定即发 GET。
+	LoadingQueue loads_awaiting_saves_;
 	LoadingQueue saving_queue_;
 	LoadingQueue pending_save_queue_;
 	ScriptSlot save_script_{kSaveLuaScript};

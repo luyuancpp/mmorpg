@@ -470,19 +470,30 @@ func rsFenceExpired(run string) fakeRouteSQLReply { return rsRows([]driver.Value
 
 func rsFenceFree() fakeRouteSQLReply { return rsRows([]driver.Value{nil, int64(0)}) }
 
-// rsFenceAll 是一个 zone 的 64 片(LOCK_FENCE_ALL 的应答):全部同一个 run_id / 生效与否 / epoch。
+// rsFenceAll 是一个 zone 的 64 片(LOCK_FENCE_ALL 的应答):全部同一个 run_id / 生效与否 / epoch。有 run_id 的片记着
+// testFenceAcquire 的 zone 对(101 → 102),holder_json 不带 manifest_path(接手核对只比 zone 对)。
 func rsFenceAll(run string, active bool, epoch uint64) fakeRouteSQLReply {
+	holder := ""
+	if run != "" {
+		holder = `{"run_id":"` + run + `"}`
+	}
+	return rsFenceAllHeld(run, active, epoch, 101, 102, holder)
+}
+
+// rsFenceAllHeld 同 rsFenceAll,分片上的 zone 对(src_zone / dst_zone)与 holder_json 由调用方给;run 为空时这三列一律 NULL
+// (列序同 routeLockFenceAllSQL:shard、run_id、active、fence_epoch、holder_json、src_zone、dst_zone)。
+func rsFenceAllHeld(run string, active bool, epoch uint64, src, dst uint32, holder string) fakeRouteSQLReply {
 	rows := make([][]driver.Value, routeFenceShards)
 	for s := range rows {
-		var runV, holder driver.Value
+		var runV, holderV, srcV, dstV driver.Value
 		if run != "" {
-			runV, holder = run, `{"run_id":"`+run+`"}`
+			runV, holderV, srcV, dstV = run, rsNullStr(holder), int64(src), int64(dst)
 		}
 		act := int64(0)
 		if active {
 			act = 1
 		}
-		rows[s] = []driver.Value{int64(s), runV, act, int64(epoch), holder}
+		rows[s] = []driver.Value{int64(s), runV, act, int64(epoch), holderV, srcV, dstV}
 	}
 	return fakeRouteSQLReply{rows: rows}
 }
@@ -891,8 +902,14 @@ func TestTakeOverFence_OnlyThePreviousRunIsTakenOver(t *testing.T) {
 		on("ENSURE_FENCE", rsAffected(0)).
 		on("WRITABLE", rsOne()).
 		on("LOCK_FENCE_ALL", rsFenceAll("third-run", true, 5)))
-	if _, err := st.TakeOverFence(context.Background(), testFenceAcquire(testRouteRun), prev); !errors.Is(err, errRouteFenceHeld) {
+	_, err = st.TakeOverFence(context.Background(), testFenceAcquire(testRouteRun), prev)
+	if !errors.Is(err, errRouteFenceHeld) {
 		t.Fatalf("a third run's live fence: error = %v, want errRouteFenceHeld", err)
+	}
+	// MZ2-5:Held 文案点名持有者并给出唯一的出路(工具没有别的释放入口),不再说「release it through the tool that owns it」。
+	if msg := err.Error(); !strings.Contains(msg, "-take-over-fence third-run") || !strings.Contains(msg, "same -manifest-path") ||
+		strings.Contains(msg, "tool that owns it") {
+		t.Fatalf("held message = %q", msg)
 	}
 	assertRouteLabels(t, f, "ENSURE_FENCE", "BEGIN", "WRITABLE", "LOCK_FENCE_ALL", "ROLLBACK")
 
@@ -904,6 +921,81 @@ func TestTakeOverFence_OnlyThePreviousRunIsTakenOver(t *testing.T) {
 		if got := f.labels(); len(got) != 0 {
 			t.Fatalf("previous run %q sent statements %v", bad, got)
 		}
+	}
+}
+
+// TestTakeOverFence_RefusesAMismatchedOrPartialFence:被接手的分片必须记着本次的 zone 对、holder_json 里的清单路径与本次相同,
+// 且每个 zone 要么 64 片全接、要么一片不接;不满足一律 errRouteInvalidArgument,事务在第一次写之前回滚,旧围栏原样留在 previousRunID 上。
+// (MZ2-2 / B1-2:zone 对写错时只接走一区、另一区挂在已死的运行上过期解封;续跑落到别的清单会被当成首跑。)
+func TestTakeOverFence_RefusesAMismatchedOrPartialFence(t *testing.T) {
+	const prev = "101-102-20261018T000000Z-0ld0ld00"
+	partial := rsFenceAll(prev, true, 5)
+	partial.rows[10] = []driver.Value{int64(10), nil, int64(0), int64(5), nil, nil, nil}
+	for _, tc := range []struct {
+		name  string
+		zone  fakeRouteSQLReply
+		wants []string
+	}{
+		{"wrong-zone-pair", rsFenceAllHeld(prev, true, 5, 101, 103, `{"run_id":"`+prev+`"}`), []string{"zone pair 101 → 103", "this run is 101 → 102"}},
+		{"reversed-zone-pair", rsFenceAllHeld(prev, true, 5, 102, 101, `{"run_id":"`+prev+`"}`), []string{"zone pair 102 → 101"}},
+		{"other-manifest", rsFenceAllHeld(prev, true, 5, 101, 102, `{"run_id":"`+prev+`","manifest_path":"/srv/merge_101_to_102_old.json"}`),
+			[]string{"-manifest-path", "/srv/merge_101_to_102_old.json"}},
+		{"unreadable-holder", rsFenceAllHeld(prev, true, 5, 101, 102, `{"run_id":`), []string{"holder_json is not readable"}},
+		{"partial", partial, []string{"only 63 of 64 shards"}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			st, f := newFakeRouteSQLStore(t, routeScript{}.
+				on("ENSURE_FENCE", rsAffected(0)).
+				on("WRITABLE", rsOne()).
+				on("LOCK_FENCE_ALL", tc.zone))
+			_, err := st.TakeOverFence(context.Background(), testFenceAcquire(testRouteRun), prev)
+			if !errors.Is(err, errRouteInvalidArgument) {
+				t.Fatalf("error = %v, want errRouteInvalidArgument", err)
+			}
+			for _, want := range tc.wants {
+				if !strings.Contains(err.Error(), want) {
+					t.Fatalf("error %q lacks %q", err, want)
+				}
+			}
+			assertRouteLabels(t, f, "ENSURE_FENCE", "BEGIN", "WRITABLE", "LOCK_FENCE_ALL", "ROLLBACK")
+		})
+	}
+
+	// 同一份清单(路径写法不同,filepath.Clean 后相同)照常接手;那次运行在另一区的围栏已按库时钟过期 = 那一区按普通获取(接 0 片)。
+	st, f := newFakeRouteSQLStore(t, routeScript{}.
+		on("ENSURE_FENCE", rsAffected(0)).
+		on("WRITABLE", rsOne()).
+		on("LOCK_FENCE_ALL", rsFenceAllHeld(prev, true, 5, 101, 102, `{"run_id":"`+prev+`","manifest_path":"./merge_101_to_102.json"}`),
+			rsFenceAll(prev, false, 5)).
+		on("NOW", rsRows([]driver.Value{int64(1_760_000_000_000)})).
+		on("ACQUIRE", rsAffected(64), rsAffected(64)))
+	grant, err := st.TakeOverFence(context.Background(), testFenceAcquire(testRouteRun), prev)
+	if err != nil || grant.Epoch != 6 {
+		t.Fatalf("take over with the same manifest = (%+v, %v), want epoch 6", grant, err)
+	}
+	assertRouteLabels(t, f, "ENSURE_FENCE", "BEGIN", "WRITABLE", "LOCK_FENCE_ALL", "LOCK_FENCE_ALL", "NOW", "ACQUIRE", "ACQUIRE", "COMMIT")
+}
+
+// TestCheckTakeOverShard:接手核对的纯判定 —— 只比 zone 对与清单路径,不比 purpose(合服中止后改跑撤销是认可的续跑路径)。
+func TestCheckTakeOverShard(t *testing.T) {
+	req := testFenceAcquire(testRouteRun)
+	req.Purpose = routeFencePurposeUnmerge
+	st := routeFenceShardState{shard: 63, runID: "prev", active: true, srcZone: 101, dstZone: 102,
+		holderJSON: `{"run_id":"prev","manifest_path":"merge_101_to_102.json"}`}
+	if err := checkTakeOverShard(101, st, req); err != nil {
+		t.Fatalf("same zone pair and manifest, other purpose: %v", err)
+	}
+	st.holderJSON = ""
+	if err := checkTakeOverShard(101, st, req); err != nil {
+		t.Fatalf("no holder_json (nothing to compare the manifest with): %v", err)
+	}
+	st.holderJSON = `{"run_id":"prev"}`
+	if err := checkTakeOverShard(101, st, req); err != nil {
+		t.Fatalf("holder_json without manifest_path: %v", err)
+	}
+	st.srcZone = 0
+	if err := checkTakeOverShard(101, st, req); !errors.Is(err, errRouteInvalidArgument) {
+		t.Fatalf("NULL src_zone on a live shard = %v, want errRouteInvalidArgument", err)
 	}
 }
 
@@ -1037,7 +1129,8 @@ func TestRouteFenceGuard_LocalDeadlineAndLoss(t *testing.T) {
 }
 
 // TestRouteFenceGuard_LoopRetriesTransientAndStopsOnLoss:续期循环成功后按 interval 等,瞬时错误按 retryWait 重试,
-// 确定失权即退出(不再续期)。睡眠注入,不依赖墙钟。
+// 确定失权即退出(不再续期)。interval = min(ttl/3, routeFenceRenewMaxInterval):ttl=1h 时是 30s 而不是 20 分钟
+// (MZ2-3:被接手而其实还活着的旧进程,不碰映射的写只能靠下一次续期失败才停)。睡眠注入,不依赖墙钟。
 func TestRouteFenceGuard_LoopRetriesTransientAndStopsOnLoss(t *testing.T) {
 	r := &fakeFenceRenewer{errs: []error{errors.New("connection refused"), nil, fmt.Errorf("%w: zone 101", errRouteFenceLost)}}
 	g, err := newRouteFenceGuard(r, []uint32{101}, testRouteRun, time.Hour, time.Unix(1_760_000_000, 0))
@@ -1051,7 +1144,7 @@ func TestRouteFenceGuard_LoopRetriesTransientAndStopsOnLoss(t *testing.T) {
 	}
 	g.done = make(chan struct{})
 	g.loop(context.Background())
-	if want := []time.Duration{20 * time.Minute, routeFenceRetryWait, 20 * time.Minute}; !reflect.DeepEqual(waits, want) {
+	if want := []time.Duration{routeFenceRenewMaxInterval, routeFenceRetryWait, routeFenceRenewMaxInterval}; !reflect.DeepEqual(waits, want) {
 		t.Fatalf("waits = %v, want %v", waits, want)
 	}
 	if r.calls != 3 {

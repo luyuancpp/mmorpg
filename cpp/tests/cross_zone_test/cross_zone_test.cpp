@@ -799,6 +799,7 @@ TEST(TravelOutcomeReset, NoRecordedEvidenceKeepsIncoming)
 #include "player/system/player_data_loader.h"
 #include "player/system/player_persist_marshal.h"
 #include "player/comp/player_persist_carry_comp.h"
+#include "player/comp/player_persist_writer_comp.h" // 严格屏障写方令牌(混版本持久字段保护 §5.2)
 #include "modules/currency/comp/player_currency_comp.h"
 #include "modules/mission/comp/mission_comp.h"
 #include "proto/common/component/asset_op_ledger_comp.pb.h"
@@ -1477,24 +1478,56 @@ TEST(ExitPersistEcs, SchemaRejectOnOnlinePlayerKeepsEntity)
         << "C3 拒写不计入双主证据";
 }
 
-// warn 照写只计数,不改实体状态;实体已不在时两种回调都是空操作。
+// warn 照写只计数,不改实体状态;同一写方之后每次写入都会再返回 2(证据留在 Redis,防回包丢失),按写方令牌只记一次;
+// 令牌对不上(另一个加载实体留下的在途写)照常计数;实体已不在时两种回调都是空操作。
 TEST(ExitPersistEcs, SchemaWarnOnlyCountsAndGonePlayerIsNoop)
 {
     ScopedPersistedPlayerCleanup cleanup;
     const auto player = MakeExitingPlayer(kSessionAtExit, kSessionAtExit);
     ASSERT_TRUE(MarkPersisted(player));
+    // 令牌由存盘写入口懒建;能返回 2 的实体必然已有。这里在测试创建点显式挂上。
+    tlsEcs.actorRegistry.emplace_or_replace<PlayerPersistWriterComp>(player).token = "writer-of-this-entity";
     const auto schemaBefore = persist_schema_stats::Read();
 
-    PlayerLifecycleSystem::HandlePlayerSaveSchemaWarned(kExitPlayerId, "player-save-test");
+    PlayerLifecycleSystem::HandlePlayerSaveSchemaWarned(kExitPlayerId, "player-save-test", "writer-of-this-entity");
 
     ASSERT_TRUE(tlsEcs.actorRegistry.valid(player)) << "warn 已照写,退出照常等落地回调收尾";
     EXPECT_TRUE(tlsEcs.actorRegistry.any_of<UnregisterPlayer>(player));
     EXPECT_EQ(persist_schema_stats::Read().regressionWarned, schemaBefore.regressionWarned + 1);
 
+    PlayerLifecycleSystem::HandlePlayerSaveSchemaWarned(kExitPlayerId, "player-save-test", "writer-of-this-entity");
+    EXPECT_EQ(persist_schema_stats::Read().regressionWarned, schemaBefore.regressionWarned + 1)
+        << "同一写方后续写入带回的旧证据只记一次";
+    PlayerLifecycleSystem::HandlePlayerSaveSchemaWarned(kExitPlayerId, "player-save-test", "writer-of-another-entity");
+    EXPECT_EQ(persist_schema_stats::Read().regressionWarned, schemaBefore.regressionWarned + 2)
+        << "另一个加载实体的在途写照常计数,不被当前实体的去重标记吞掉";
+    EXPECT_TRUE(tlsEcs.actorRegistry.get<PlayerPersistWriterComp>(player).regressionWarnReported);
+
     constexpr Guid kGonePlayerId = 987650001;
     ASSERT_EQ(tlsEcs.GetPlayer(kGonePlayerId), entt::entity{entt::null});
     PlayerLifecycleSystem::HandlePlayerSaveSchemaRejected(kGonePlayerId, "player-save-test", "6");
     EXPECT_EQ(persist_schema_stats::Read().regressionRejected, schemaBefore.regressionRejected + 1);
+}
+
+// 写方令牌"一个加载实体一个、生命期内不变"(设计 §5.2):读路径不建;同一实体两次取相同;换 owner 代次(E→E+1 复用实体)
+// 不变;同一玩家重新加载成新实体(entt 实体号可能被回收复用)必须不同;形状满足严格 Lua 的 ARGV[11] 校验。
+TEST(ExitPersistEcs, PersistWriterTokenIsPerLoadedEntity)
+{
+    ScopedPersistedPlayerCleanup cleanup;
+    const auto first = MakeOnlinePlayer(kSessionAtExit);
+    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<PlayerPersistWriterComp>(first)) << "令牌只在存盘写入口懒建";
+    const std::string tokenA = player_persist::WriterTokenForSave(first);
+    EXPECT_TRUE(IsValidRedisSaveSchemaWriter(tokenA)) << tokenA;
+    EXPECT_EQ(tokenA, player_persist::WriterTokenForSave(first));
+    tlsEcs.actorRegistry.emplace_or_replace<PlayerOwnerEpochComp>(first).epoch = 7;
+    tlsEcs.actorRegistry.get<PlayerOwnerEpochComp>(first).epoch = 8;
+    EXPECT_EQ(tokenA, player_persist::WriterTokenForSave(first)) << "换 owner 代次不换令牌,本实体的后续写入才能跳过 C3";
+
+    // MakeOnlinePlayer 先 tlsEcs.Clear() 再建实体:同一玩家重新加载,实体号可能复用。
+    const auto second = MakeOnlinePlayer(kSessionAtExit);
+    const std::string tokenB = player_persist::WriterTokenForSave(second);
+    EXPECT_TRUE(IsValidRedisSaveSchemaWriter(tokenB)) << tokenB;
+    EXPECT_NE(tokenA, tokenB) << "新加载的实体必须拿新令牌,否则会跳过它接手别人数据时那一次比较";
 }
 
 TEST(ExitPersistEcs, CancelExitOnReconnectRemovesBothMarkers)

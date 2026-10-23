@@ -714,3 +714,27 @@ func TestRelocateAbortDB_UnfreezesThroughTheDB(t *testing.T) {
 		t.Fatalf("cache after the abort = %s, want 901:3 at rev 8", got)
 	}
 }
+
+// TestRelocateAbortDB_CacheOnlyFreezeFailsClosed:db 源撤销按库判定。缓存里有本次的冻结值、库里却没有(两份分叉:同 rev、值不同,
+// 例如绕过发布脚本的写者)时,read 先按库值发布被拒,这一批一个人都不记、库与缓存都不动 —— 不按缓存那一份去解冻,也不把分叉盖过去。
+// (清单来源与本次不一致的撤销在入口就被 relocateRouteSourceRefusal 拒绝,走不到这里,B2-1。)
+func TestRelocateAbortDB_CacheOnlyFreezeFailsClosed(t *testing.T) {
+	diverged := mergeRouteRow{PlayerID: 3, HomeZone: relocTestS, StorageID: relocTestS, PlacementVersion: 1, Rev: 3}
+	db := newMemRouteDB(diverged)
+	cache := newMemRouteCache()
+	cache.seed(mergeRouteRow{PlayerID: 3, HomeZone: relocTestS, StorageID: relocTestS, PlacementVersion: 1, FrozenRunID: relocTestRun, Rev: 3})
+	before := cache.cached(3)
+	p, _ := newMemRelocatePlacements(t, db, cache)
+	m := relocTestManifest(3)
+	m.RouteSource = routeSourceDB
+	m.Players[0].State, m.Players[0].Version = relocFrozen, 1
+	if _, err := relocDBEngine(m, p, nil).abort(context.Background(), false); !errors.Is(err, errRoutePublishRejected) {
+		t.Fatalf("diverged copies: abort = %v, want errRoutePublishRejected (fail closed)", err)
+	}
+	if got := relocStates(m); got != "3:frozen" {
+		t.Fatalf("diverged copies: states = %s, want the player left as frozen (nothing recorded)", got)
+	}
+	if got := cache.cached(3); got != before || db.rows[3] != diverged || len(db.casSizes) != 0 {
+		t.Fatalf("diverged copies: cache %s (was %s), DB %+v, CAS batches %v — want nothing written", got, before, db.rows[3], db.casSizes)
+	}
+}

@@ -347,8 +347,10 @@ func publishDeadNodeReconcilePending() {
 //   - 写 death_at:截止 = 一个屏障(默认 20s),每个节点约 4~5 次,每次 1 条 SET;
 //   - ZREM:放弃期限 deferredNodeDetachGiveUpAfter(10 分钟),最多约 120 次,每次 1 条 SET + 1 条
 //     ZREM。过了它,任何写成的 death_at 都已过期、屏障早已走完,节点继续留在负载集只剩可用性代价
-//     (按存活处理,方向 fail-closed),放弃后由下一次 fullSync(watch 重连 / 领导权变化 / 进程
-//     重启)在负载集里重扫到它。
+//     (按存活处理,方向 fail-closed),放弃后由下一次 fullSync 在负载集里重扫到它。2026-10-22 起放弃时
+//     主动请求一次 fullSync(RequestLoadReporterResync,非阻塞、合并信号),不再干等 watch 重连 / 领导权
+//     变化 / 进程重启:此前死节点会一直留在负载集,名下玩家一直回 18(cross-zone-scene-travel.md §13.4 复审
+//     建议)。重扫若仍摘不掉,会以新的首次观察时刻再推迟,每个卡住的节点最多每个放弃期限触发一次 fullSync。
 //   - 不加退避与抖动:单写者(领导者)对每个死节点一两条命令,节拍固定;退避和抖动是为打散大量
 //     并发客户端,这里只有一个领导者。
 //   - 所有时间判断都用 time.Since(单调读数)。
@@ -520,6 +522,8 @@ func retryDeferredNodeDetaches(svcCtx *svc.ServiceContext) int {
 				}
 				logx.Errorf("[ReentryBarrier][DeferDetach] Still unable to remove from load set after %v since first attempt; abandoning, node retained as alive for next fullSync rescan: zone=%d node=%s err=%v",
 					waited, z, n, err)
+				// 让那次 fullSync 马上来,而不是等 watch 中断 / 换领导者 / 重启(见上面「有界性」)。
+				RequestLoadReporterResync()
 				continue
 			}
 			logx.Errorf("[ReentryBarrier][DeferDetach] Failed to remove from load set; retrying next tick (waited %v / abandonment deadline %v): zone=%d node=%s err=%v",

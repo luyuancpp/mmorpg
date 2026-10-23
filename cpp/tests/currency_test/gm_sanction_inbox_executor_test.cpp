@@ -189,7 +189,7 @@ TEST_F(GmSanctionInboxExecutorTest, AttachCurrencyDebtOverflowIsRejectedWithPrim
 // 同币种的既有欠款带着本版本不认识的字段(新版本写下的):AttachDebt 不会合并,执行器报版本错位,
 // 不能记成终态 REJECTED —— 那样这笔 GM 欠款以后再也不会挂上(docs/design/mixed-version-persist-field-protection.md §4.4,
 // player-inbox-service.md §7.6)。也不是 DEFER:错位会在会话内消失,本地续做会越过服务端之后挂的 VOID(评审 L1);
-// 收件箱据 kVersionSkew 停用本域、下次落地重拉(见 PlayerInboxSystemTest 的同名场景)。别的币种不受影响。
+// 收件箱据 kVersionSkew 停用本域、实体重建后重拉(见 PlayerInboxSystemTest 的同名场景)。别的币种不受影响。
 TEST_F(GmSanctionInboxExecutorTest, AttachCurrencyDebtReportsVersionSkewWhenExistingDebtCarriesUnknownFields)
 {
 	constexpr int kFutureField = 9999; // 本版本不认识的字段号

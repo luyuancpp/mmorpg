@@ -688,3 +688,29 @@ func TestRouteReadySeriesPrimed(t *testing.T) {
 		t.Fatalf("route_not_ready label values changed: defer=%q placement=%q", DeferRouteNotReady, PlacementRouteNotReady)
 	}
 }
+
+// TestPlacementSeriesPrimed 钉住落点计数器的预置(deploy/k8s/player-placement-alerts.yaml 的「出现一次就报」四条告警据此
+// 去掉 `unless … offset 10m` 第二支):PrimePlacement 之后 db_placement_guard_total 的 op×outcome 18 条、
+// db_placement_store_open_total 的 3 条都已存在,且没有封闭集合之外的取值。取值用字面量写死:告警按这些字符串写,改名先红。
+// 只断言存在(-count=N 时同一进程里前一轮可能已经计过数)。
+func TestPlacementSeriesPrimed(t *testing.T) {
+	PrimePlacement()
+	PrimePlacement() // 可重复调用
+
+	var guards []string
+	for _, op := range []string{"read", "write"} {
+		for _, outcome := range []string{"placed", "home", "legacy", "stale_topic", "frozen_deferred", "missing_required",
+			"lookup_error", "recheck_moved", "route_not_ready"} {
+			guards = append(guards, op+"|"+outcome)
+		}
+	}
+	assertExactSeries(t, "db_placement_guard_total", []string{"op", "outcome"}, guards, false)
+	assertExactSeries(t, "db_placement_store_open_total", []string{"result"}, []string{"ok", "error", "rejected"}, false)
+
+	before, _ := seriesValues(t, "db_placement_guard_total", "op", "outcome")
+	CountPlacementGuard("write", PlacementStaleTopic)
+	got, _ := seriesValues(t, "db_placement_guard_total", "op", "outcome")
+	if got["write|stale_topic"] != before["write|stale_topic"]+1 || got["write|placed"] != before["write|placed"] {
+		t.Fatalf("placement guard counts = %v (before %v), want write|stale_topic +1 and write|placed unchanged", got, before)
+	}
+}
