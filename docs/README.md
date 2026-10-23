@@ -7,6 +7,8 @@
 3. [ops/k8s-open-server-runbook.md](ops/k8s-open-server-runbook.md) —— 开服与部署的操作步骤
 4. 之后按要改的模块,到下面的索引里找对应的设计文档
 
+协议生成的当前命令、输入完整性与守护段规则见[生成器主说明](../tools/proto_generator/README.md)；旧 pbgen 三语杂记已由该入口与专项设计承接。
+
 ## 目录约定
 
 | 目录 | 放什么 | 不放什么 |

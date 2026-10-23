@@ -512,8 +512,16 @@ func handleDBReadOp(
 	task *db_proto.DBTask,
 	msg proto.Message,
 ) (writeOutcome, error) {
-	if err := store.WithContext(ctx).FindOneByWhereClause(msg, task.WhereCase); err != nil && !errors.Is(err, proto2mysql.ErrNoRowsFound) {
-		return writeOutcome{}, fmt.Errorf("db read failed: %w", storeerr.Tag(err))
+	if err := store.WithContext(ctx).FindOneByWhereClause(msg, task.WhereCase); err != nil {
+		if !errors.Is(err, proto2mysql.ErrNoRowsFound) {
+			return writeOutcome{}, fmt.Errorf("db read failed: %w", storeerr.Tag(err))
+		}
+		// 玩家双表已由正式 Create 原子建立；缺行代表权威历史缺口，不能把带 id 的读请求原样发布为存档。
+		switch msg.ProtoReflect().Descriptor().FullName() {
+		case (&player_database.PlayerDatabase{}).ProtoReflect().Descriptor().FullName(),
+			(&player_database.PlayerDatabase_1{}).ProtoReflect().Descriptor().FullName():
+			return writeOutcome{}, errMissingPlayerSQLRow
+		}
 	}
 	// C2(persist_schema.go):本实例的 SELECT 只列自己认识的列,行世代更高时读出的是截断副本,不能回填缓存、不能交给 login。
 	if err := checkReadSchema(task, msg); err != nil {
@@ -2307,6 +2315,10 @@ func (w *worker) handleTask(task *workerTask, isOfflineExpand bool) {
 	// C2(persist_schema.go):行世代高于本实例的读立即回失败回执,不进重试 —— 读按 L-04 会耗预算,排队只会让登录等满超时。
 	if err != nil && dbTask.Op == db_proto.DBOp_DB_OP_READ && errors.Is(err, errSchemaTooNew) {
 		w.failReadSchemaTooNew(task, dbTask, err)
+		return
+	}
+	if err != nil && dbTask.Op == db_proto.DBOp_DB_OP_READ && errors.Is(err, errMissingPlayerSQLRow) {
+		w.failReadAuthority(task, dbTask, metrics.ReadAbandonedMissingPlayerRow, err)
 		return
 	}
 

@@ -89,7 +89,7 @@ See also:
 
 - 完整流水线先在描述符阶段严格检查 `domain_meta` 的 source：空配置、缺失目录、非目录、遍历失败或没有 proto 都应失败，不能按旧笔记的“告警后跳过”完成整轮。低层 C++ 批次的跳过行为不代表完整流水线契约。此阶段失败早于消息号／事件号文件写入，但此前可能已有复制或部分生成，不保证所有产物完全未变；删域与墓碑规则见[RPC 设计 §20.1](../../docs/design/muduo-rpc-channel.md)。
 - 全局 `FirstCode` 必须位于当前方法签名／方法体之前；方法守护段不能误取为全局段。非空段无法放回、重复覆盖、孤立、嵌套或未闭合等问题须拒绝生成，不能吞掉手写代码。规则与诊断以 [`code_parser.go`](protogen/internal/code_parser.go) 及 gRPC 的命名段校验为准，生成式 handler 的可编辑边界仍遵守根 `AGENTS.md` §3。
-- 流水线末尾由 `SyncCppBuildProjects` 同步 C++ 生成产物的 CMake／vcxproj／filters；新增 Kafka proto 后先走完整生成与差异核对，不按旧笔记手改生成工程登记。实现见 [`cpp_build_projects.go`](protogen/internal/prototools/cpp_build_projects.go)。
+- 流水线末尾由 `SyncCppBuildProjects` 为生成的协议与调用适配器补齐 CMake／vcxproj／filters 登记；新增 Kafka proto 后先走完整生成与差异核对，不按旧笔记手改生成工程登记。实现见 [`cpp_build_projects.go`](protogen/internal/prototools/cpp_build_projects.go)。
 - gRPC 插件路径由生成器解析；个别低层生成失败仍可能只记 WARN，退出码 0 不能代替对预期产物、生成日志与受影响服务构建的检查。当前命令与服务端专用配置见上文，未获授权不要写独立客户端。
 
 - proto-gen is idempotent; running it multiple times produces the same output

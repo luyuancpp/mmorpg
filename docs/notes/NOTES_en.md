@@ -304,7 +304,7 @@ Top-ROI subset pulled from 🟡 Partial — scaffolding is in place, can be clos
 
 | # | Item | Missing | Effort |
 |---|---|---|---|
-| #102 | Open-server rate limit (Bucket4j+Redis+wave-release) | Design + Java skeleton ready, steps 2–10 unwritten | M |
+| #102 | 开服限流(Bucket4j+Redis+波次放人) | Gateway 限流已实现；真排队部署门禁未清，专项指标与尖峰容量待验收，见削峰设计 | M |
 | #280/#242/#243 | Re-login-while-save-not-done race | `player_lifecycle.cpp:376` has TODO, add state machine | M |
 | #70/#125 | Print request protocol + stack on error | Building blocks ready, missing unified hook | S | ✅ 2026-05-14 done |
 | #216 | SIGUSR1 dumps all-thread stacks | `PrintDefaultStackTrace()` exists, missing signal handler | S | ✅ 2026-05-12: current-thread version done |
@@ -435,7 +435,7 @@ Pulled from ❌ Not done — infrastructure gaps that hurt when production break
 ### Open-server · Rate-limit · Queue
 | # | Item | State | Missing | Effort | Depends |
 |---|---|---|---|---|---|
-| #102 | Traffic spike / activity peak | Design doc `open-server-rate-limit-design.md` + Java skeleton | Implement steps 2–10 | **M** | — |
+| #102 | 流量冲击/活动峰值 | [削峰现行契约](../design/open-server-rate-limit-design.md)与已有实现 | 专项指标、真实故障放行、排队门禁与尖峰容量验收 | **M** | — |
 | #214 | Login queue with open-source rate limiter | Java `AssignGateRateLimiter` + `QueueShardCount` | Closure still has gaps | M | #102 |
 
 ### Activity · Time

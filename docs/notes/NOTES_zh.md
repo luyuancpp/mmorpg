@@ -302,7 +302,7 @@
 
 | # | 事 | 还缺 | 工作量 |
 |---|---|---|---|
-| #102 | 开服限流(Bucket4j+Redis+波次放人) | 设计+Java骨架齐,步骤 2–10 未写 | M |
+| #102 | 开服限流(Bucket4j+Redis+波次放人) | Gateway 限流已实现；真排队部署门禁未清，专项指标与尖峰容量待验收，见削峰设计 | M |
 | #280/#242/#243 | 存档未完成时 re-login 的竞态 | `player_lifecycle.cpp:376` 有 TODO,补状态机 | M |
 | #70/#125 | 出错时打印请求协议+堆栈 | 基础组件齐,缺统一 hook | S | ✅ 2026-05-14 完成 |
 | #216 | SIGUSR1 打印所有线程堆栈 | `PrintDefaultStackTrace()` 已有,缺 signal handler | S | ✅ 2026-05-12: 当前线程版完成 |
@@ -434,7 +434,7 @@
 ### 开服 · 限流 · 排队
 | # | 事项 | 现状 | 缺 | 量 | 依赖 |
 |---|---|---|---|---|---|
-| #102 | 流量冲击/活动峰值 | 设计文档 `open-server-rate-limit-design.md` + Java 骨架 | 步骤 2–10 全部实施 | **M** | — |
+| #102 | 流量冲击/活动峰值 | [削峰现行契约](../design/open-server-rate-limit-design.md)与已有实现 | 专项指标、真实故障放行、排队门禁与尖峰容量验收 | **M** | — |
 | #214 | 登录排队开源限流器 | Java `AssignGateRateLimiter` + `QueueShardCount` | 是否闭环仍有差距 | M | #102 |
 
 ### 活动 · 时间

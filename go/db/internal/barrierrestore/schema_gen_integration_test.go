@@ -57,7 +57,7 @@ func TestIntegrationBarrierRestoreSchemaGeneration(t *testing.T) {
 				require.NoError(t, f.r.ApplyOne(f.ctx, plan, 0))
 				fields, err := f.r.Redis.HGetAll(f.ctx, savebarrier.Key(id)).Result()
 				require.NoError(t, err)
-				require.Equal(t, map[string]string{"pending": version, "player_database": version, "player_database_1": version, "schema_gen": tc.want, "handoff_fence": assertRestoredFence(t, fields["handoff_fence"], "8", "", "0", strings.Repeat("0", 32))}, fields)
+				require.Equal(t, map[string]string{"pending": version, "player_database": version, "player_database_1": version, "schema_gen": tc.want, "handoff_fence": assertRestoredFence(t, fields["handoff_fence"], "19", "", "0", strings.Repeat("0", 32))}, fields)
 				ttl, err := f.r.Redis.PTTL(f.ctx, savebarrier.Key(id)).Result()
 				require.NoError(t, err)
 				require.Equal(t, -time.Nanosecond, ttl)

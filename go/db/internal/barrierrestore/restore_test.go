@@ -384,7 +384,7 @@ func TestRestoreRevokesOriginalHandoffFloorAndRotatesEveryTime(t *testing.T) {
                 require.NoError(t,r.ApplyOne(context.Background(),plan,0))
                 raw:=cache.HGet(savebarrier.Key(7),"handoff_fence")
                 if known { assertRestoredFence(t,raw,"8","scene","12",admission) } else {
-                    assertRestoredFence(t,raw,"8","","0",strings.Repeat("0",32))
+                    assertRestoredFence(t,raw,"9","","0",strings.Repeat("0",32))
                 }
                 require.NotEqual(t,last,raw);last=raw
                 require.Equal(t,time.Duration(0),cache.TTL(savebarrier.Key(7)),"永久下限不随标记TTL失效")
@@ -394,7 +394,7 @@ func TestRestoreRevokesOriginalHandoffFloorAndRotatesEveryTime(t *testing.T) {
 }
 
 func TestRestoreRejectsDamagedHandoffFloorWithoutAnyMutation(t *testing.T) {
-    for _,raw:=range []string{"", "8|scene|1|bad|H|bad", "9|scene|1|"+strings.Repeat("a",32)+"|H|"+strings.Repeat("b",32)} {
+    for _,raw:=range []string{"", "8|scene|1|bad|H|bad", "10|scene|1|"+strings.Repeat("a",32)+"|H|"+strings.Repeat("b",32)} {
         t.Run(raw,func(t *testing.T) {
             r,store,cache:=fixture(t,"8","90")
             p:=prepare(t,r,false);v:=savebarrier.Version(8,90)

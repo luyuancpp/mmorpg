@@ -2943,10 +2943,13 @@ TEST(CurrencyTest, TravelSqlBarrierWaitsForBothSqlAcksAgainstRealRedis)
         ASSERT_NE(nullptr, reply);
         ASSERT_EQ(REDIS_REPLY_INTEGER, reply->type);
     };
+    const std::string held = "5|sql-barrier-test|1|"+std::string(32,'a')+"|H|"+std::string(32,'b');
+    const std::string published = "5|sql-barrier-test|1|"+std::string(32,'a')+"|F|"+std::string(32,'c');
+    setField("handoff_fence", held);
     const auto publish = [&](const std::string& marker) {
-        Reply reply(static_cast<redisReply*>(redisCommand(sync.context.get(), "EVAL %s 3 %b %b %b 5 %b 300",
-            handoff_sql_barrier::kPublishMarkLua, ownerKey.data(), ownerKey.size(), barrierKey.data(), barrierKey.size(),
-            markKey.data(), markKey.size(), marker.data(), marker.size())), &freeReplyObject);
+        Reply reply(static_cast<redisReply*>(redisCommand(sync.context.get(), "EVAL %s 3 %b %b %b 5 %b 300 %b %b",
+            handoff_sql_barrier::kPublishMarkLua.c_str(), ownerKey.data(), ownerKey.size(), barrierKey.data(), barrierKey.size(),
+            markKey.data(), markKey.size(), marker.data(), marker.size(), held.data(), held.size(), published.data(), published.size())), &freeReplyObject);
         if (reply == nullptr) return -99LL;
         if (reply->type == REDIS_REPLY_ERROR) return -2LL;
         return reply->type == REDIS_REPLY_INTEGER ? reply->integer : -99LL;
@@ -2963,9 +2966,9 @@ TEST(CurrencyTest, TravelSqlBarrierWaitsForBothSqlAcksAgainstRealRedis)
     setField("player_database_1", version);
     EXPECT_EQ(1LL, publish(marker));
     EXPECT_EQ(marker, sync.Get(markKey));
-    Reply alias(static_cast<redisReply*>(redisCommand(sync.context.get(), "EVAL %s 3 %b %b %b 5 %b 300",
-        handoff_sql_barrier::kPublishMarkLua, ownerKey.data(), ownerKey.size(), barrierKey.data(), barrierKey.size(),
-        barrierKey.data(), barrierKey.size(), marker.data(), marker.size())), &freeReplyObject);
+    Reply alias(static_cast<redisReply*>(redisCommand(sync.context.get(), "EVAL %s 3 %b %b %b 5 %b 300 %b %b",
+        handoff_sql_barrier::kPublishMarkLua.c_str(), ownerKey.data(), ownerKey.size(), barrierKey.data(), barrierKey.size(),
+        barrierKey.data(), barrierKey.size(), marker.data(), marker.size(), held.data(), held.size(), published.data(), published.size())), &freeReplyObject);
     ASSERT_NE(nullptr, alias);
     EXPECT_EQ(REDIS_REPLY_ERROR, alias->type);
     EXPECT_EQ(marker, sync.Get(markKey));
@@ -2974,7 +2977,7 @@ TEST(CurrencyTest, TravelSqlBarrierWaitsForBothSqlAcksAgainstRealRedis)
     ASSERT_EQ(REDIS_REPLY_INTEGER, ttl->type);
     EXPECT_GT(ttl->integer, 0);
     EXPECT_LE(ttl->integer, 300);
-    sync.Del(markKey);
+    sync.Del(markKey); setField("handoff_fence", held);
     setField("pending", newer);
     EXPECT_EQ(0LL, publish("5:1001")) << "旧双 ACK 不能释放更新快照";
     EXPECT_EQ(0LL, sync.Exists(markKey));
@@ -2984,7 +2987,7 @@ TEST(CurrencyTest, TravelSqlBarrierWaitsForBothSqlAcksAgainstRealRedis)
     setField("player_database_1", newer);
     EXPECT_EQ(1LL, publish("5:1001"));
     EXPECT_EQ("5:1001", sync.Get(markKey));
-    sync.Del(markKey);
+    sync.Del(markKey); setField("handoff_fence", held);
 
     sync.Set(ownerKey, "6");
     EXPECT_EQ(-1LL, publish("5:1002"));
@@ -3010,7 +3013,7 @@ TEST(CurrencyTest, TravelSqlBarrierWaitsForBothSqlAcksAgainstRealRedis)
     EXPECT_EQ("blocked", sync.Get(barrierKey));
     EXPECT_EQ(0LL, sync.Exists(markKey));
     sync.Del(barrierKey);
-    setField("pending", newer); setField("player_database", newer); setField("player_database_1", newer);
+    setField("handoff_fence", held); setField("pending", newer); setField("player_database", newer); setField("player_database_1", newer);
     Reply wrongType(static_cast<redisReply*>(redisCommand(sync.context.get(), "LPUSH %b blocked", markKey.data(), markKey.size())), &freeReplyObject);
     ASSERT_NE(nullptr, wrongType);
     ASSERT_EQ(REDIS_REPLY_INTEGER, wrongType->type);
