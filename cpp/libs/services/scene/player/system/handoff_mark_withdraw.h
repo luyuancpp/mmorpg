@@ -1,4 +1,5 @@
 #pragma once
+#include "services/scene/player/system/handoff_sql_barrier.h"
 
 #include <algorithm>
 #include <chrono>
@@ -51,13 +52,15 @@ namespace handoff_mark_withdraw
 	// 疏散改派 DispatchEmergencyRelocate),精确比对才不会误删。标记里的 ms 取自墙钟,正常情况下新旧
 	// 两份不同;同值碰撞(同一毫秒内重写 / 墙钟回拨)代码并不排除,其后果只是新标记被这次撤回删掉、
 	// 那次落点被 scene_manager 以 18 拒回、玩家重登,不会回档。
-	inline constexpr const char *kLuaDelIfEqual =
-		"if redis.call('GET', KEYS[1]) == ARGV[1] then return redis.call('DEL', KEYS[1]) end return 0";
+	inline const std::string& kLuaDelIfEqual = handoff_sql_barrier::kRevokeFenceLua;
 
 	struct Entry
 	{
 		uint64_t playerId{0};
-		std::string markValue;		   // 标记原文 "{epoch}:{ms}",唯一标识"我写的那一份"
+		std::string holderFence;
+        std::string publishedFence;
+        std::string revokedFence;
+        std::string markValue;		   // 标记原文 "{epoch}:{ms}",唯一标识"我写的那一份"
 		Clock::time_point deadline;	   // 过了就放弃(Redis 侧的标记此时也已过期)
 		Clock::time_point nextAttemptAt; // 周期重试的最早时刻
 		uint32_t attempts{0};			 // 已被 CollectDue 取走几次;调用方据此只在首发失败时打 ERROR
@@ -71,27 +74,24 @@ namespace handoff_mark_withdraw
 		// 表满时淘汰 deadline 最早的一条(最接近自然过期、风险最小),被淘汰的条目经 evictedOut 带出,
 		// 由调用方记日志(要能定位到是哪个玩家)+ 计数;其余情况 evictedOut 置空。
 		bool Add(uint64_t playerId, std::string markValue, Clock::time_point now, std::chrono::seconds ttl,
-				 std::optional<Entry> &evictedOut)
+				 std::optional<Entry> &evictedOut, std::string holderFence = {},
+                 std::string publishedFence = {}, std::string revokedFence = {})
 		{
 			evictedOut.reset();
 			for (const auto &entry : entries_)
 			{
-				if (entry.playerId == playerId && entry.markValue == markValue)
+				if (entry.playerId == playerId && entry.markValue == markValue && entry.holderFence == holderFence)
 				{
 					return false;
 				}
 			}
-			if (entries_.size() >= kMaxPending)
-			{
-				const auto earliest = std::min_element(entries_.begin(), entries_.end(),
-													   [](const Entry &lhs, const Entry &rhs)
-													   { return lhs.deadline < rhs.deadline; });
-				evictedOut = std::move(*earliest);
-				entries_.erase(earliest);
-			}
+			if (entries_.size() >= kMaxPending) return false;
 			Entry entry;
 			entry.playerId = playerId;
 			entry.markValue = std::move(markValue);
+            entry.holderFence = std::move(holderFence);
+            entry.publishedFence = std::move(publishedFence);
+            entry.revokedFence = std::move(revokedFence);
 			entry.deadline = now + ttl;
 			entry.nextAttemptAt = now; // 立刻到期:调用方登记后紧接着 CollectDue 取走并发出第一次撤回
 			entries_.push_back(std::move(entry));
@@ -110,10 +110,7 @@ namespace handoff_mark_withdraw
 		// 返回副本而不是引用:调用方发命令的过程中不该攥着表内指针。
 		std::vector<Entry> CollectDue(Clock::time_point now, bool force, std::size_t &expiredOut)
 		{
-			const auto firstExpired = std::remove_if(entries_.begin(), entries_.end(),
-													 [now](const Entry &entry) { return entry.deadline <= now; });
-			expiredOut = static_cast<std::size_t>(entries_.end() - firstExpired);
-			entries_.erase(firstExpired, entries_.end());
+			expiredOut = 0; // 资格没有 TTL，未确认撤销不能因标记过期而消账。
 
 			std::vector<Entry> due;
 			for (auto &entry : entries_)
@@ -130,11 +127,11 @@ namespace handoff_mark_withdraw
 		}
 
 		// 销账:只删精确匹配的那一条。返回 false = 表里没有(已过期丢弃 / 已被另一次应答销过)。
-		bool Confirm(uint64_t playerId, const std::string &markValue)
+		bool Confirm(uint64_t playerId, const std::string &markValue, const std::string& holderFence = {})
 		{
 			const auto it = std::find_if(entries_.begin(), entries_.end(),
 										 [&](const Entry &entry)
-										 { return entry.playerId == playerId && entry.markValue == markValue; });
+										 { return entry.playerId == playerId && entry.markValue == markValue && entry.holderFence == holderFence; });
 			if (it == entries_.end())
 			{
 				return false;

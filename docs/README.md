@@ -80,7 +80,7 @@ Redis 物理水平扩展的用户目标、当前存盘链问题、源码入口�
 - [login-node-stateless-no-affinity.md](design/login-node-stateless-no-affinity.md) — Login Node: Stateless, No Session Affinity
 - [account-role-authority.md](design/account-role-authority.md) — 账号角色目录的全局 SQL 权威、登录接线及上线前数据边界
 - [login-queue-2026-05.md](design/login-queue-2026-05.md) — Login Queue (AssignGate Real Queue) — 2026-05
-- [open-server-rate-limit-design.md](design/open-server-rate-limit-design.md) — 开服登录削峰设计 (Gateway 限流 + 排队)
+- [open-server-rate-limit-design.md](design/open-server-rate-limit-design.md) — 开服登录削峰与排队入口
 - [player-locator-gate-session-index.md](design/player-locator-gate-session-index.md) — player_locator 会话对账:按 gate 实例建会话索引(2026-10-18)
 - [player_login_flow.md](design/player_login_flow.md) — 玩家登录/断线/重连/替换登录/超时清理 — 最终态事件流 · [EN](design/player_login_flow_en.md) · [中文](design/player_login_flow_zh.md)
 - [serverlist-static-publish-2026-05.md](design/serverlist-static-publish-2026-05.md) — Server-List 静态发布架构 (Static Publish via OSS + CDN) — 2026-05
@@ -94,7 +94,7 @@ Redis 物理水平扩展的用户目标、当前存盘链问题、源码入口�
 - [broadcast-message-size-analysis.md](design/broadcast-message-size-analysis.md) — BroadcastToPlayers 消息体积分析
 - [cross_scene_player_messaging.md](design/cross_scene_player_messaging.md) — Cross-Scene Player Messaging (跨场景玩家消息投递) · [EN](design/cross_scene_player_messaging_en.md) · [中文](design/cross_scene_player_messaging_zh.md)
 - [enter-scene-zone-routing.md](design/enter-scene-zone-routing.md) — EnterScene Zone Routing Design (updated 2026-08-03; handoff-gate, login-side and merge sections re-verified against code 2026-09-20)
-- [nav-spawn-fix-2026-09-05.md](design/nav-spawn-fix-2026-09-05.md) — 客户端/服务端导航数据、出生点与位置纠正契约统一(2026-09-05)
+- [nav-spawn-fix-2026-09-05.md](design/nav-spawn-fix-2026-09-05.md) — 客户端/服务端导航数据、出生点与位置纠正契约
 - [scene-creation-architecture.md](design/scene-creation-architecture.md) — Scene Creation Architecture
 - [scene-enter-chain-residuals.md](design/scene-enter-chain-residuals.md) — 进场链余项 a–e:踢线、离场、落点、释放与断线上报的身份栅栏(设计稿,2026-10-16)
 - [scene-enter-session-fence.md](design/scene-enter-session-fence.md) — 入场会话栅栏:登录代次(login_generation)
@@ -239,7 +239,6 @@ Redis 物理水平扩展的用户目标、当前存盘链问题、源码入口�
 - [published-contract-compatibility-20261017.md](design/published-contract-compatibility-20261017.md) — 两套已发布契约的合并兼容方案（双入口方向已批准；来源与实施状态见文内）
 - [excel-6row-header-format.md](design/excel-6row-header-format.md) — 配置表格式说明入口（旧六行表头已停用） · [EN](design/excel-6row-header-format_en.md) · [中文](design/excel-6row-header-format_zh.md)
 - [generated-table-header-decoupling-plan.md](design/generated-table-header-decoupling-plan.md) — 交接：mmorpg 导表器生成头文件解耦（①exprtk ②FK声明化 ③muduo）
-- [pbgen_notes.md](design/pbgen_notes.md) — Proto-Gen (pbgen) Notes · [EN](design/pbgen_notes_en.md) · [中文](design/pbgen_notes_zh.md)
 - [proto-event-message-suffix-rename-2026-06.md](design/proto-event-message-suffix-rename-2026-06.md) — Proto Event Message Suffix Rename (2026-06)
 - [proto-scene-file-rename-2026-04.md](design/proto-scene-file-rename-2026-04.md) — Proto Scene File Rename (2026-04)
 - [proto3_enum_zero_requirement.md](design/proto3_enum_zero_requirement.md) — Proto3 Enum Zero Requirement · [EN](design/proto3_enum_zero_requirement_en.md) · [中文](design/proto3_enum_zero_requirement_zh.md)

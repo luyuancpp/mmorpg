@@ -11,6 +11,7 @@
 #include "player/system/player_lifecycle.h"
 #include "player/system/player_scene.h"
 #include "player/system/role_admission_system.h"
+#include "player/system/handoff_sql_barrier.h"
 #include "battle/system/player_battle.h"
 #include "player/comp/player_frozen_comp.h"
 #include "proto/common/component/battle_comp.pb.h"
@@ -54,6 +55,18 @@ protected:
         };
         dependencies.readSqlAck = [this](Guid player, auto reply) {
             EXPECT_EQ(kPlayer, player); sqlReplies.push_back(std::move(reply)); return true;
+        };
+        dependencies.registerHandoffFence = [this](Guid player, std::string candidate, std::optional<std::string> prior,
+            std::function<bool()> stillQualified, Admission::FenceReply reply) {
+            EXPECT_EQ(kPlayer, player);
+            fenceCandidates.push_back(candidate); fencePriors.push_back(prior);
+            auto afterRead = [this, stillQualified = std::move(stillQualified), reply = std::move(reply)] {
+                const bool allowed = stillQualified();
+                if (allowed) ++fenceWrites;
+                reply(allowed, std::string(""));
+            };
+            if (delayFence) fenceReads.push_back(std::move(afterRead)); else afterRead();
+            return true;
         };
         dependencies.activate = [this](Guid player, PlayerEnterContext context) {
             EXPECT_EQ(kPlayer, player); activated.push_back(std::move(context));
@@ -161,6 +174,11 @@ protected:
     uint32_t localNodeReads{0}, clockReads{0};
     std::string lastEnterPreconditions;
     bool pendingLoad{false};
+    bool delayFence{false};
+    uint32_t fenceWrites{0};
+    std::vector<std::string> fenceCandidates;
+    std::vector<std::optional<std::string>> fencePriors;
+    std::vector<std::function<void()>> fenceReads;
 };
 
 TEST_F(RoleAdmissionTest, LiveBattleFinishesBeforeTradeFreezesOrUnloadsThePlayer) {
@@ -457,3 +475,53 @@ TEST(RoleAdmissionAuthentication, SignatureBindsMethodCallerBodyAndDeadline) {
     EXPECT_FALSE(service_call_auth::Verify(method, request, request.auth(), "trade", secret, now));
 }
 } // namespace
+
+TEST_F(RoleAdmissionTest, FenceReadAfterSealDoesNotSubmitOrActivate) {
+    delayFence = true;
+    Enter(); CompleteRegister(0);
+    ASSERT_EQ(1u, fenceReads.size()); EXPECT_TRUE(activated.empty());
+    ASSERT_TRUE(Admission::Seal(SealFor()));
+    fenceReads[0]();
+    EXPECT_EQ(0u, fenceWrites) << "Seal先于HGET完成，不能再发CAS登记/DEL";
+    EXPECT_TRUE(activated.empty());
+    EXPECT_FALSE(Admission::Allows(kPlayer, registers[0].identity().generation(), kRevision));
+}
+
+TEST_F(RoleAdmissionTest, FenceReadAfterOriginalDeadlineDoesNotSubmitOrActivate) {
+    delayFence = true;
+    Enter(); CompleteRegister(0);
+    ASSERT_EQ(1u, fenceReads.size());
+    now += 15s;
+    fenceReads[0]();
+    EXPECT_EQ(0u, fenceWrites); EXPECT_TRUE(activated.empty());
+    EXPECT_EQ(1u, rejections);
+}
+
+TEST_F(RoleAdmissionTest, FenceReadAfterScopeEndsCannotBorrowReplacementState) {
+    delayFence = true;
+    Enter(); CompleteRegister(0);
+    ASSERT_EQ(1u, fenceReads.size());
+    scope.reset();
+    fenceReads[0]();
+    EXPECT_EQ(0u, fenceWrites); EXPECT_TRUE(activated.empty());
+}
+
+TEST_F(RoleAdmissionTest, ContextIdentityMustMatchOriginalAdmissionAndSession) {
+    Enter(); CompleteRegister(0);
+    ASSERT_EQ(1u, activated.size());
+    auto original = activated[0];
+    ASSERT_TRUE(Admission::ConfirmedIdentityForContext(kPlayer, original));
+    const auto parsed = handoff_sql_barrier::ParseFence(original.handoffFence);
+    ASSERT_TRUE(parsed);
+    EXPECT_EQ(original.roleAdmissionGeneration, parsed->generation);
+    EXPECT_EQ(registers[0].identity().scene_instance_id(), parsed->sceneInstance);
+    auto wrong = original;
+    wrong.enterInfo.set_session_id(92);
+    EXPECT_FALSE(Admission::ConfirmedIdentityForContext(kPlayer, wrong));
+    Enter(); CompleteRegister(1);
+    ASSERT_EQ(2u, activated.size());
+    EXPECT_FALSE(Admission::ConfirmedIdentityForContext(kPlayer, original));
+    EXPECT_TRUE(Admission::ConfirmedIdentityForContext(kPlayer, activated[1]));
+    EXPECT_GT(activated[1].roleAdmissionGeneration, original.roleAdmissionGeneration);
+    EXPECT_NE(activated[1].handoffFence, original.handoffFence);
+}

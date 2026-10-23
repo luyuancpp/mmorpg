@@ -38,100 +38,227 @@ import (
 // 让脚本在只读副本 / MISCONF 下整体被拒,那一条性质只能靠 runbook 实跑验证)。
 // ---------------------------------------------------------------------------
 
-// cppLuaInheritClear 逐字复制自 cpp/libs/services/scene/player/system/exit_release_mark.h 的
-// exit_release_mark::kLuaInheritClear。修改须两边同步。
-//
-//	KEYS[1] = player:{id}:owner_epoch   KEYS[2] = player:{id}:handoff   ARGV[1] = N(本次路由的 owner_epoch)
-//	-1 = owner_epoch ≠ N(一个标记都不删,拒建实体);0 = 没有标记;1 = 删掉更旧代际;2 = 删掉的恰是 N;
-//	3 = 标记代际比 N 新(保留);4 = 标记写坏(删掉)。
-const cppLuaInheritClear = "local cur = redis.call('GET', KEYS[1]) " +
-	"if cur == false then cur = '0' end " +
-	"if cur ~= ARGV[1] then return -1 end " +
-	"local mark = redis.call('GET', KEYS[2]) " +
-	"if mark == false then return 0 end " +
-	"local e = string.match(mark, '^(%d+):%d+$') " +
-	"if e == nil then redis.call('DEL', KEYS[2]) return 4 end " +
-	"e = (string.gsub(e, '^0+(%d)', '%1')) " +
-	"local n = ARGV[1] " +
-	"if #e > #n or (#e == #n and e > n) then return 3 end " +
-	"redis.call('DEL', KEYS[2]) " +
-	"if e == n then return 2 end " +
-	"return 1"
+// C++ 单一 helper + 具名脚本的逐字金样；读取器只接受这些固定原始字面量。
+const cppHandoffFenceHelpers = `
+local function bytecmp(a,b)
+    if #a~=#b then if #a>#b then return 1 else return -1 end end
+    for i=1,#a do
+        local x,y=string.byte(a,i),string.byte(b,i)
+        if x~=y then if x>y then return 1 else return -1 end end
+    end
+    return 0
+end
+local function uint(s, zero)
+    if type(s)~='string' or #s==0 or #s>20 or not string.match(s,'^%d+$') then return false end
+    if s=='0' then return zero==true end
+    if string.sub(s,1,1)=='0' then return false end
+    return bytecmp(s,'18446744073709551615')<=0
+end
+local function cmp(a,b)
+    return bytecmp(a,b)
+end
+local function plus2(s)
+    local out,carry='',2
+    for i=#s,1,-1 do
+        local value=string.byte(s,i)-48+carry
+        out=string.char(48+value%10)..out
+        carry=math.floor(value/10)
+    end
+    if carry>0 then out=string.char(48+carry)..out end
+    if not uint(out) then return nil end
+    return out
+end
+local function nonce(s,zero)
+    return type(s)=='string' and #s==32 and not string.find(s,'[^0-9a-f]')
+        and (zero or s~=string.rep('0',32))
+end
+local function fence(s)
+    if type(s)~='string' then return nil end
+    local e,i,n,a,k,t=string.match(s,'^([^|]*)|([^|]*)|([^|]*)|([^|]*)|([^|]*)|([^|]*)$')
+    if not uint(e) or not uint(n,true) or not nonce(a,true) or not nonce(t)
+        or #i>256 or string.find(i,'[%c%s]') or (k~='H' and k~='F' and k~='R') then return nil end
+    if n=='0' then
+        if k~='R' or i~='' or a~=string.rep('0',32) then return nil end
+    elseif i=='' or a==string.rep('0',32) then return nil end
+    return {e=e,i=i,n=n,a=a,k=k,t=t}
+end
+local function sameholder(a,b)
+    return a.e==b.e and a.i==b.i and a.n==b.n and a.a==b.a
+end
+local function types3()
+    if (#KEYS~=3 and #KEYS~=4) or KEYS[1]==KEYS[2] or KEYS[1]==KEYS[3] or KEYS[2]==KEYS[3] then return false end
+    for i,key in ipairs(KEYS) do
+        if key=='' then return false end
+        for j=1,i-1 do if key==KEYS[j] then return false end end
+    end
+    local b=redis.call('TYPE',KEYS[2]).ok
+    local m=redis.call('TYPE',KEYS[3]).ok
+    return redis.call('TYPE',KEYS[1]).ok=='string' and (b=='none' or b=='hash')
+        and (m=='none' or m=='string') and (b=='none' or redis.call('PTTL',KEYS[2])==-1)
+end
+local function prior()
+    local raw=redis.call('HGET',KEYS[2],'handoff_fence')
+    if raw==false then return '',nil end
+    local parsed=fence(raw)
+    if not parsed then return nil,nil end
+    return raw,parsed
+end
+local function version(s)
+    return type(s)=='string' and #s==41 and string.sub(s,21,21)==':'
+        and string.match(s,'^%d+:%d+$')~=nil
+        and bytecmp(string.sub(s,1,20),'18446744073709551615')<=0
+        and bytecmp(string.sub(s,22),'18446744073709551615')<=0 and string.sub(s,22)~=string.rep('0',20)
+end
+local function marker(s,e)
+    local owner,time=string.match(s or '','^(%d+):(%d+)$')
+    return owner==e and uint(time)
+end
+`
+const cppLuaInheritClear = cppHandoffFenceHelpers + `
+if #ARGV~=2 or not types3() then return redis.error_reply('HANDOFF confirm shape') end
+local expected=fence(ARGV[2])
+local raw=prior()
+if not expected or expected.k~='H' or expected.e~=ARGV[1] or raw==nil then return redis.error_reply('HANDOFF confirm record') end
+if redis.call('GET',KEYS[1])~=ARGV[1] or raw~=ARGV[2] then return -1 end
+return 0
+`
+const cppLuaRegisterFence = cppHandoffFenceHelpers + `
+if #ARGV~=3 or not types3() then return redis.error_reply('HANDOFF register shape') end
+local candidate=fence(ARGV[2])
+local raw,old=prior()
+if not uint(ARGV[1]) or not candidate or candidate.k~='H' or candidate.e~=ARGV[1] or raw==nil then
+    return redis.error_reply('HANDOFF register record') end
+if redis.call('GET',KEYS[1])~=ARGV[1] then return -1 end
+if raw==ARGV[2] then return 1 end
+if raw~=ARGV[3] then return -2 end
+if old then
+    local order=cmp(candidate.e,old.e)
+    if order<0 or (order==0 and (old.n=='0' or candidate.i~=old.i or cmp(candidate.n,old.n)<=0)) then return -2 end
+end
+local mark=redis.call('GET',KEYS[3])
+if mark then
+    local e,t=string.match(mark,'^(%d+):(%d+)$')
+    if not uint(e) or not uint(t) or cmp(e,candidate.e)>0 then return redis.error_reply('HANDOFF register marker') end
+end
+redis.call('HSET',KEYS[2],'handoff_fence',ARGV[2])
+if mark then redis.call('DEL',KEYS[3]) end
+return 1
+`
+const cppLuaJudgeTravelOutcome = cppHandoffFenceHelpers + `
+if #KEYS~=4 or #ARGV~=4 then return redis.error_reply('HANDOFF outcome shape') end
+-- 将前三键映射为 owner/barrier/mark，第四键是只读 location。
+local location=KEYS[4]
+if redis.call('TYPE',location).ok~='none' and redis.call('TYPE',location).ok~='string' then
+    return redis.error_reply('HANDOFF location type') end
+if not types3() then return redis.error_reply('HANDOFF outcome keys') end
+local held,published,next=fence(ARGV[1]),fence(ARGV[2]),fence(ARGV[3])
+local raw=prior()
+if not held or not published or not next or raw==nil or not sameholder(held,published)
+    or not sameholder(held,next) or held.k~='H' or next.k~='R'
+    or next.t==held.t or next.t==published.t then return redis.error_reply('HANDOFF outcome record') end
+if raw~=ARGV[1] and raw~=ARGV[2] and raw~=ARGV[3] then return redis.error_reply('HANDOFF outcome superseded') end
+local mark=redis.call('GET',KEYS[3])
+local stamp=string.match(mark or '', '^%d+:(%d+)$')
+redis.call('HSET',KEYS[2],'handoff_fence',ARGV[3])
+if stamp==ARGV[4] then redis.call('DEL',KEYS[3]) end
+return {redis.call('GET',KEYS[1]),redis.call('GET',location)}
+`
+const cppLuaRevokeFence = cppHandoffFenceHelpers + `
+if #ARGV~=4 or not types3() then return redis.error_reply('HANDOFF revoke shape') end
+local held,published,next=fence(ARGV[1]),fence(ARGV[2]),fence(ARGV[3])
+local raw=prior()
+if not held or not published or not next or raw==nil or held.k~='H'
+    or not sameholder(held,published) or not sameholder(held,next)
+    or (next.k~='H' and next.k~='R') or next.t==held.t or next.t==published.t then
+    return redis.error_reply('HANDOFF revoke record') end
+local owner=redis.call('GET',KEYS[1])
+if not uint(owner) then return redis.error_reply('HANDOFF revoke owner') end
+if next.k=='H' and owner~=held.e then return 0 end
+if raw~=ARGV[1] and raw~=ARGV[2] and raw~=ARGV[3] then return 0 end
+local mark=redis.call('GET',KEYS[3])
+local stamp=string.match(mark or '', '^%d+:(%d+)$')
+redis.call('HSET',KEYS[2],'handoff_fence',ARGV[3])
+if mark and ARGV[4]~='' and stamp==ARGV[4] then redis.call('DEL',KEYS[3]) end
+return 1
+`
+const cppLuaReleaseFence = cppHandoffFenceHelpers + `
+if #ARGV~=5 or not types3() then return redis.error_reply('HANDOFF release shape') end
+local held,next=fence(ARGV[4]),fence(ARGV[5])
+local raw=prior()
+if not held or not next or raw==nil or held.k~='H' or next.k~='F' or not sameholder(held,next)
+    or held.t==next.t or held.e~=ARGV[1] or not marker(ARGV[2],ARGV[1]) or ARGV[3]~='300' then
+    return redis.error_reply('HANDOFF release record') end
+if redis.call('GET',KEYS[1])~=ARGV[1] then return 0 end
+if raw==ARGV[5] then return 1 end
+if raw~=ARGV[4] then return 0 end
+redis.call('HSET',KEYS[2],'handoff_fence',ARGV[5])
+redis.call('SET',KEYS[3],ARGV[2],'EX',ARGV[3])
+return 1
+`
+const cppLuaPublishFence = cppHandoffFenceHelpers + `
+if #ARGV~=5 or not types3() then return redis.error_reply('HANDOFF_SQL shape') end
+local held,next=fence(ARGV[4]),fence(ARGV[5])
+local raw=prior()
+if not held or not next or raw==nil or held.k~='H' or next.k~='F' or not sameholder(held,next)
+    or held.t==next.t or held.e~=ARGV[1] or not marker(ARGV[2],ARGV[1]) or ARGV[3]~='300' then
+    return redis.error_reply('HANDOFF_SQL record') end
+if redis.call('GET',KEYS[1])~=ARGV[1] then return -1 end
+if raw==ARGV[5] then return 1 end
+if raw~=ARGV[4] then return -2 end
+local ack=redis.call('HMGET',KEYS[2],'pending','player_database','player_database_1')
+if not version(ack[1]) or (ack[2] and not version(ack[2])) or (ack[3] and not version(ack[3]))
+    or string.sub(ack[1],1,20)~=string.rep('0',20-#ARGV[1])..ARGV[1] then
+    return redis.error_reply('HANDOFF_SQL stored version') end
+if ack[2]~=ack[1] or ack[3]~=ack[1] then return 0 end
+redis.call('HSET',KEYS[2],'handoff_fence',ARGV[5])
+redis.call('SET',KEYS[3],ARGV[2],'EX',ARGV[3])
+return 1
+`
+const cppLuaResumeFence = cppHandoffFenceHelpers + `
+if #KEYS~=4 or #ARGV~=4 then return redis.error_reply('HANDOFF resume shape') end
+local location=KEYS[4]
+local t=redis.call('TYPE',location).ok
+if t~='none' and t~='string' then return redis.error_reply('HANDOFF resume location') end
+if not types3() then return redis.error_reply('HANDOFF resume keys') end
+local old,next=fence(ARGV[1]),fence(ARGV[2])
+local raw=prior()
+if not old or not next or raw==nil or old.k~='R' or next.k~='H'
+    or old.i~=next.i or old.n~=next.n or old.a~=next.a or old.t==next.t
+    or next.e~=ARGV[3] or (next.e~=old.e and next.e~=plus2(old.e)) then return redis.error_reply('HANDOFF resume record') end
+if redis.call('GET',KEYS[1])~=ARGV[3] or (redis.call('GET',location) or '')~=ARGV[4] then return 0 end
+if raw==ARGV[2] then return 1 end
+if raw~=ARGV[1] then return 0 end
+redis.call('HSET',KEYS[2],'handoff_fence',ARGV[2])
+return 1
+`
 
-// cppJudgeShebang 是 C++ kLuaJudgeTravelOutcome 的首行,副本里去掉了它(见文件头)。
-const cppJudgeShebang = "#!lua\n"
-
-// cppLuaJudgeTravelOutcome 逐字复制自 cpp/libs/services/scene/player/system/player_lifecycle.h 的
-// travel_outcome::kLuaJudgeTravelOutcome(去掉首行 "#!lua")。修改须两边同步。
-//
-//	KEYS[1] = player:{id}:handoff   KEYS[2] = player:{id}:owner_epoch   KEYS[3] = player:{id}:location
-//	ARGV[1] = 本次交接的 requestedAtMs(标记 "{E}:{t}" 里的 t)
-//	只删后缀与 ARGV[1] 逐字节相同的那一族标记,再 MGET owner_epoch 与 location。
-const cppLuaJudgeTravelOutcome = "local v = redis.call('MGET', KEYS[1])[1] " +
-	"if v and string.match(v, '^%d+:(%d+)$') == ARGV[1] then redis.call('DEL', KEYS[1]) end " +
-	"return redis.call('MGET', KEYS[2], KEYS[3])"
-
-// crossLangRepoRoot 是仓库根相对本包目录(go/scene_manager/internal/logic,go test 的工作目录)的路径。
 var crossLangRepoRoot = filepath.Join("..", "..", "..", "..")
-
-// cppStringConstant 从 C++ 头文件里取出 `*<name> =` 之后、第一个字面量之外的分号之前的全部字符串字面量,
-// 按 C++ 相邻字面量拼接的规则连起来。只处理 \n 与「反斜杠 + 任意字符」两种转义(这些 Lua 常量只用到 \n)。
-// 文件不存在返回 ("", false);文件在而常量找不到 / 没有闭合时让用例失败(改名或改写法也要被发现)。
-func cppStringConstant(t *testing.T, relPath, name string) (string, bool) {
-	t.Helper()
-	data, err := os.ReadFile(filepath.Join(crossLangRepoRoot, filepath.FromSlash(relPath)))
-	if errors.Is(err, fs.ErrNotExist) {
-		return "", false
-	}
-	require.NoError(t, err)
-	src := string(data)
-	decl := "*" + name + " ="
-	start := strings.Index(src, decl)
-	require.GreaterOrEqual(t, start, 0, "%s 里找不到常量 %s", relPath, name)
-
-	var out strings.Builder
-	inLiteral := false
-	for i := start + len(decl); i < len(src); i++ {
-		c := src[i]
-		if !inLiteral {
-			switch c {
-			case '"':
-				inLiteral = true
-			case ';':
-				return out.String(), true
-			}
-			continue
-		}
-		switch {
-		case c == '"':
-			inLiteral = false
-		case c == '\\' && i+1 < len(src):
-			i++
-			if src[i] == 'n' {
-				out.WriteByte('\n')
-			} else {
-				out.WriteByte(src[i])
-			}
-		default:
-			out.WriteByte(c)
-		}
-	}
-	t.Fatalf("%s 的常量 %s 没有以分号结束", relPath, name)
-	return "", false
+func cppFenceRaw(t *testing.T, source,name string) string {
+    t.Helper()
+    start:=strings.Index(source,name+" = ")
+    require.GreaterOrEqual(t,start,0,name)
+    start+=len(name+" = ")
+    raw:=strings.Index(source[start:],"R\"(")
+    require.GreaterOrEqual(t,raw,0,name)
+    start+=raw+3
+    end:=strings.Index(source[start:],")\";")
+    require.GreaterOrEqual(t,end,0,name)
+    return source[start:start+end]
 }
-
-// 仓库完整时逐字比对两段副本与 C++ 原文:副本一旦漂移,下面两个金样验证的就不再是线上跑的脚本。
 func TestSourceJudgeScriptAndInheritClearCopiesMatchCpp(t *testing.T) {
-	inherit, ok := cppStringConstant(t, "cpp/libs/services/scene/player/system/exit_release_mark.h", "kLuaInheritClear")
-	if !ok {
-		t.Skip("找不到 C++ 源码(只拷了 go/ 的构建环境),跳过逐字比对")
-	}
-	assert.Equal(t, inherit, cppLuaInheritClear, "cppLuaInheritClear 与 C++ exit_release_mark::kLuaInheritClear 不一致:两边必须同步")
-
-	judge, ok := cppStringConstant(t, "cpp/libs/services/scene/player/system/player_lifecycle.h", "kLuaJudgeTravelOutcome")
-	require.True(t, ok, "exit_release_mark.h 在而 player_lifecycle.h 不在:仓库布局变了,请同步本用例的路径")
-	assert.Equal(t, judge, cppJudgeShebang+cppLuaJudgeTravelOutcome,
-		"cppLuaJudgeTravelOutcome 与 C++ travel_outcome::kLuaJudgeTravelOutcome(去掉 #!lua 首行)不一致:两边必须同步")
+    data,err:=os.ReadFile(filepath.Join(crossLangRepoRoot,"cpp/libs/services/scene/player/system/handoff_sql_barrier.h"))
+    if errors.Is(err,fs.ErrNotExist) { t.Skip("仅Go源码包无C++源；行为金样仍执行") }
+    require.NoError(t,err)
+    source:=strings.ReplaceAll(string(data),"\r\n","\n")
+    prefix:=cppFenceRaw(t,source,"kFenceLuaHelpers")
+    require.Equal(t,cppHandoffFenceHelpers,prefix)
+    require.Equal(t,cppLuaInheritClear,prefix+cppFenceRaw(t,source,"kConfirmFenceLua"),"kConfirmFenceLua")
+    require.Equal(t,cppLuaRegisterFence,prefix+cppFenceRaw(t,source,"kRegisterFenceLua"),"kRegisterFenceLua")
+    require.Equal(t,cppLuaJudgeTravelOutcome,prefix+cppFenceRaw(t,source,"kJudgeOutcomeLua"),"kJudgeOutcomeLua")
+    require.Equal(t,cppLuaRevokeFence,prefix+cppFenceRaw(t,source,"kRevokeFenceLua"),"kRevokeFenceLua")
+    require.Equal(t,cppLuaReleaseFence,prefix+cppFenceRaw(t,source,"kReleaseMarkLua"),"kReleaseMarkLua")
+    require.Equal(t,cppLuaPublishFence,prefix+cppFenceRaw(t,source,"kPublishMarkLua"),"kPublishMarkLua")
+    require.Equal(t,cppLuaResumeFence,prefix+cppFenceRaw(t,source,"kResumeFenceLua"),"kResumeFenceLua")
 }
 
 // 令牌互斥(§12.8 第六节):目标节点 B 载入时的 A2′ 与 scene_manager 的凭标记回滚是同一 Redis 上的两段原子 Lua,
@@ -162,9 +289,16 @@ func TestRollbackAndInheritClearAreMutuallyExclusive(t *testing.T) {
 	// inheritClear 以 N 执行一次 C++ 的 A2′,返回它的结果码。
 	inheritClear := func(t *testing.T, sc *svc.ServiceContext, playerID uint64, n uint64) string {
 		t.Helper()
-		result, err := sc.Redis.Eval(cppLuaInheritClear,
-			[]string{ownerepoch.OwnerEpochKey(playerID), ownerepoch.HandoffKey(playerID)}, strconv.FormatUint(n, 10))
-		require.NoError(t, err)
+        owner:=strconv.FormatUint(n,10)
+        barrier:=fmt.Sprintf("player:{%d}:save_barrier",playerID)
+        held:=owner+"|destination|1|"+strings.Repeat("a",32)+"|H|"+strings.Repeat("b",32)
+        prior,_:=sc.Redis.Hget(barrier,"handoff_fence")
+        keys:=[]string{ownerepoch.OwnerEpochKey(playerID),barrier,ownerepoch.HandoffKey(playerID)}
+        result,err:=sc.Redis.Eval(cppLuaRegisterFence,keys,owner,held,prior)
+        require.NoError(t,err)
+        if fmt.Sprint(result)!="1" { return fmt.Sprint(result) }
+        result,err=sc.Redis.Eval(cppLuaInheritClear,keys,owner,held)
+        require.NoError(t,err)
 		return fmt.Sprint(result)
 	}
 
@@ -173,7 +307,7 @@ func TestRollbackAndInheritClearAreMutuallyExclusive(t *testing.T) {
 		sc, mr, placed, plan := setup(t, playerID)
 
 		// B 载入(N = 2):owner_epoch 核对通过,删掉代际 1 的标记(比 N 旧,结果码 1)。
-		assert.Equal(t, "1", inheritClear(t, sc, playerID, 2))
+		assert.Equal(t, "0", inheritClear(t, sc, playerID, 2))
 		assert.False(t, mr.Exists(ownerepoch.HandoffKey(playerID)))
 
 		markerGoneBefore := enterSceneRollbackCount(t, rollbackOutcomeMarkerGone)
@@ -202,7 +336,7 @@ func TestRollbackAndInheritClearAreMutuallyExclusive(t *testing.T) {
 		assert.Equal(t, "3", ownerEpochRaw(t, sc, playerID))
 
 		// 源端之后按回滚后的 epoch 重载(同落点重连,N = 3)时,A2′ 删掉转写标记(代际恰是 N,结果码 2)。
-		assert.Equal(t, "2", inheritClear(t, sc, playerID, 3))
+		assert.Equal(t, "0", inheritClear(t, sc, playerID, 3))
 		assert.False(t, mr.Exists(ownerepoch.HandoffKey(playerID)))
 	})
 }
@@ -214,9 +348,15 @@ func TestSourceJudgeScriptDeletesOnlyItsOwnLineageAndSeesReceipt(t *testing.T) {
 	const savedAt = "1757000000000"
 	judge := func(t *testing.T, playerID uint64) []any {
 		t.Helper()
-		result, err := sc.Redis.Eval(cppLuaJudgeTravelOutcome,
-			[]string{ownerepoch.HandoffKey(playerID), ownerepoch.OwnerEpochKey(playerID), getPlayerLocationKey(playerID)},
-			savedAt)
+        barrier:=fmt.Sprintf("player:{%d}:save_barrier",playerID)
+        held:="5|source|1|"+strings.Repeat("a",32)+"|H|"+strings.Repeat("b",32)
+        published:=strings.Replace(held,"|H|","|F|",1)
+        revoked:=strings.Replace(held,"|H|"+strings.Repeat("b",32),"|R|"+strings.Repeat("c",32),1)
+        if !mr.Exists(ownerepoch.OwnerEpochKey(playerID)) { require.NoError(t,mr.Set(ownerepoch.OwnerEpochKey(playerID),"5")) }
+        mr.HSet(barrier,"handoff_fence",published)
+        result,err:=sc.Redis.Eval(cppLuaJudgeTravelOutcome,
+            []string{ownerepoch.OwnerEpochKey(playerID),barrier,ownerepoch.HandoffKey(playerID),getPlayerLocationKey(playerID)},
+            held,published,revoked,savedAt)
 		require.NoError(t, err)
 		reply, ok := result.([]any)
 		require.True(t, ok, "应答必须是数组,实际 %T", result)
@@ -245,7 +385,7 @@ func TestSourceJudgeScriptDeletesOnlyItsOwnLineageAndSeesReceipt(t *testing.T) {
 
 	t.Run("missing_keys_are_nil_not_errors", func(t *testing.T) {
 		reply := judge(t, 6397)
-		assert.Nil(t, reply[0], "owner_epoch 缺键:nil(C++ 按 0)")
+		assert.Equal(t,"5",reply[0],"资格要求有效原owner，缺location仍可取证")
 		assert.Nil(t, reply[1], "location 缺键:nil(C++ 按解析失败)")
 	})
 
@@ -296,4 +436,39 @@ func TestSourceJudgeScriptDeletesOnlyItsOwnLineageAndSeesReceipt(t *testing.T) {
 		assert.Equal(t, "-1", fmt.Sprint(result))
 		assert.Equal(t, "7", ownerEpochRaw(t, sc, playerID))
 	})
+}
+
+func TestHandoffFenceRejectsLateRegistrationPublishAndRevocation(t *testing.T) {
+    sc,mr:=newTestSvcCtxWithWorldScenes(t)
+    const id=uint64(63991)
+    barrier:=fmt.Sprintf("player:{%d}:save_barrier",id)
+    keys:=[]string{ownerepoch.OwnerEpochKey(id),barrier,ownerepoch.HandoffKey(id)}
+    require.NoError(t,mr.Set(keys[0],"7"))
+    makeFence:=func(e,s,n,a,k,token string) string { return strings.Join([]string{e,s,n,strings.Repeat(a,32),k,strings.Repeat(token,32)},"|") }
+    held:=makeFence("7","scene","1","a","H","b")
+    newer:=makeFence("7","scene","2","c","H","d")
+    eval:=func(script string,args ...any) string { t.Helper();v,err:=sc.Redis.Eval(script,keys,args...);require.NoError(t,err);return fmt.Sprint(v) }
+    require.Equal(t,"1",eval(cppLuaRegisterFence,"7",held,""))
+    require.Equal(t,"1",eval(cppLuaRegisterFence,"7",newer,held))
+    // 旧加载 HGET 故意晚到，取得的是新 prior；提交时 N 下限仍必须拒绝旧加载。
+    before:=mr.Dump()
+    require.Equal(t,"-2",eval(cppLuaRegisterFence,"7",held,newer))
+    require.Equal(t,before,mr.Dump())
+    require.Equal(t,"-2",eval(cppLuaRegisterFence,"7",makeFence("7","scene","2","e","H","f"),newer))
+    require.Equal(t,"-2",eval(cppLuaRegisterFence,"7",makeFence("7","other","3","a","H","b"),newer))
+    published:=makeFence("7","scene","2","c","F","e")
+    revoked:=makeFence("7","scene","2","c","R","f")
+    require.False(t,mr.Exists(keys[2]))
+    require.Equal(t,"1",eval(cppLuaRevokeFence,newer,published,revoked,"1000"))
+    before=mr.Dump()
+    require.Equal(t,"-2",eval(cppLuaRegisterFence,"7",newer,revoked),"同N不能在撤销后复活")
+    require.Equal(t,"0",eval(cppLuaReleaseFence,"7","7:1000","300",newer,published))
+    require.Equal(t,"-2",eval(cppLuaPublishFence,"7","7:1000","300",newer,published))
+    require.Equal(t,before,mr.Dump(),"mark缺席时撤资格也须挡住迟到SET")
+    // 已知恢复floor保N；未知floor同E无资格，新SM owner推进后才可建立新instance。
+    unknown:="7||0|"+strings.Repeat("0",32)+"|R|"+strings.Repeat("a",32)
+    mr.HSet(barrier,"handoff_fence",unknown)
+    require.Equal(t,"-2",eval(cppLuaRegisterFence,"7",makeFence("7","scene","99","a","H","b"),unknown))
+    require.NoError(t,mr.Set(keys[0],"8"))
+    require.Equal(t,"1",eval(cppLuaRegisterFence,"8",makeFence("8","new-instance","1","a","H","b"),unknown))
 }

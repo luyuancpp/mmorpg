@@ -11,6 +11,7 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 	base "proto/common/base"
+	componentpb "proto/common/component"
 	dspb "proto/data_service"
 	"shared/savebarrier"
 )
@@ -37,7 +38,7 @@ func TestCreateClientValidatesInitialCommitReceipt(t *testing.T) {
 				case "idempotent": out.InitialPlayerData = nil
 				case "wrong-id": out.InitialPlayerData = savebarrier.InitialPlayerData(role.PlayerId + 1)
 				case "zero-sequence": out.InitialPlayerData.LastSaveSeq = 0
-				case "business-payload": out.InitialPlayerData.PlayerDatabaseData.ProtoReflect().SetUnknown([]byte{0xF8, 0x7F, 1})
+				case "business-payload": out.InitialPlayerData.PlayerDatabaseData.LevelComponent = &componentpb.LevelComp{Level: 8}
 				case "unknown-field": out.InitialPlayerData.ProtoReflect().SetUnknown([]byte{0xF8, 0x7F, 1})
 				}
 				return out, nil

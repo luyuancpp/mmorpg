@@ -105,10 +105,11 @@ void ArmTimer() {
 // Redis 适配器不持有连接；HGET 原件随后只作为同一候选的 CAS 输入。
 // 上层弱 state/原 generation 在两次异步边界均复核，迟到完成不会激活新实体。
 bool RegisterFence(Guid player, std::string candidate, std::optional<std::string> expected,
-    RoleAdmissionSystem::FenceReply completed) {
+    std::function<bool()> stillQualified, RoleAdmissionSystem::FenceReply completed) {
     const auto parsed = handoff_sql_barrier::ParseFence(candidate);
     if (!parsed || parsed->state != handoff_sql_barrier::FenceState::kHeld) return false;
-    auto submit = [player, candidate, completed](std::string prior) {
+    auto submit = [player, candidate, stillQualified, completed](std::string prior) {
+        if (!stillQualified()) { completed(false, prior); return; }
         auto& redis = tlsRedis.GetZoneRedis();
         if (!redis || !redis->connected()) { completed(false, prior); return; }
         const auto record = handoff_sql_barrier::ParseFence(candidate);
@@ -147,14 +148,24 @@ void SendFence(Guid playerId) {
     if (generation <= role.closedThrough || generation <= role.sealedThrough) { role.waitingFence = false; return; }
     role.fenceInFlight = true; ++role.fenceAttempts; ++role.callbacks;
     const std::weak_ptr<RoleAdmissionState> original = state;
+    auto stillQualified = [original, playerId, generation, candidate = role.context.handoffFence] {
+        if (!Owns(original)) return false;
+        const auto it = state->roles.find(playerId);
+        if (it == state->roles.end()) return false;
+        const auto& current = it->second;
+        return current.waitingFence && current.identity.generation() == generation
+            && current.context.handoffFence == candidate && generation > current.closedThrough
+            && generation > current.sealedThrough && Now() < current.registerDeadline;
+    };
     auto completed = [original, playerId, generation](bool ok, std::optional<std::string> prior) {
         if (!Owns(original)) return;
         auto it = state->roles.find(playerId);
         if (it == state->roles.end()) return;
         auto& current = it->second;
         if (current.callbacks) --current.callbacks;
+        if (current.identity.generation() != generation) return;
         current.fenceInFlight = false;
-        if (!current.waitingFence || current.identity.generation() != generation) return;
+        if (!current.waitingFence) return;
         if (prior && !current.fencePrior) current.fencePrior = std::move(prior);
         if (Now() >= current.registerDeadline || generation <= current.closedThrough || generation <= current.sealedThrough) {
             current.waitingFence = false; Reject(playerId, current.context.enterInfo.session_id()); return;
@@ -164,8 +175,8 @@ void SendFence(Guid playerId) {
         Activate(playerId, current.context);
     };
     const bool sent = state->dependencies.registerHandoffFence
-        ? state->dependencies.registerHandoffFence(playerId, role.context.handoffFence, role.fencePrior, completed)
-        : RegisterFence(playerId, role.context.handoffFence, role.fencePrior, completed);
+        ? state->dependencies.registerHandoffFence(playerId, role.context.handoffFence, role.fencePrior, stillQualified, completed)
+        : RegisterFence(playerId, role.context.handoffFence, role.fencePrior, stillQualified, completed);
     if (!sent) {
         role.fenceInFlight = false; --role.callbacks;
         role.retryAt = Now() + std::chrono::seconds(1);
@@ -379,7 +390,7 @@ void RoleAdmissionSystem::RequestEnter(Guid playerId, PlayerEnterContext context
         }
         return;
     }
-    if (role.registerCalls != 0) { Reject(playerId, session); return; }
+    if (role.registerCalls != 0 || role.fenceInFlight) { Reject(playerId, session); return; }
     context.roleAdmissionGeneration = ++state->nextGeneration;
     const auto admissionToken = handoff_sql_barrier::NewFenceToken();
     const auto candidate = handoff_sql_barrier::EncodeFence({context.ownerEpoch, local.instanceId,
@@ -462,6 +473,7 @@ bool RoleAdmissionSystem::Seal(const common::base::RoleTradeSeal& seal) {
     role.tradeSaveRequired = tlsEcs.GetPlayer(seal.player_id()) != entt::null;
     role.tradeSaveQueued = false;
     role.sealedThrough = std::max(role.sealedThrough, seal.through_generation()); role.waitingRegister = false;
+    if (role.identity.generation() <= role.sealedThrough) role.waitingFence = false;
     role.retryAt = Now();
     Freeze(seal.player_id());
     Tick(); return true;

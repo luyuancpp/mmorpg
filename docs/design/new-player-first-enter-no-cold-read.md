@@ -5,7 +5,10 @@
 ## 建角初始持久提交
 
 - 初始版本 `(owner_epoch=1, save_seq=1)` 是每个严格全新 ID 的无 actor 持久提交，不能由普通存盘、导入、修复、恢复或转让补发。它不授予场景写权限。建角的目录首次 INSERT 与两张玩家行的严格 INSERT 共用全局权威池的同一个 `sql.Tx`；任一行已存在、权威路由缺失或冻结、落点越出白名单、权限或提交失败，全部回滚，不覆盖原件。
-- 锁顺序为账号目录、角色唯一归属、路由可写保护、归属区合服围栏、完整主键的权威路由、第一张玩家行、第二张玩家行。落点只由被锁的 SQL 路由和 `placement.StoreDBName` 派生；跨 schema 仍用此事务所在的同一物理连接，禁止另开落点连接拼成两阶段提交。
+- 锁顺序为账号目录、路由可写保护、正式中性合服分片与完整主键的权威路由、角色唯一归属、第一张玩家行、第二张玩家行。落点只由被锁的 SQL 路由和 `placement.StoreDBName` 派生；跨 schema 仍用此事务所在的同一物理连接，禁止另开落点连接拼成两阶段提交。
+- `account_role.initial_player_commit=1` 只与本次目录和双行严格新建在同一事务产生，旧行正式迁移默认 0；不从任意旧/导入/恢复的 `1:1` 数字倒推资格。正常 global 装配固定要求初始提交，`RequireTiDB` 探针、`RoleTradeSQLProof` 和 dev/test 模式均不关闭此安全语义；只有显式 `LegacyNonGlobal` 构造器不发此回执。
+- 无 actor 的角色交易使用独立 `INITIAL_COMMIT` 证据：必须完整 P、0 required floor、0 holders、目录标记 1 / owner revision 1 及双 SQL 完整初始 payload；不能伪成 `NO_ADMISSION(0:0)` 或 SCENE。已有 closed admissions 的历史下限仍保留。
+- 目录事务只有一次 Begin/Commit，没有自动重试；每次 action 清空临时初始回执，Commit 未确认时不返回。Login 只能经原 Lookup 恢复目录成功，不能由此补发缓存种子。
 - 默认关闭 `NewPlayerSeed` 时，首次登录强读两张实际 SQL 行，沿现有 `Reconcile/AdoptSQL` 写完整父快照、`LastSaveSeq=1`、pending 和两表 ACK，并将 owner 地板抬到 1。正式首任 actor 随后仍只由 SceneManager 的既有 INCR 铸为 2；Login 和 C++ 不另行 INCR。恢复只抬地板，不降低已铸出的较高 owner。
 - 打开 `NewPlayerSeed` 时保留首次进场免 Kafka 冷读的优化，但种子移到正式 SQL 提交之后。仅本次新建成功回执可写包含完整初始版本的父快照、屏障和 owner 地板；已有目录幂等、未知提交结果及目录回读均不补发该回执。迟到种子遇到非初始父快照、较高 owner 或已推进屏障时不写，不能补偿删除已经提交的角色或释放其在役名字。禁止继续使用 `LastSaveSeq=0` 的已核验快路径冒充持久基底。
 - 任一玩家 SQL 回包的 `Data` 真正缺失均拒绝，不能先填 `player_id` 骨架再称它是已有初始行。目录重放、Import、Repair、Restore、转让及墓碑均不重建缺行。首存前失败可以从仍完整的初始提交恢复；历史任一行丢失仍 fail-closed。该方案不声称检测全套 SQL 原件同时回档至同一旧快照。

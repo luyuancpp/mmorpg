@@ -568,16 +568,11 @@ TEST(HandoffMarkWithdrawQueue, DuplicateAddKeepsOriginalDeadline)
     hmw::Queue queue;
     std::optional<hmw::Entry> evicted;
     ASSERT_TRUE(queue.Add(kWithdrawPlayerA, "7:100", WithdrawT0(), kWithdrawTtl, evicted));
-    EXPECT_FALSE(queue.Add(kWithdrawPlayerA, "7:100", WithdrawT0() + std::chrono::seconds(100), kWithdrawTtl, evicted))
-        << "同一份标记重复登记不算新条目";
-    EXPECT_EQ(queue.size(), 1u);
-
-    // 原 deadline = T0 + 305s。重复登记若把它推到了 T0 + 405s,这里就不会过期。
+    EXPECT_FALSE(queue.Add(kWithdrawPlayerA, "7:100", WithdrawT0() + std::chrono::seconds(100), kWithdrawTtl, evicted));
     std::size_t expired = 0;
-    const auto due = queue.CollectDue(WithdrawT0() + kWithdrawTtl, /*force=*/false, expired);
-    EXPECT_EQ(expired, 1u) << "截止时刻跟的是第一次登记,不得被重复登记延长";
-    EXPECT_TRUE(due.empty());
-    EXPECT_EQ(queue.size(), 0u);
+    const auto due = queue.CollectDue(WithdrawT0() + kWithdrawTtl, false, expired);
+    EXPECT_EQ(0u, expired); ASSERT_EQ(1u, due.size());
+    EXPECT_EQ(1u, queue.size()) << "资格不能因标记TTL到期消账";
 }
 
 TEST(HandoffMarkWithdrawQueue, CollectDueRespectsNextAttempt)
@@ -605,18 +600,15 @@ TEST(HandoffMarkWithdrawQueue, CollectDueRespectsNextAttempt)
     EXPECT_TRUE(queue.HasPlayer(kWithdrawPlayerA));
 }
 
-TEST(HandoffMarkWithdrawQueue, CollectDueDropsExpiredAndCounts)
+TEST(HandoffMarkWithdrawQueue, UnconfirmedRevocationNeverExpiresByMarkTTL)
 {
     hmw::Queue queue;
     std::optional<hmw::Entry> evicted;
     ASSERT_TRUE(queue.Add(kWithdrawPlayerA, "7:100", WithdrawT0(), kWithdrawTtl, evicted));
-
-    std::size_t expired = 0;
-    const auto due = queue.CollectDue(WithdrawT0() + kWithdrawTtl + std::chrono::seconds(1), /*force=*/true, expired);
-    EXPECT_EQ(expired, 1u);
-    EXPECT_TRUE(due.empty()) << "过了截止时刻的条目不再重发(force 也不行)";
-    EXPECT_EQ(queue.size(), 0u);
-    EXPECT_FALSE(queue.HasPlayer(kWithdrawPlayerA)) << "放弃之后闸口必须放开,否则玩家永远换不了图";
+    std::size_t expired = 99;
+    const auto due = queue.CollectDue(WithdrawT0() + kWithdrawTtl + std::chrono::seconds(1), true, expired);
+    EXPECT_EQ(0u, expired); ASSERT_EQ(1u, due.size());
+    EXPECT_EQ(1u, queue.size()); EXPECT_TRUE(queue.HasPlayer(kWithdrawPlayerA));
 }
 
 TEST(HandoffMarkWithdrawQueue, ConfirmRemovesOnlyExactValue)
@@ -637,40 +629,24 @@ TEST(HandoffMarkWithdrawQueue, ConfirmRemovesOnlyExactValue)
     EXPECT_FALSE(queue.HasPlayer(kWithdrawPlayerA));
 }
 
-TEST(HandoffMarkWithdrawQueue, CapacityEvictsEarliestDeadline)
+TEST(HandoffMarkWithdrawQueue, CapacityRejectsNewEntryWithoutEvictingUnconfirmedRevocation)
 {
     hmw::Queue queue;
     std::optional<hmw::Entry> evicted;
-    // 第 i 条在 T0 + i 秒登记,deadline 严格递增:player 1 的最早。
-    for (std::size_t i = 0; i < hmw::kMaxPending; ++i)
-    {
-        ASSERT_TRUE(queue.Add(static_cast<uint64_t>(i + 1), "7:100",
-                              WithdrawT0() + std::chrono::seconds(static_cast<long long>(i)), kWithdrawTtl, evicted));
-        ASSERT_FALSE(evicted.has_value());
-    }
-    ASSERT_EQ(queue.size(), hmw::kMaxPending);
-
-    const uint64_t overflowPlayer = static_cast<uint64_t>(hmw::kMaxPending) + 1;
-    EXPECT_TRUE(queue.Add(overflowPlayer, "7:100",
-                          WithdrawT0() + std::chrono::seconds(static_cast<long long>(hmw::kMaxPending)), kWithdrawTtl,
-                          evicted));
-    ASSERT_TRUE(evicted.has_value()) << "表满必须让调用方知道(要记 ERROR + withdraw_expired)";
-    EXPECT_EQ(evicted->playerId, 1u) << "被淘汰的条目要带出来:日志得能定位到是哪个玩家";
-    EXPECT_EQ(evicted->markValue, "7:100");
-    EXPECT_EQ(queue.size(), hmw::kMaxPending);
-    EXPECT_FALSE(queue.HasPlayer(1)) << "被淘汰的是 deadline 最早的那一条";
-    EXPECT_TRUE(queue.HasPlayer(2));
-    EXPECT_TRUE(queue.HasPlayer(overflowPlayer));
+    for (std::size_t i=0;i<hmw::kMaxPending;++i)
+        ASSERT_TRUE(queue.Add(i+1,"7:100",WithdrawT0(),kWithdrawTtl,evicted));
+    EXPECT_FALSE(queue.Add(hmw::kMaxPending+1,"7:100",WithdrawT0(),kWithdrawTtl,evicted));
+    EXPECT_FALSE(evicted.has_value()); EXPECT_EQ(hmw::kMaxPending,queue.size());
+    EXPECT_TRUE(queue.HasPlayer(1)); EXPECT_FALSE(queue.HasPlayer(hmw::kMaxPending+1));
 }
 
 TEST(HandoffMarkWithdrawQueue, LuaIsConditionalDelete)
 {
-    // 撤回会被延迟重发,期间同一玩家可能已经写了新标记;退回无条件 DEL 会误删新标记。
     const std::string lua = hmw::kLuaDelIfEqual;
-    EXPECT_NE(lua.find("GET"), std::string::npos);
-    EXPECT_NE(lua.find("== ARGV[1]"), std::string::npos);
-    EXPECT_NE(lua.find("DEL"), std::string::npos);
-    EXPECT_LT(lua.find("GET"), lua.find("DEL")) << "先比对、后删除";
+    EXPECT_NE(lua.find("raw~=ARGV[1] and raw~=ARGV[2] and raw~=ARGV[3]"), std::string::npos);
+    EXPECT_LT(lua.find("redis.call('HSET'"), lua.find("redis.call('DEL'")) << "mark缺席也先撤资格";
+    EXPECT_NE(lua.find("sameholder(held,next)"), std::string::npos);
+    EXPECT_EQ(lua.find("tonumber"), std::string::npos);
 }
 
 // ============================================================================
@@ -1740,44 +1716,26 @@ TEST(ExitReleaseMarkWrite, ReplyClassification)
 TEST(ExitReleaseMarkWrite, LuaChecksOwnerEpochBeforeSet)
 {
     const std::string lua = erm::kLuaWriteIfOwnerEpoch;
-    const auto compare = lua.find("redis.call('GET', KEYS[1]) ~= ARGV[1]");
-    ASSERT_NE(compare, std::string::npos) << "先比 owner_epoch";
-    const auto set = lua.find("redis.call('SET', KEYS[2]");
-    ASSERT_NE(set, std::string::npos);
-    EXPECT_LT(compare, set) << "比对在写之前";
-    EXPECT_LT(lua.find("return 0"), set) << "核对不过直接返回 0、不写";
-    EXPECT_NE(lua.find("'EX', ARGV[3]"), std::string::npos) << "标记必须带 TTL";
+    EXPECT_LT(lua.find("redis.call('GET',KEYS[1])~=ARGV[1]"), lua.find("redis.call('HSET'"));
+    EXPECT_LT(lua.find("if raw~=ARGV[4] then return 0 end"), lua.find("redis.call('SET'"));
+    EXPECT_NE(lua.find("sameholder(held,next)"), std::string::npos);
+    EXPECT_NE(lua.find("'EX',ARGV[3]"), std::string::npos);
+    EXPECT_EQ(lua.find("tonumber"), std::string::npos);
 }
 
-TEST(ExitReleaseInheritClear, LuaComparesOwnerEpochFirstAndOnlyDeletesUpToN)
+TEST(ExitReleaseInheritClear, DelayedClearOnlyConfirmsOriginalRegisteredHolder)
 {
     const std::string lua = erm::kLuaInheritClear;
-    const auto compare = lua.find("if cur ~= ARGV[1] then return -1 end");
-    ASSERT_NE(compare, std::string::npos) << "先比 owner_epoch,核对不过返回 -1";
-    EXPECT_NE(lua.find("if cur == false then cur = '0' end"), std::string::npos) << "owner_epoch 缺键按 0";
-    const auto firstDel = lua.find("DEL");
-    ASSERT_NE(firstDel, std::string::npos);
-    EXPECT_LT(compare, firstDel) << "核对不过时一个标记都不删(M2)";
-    const auto keepNewer = lua.find("then return 3 end");
-    const auto lastDel = lua.rfind("redis.call('DEL', KEYS[2])");
-    ASSERT_NE(keepNewer, std::string::npos);
-    EXPECT_LT(keepNewer, lastDel) << "代际比 N 新的标记先返回 3、不删:只删 ≤N";
-    EXPECT_EQ(lua.find("tonumber"), std::string::npos) << "uint64 代际不能过 tonumber(2^53 以上丢精度)";
+    EXPECT_NE(lua.find("redis.call('GET',KEYS[1])~=ARGV[1] or raw~=ARGV[2]"), std::string::npos);
+    EXPECT_EQ(lua.find("redis.call('DEL'"), std::string::npos) << "登记已清mark，迟到A2仅核原H";
+    EXPECT_NE(handoff_sql_barrier::kRegisterFenceLua.find("cmp(candidate.n,old.n)<=0"), std::string::npos);
+    EXPECT_EQ(lua.find("tonumber"), std::string::npos);
 }
 
-TEST(ExitReleaseInheritClear, UnknownEpochLuaNeverRefusesAndOnlyDeletesUpToCurrent)
+TEST(ExitReleaseInheritClear, UnknownEpochCannotBorrowCurrentHolder)
 {
-    // 复审 ownership-major:路由不带 owner_epoch 时照样清,以 Redis 里当前的 owner_epoch 代替 N。
-    const std::string lua = erm::kLuaInheritClearUnknownEpoch;
-    EXPECT_EQ(lua.find("return -1"), std::string::npos) << "无从核对归属:不返回 -1";
-    EXPECT_EQ(lua.find("ARGV"), std::string::npos) << "没有 N 可传";
-    EXPECT_NE(lua.find("if cur == false then cur = '0' end"), std::string::npos) << "owner_epoch 缺键按 0";
-    const auto keepNewer = lua.find("then return 3 end");
-    const auto lastDel = lua.rfind("redis.call('DEL', KEYS[2])");
-    ASSERT_NE(keepNewer, std::string::npos);
-    ASSERT_NE(lastDel, std::string::npos);
-    EXPECT_LT(keepNewer, lastDel) << "代际比当前新的标记先返回 3、不删:只删 ≤ 当前代际";
-    EXPECT_EQ(lua.find("tonumber"), std::string::npos) << "uint64 代际不能过 tonumber";
+    EXPECT_STREQ(erm::kLuaInheritClearUnknownEpoch, "return -1")
+        << "无原owner/holder不得借当前Redis身份清标记";
 }
 
 TEST(ExitReleaseInheritClear, ReplyClassification)
@@ -3231,23 +3189,15 @@ TEST(TravelOwnership, NameTableCoversEveryVerdict)
     EXPECT_STREQ(to::OwnershipName(to::Ownership::kCount), "?") << "越界不能读出数组外";
 }
 
-TEST(TravelOwnership, JudgeScriptKeepsShebangAndMget)
+TEST(TravelOwnership, JudgeRevokesOriginalHolderBeforeReadingOwnership)
 {
     const std::string lua = to::kLuaJudgeTravelOutcome;
-    EXPECT_EQ(lua.rfind("#!lua\n", 0), 0u)
-        << "必须以 #!lua 开头:只读副本 / MISCONF / OOM 下整体被拒,不会出现删除失败而读取成功";
-    EXPECT_EQ(lua.find("no-writes"), std::string::npos) << "不得声明 no-writes:那会让只读副本上照样读成功";
-    EXPECT_EQ(lua.find("'GET'"), std::string::npos) << "只用 MGET:GET 遇到类型不对的键会抛 WRONGTYPE,取证永远出不来";
-    EXPECT_EQ(lua.find("'SET'"), std::string::npos) << "取证只删不写";
-    const auto del = lua.find("redis.call('DEL', KEYS[1])");
-    const auto read = lua.find("return redis.call('MGET', KEYS[2], KEYS[3])");
-    ASSERT_NE(del, std::string::npos);
-    ASSERT_NE(read, std::string::npos);
-    EXPECT_LT(del, read) << "先删本族标记,再在同一段脚本里读 epoch 与 location";
-    EXPECT_NE(lua.find("string.match(v, '^%d+:(%d+)$') == ARGV[1]"), std::string::npos)
-        << "只删后缀(saved_at_ms)与本次 requestedAtMs 逐字节相同的那一族,别人的标记不碰";
-    EXPECT_EQ(lua.find("DEL', KEYS[2]"), std::string::npos) << "不删 owner_epoch";
-    EXPECT_EQ(lua.find("DEL', KEYS[3]"), std::string::npos) << "不删 location";
+    EXPECT_LT(lua.find("if not types3()"), lua.find("redis.call('HSET'"));
+    EXPECT_LT(lua.find("raw~=ARGV[1] and raw~=ARGV[2] and raw~=ARGV[3]"), lua.find("redis.call('HSET'"));
+    EXPECT_LT(lua.find("redis.call('HSET'"), lua.find("redis.call('DEL'"));
+    EXPECT_LT(lua.find("redis.call('DEL'"), lua.find("return {redis.call('GET'"));
+    EXPECT_EQ(lua.find("DEL',KEYS[1]"), std::string::npos) << "不删owner";
+    EXPECT_EQ(lua.find("DEL',location"), std::string::npos) << "不删location";
 }
 
 // ============================================================================
@@ -7956,4 +7906,30 @@ TEST(OwnerEpochStats, CounterBehindOnStaleInFlightSaveResavesWithCurrentEpoch)
     const auto after = owner_epoch_stats::Read();
     EXPECT_EQ(after.ownerCounterBehind, before.ownerCounterBehind) << "当前 epoch 是否也落后要等重存的回答";
     EXPECT_EQ(after.staleOwnerWriteRejected, before.staleOwnerWriteRejected);
+}
+
+TEST(HandoffFenceCodec, PreservesUint64AndRejectsUnknownHolderMasqueradingAsAdmission)
+{
+    using namespace handoff_sql_barrier;
+    const std::string a(32,'a'), b(32,'b');
+    const auto raw=EncodeFence({UINT64_MAX,"scene",UINT64_MAX,a,FenceState::kHeld,b});
+    ASSERT_TRUE(raw);const auto parsed=ParseFence(*raw);ASSERT_TRUE(parsed);
+    EXPECT_EQ(UINT64_MAX,parsed->ownerEpoch);EXPECT_EQ(UINT64_MAX,parsed->generation);
+    EXPECT_FALSE(ParseFence("18446744073709551616|scene|1|"+a+"|H|"+b));
+    EXPECT_FALSE(ParseFence("7|scene|0|"+a+"|H|"+b));
+    EXPECT_FALSE(ParseFence("7||0|"+std::string(32,'0')+"|H|"+b));
+    EXPECT_TRUE(ParseFence("7||0|"+std::string(32,'0')+"|R|"+b));
+    EXPECT_FALSE(ParseFence("7|scene|1|"+a+"|H|"+std::string(32,'0')));
+    const auto changed=RotateFence(*raw,FenceState::kRevoked);ASSERT_TRUE(changed);EXPECT_NE(*raw,*changed);
+    EXPECT_EQ(parsed->generation,ParseFence(*changed)->generation);
+}
+
+TEST(HandoffMarkWithdrawQueue, OldConfirmationCannotConsumeNewHolderEvenWithSameTimestamp)
+{
+    hmw::Queue queue;std::optional<hmw::Entry> evicted;
+    ASSERT_TRUE(queue.Add(7,"7:100",WithdrawT0(),kWithdrawTtl,evicted,"old","oldF","oldR"));
+    ASSERT_TRUE(queue.Add(7,"7:100",WithdrawT0(),kWithdrawTtl,evicted,"new","newF","newR"));
+    EXPECT_TRUE(queue.Confirm(7,"7:100","old"));EXPECT_EQ(1u,queue.size());
+    EXPECT_FALSE(queue.Confirm(7,"7:100","old"));EXPECT_TRUE(queue.HasPlayer(7));
+    EXPECT_TRUE(queue.Confirm(7,"7:100","new"));EXPECT_EQ(0u,queue.size());
 }

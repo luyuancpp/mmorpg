@@ -82,16 +82,9 @@ func seedCommittedNewPlayerAllData(ctx context.Context, rc *redis.Client, script
 	}
 }
 
-// newPlayerAllDataSkeleton 返回「这名玩家在库里一行都没有」时父键的完整内容:两张子表各只带 player_id。
-//
-// 两条路共用这一个构造,必须同源(docs/design/new-player-first-enter-no-cold-read.md §4.1):
-//   - EnsurePlayerAllDataInRedisAsync 冷读时以它为底。go/db 查不到行时原样回显请求体
-//     (go/db key_ordered_consumer.go 的 handleDBReadOp / publishDBReadResult),子表保持这份内容;
-//   - SeedNewPlayerAllData 在建角时直接写它。
-//
-// 所以新号的种子与「冷读读空后组装出的父键」逐字段相同,首次入场之后的身份补齐(player_class_backfill.go)
-// 与 scene 的新号初始化(InitPlayerFromAllData 的 registration_timestamp 分支)走的是同一条既有路径。
-// 这里**不能**带身份字段或 registration_timestamp:前者有 backfill 负责,后者一旦非 0,scene 会跳过首次注册。
+// newPlayerAllDataSkeleton 仅是两行 SQL 解码的目标容器，不证明任一行存在。
+// 正式 Ensure 必须收到两份非空 Data 后才能发布；旧缓存夹具仍用它表达零序号种子。
+// 此处不加身份或 registration_timestamp，身份仍由 backfill 和 scene 正式首次注册负责。
 func newPlayerAllDataSkeleton(playerId uint64) *login_proto_database.PlayerAllData {
 	return &login_proto_database.PlayerAllData{
 		PlayerDatabaseData:   &login_proto_database.PlayerDatabase{PlayerId: playerId},
@@ -167,14 +160,8 @@ end
 return 0
 `
 
-// SeedNewPlayerAllData 在建角时写新号的 PlayerAllData 父键种子(内容 = newPlayerAllDataSkeleton),
-// 让首次 EnterGame 的 EnsurePlayerAllDataInRedisAsync 命中快路径、不再发 Kafka 读任务。
-//
-// 前提(调用方保证):playerId 是刚铸出、尚未对任何人可见的号段 id。号段 id 不复用,所以此刻该 id 在任何库里
-// 都没有行,种子就是真值。本函数只写缓存,不碰数据库;rc 必须与预加载、scene 读写父键是同一个 Redis 实例
-// (既有契约,cross-zone-scene-travel.md CZ-2)。
-//
-// err 只在结论为 SeedError 时非 nil。
+// SeedNewPlayerAllData 保留旧缓存格式以验证兼容与历史缺口，正式 Create 不再调用。
+// 该零序号缓存不能走新可信快路，Ensure 必须强读两张 SQL 行；建角使用提交后能力 SeedCommittedNewPlayerAllData。
 func SeedNewPlayerAllData(ctx context.Context, rc *redis.Client, playerId uint64) (SeedResult, error) {
 	return seedNewPlayerAllData(ctx, rc, defaultParentLoadScripts, playerId)
 }

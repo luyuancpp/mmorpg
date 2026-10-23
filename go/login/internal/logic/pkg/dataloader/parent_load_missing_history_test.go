@@ -7,6 +7,7 @@ import (
 	"shared/savebarrier"
 	"strings"
 	"testing"
+	"fmt"
 )
 
 // owner 已铸造不能证明从未存盘。父键、屏障和 SQL 行同时缺失时没有持久新号原件，必须拒绝。
@@ -37,5 +38,42 @@ func TestParentLoadMissingRedisAndSQLHistoryWithMintedOwnerFailsClosed(t *testin
 	}
 	if after := mr.Dump(); after != before {
 		t.Fatal("拒绝路径改写了原键，或凭空建立父快照/屏障/身份戳")
+	}
+}
+
+func TestParentLoadMissingEitherInitialSQLRowNeverPublishesParent(t *testing.T) {
+	for _, table := range []string{"PlayerDatabase", "PlayerDatabase_1"} {
+		t.Run(table, func(t *testing.T) {
+			mr, rc := newSeedTestRedis(t)
+			ctx := context.Background()
+			if err := rc.Set(ctx, ownerepoch.OwnerEpochKey(seedTestPlayerID), "3", 0).Err(); err != nil { t.Fatal(err) }
+			setTestParentIdentity(t, rc, "redis-live", "")
+			before := mr.Dump()
+			reads := &coldSQLReads{read: func(task *dbpb.DBTask) ([]byte, error) {
+				if strings.HasSuffix(task.MsgType, "."+table) { return nil, nil }
+				return initialCommitSQLRead(task)
+			}}
+			calls := 0
+			var result error
+			ensurePlayerAllDataInRedisAsync(ctx, rc, testParentLoadScripts, true, reads, reads, seedTestPlayerID, 0, func(err error) { calls++; result = err })
+			if calls != 1 || reads.count != 2 || result == nil || mr.Dump() != before { t.Fatalf("缺单行仍放行或写键: calls=%d reads=%d error=%v", calls, reads.count, result) }
+		})
+	}
+}
+
+func TestLegacyZeroSequenceSeedCannotBypassMissingSQLWithEitherSwitch(t *testing.T) {
+	for _, verify := range []bool{false, true} {
+		t.Run(fmt.Sprint(verify), func(t *testing.T) {
+			mr, rc := newSeedTestRedis(t)
+			ctx := context.Background()
+			setTestParentIdentity(t, rc, "redis-live", "")
+			if _, err := seedTestNewPlayerAllData(ctx, rc, seedTestPlayerID); err != nil { t.Fatal(err) }
+			before := mr.Dump()
+			reads := &coldSQLReads{read: func(*dbpb.DBTask) ([]byte, error) { return nil, nil }}
+			calls := 0
+			var result error
+			ensurePlayerAllDataInRedisAsync(ctx, rc, testParentLoadScripts, verify, reads, reads, seedTestPlayerID, 0, func(err error) { calls++; result = err })
+			if calls != 1 || reads.count != 2 || result == nil || mr.Dump() != before { t.Fatal("旧零序号种子或兼容开关绕过了真实 SQL 缺行") }
+		})
 	}
 }

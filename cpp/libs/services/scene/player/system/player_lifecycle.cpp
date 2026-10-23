@@ -713,6 +713,9 @@ namespace
 	// 内容整体算一个参数(redis_client.h 的存盘 Lua 也是同一写法);key / 标记原文只含数字与冒号。
 	void SendHandoffWithdraw(const handoff_mark_withdraw::Entry &entry, const char *site)
 	{
+        if (!handoff_sql_barrier::ParseFence(entry.holderFence)
+            || !handoff_sql_barrier::ParseFence(entry.publishedFence)
+            || !handoff_sql_barrier::ParseFence(entry.revokedFence)) return;
 		const Guid playerId = entry.playerId;
 		const bool firstAttempt = entry.attempts <= 1; // CollectDue 取走时已加一:1 = 首发
 		const char *deferredReason = nullptr;
@@ -725,13 +728,13 @@ namespace
 		{
 			const std::string key = player_ownership::HandoffRedisKey(playerId);
 			const int ret = redis->command(
-				[playerId, firstAttempt, markValue = entry.markValue](hiredis::Hiredis *, redisReply *reply)
+				[playerId, firstAttempt, markValue = entry.markValue, holderFence = entry.holderFence](hiredis::Hiredis *, redisReply *reply)
 				{
 					if (reply != nullptr && reply->type == REDIS_REPLY_INTEGER)
 					{
 						// 条件删除确实在 Redis 上执行过了:1 = 删掉了自己写的那一份;0 = 标记已不是这一份
 						// (没写成 / 已过期 / 已被同一玩家的新标记覆盖),两种都说明旧标记不在了,可以销账。
-						tlsHandoffWithdrawQueue.Confirm(playerId, markValue);
+						tlsHandoffWithdrawQueue.Confirm(playerId, markValue, holderFence);
 						if (reply->integer == 1)
 						{
 							LOG_INFO << "[ZoneTravel][WithdrawMark] withdrawn player=" << playerId
@@ -761,7 +764,12 @@ namespace
 					}
 					travel_handoff_stats::Inc(travel_handoff_stats::Get().withdrawDeferred);
 				},
-				"EVAL %s 1 %s %s", handoff_mark_withdraw::kLuaDelIfEqual, key.c_str(), entry.markValue.c_str());
+				"EVAL %s 3 %s %s %s %b %b %b %b", handoff_mark_withdraw::kLuaDelIfEqual.c_str(),
+                player_ownership::OwnerEpochRedisKey(playerId).c_str(),
+                ("player:{" + std::to_string(playerId) + "}:save_barrier").c_str(), key.c_str(),
+                entry.holderFence.data(), entry.holderFence.size(), entry.publishedFence.data(), entry.publishedFence.size(),
+                entry.revokedFence.data(), entry.revokedFence.size(),
+                entry.markValue.substr(entry.markValue.find(':') + 1).data(), entry.markValue.substr(entry.markValue.find(':') + 1).size());
 			if (ret != REDIS_OK)
 			{
 				deferredReason = "dispatch_failed"; // 命令没发出去,回调不会来
@@ -2244,7 +2252,9 @@ void PlayerLifecycleSystem::HandlePlayerAsyncSaved(Guid playerId, PlayerAllData 
 			// 玩家同节点重连后的下一次跨节点换图会凭它免存盘过换手门(回档)。理由详见 FinishExitAfterPersist,
 			// 那里也说明了为什么撤回删不到 scene_manager 回滚转写出来的 "E+2:t" 却无害、为什么不许改成无条件 DEL。
 			const auto &travelIntent = tlsEcs.actorRegistry.get<PlayerTravelHandoffComp>(playerEntity);
-			const uint64_t handoffMarkEpoch = travelIntent.markEpoch;
+			const auto holderFence = travelIntent.holderFence;
+            const auto publishedFence = travelIntent.publishedFence.empty() ? holderFence : travelIntent.publishedFence;
+            const uint64_t handoffMarkEpoch = travelIntent.markEpoch;
 			const uint64_t handoffRequestedAtMs = travelIntent.requestedAtMs;
 			const bool handoffMarkWritten = handoffMarkEpoch != 0 && handoffRequestedAtMs != 0;
 			LOG_WARN << "HandlePlayerAsyncSaved: player " << playerId
@@ -2253,9 +2263,9 @@ void PlayerLifecycleSystem::HandlePlayerAsyncSaved(Guid playerId, PlayerAllData 
 			travel_handoff_stats::Inc(travel_handoff_stats::Get().exitWins);
 			tlsEcs.actorRegistry.remove<PlayerTravelHandoffComp>(playerEntity);
 			if (!RoleAdmissionSystem::IsSealed(playerId)) tlsEcs.actorRegistry.remove<PlayerFrozenComp>(playerEntity);
-			if (handoffMarkWritten)
+			if (!holderFence.empty())
 			{
-				WithdrawHandoffMark(playerId, handoffMarkEpoch, handoffRequestedAtMs, "exit wins");
+				WithdrawHandoffMark(playerId, handoffMarkEpoch, handoffRequestedAtMs, "exit wins", holderFence, publishedFence);
 				// 交接组件已摘,FinishExitAfterPersist 看不到它了:记在意图组件上,让 A1′ 不写断线释放标记(M11)。
 				if (auto *exitIntent = tlsEcs.actorRegistry.try_get<PlayerExitIntentComp>(playerEntity))
 				{
@@ -2747,10 +2757,10 @@ bool PlayerLifecycleSystem::EnterScene(const entt::entity player, const PlayerEn
 	if (guid == nullptr || guid->value == 0) return false;
 	const Guid playerId = guid->value;
 	if (tlsEcs.GetPlayer(playerId) != player) return false;
-	if (!RoleAdmissionSystem::ConfirmedIdentityForContext(playerId, ctx)) return false;
+	if (!RoleAdmissionSystem::Allows(playerId, ctx.roleAdmissionGeneration, ctx.ownerRevision)) return false;
     const auto admissionFence = handoff_sql_barrier::ParseFence(ctx.handoffFence);
-    if (!admissionFence || admissionFence->state != handoff_sql_barrier::FenceState::kHeld
-        || admissionFence->ownerEpoch != ctx.ownerEpoch || admissionFence->generation != ctx.roleAdmissionGeneration) return false;
+    if (!ctx.handoffFence.empty() && (!admissionFence || admissionFence->state != handoff_sql_barrier::FenceState::kHeld
+        || admissionFence->ownerEpoch != ctx.ownerEpoch || admissionFence->generation != ctx.roleAdmissionGeneration)) return false;
 	LOG_DEBUG << "EnterScene: Player " << playerId << " entering scene node"
 	         << " session=" << enterInfo.session_id()
 	         << " scene_id=" << enterInfo.scene_id()
@@ -3368,7 +3378,9 @@ void PlayerLifecycleSystem::FinishExitAfterPersist(Guid playerId)
 		// 先抄后摘:handoff 标记写没写过、原文是什么只有组件知道(markEpoch != 0 = BeginTravelHandoff
 		// 的 SET 已发出,原文 = "{markEpoch}:{requestedAtMs}")。
 		const auto &travelIntent = tlsEcs.actorRegistry.get<PlayerTravelHandoffComp>(playerEntity);
-		const uint64_t handoffMarkEpoch = travelIntent.markEpoch;
+		const auto holderFence = travelIntent.holderFence;
+            const auto publishedFence = travelIntent.publishedFence.empty() ? holderFence : travelIntent.publishedFence;
+            const uint64_t handoffMarkEpoch = travelIntent.markEpoch;
 		const uint64_t handoffRequestedAtMs = travelIntent.requestedAtMs;
 		const bool handoffMarkWritten = handoffMarkEpoch != 0 && handoffRequestedAtMs != 0;
 		LOG_INFO << "FinishExitAfterPersist: player " << playerId
@@ -3397,9 +3409,9 @@ void PlayerLifecycleSystem::FinishExitAfterPersist(Guid playerId)
 		// 状态已落盘、持有者不再写"依然为真 —— 之后本节点重载时 A2′(N = E+2)会删掉它,跨节点重登凭它过门零损失。
 		// **禁止**为了"删干净"改成无条件 DEL:那会删掉现任持有者此刻的活标记(见 travel_outcome::kLuaJudgeTravelOutcome
 		// 为什么只删本族)。
-		if (handoffMarkWritten)
+		if (!holderFence.empty())
 		{
-			WithdrawHandoffMark(playerId, handoffMarkEpoch, handoffRequestedAtMs, "exit wins");
+			WithdrawHandoffMark(playerId, handoffMarkEpoch, handoffRequestedAtMs, "exit wins", holderFence, publishedFence);
 			exitWonOverIssuedHandoff = true;
 		}
 	}
@@ -6079,9 +6091,15 @@ void PlayerLifecycleSystem::ArmTravelReplyWatchdog(Guid playerId, uint64_t reque
 	// 只按值捕获 id + 代际 + 证据 + 原因文本,不绑任何对象(§11.7)。不保存 TimerId、不取消:到期时代际
 	// 不符即 no-op,比维护一张定时器表更简单。截止时刻按单调时钟定,muduo 提前唤醒(纵深防御)时由 RunAtMonotonic
 	// 按剩余时间重挂(重挂时 lambda 随 std::function 复制,reason 一并复制)。
+    const auto originalEntity = tlsEcs.GetPlayer(playerId);
+    const auto* originalTravel = tlsEcs.actorRegistry.valid(originalEntity)
+        ? tlsEcs.actorRegistry.try_get<PlayerTravelHandoffComp>(originalEntity) : nullptr;
+    if (!originalTravel || originalTravel->requestedAtMs != requestedAtMs) return;
+    const auto originalHolder = originalTravel->holderFence;
+
 	const bool armed = RunAtMonotonic(
 		travel_freeze_cap::Clock::now() + travel_freeze_cap::kReplyBudget,
-		[playerId, requestedAtMs, evidence, reason = std::move(reason)]()
+		[playerId, requestedAtMs, originalEntity, originalHolder, evidence, reason = std::move(reason)]()
 	{
 		const auto entity = tlsEcs.GetPlayer(playerId);
 		if (!tlsEcs.actorRegistry.valid(entity))
@@ -6089,7 +6107,7 @@ void PlayerLifecycleSystem::ArmTravelReplyWatchdog(Guid playerId, uint64_t reque
 			return;
 		}
 		const auto *travel = tlsEcs.actorRegistry.try_get<PlayerTravelHandoffComp>(entity);
-		if (travel == nullptr || travel->requestedAtMs != requestedAtMs)
+		if (entity != originalEntity || travel == nullptr || travel->requestedAtMs != requestedAtMs || travel->holderFence != originalHolder)
 		{
 			return; // 已收到应答,或已是另一次传送
 		}
@@ -6143,6 +6161,11 @@ void PlayerLifecycleSystem::ResolveTravelOutcome(Guid playerId, uint64_t request
 	}
 	const travel_outcome::Evidence evidence =
 		travel_outcome::EffectiveEvidence(travel->hasRecordedEvidence, travel->recordedEvidence, incomingEvidence);
+	if (!travel->resumeFence.empty()) {
+        ResumeTravelAfterRevocation(playerId, requestedAtMs, travel->resumeOwnerEpoch,
+            travel->resumeLocation, reason, evidence);
+        return;
+    }
 	uint64_t cachedEpoch = 0;
 	if (const auto *epochComp = tlsEcs.actorRegistry.try_get<PlayerOwnerEpochComp>(playerEntity))
 	{
@@ -6171,14 +6194,24 @@ void PlayerLifecycleSystem::ResolveTravelOutcome(Guid playerId, uint64_t request
 	// 回调只按值捕获 id + 代际 + 缓存 epoch + 原因文本 + 证据,回调里按 id 回查实体(§11.7,不绑对象)。
 	// 脚本串作为一个 %s 参数传入是安全的:hiredis 只按**格式串**里的空格切参数(同 SendHandoffWithdraw);
 	// 脚本里的 %d 是 Lua 的模式字符,不经 hiredis 格式化。
-	const int ret = redis->command(
-		[playerId, requestedAtMs, cachedEpoch, reasonText, dispatchedEvidence = evidence](hiredis::Hiredis *,
-																							redisReply *reply)
-		{
-			JudgeTravelOutcomeReply(playerId, requestedAtMs, cachedEpoch, reasonText, dispatchedEvidence, reply);
-		},
-		"EVAL %s 3 %s %s %s %s", travel_outcome::kLuaJudgeTravelOutcome, handoffKey.c_str(), epochKey.c_str(),
-		locationKey.c_str(), requestedAtText.c_str());
+    if (travel->revokedFence.empty()) {
+        const auto revoked = handoff_sql_barrier::RotateFence(travel->holderFence, handoff_sql_barrier::FenceState::kRevoked);
+        if (!revoked) return;
+        travel->revokedFence = *revoked;
+    }
+    const auto originalHolder = travel->holderFence;
+    const auto published = travel->publishedFence.empty() ? originalHolder : travel->publishedFence;
+    const std::string barrierKey = "player:{" + std::to_string(playerId) + "}:save_barrier";
+    const int ret = redis->command(
+        [playerId, requestedAtMs, cachedEpoch, reasonText, originalHolder, dispatchedEvidence = evidence](hiredis::Hiredis*, redisReply* reply) {
+            const auto entity = tlsEcs.GetPlayer(playerId);
+            const auto* pending = tlsEcs.actorRegistry.valid(entity) ? tlsEcs.actorRegistry.try_get<PlayerTravelHandoffComp>(entity) : nullptr;
+            if (!pending || pending->holderFence != originalHolder) return;
+            JudgeTravelOutcomeReply(playerId, requestedAtMs, cachedEpoch, reasonText, dispatchedEvidence, reply);
+        }, "EVAL %s 4 %s %s %s %s %b %b %b %s", travel_outcome::kLuaJudgeTravelOutcome.c_str(),
+        epochKey.c_str(), barrierKey.c_str(), handoffKey.c_str(), locationKey.c_str(),
+        originalHolder.data(), originalHolder.size(), published.data(), published.size(),
+        travel->revokedFence.data(), travel->revokedFence.size(), requestedAtText.c_str());
 	if (ret != REDIS_OK)
 	{
 		LOG_ERROR << "[ZoneTravel] redis command dispatch failed while verifying travel outcome for player "
@@ -6265,10 +6298,9 @@ void PlayerLifecycleSystem::JudgeTravelOutcomeReply(Guid playerId, uint64_t requ
 		// 就地完成,静默解冻,不发失败 tip。
 		// 先把 markEpoch 清 0:脚本已在同一原子步骤里删掉本族标记,不再登记撤回 —— 否则撤回的应答回来之前 Redis 一断,
 		// 待撤回表会让 IsSceneChangeBusy 把这个玩家挡在换图之外最长约 305s。
-		current->markEpoch = 0;
-		// current 指针到此为止不再使用:Abort 会摘组件。
-		AbortTravelHandoff(playerId, reasonText.c_str(),
-						   /*notifyFailure=*/evidence != travel_outcome::Evidence::kSucceeded);
+        ResumeTravelAfterRevocation(playerId, requestedAtMs, cachedEpoch,
+            reply->element[1] && reply->element[1]->type == REDIS_REPLY_STRING
+                ? std::string(reply->element[1]->str, reply->element[1]->len) : "", reasonText, evidence);
 		return;
 
 	case Ownership::kRolledBackToSelf:
@@ -6304,32 +6336,8 @@ void PlayerLifecycleSystem::JudgeTravelOutcomeReply(Guid playerId, uint64_t requ
 					  << "; keeping the frozen entity without adopting or forcing a save";
 			return;
 		}
-		LOG_WARN << "[ZoneTravel][RollbackAdopt] player " << playerId
-				 << " handoff was rolled back to this node (receipt=" << location.rollback_receipt() << ", "
-				 << reasonText << ", evidence=" << travel_outcome::EvidenceName(evidence) << "): owner_epoch "
-				 << cachedEpoch << " -> " << redisEpoch << "; adopting and unfreezing (metric=rolled_back_adopted)";
-		// 顺序钉死:**先抬 epoch、后 AbortTravelHandoff 摘交接组件**,且两步在同一个调用栈里同步完成。ReleasePlayer 归属栅栏
-		// (HandleReleaseFromSceneManager / release_fence::Decide,scene-enter-chain-residuals.md §4)依赖它:交接组件一摘,
-		// IsHandoffRequested 即为假,此后到达的迟到释放(期望 E)必须看到缓存已是 E+2、判 skip_stale_release;若缓存还停在 E,
-		// 会判 E == E 而退掉这个刚解冻、仍持有归属的实体。本函数本身就跑在取证脚本的 Redis 应答回调里,这没问题;约束是:
-		// 重构不得调换这两步,也不得把两步拆到不同的回调或事件循环轮次之间(例如先 Abort、等另一次 Redis 应答再抬 epoch)。
-		epochComp->epoch = std::max(epochComp->epoch, redisEpoch);
-		current->markEpoch = 0; // 本族标记已被脚本删掉,不登记撤回(理由同 B4)
-		travel_handoff_stats::Inc(travel_handoff_stats::Get().rolledBackAdopted);
-		// current 指针到此为止不再使用:Abort 会摘交接组件与冻结组件(实体保留)。
-		AbortTravelHandoff(playerId, reasonText.c_str(),
-						   /*notifyFailure=*/evidence != travel_outcome::Evidence::kSucceeded);
-		// 强制写一次(跳过 dirty-save 快路径):让 DBTask(E+2) 立刻越过幽灵持有者可能落下的 DBTask(E+1),并恢复
-		// "快照 == Redis"的前提(见头文件 SavePlayerToRedisImpl)。交接组件已摘,"交接已发起不得再写"不再拦它。
-		// 实体正在退出(退出链 M4 在等一笔更早的存盘)时同样写:它成为最新一份,退出分支按收敛规则收尾,
-		// A1′ 按 E+2 条件写。
-		if (SavePlayerToRedisImpl(entity, /*allowSkipWhenPersisted=*/false) != SaveResult::kQueued)
-		{
-			// Abort 的事件链可能破坏刚校验过的组件,因此提交点仍检查结果。实体已保留,
-			// 只记录保存未建立的事实,不据此销毁或继续交接。
-			LOG_ERROR << "[ZoneTravel][RollbackAdopt] player " << playerId
-					  << " adopted owner_epoch " << redisEpoch << " but the forced save was not issued";
-		}
+        ResumeTravelAfterRevocation(playerId, requestedAtMs, redisEpoch,
+            std::string(reply->element[1]->str, reply->element[1]->len), reasonText, evidence);
 		return;
 	}
 
@@ -6544,15 +6552,17 @@ void PlayerLifecycleSystem::HandleTravelEnterSceneReply(entt::entity playerEntit
 }
 
 void PlayerLifecycleSystem::WithdrawHandoffMark(Guid playerId, uint64_t markEpoch, uint64_t requestedAtMs,
-												   const char *site)
+												   const char *site, const std::string& holderFence, const std::string& publishedFence)
 {
+    const auto revoked = handoff_sql_barrier::RotateFence(holderFence, handoff_sql_barrier::FenceState::kRevoked);
+    if (!revoked) return;
 	// 先登记、后发命令:哪怕命令当场发不出去,IsSceneChangeBusy 这道闸也已经立起来了。
 	const auto now = handoff_mark_withdraw::Clock::now();
 	std::optional<handoff_mark_withdraw::Entry> evicted;
 	tlsHandoffWithdrawQueue.Add(playerId, player_ownership::HandoffRedisValue(markEpoch, requestedAtMs), now,
 								std::chrono::seconds(player_ownership::kHandoffMarkTtlSec) +
 									handoff_mark_withdraw::kDeadlineMargin,
-								evicted);
+								evicted, holderFence, publishedFence, *revoked);
 	if (evicted.has_value())
 	{
 		// 表满只可能出现在 Redis 长时间不通、且期间有 kMaxPending 个交接作废。被淘汰的那一条此后只剩
@@ -6828,6 +6838,54 @@ bool PlayerLifecycleSystem::ConcludeHandoffAfterMarkSent(Guid playerId, travel_f
 	return true;
 }
 
+void PlayerLifecycleSystem::ResumeTravelAfterRevocation(Guid playerId, uint64_t requestedAtMs, uint64_t targetEpoch,
+    const std::string& originalLocation, const std::string& reason, travel_outcome::Evidence evidence)
+{
+    const auto entity = tlsEcs.GetPlayer(playerId);
+    auto* travel = tlsEcs.actorRegistry.valid(entity) ? tlsEcs.actorRegistry.try_get<PlayerTravelHandoffComp>(entity) : nullptr;
+    if (!travel || travel->requestedAtMs != requestedAtMs || travel->cancellationPending) return;
+    auto record = handoff_sql_barrier::ParseFence(travel->revokedFence);
+    if (!record || record->state != handoff_sql_barrier::FenceState::kRevoked) return;
+    const auto oldEpoch = record->ownerEpoch;
+    if (targetEpoch != oldEpoch && (oldEpoch > UINT64_MAX - 2 || targetEpoch != oldEpoch + 2)) return;
+    if (travel->resumeFence.empty()) {
+        record->ownerEpoch = targetEpoch; record->state = handoff_sql_barrier::FenceState::kHeld;
+        record->token = handoff_sql_barrier::NewFenceToken();
+        const auto candidate = handoff_sql_barrier::EncodeFence(*record);
+        if (!candidate) return;
+        travel->resumeFence = *candidate;
+        travel->resumeOwnerEpoch = targetEpoch;
+        travel->resumeLocation = originalLocation;
+    }
+    if (targetEpoch != travel->resumeOwnerEpoch || originalLocation != travel->resumeLocation) return;
+    const auto next = std::optional<std::string>(travel->resumeFence);
+    auto& redis = tlsRedis.GetZoneRedis();
+    if (!next || !redis || !redis->connected()) return;
+    const auto original = travel->holderFence;
+    const auto revoked = travel->revokedFence;
+    const auto frozenAt = travel->frozenAtSteady;
+    travel->cancellationPending = true;
+    const int sent = redis->command([playerId, entity, original, frozenAt, targetEpoch, oldEpoch, next = *next, reason, evidence]
+        (hiredis::Hiredis*, redisReply* reply) {
+        if (tlsEcs.GetPlayer(playerId) != entity || !tlsEcs.actorRegistry.valid(entity)) return;
+        auto* pending = tlsEcs.actorRegistry.try_get<PlayerTravelHandoffComp>(entity);
+        auto* owner = tlsEcs.actorRegistry.try_get<PlayerOwnerEpochComp>(entity);
+        if (!pending || !owner || pending->holderFence != original || pending->frozenAtSteady != frozenAt) return;
+        pending->cancellationPending = false;
+        if (!reply || reply->type != REDIS_REPLY_INTEGER || reply->integer != 1) return;
+        owner->epoch = targetEpoch; owner->handoffFence = next;
+        pending->revokedFence = next; pending->markEpoch = 0;
+        if (targetEpoch != oldEpoch) travel_handoff_stats::Inc(travel_handoff_stats::Get().rolledBackAdopted);
+        AbortTravelHandoff(playerId, reason.c_str(), evidence != travel_outcome::Evidence::kSucceeded);
+        if (targetEpoch != oldEpoch) SavePlayerToRedisImpl(entity, false);
+    }, "EVAL %s 4 %s %s %s %s %b %b %s %b", handoff_sql_barrier::kResumeFenceLua.c_str(),
+        player_ownership::OwnerEpochRedisKey(playerId).c_str(), ("player:{" + std::to_string(playerId) + "}:save_barrier").c_str(),
+        player_ownership::HandoffRedisKey(playerId).c_str(), player_ownership::LocationRedisKey(playerId).c_str(),
+        revoked.data(), revoked.size(), next->data(), next->size(), std::to_string(targetEpoch).c_str(),
+        originalLocation.data(), originalLocation.size());
+    if (sent != REDIS_OK) travel->cancellationPending = false;
+}
+
 void PlayerLifecycleSystem::AbortTravelHandoff(Guid playerId, const char *reason, bool notifyFailure)
 {
 	const auto playerEntity = tlsEcs.GetPlayer(playerId);
@@ -6840,6 +6898,46 @@ void PlayerLifecycleSystem::AbortTravelHandoff(Guid playerId, const char *reason
 	{
 		return; // 已经没有交接意图(应答与看门狗只有一个能赢),幂等
 	}
+    auto* mutableTravel = tlsEcs.actorRegistry.try_get<PlayerTravelHandoffComp>(playerEntity);
+    const auto* holder = tlsEcs.actorRegistry.try_get<PlayerOwnerEpochComp>(playerEntity);
+    const auto resumed = handoff_sql_barrier::ParseFence(travel->revokedFence);
+    const bool confirmed = resumed && resumed->state == handoff_sql_barrier::FenceState::kHeld
+        && holder && holder->handoffFence == travel->revokedFence;
+    if (!confirmed) {
+        if (travel->cancellationPending) return;
+        if (mutableTravel->cancelFence.empty()) {
+            const auto candidate = handoff_sql_barrier::RotateFence(travel->holderFence, handoff_sql_barrier::FenceState::kHeld);
+            if (!candidate) return;
+            mutableTravel->cancelFence = *candidate;
+        }
+        const auto next = std::optional<std::string>(mutableTravel->cancelFence);
+        auto& redis = tlsRedis.GetZoneRedis();
+        if (!next || !redis || !redis->connected()) return; // 保持冻结，不以TTL推断撤销成功。
+        mutableTravel->cancellationPending = true;
+        const auto original = travel->holderFence;
+        const auto published = travel->publishedFence.empty() ? original : travel->publishedFence;
+        const auto stamp = travel->requestedAtMs;
+        const auto frozenAt = travel->frozenAtSteady;
+        const std::string reasonText = reason;
+        const int sent = redis->command([playerId, playerEntity, original, next = *next, frozenAt, reasonText, notifyFailure]
+            (hiredis::Hiredis*, redisReply* reply) {
+            if (tlsEcs.GetPlayer(playerId) != playerEntity || !tlsEcs.actorRegistry.valid(playerEntity)) return;
+            auto* pending = tlsEcs.actorRegistry.try_get<PlayerTravelHandoffComp>(playerEntity);
+            auto* owner = tlsEcs.actorRegistry.try_get<PlayerOwnerEpochComp>(playerEntity);
+            if (!pending || !owner || pending->holderFence != original || pending->frozenAtSteady != frozenAt) return;
+            pending->cancellationPending = false;
+            if (!reply || reply->type != REDIS_REPLY_INTEGER) return;
+            if (reply->integer != 1) { DestroyDeposedPlayer(playerId, "handoff qualification superseded"); return; }
+            owner->handoffFence = next; pending->revokedFence = next; pending->markEpoch = 0;
+            AbortTravelHandoff(playerId, reasonText.c_str(), notifyFailure);
+        }, "EVAL %s 3 %s %s %s %b %b %b %s", handoff_sql_barrier::kRevokeFenceLua.c_str(),
+            player_ownership::OwnerEpochRedisKey(playerId).c_str(),
+            ("player:{" + std::to_string(playerId) + "}:save_barrier").c_str(), player_ownership::HandoffRedisKey(playerId).c_str(),
+            original.data(), original.size(), published.data(), published.size(), next->data(), next->size(), std::to_string(stamp).c_str());
+        if (sent != REDIS_OK) mutableTravel->cancellationPending = false;
+        return;
+    }
+
 	// 先抄后摘:失败 tip 按"这是哪一种交接"选、标记原文靠 markEpoch + requestedAtMs 还原,
 	// 摘掉组件就无从知道了。
 	const bool crossZone = (travel->targetZoneId != GetZoneId());
@@ -6878,10 +6976,6 @@ void PlayerLifecycleSystem::AbortTravelHandoff(Guid playerId, const char *reason
 	// markEpoch == 0 = 盘上没有这份标记:写标记的 SET 从没发出去过(存盘看门狗 / epoch 未知 / Redis 未连接 / 命令没
 	// 发出去)、SET 收到 ERROR 应答(HandleTravelMarkWriteRejected),或 ResolveTravelOutcome 的取证脚本已在同一原子
 	// 步骤里删掉了本族标记(判定表 B4 / B5)。不登记,免得一个根本不存在的标记把玩家挡在换图之外。
-	if (handoffMarkEpoch != 0 && handoffRequestedAtMs != 0)
-	{
-		WithdrawHandoffMark(playerId, handoffMarkEpoch, handoffRequestedAtMs, "abort");
-	}
 
 	if (!notifyFailure)
 	{

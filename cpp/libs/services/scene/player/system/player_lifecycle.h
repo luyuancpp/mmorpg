@@ -1649,6 +1649,8 @@ private:
 	//   notifyFailure = false → 静默解冻。只用于"同 zone 重发后落回了本节点":换图其实成功了,场景由
 	//                           PlayerEnterGameNode → EnterScene 就地切换,再发失败 tip 是误报。
 	static void AbortTravelHandoff(Guid playerId, const char *reason, bool notifyFailure = true);
+    static void ResumeTravelAfterRevocation(Guid playerId, uint64_t requestedAtMs, uint64_t targetEpoch,
+        const std::string& originalLocation, const std::string& reason, travel_outcome::Evidence evidence);
 
 	// handoff 标记的 SET 发出之后(requestedAtMs != 0),凡是"应答本身不足以判定去留"的情形都走这里,先判清楚有没有被
 	// 放行(GO-2 判定表,cross-zone-scene-travel.md §12.8)。取证是**一次** EVAL travel_outcome::kLuaJudgeTravelOutcome:

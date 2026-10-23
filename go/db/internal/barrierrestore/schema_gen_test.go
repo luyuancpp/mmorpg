@@ -1,6 +1,7 @@
 package barrierrestore
 
 import (
+    "strings"
 	"context"
 	"database/sql/driver"
 	"testing"
@@ -48,7 +49,8 @@ func TestSchemaGenRestoreUsesSQLMinimumAndOverwritesIndex(t *testing.T) {
 				require.Equal(t, tc.want, cache.HGet(savebarrier.Key(7), "schema_gen"))
 				fields, err := r.Redis.HGetAll(context.Background(), savebarrier.Key(7)).Result()
 				require.NoError(t, err)
-				require.Len(t, fields, 4)
+				require.Len(t, fields, 5)
+                assertRestoredFence(t, fields["handoff_fence"], "8", "", "0", strings.Repeat("0", 32))
 			}
 			require.Equal(t, beforeRows, store.rows, "世代索引恢复不能改SQL原戳或资产")
 			require.Zero(t, store.commits)
@@ -72,7 +74,7 @@ func TestSchemaGenRestoreAcceptsAndClearsWriterFields(t *testing.T) {
 		fields, err := r.Redis.HGetAll(context.Background(), savebarrier.Key(7)).Result()
 		require.NoError(t, err)
 		require.Equal(t, map[string]string{"pending": version, "player_database": version, "player_database_1": version,
-			"schema_gen": "4"}, fields)
+			"schema_gen": "4", "handoff_fence": assertRestoredFence(t, fields["handoff_fence"], "8", "", "0", strings.Repeat("0", 32))}, fields)
 	}
 	require.Zero(t, store.commits)
 }
@@ -204,7 +206,7 @@ func TestSchemaGenRecoveryAcrossRedisSplitAndDBFirst(t *testing.T) {
 				require.NoError(t, r.ApplyOne(context.Background(), plan, 0))
 				got, err := r.Redis.HGetAll(context.Background(), savebarrier.Key(7)).Result()
 				require.NoError(t, err)
-				require.Equal(t, map[string]string{"pending": plan.Players[0].Target, "player_database": plan.Players[0].Target, "player_database_1": plan.Players[0].Target, "schema_gen": "4"}, got) // 两行 7 与 4 取最小值
+				require.Equal(t, map[string]string{"pending": plan.Players[0].Target, "player_database": plan.Players[0].Target, "player_database_1": plan.Players[0].Target, "schema_gen": "4", "handoff_fence": assertRestoredFence(t, got["handoff_fence"], "8", "", "0", strings.Repeat("0", 32))}, got) // 两行 7 与 4 取最小值
 			}
 			require.Equal(t, 1, store.commits)
 			if dbFirst {

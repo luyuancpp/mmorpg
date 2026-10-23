@@ -5,6 +5,7 @@ package barrierrestore
 import (
 	"context"
 	"crypto/sha256"
+	"crypto/rand"
 	"database/sql"
 	"encoding/binary"
 	"encoding/hex"
@@ -503,7 +504,14 @@ func (r Restorer) inspect(ctx context.Context, p Plan, row Player, publish, comm
 		}
 		keys = keys[:72]
 	}
-	n, err := restoreScript.Run(ctx, r.Redis, keys, p.MaintenanceID, row.Owner, row.Target, write, allowExisting, row.HomeZone, row.Placement, strconv.FormatUint(uint64(schemaGen), 10)).Int()
+    // 首次读取的原件只作为本次 Lua CAS 输入；不能缺省空字段冒缺键。
+    prior, err := r.Redis.HGet(ctx, savebarrier.Key(id), "handoff_fence").Result()
+    if errors.Is(err, redis.Nil) { prior = "" } else if err != nil { return fmt.Errorf("读取交接资格下限: %w", err) } else if prior == "" {
+        return errors.New("交接资格下限为空值")
+    }
+    var token [16]byte
+    if _, err := rand.Read(token[:]); err != nil { return fmt.Errorf("轮换交接撤销令牌: %w", err) }
+	n, err := restoreScript.Run(ctx, r.Redis, keys, p.MaintenanceID, row.Owner, row.Target, write, allowExisting, row.HomeZone, row.Placement, strconv.FormatUint(uint64(schemaGen), 10), prior, hex.EncodeToString(token[:])).Int()
 	if err != nil {
 		return fmt.Errorf("维护屏障检查拒绝: %w", err)
 	}

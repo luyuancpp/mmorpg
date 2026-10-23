@@ -63,7 +63,7 @@ func EnsurePlayerAllDataInRedisAsync(
 func ensurePlayerAllDataInRedisAsync(ctx context.Context, rc redis.Cmdable, scripts parentLoadScripts,
 	verifyOnIdentityChange bool, disp readResultRegistrar, producer dbTaskProducer, playerId uint64,
 	perTaskTTL time.Duration, onComplete func(error)) {
-	// 骨架与建角写的新号种子同源(newPlayerAllDataSkeleton):子表读空时父键就是它。
+	// 先建解码容器；任一 SQL Data 缺失必须拒绝，不能把此容器当真实初始行。
 	parent := newPlayerAllDataSkeleton(playerId)
 	parentKey := buildParentKey(parent, playerId)
 

@@ -165,11 +165,12 @@ func setProofFence(t *testing.T, db *sql.DB, player, epoch, seq uint64) {
 
 func TestTiDBRoleAdmissionStrongSQLProofRejectsUnsyncedRowsAndKeepsReceipt(t *testing.T) {
 	d, global := accountDirectoryTiDB(t)
-	id, _, rows := roleProofStorage(t, global, 11)
 	ctx, cancel := context.WithTimeout(context.Background(), 40*time.Second)
 	defer cancel()
 	_, err := createInitialRoleForTest(d, ctx, "seller", &base.AccountSimplePlayer{ZoneId: 1, PlayerId: 11})
 	require.NoError(t, err)
+	// 目录按正式初始事务建立后，本例再把路由切到专门的旧版/追盘证据夹具。
+	id, _, rows := roleProofStorage(t, global, 11)
 	v, err := NewSQLRoleFreezeVerifier([]uint32{id})
 	require.NoError(t, err)
 	trades, admissions := newTestAccountRoleTradeStore(d, v), NewAccountRoleAdmissionStore(d)
@@ -212,11 +213,12 @@ func TestTiDBRoleAdmissionStrongSQLProofRejectsUnsyncedRowsAndKeepsReceipt(t *te
 
 func TestTiDBRoleAdmissionSQLProofNoAdmissionAndHistoricalFloor(t *testing.T) {
 	d, global := accountDirectoryTiDB(t)
-	id, _, rows := roleProofStorage(t, global, 11)
 	ctx, cancel := context.WithTimeout(context.Background(), 40*time.Second)
 	defer cancel()
 	_, err := createInitialRoleForTest(d, ctx, "seller", &base.AccountSimplePlayer{ZoneId: 1, PlayerId: 11})
 	require.NoError(t, err)
+	// 目录按正式初始事务建立后，本例再把路由切到专门的旧版/追盘证据夹具。
+	id, _, rows := roleProofStorage(t, global, 11)
 	v, err := NewSQLRoleFreezeVerifier([]uint32{id})
 	require.NoError(t, err)
 	trades := newTestAccountRoleTradeStore(d, v)
@@ -280,11 +282,12 @@ func TestTiDBRoleAdmissionRegisterAndBeginShareCommitLock(t *testing.T) {
 
 func TestTiDBRoleAdmissionSQLProofRejectsRouteAndSchemaFailures(t *testing.T) {
 	d, global := accountDirectoryTiDB(t)
-	id, _, rows := roleProofStorage(t, global, 11)
 	ctx, cancel := context.WithTimeout(context.Background(), 40*time.Second)
 	defer cancel()
 	_, err := createInitialRoleForTest(d, ctx, "seller", &base.AccountSimplePlayer{ZoneId: 1, PlayerId: 11})
 	require.NoError(t, err)
+	// 目录按正式初始事务建立后，本例再把路由切到专门的旧版/追盘证据夹具。
+	id, _, rows := roleProofStorage(t, global, 11)
 	v, err := NewSQLRoleFreezeVerifier([]uint32{id})
 	require.NoError(t, err)
 	trades := newTestAccountRoleTradeStore(d, v)

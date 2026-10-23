@@ -2,9 +2,11 @@
 
 状态：**实现与验收均未全部完成**。除了剩余编译、真库与双区验收，还须闭合首存前新号恢复、Java 历史快照缺失、迟到释放标记和历练丢失终局的安全恢复问题，不能概括为“只剩跑测试”。本文件是负责人要求的审核入口；完整实施过程与失败原件见 [原交接](global-economy-review-20261021.md)。下面的历史通过结果只覆盖其记录的源码、依赖、环境与命令，不能替代后来变化的源码或重启后的数据库验收。
 
-当前剩余工作按交付结果分为四块：三项数据安全修复及其完整调用链、最新三语言构建与回归、剩余真库专项、两版完整双区与故障验收。Unity 最新 Guild 的 234 项已通过。Go 初始 SQL 提交和 C++ 迟到回调围栏仍在实现；Java 缺快照修复已应用，但完整 Store 尚未通过。历练已启动后丢失终局的安全恢复仍是开放项，不因本轮三项修复而自动闭合。
+当前剩余工作按交付结果分为四块：三项数据安全修复及其完整调用链、最新三语言构建与回归、剩余真库专项、两版完整双区与故障验收。Unity 最新 Guild 的 234 项已通过。Go 初始 SQL 提交和 C++ 迟到回调围栏仍在实现；Java 缺快照修复已应用，完整 Store 普通回归已通过，真 TiDB 与下游 Data 仍须验收。历练已启动后丢失终局的安全恢复仍是开放项，不因本轮三项修复而自动闭合。
 
 最新实际失败也保留在账：Java M9 原 3000 行／20 区夹具确实选择 `TableFullScan`，不是 EXPLAIN 解析遗漏；后继只调整有明确选择性的索引夹具，保留原分布的查询正确性核验，不修改生产索引或强制执行计划，不把该适配当作容量结论。Java Store 修后完整 176 项取得 165 PASS、1 FAIL、2 ERROR、8 SKIP；新增五项全过，但三处旧夹具仍假定建角没有初始状态，正同步适配。两次原件分别为 `C:/Users/luyua/.codex/tmp/java-external-current-green-full-candidate-20261023-r21-m9-diagnostic/run-TiDB-game-data-20261023T084652395Z-e66471e9/proof.json`（SHA `85A36E712CA5092A14B1EA47028198DDECA736DB285387B3918B6C1B9DFA3BE5`）与 `C:/Users/luyua/.codex/tmp/java-current-b0b7551-current-epoch-preparation-r1/player-state-presence-green-r1/run-PlayerStoreBuild/proof.json`（SHA `DA4B3A1D42100ADF465D221E6BB683EB9F2AE6F3041961E3F49BB5BE6877FA42`）。
+
+三处旧夹具适配后的完整 Store 后继实际执行 **176 项：168 PASS、8 个原有外部 SKIP，原生命令退出 0**。归档脚本曾误核另一个模块的文件名，原失败保留；仅纠正该路径并复核正确 Store GAV、归档／安装 JAR SHA、全部输入、逐项 XML 与所属进程退出后，独立尾封续接通过，未重复 Maven、未回写原失败。后继原件 `C:/Users/luyua/.codex/tmp/java-current-b0b7551-current-epoch-preparation-r1/player-state-presence-green-archive-successor-r2/proof.json`，SHA `7B96164CDD760CD55BD5F5FBC668C780ED285A538F212CBD20ECAD7DAAC36C8B`。本轮新增 SQL 回归在此使用 H2，不能冒称已取得真 TiDB 初始提交证据；仍须完整适用真库集合，以及新 Store 的下游与完整 30 模块重建。
 
 ## 1. 最新版本与改动归属
 
@@ -12,13 +14,15 @@
 
 | 仓库 | HEAD | 保护范围 |
 | --- | --- | --- |
-| `D:/luyuan/xuanming-server-mmo-cpp` | `2c07f2c28c627f2559f76b6699d82c4aa8aa05dd` | 保留负责人新保存的提交、子模块既有状态、生成器、存盘、路由与并行修复 |
-| `D:/luyuan/xuanming-server-mmo` | `e16d2f9c25d75a999b2d739e7ced4f271a8dd6c0` | 保留最新刷新令牌家族模型及后继修复，在其基础上接齐流程 |
+| `D:/luyuan/xuanming-server-mmo-cpp` | `9d2784fbf3e3009cada8ce66cb98d6f604434ffe` | 保留新保存的提交、子模块既有状态、生成器、存盘、路由与并行修复；其中包含本批尚未收尾的部分代码，提交不等于验收完成 |
+| `D:/luyuan/xuanming-server-mmo` | `393be2a2fd5eabf751dd65925b5a12b7ff12a2a2` | 保留最新刷新令牌家族、快照存在性与后继夹具修复，在其基础上继续验证 |
 | `D:/luyuan/mmorpg-client` | `242e35060a7364bb2d3a28bfb2581b04e530f290` | 保留最新帮会经济恢复提示与断言；使用 CurrentMaps，不恢复旧天墉城，不覆盖新地图、资源、prefab 或 meta |
 
 Go 权威源码目录是主仓的 `D:/luyuan/xuanming-server-mmo-cpp/go`，Robot 在同仓 `robot`；验收私有副本只按这些来源的已审清单复制。负责人明确 `D:/luyuan/xuanming-server` 是另一方向的服务器，**排除在本任务源码、依赖、运行包和验收范围之外，不访问或修改该目录**。路径核对按完整目录段，不能用相似前缀混淆两个仓库。
 
 三仓均不是本任务独占工作区。**不要把整仓 `git diff` 归为本批，也不要用旧提交文件覆盖当前文件。** 原交接 §3、§8–60 与分批输入快照用于定位本任务接缝；输入快照是验证输入清单，不自动等于本任务作者清单。尚无逐行完整归属清单，不能声称所有 dirty 均由本任务产生。本任务没有 commit、push 或 tag。
+
+续验期间新保存的两次提交已纳入上表；此前主仓 `2c07f2c28`、Java `e16d2f9c` 的验证仍保留其原始提交说明。Java Data 下一阶段在 Maven 启动前检测到 HEAD 变化而拒绝，原件 `C:/Users/luyua/.codex/tmp/java-current-b0b7551-current-epoch-preparation-r1/data-state-safety-green-r1/run-DataBuild/proof.json`，SHA `84797856F29F135328A308855FEC10D76C79DAE75EDDEBFBE64085087F8DBD13`；完整 2664 项已记录源字节与阶段前清单相同，后继更新真实提交号后继续，不回退文件、不重复已成功的 Store 测试。该次原生启动数为 0，不能算一次编译失败或通过。
 
 ## 2. 已实现的主要接缝与审核重点
 

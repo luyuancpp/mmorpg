@@ -188,6 +188,10 @@ struct PlayerTravelHandoffComp
 	std::string holderFence;
 	std::string publishedFence;
 	std::string revokedFence;
+	std::string resumeFence; // 发出前固定，已提交丢回包只重放同一候选
+	std::string resumeLocation;
+	uint64_t resumeOwnerEpoch{0};
+	std::string cancelFence;
 	bool cancellationPending{false};
 	bool cancellationNotifyFailure{true};
 	std::string cancellationReason;

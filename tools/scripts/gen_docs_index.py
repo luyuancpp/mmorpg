@@ -46,7 +46,7 @@ DESIGN_RULES = [
         "async-load-disconnect-reconnect-race.md", "redis-async-client-retry-fix.md",
     ]),
     ("协议与配表工具链", [
-        "proto-*", "proto3_*", "pbgen_notes*", "excel-6row-header-format*", "tip-code-axis.md",
+        "proto-*", "proto3_*", "excel-6row-header-format*", "tip-code-axis.md",
         "generated-table-header-decoupling-plan.md",
     ]),
     ("ID、节点身份与寻址", [
