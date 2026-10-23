@@ -241,7 +241,6 @@ Redis 物理水平扩展的用户目标、当前存盘链问题、源码入口�
 - [published-contract-compatibility-20261017.md](design/published-contract-compatibility-20261017.md) — 两套已发布契约的合并兼容方案（双入口方向已批准；来源与实施状态见文内）
 - [excel-6row-header-format.md](design/excel-6row-header-format.md) — 配置表格式说明入口（旧六行表头已停用） · [EN](design/excel-6row-header-format_en.md) · [中文](design/excel-6row-header-format_zh.md)
 - [generated-table-header-decoupling-plan.md](design/generated-table-header-decoupling-plan.md) — 交接：mmorpg 导表器生成头文件解耦（①exprtk ②FK声明化 ③muduo）
-- [proto-event-message-suffix-rename-2026-06.md](design/proto-event-message-suffix-rename-2026-06.md) — Proto Event Message Suffix Rename (2026-06)
 - [proto-scene-file-rename-2026-04.md](design/proto-scene-file-rename-2026-04.md) — Proto Scene File Rename (2026-04)
 - [proto3_enum_zero_requirement.md](design/proto3_enum_zero_requirement.md) — Proto3 Enum Zero Requirement · [EN](design/proto3_enum_zero_requirement_en.md) · [中文](design/proto3_enum_zero_requirement_zh.md)
 - [tip-code-axis.md](design/tip-code-axis.md) — tip 码轴：段是发号器的输入

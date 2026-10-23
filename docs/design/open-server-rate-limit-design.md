@@ -55,7 +55,7 @@ HTTP JSON 使用 snake_case，字段以 [LoginResponse](../../java/gateway_node/
 | assign 的 `code=100, queue_source="login"` | login 真队列返回 queue_token、queue_rank、queue_total；rank 从 0 开始。 |
 | `code=429` | IP 桶或账号冷却拒绝；assign 的 error 为 IP_RATE_LIMIT / ACCOUNT_COOLDOWN，login 使用其 DTO 的 message。 |
 | assign 的 `code=0` | 返回 gate_ip、gate_port、token_payload、token_signature、token_deadline。 |
-| `code=410` | 排队令牌失效，丢弃 token 后重新入队。 |
+| `code=410` | 排队令牌失效，丢弃 token 后重新调用 assign-gate；后续可能放行或重新排队。 |
 | `code=404` 或 `503 zone_*` | 区服不存在、维护、关闭或未开放；属于业务终态，不能当作状态查询网络失败重入。 |
 
 原稿的 `wait_estimate_sec`、`token/deadline` 示例不再作为当前字段契约。
@@ -208,6 +208,7 @@ J1 未做：先扣 zone 再判 IP 的顺序不变，风险见 R13。冷却本身
 
 本仓 [robot 状态机](../../robot/http_assign_gate.go)已实现持票查询、抖动、恢复重入与预算检查，
 [回归测试源码](../../robot/http_assign_gate_test.go)覆盖相关分支；本次未运行。
+预算检查覆盖重试阶段的等待、恢复重入与 410 重调；首个 assign-gate 仍会执行，不保证已过期 ctx 零请求。
 robot 无票分支保留既有差异：100 不加抖动，429 直接交外层；410 换票时不主动清失败退避计数。
 已发出的 HTTP 请求按自身 perCallTimeout 完成，不随排队 ctx 立即取消，截止后收到 code=0 仍按放行处理。
 独立客户端与独立 Java 版的实现状态需各自任务验收，本次没有读取或修改它们。

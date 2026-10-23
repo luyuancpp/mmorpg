@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	playerpb "proto/common/database"
 	db_proto "proto/db"
 	"runtime/debug"
 	"strconv"
@@ -518,8 +519,8 @@ func handleDBReadOp(
 		}
 		// 玩家双表已由正式 Create 原子建立；缺行代表权威历史缺口，不能把带 id 的读请求原样发布为存档。
 		switch msg.ProtoReflect().Descriptor().FullName() {
-		case (&player_database.PlayerDatabase{}).ProtoReflect().Descriptor().FullName(),
-			(&player_database.PlayerDatabase_1{}).ProtoReflect().Descriptor().FullName():
+		case (&playerpb.PlayerDatabase{}).ProtoReflect().Descriptor().FullName(),
+			(&playerpb.PlayerDatabase_1{}).ProtoReflect().Descriptor().FullName():
 			return writeOutcome{}, errMissingPlayerSQLRow
 		}
 	}

@@ -230,7 +230,7 @@ func register() {
 		for _, reason := range deadLetterReasons {
 			taskDeadLetterTotal.WithLabelValues(reason).Add(0)
 		}
-		for _, reason := range []string{ReadAbandonedStoreUnavailable, ReadAbandonedBudgetExhausted, ReadAbandonedSchemaTooNew} {
+		for _, reason := range []string{ReadAbandonedStoreUnavailable, ReadAbandonedBudgetExhausted, ReadAbandonedSchemaTooNew, ReadAbandonedMissingPlayerRow} {
 			taskReadAbandonedTotal.WithLabelValues(reason).Add(0)
 		}
 		// 世代仪表在 SetPersistSchemaGen / SetPersistSchemaBootstrapClosed 里赋值;计数器注册即以 0 存在。
@@ -339,6 +339,7 @@ const (
 	ReadAbandonedStoreUnavailable = "store_unavailable" // 库打不开或在冷却期内:立即回失败回执
 	ReadAbandonedBudgetExhausted  = "budget_exhausted"  // 重试次数用完:丢弃,不进死信
 	ReadAbandonedSchemaTooNew     = "schema_too_new"    // 行的持久 schema 世代高于本实例(C2):立即回失败回执,不回填缓存
+	ReadAbandonedMissingPlayerRow = "player_row_missing" // 正式玩家双表缺行：立即回失败，不把请求体冒充真实存档
 )
 
 // SetPersistSchemaGen 记下本二进制的持久 schema 世代,启动时调用一次。

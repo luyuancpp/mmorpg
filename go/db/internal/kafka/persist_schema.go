@@ -213,17 +213,24 @@ func logSchemaTooNew(dbTask *db_proto.DBTask, cause error) {
 // failReadSchemaTooNew 以失败回执结束一条读(C2):旧版 go/db 读不到新列,冷加载拿到的会是截断副本。
 // 立即回失败、不回填缓存、不进重试:等待方(login 预加载)按既有失败路径收尾,玩家稍后重试时由新版实例处理。
 func (w *worker) failReadSchemaTooNew(task *workerTask, dbTask *db_proto.DBTask, cause error) {
+	w.failReadAuthority(task, dbTask, metrics.ReadAbandonedSchemaTooNew, cause)
+}
+
+var errMissingPlayerSQLRow = errors.New("玩家 SQL 权威历史行缺失")
+
+// 两种确定的权威读拒绝均不进入重试；失败通知发布失败仍沿原可靠延后，不丢原任务。
+func (w *worker) failReadAuthority(task *workerTask, dbTask *db_proto.DBTask, reason string, cause error) {
 	if dbTask.TaskId != "" {
-		failure := &db_proto.TaskResult{Success: false, Error: metrics.ReadAbandonedSchemaTooNew}
+		failure := &db_proto.TaskResult{Success: false, Error: reason}
 		if err := publishTaskResult(w.ctx, w.redisClient, dbTask, failure); err != nil {
-			w.deferFailedTask(task, dbTask, fmt.Errorf("publish schema-too-new failure result: %w", err))
+			w.deferFailedTask(task, dbTask, fmt.Errorf("publish authority read failure result: %w", err))
 			return
 		}
 	}
-	metrics.CountReadAbandoned(metrics.ReadAbandonedSchemaTooNew)
-	if ok, suppressed := storeLogLimiter.allow("read_"+metrics.ReadAbandonedSchemaTooNew, time.Now()); ok {
-		logx.Errorf("read answered with a failure result, row persist schema generation newer than this go/db: taskID=%s msgType=%s suppressed_since_last=%d cause=%v",
-			dbTask.TaskId, dbTask.MsgType, suppressed, cause)
+	metrics.CountReadAbandoned(reason)
+	if ok, suppressed := storeLogLimiter.allow("read_"+reason, time.Now()); ok {
+		logx.Errorf("权威读取已回失败，不发布玩家缓存: reason=%s taskID=%s msgType=%s suppressed_since_last=%d cause=%v",
+			reason, dbTask.TaskId, dbTask.MsgType, suppressed, cause)
 	}
 	if task.fromRetry {
 		if err := ackRetryReceipt(w.ctx, w.redisClient, w.retryProcessingKey, task.retryReceipt); err != nil {
