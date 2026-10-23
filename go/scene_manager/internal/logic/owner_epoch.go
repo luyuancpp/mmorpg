@@ -21,9 +21,10 @@ import (
 // 两把键的格式契约在 shared/ownerepoch(Go 与 C++ 两边一字不差)。本文件只放
 // scene_manager 自己的读写:
 //
-//  1. 铸造 + CAS 写 location 的 Lua(placePlayerLocation 用);
-//  2. 路由 / 重定向投递失败后的**单调**回滚(GO-2 根治,cross-zone-scene-travel.md §12.8):
-//     location 退回本次写入之前的值,铸造过的 epoch 再 INCR 一格(N+1 → N+2),从不退回旧值;
+//  1. 铸造 + CAS 写 location 的 Lua(placePlayerLocation 用),铸造值取墙钟地板、铸造后先等 WAITAOF 落盘确认
+//     (docs/design/zone-redis-regression-guard-20261022.md §4.3 G3a / G3b);
+//  2. 路由 / 重定向投递失败(含铸造没确认落盘)后的**单调**回滚(GO-2 根治,cross-zone-scene-travel.md §12.8):
+//     location 退回本次写入之前的值,铸造过的 epoch 再 INCR 一格(铸出 M → M+1),从不退回旧值;
 //     凭标记铸造的回滚以「所凭标记原样还在」为前提,同时在恢复出的 location 里写回滚回执、把
 //     标记转写到新 epoch。例外 keep:没铸造的落点,以及同物理节点 epoch 0 的铸造(§12.6.9(c)),
 //     只退 location、epoch 键不动;
@@ -33,10 +34,15 @@ import (
 // 闸口推进,而且**只在持有者真的换了的时候**推进:首次落点、过了换手门的跨节点
 // 交接、放行跨 zone 交接、等待落点的第二条腿。新值随路由事件带给目标节点;C++
 // 存盘用 Lua 比对「缓存值 == Redis 当前值」,老 epoch 的写一律被拒。
-// epoch 只经 INCR 前进 —— 路由失败的回滚也是 INCR,任何值都不会被铸两次(补种只按 location
-// 记录值补回缺失的键,见 enterscenelogic.go sameNodeZeroMint 一段)。除下面「唯一例外」里的同节点 epoch 0
+// epoch 只升不降:铸造取 max(当前值 + 1, 当前毫秒墙钟)(G3a 墙钟地板),路由失败的回滚 INCR 一格;任何值都不会被
+// 铸两次(补种只按 location 记录值补回缺失的键,见 enterscenelogic.go sameNodeZeroMint 一段)。墙钟地板让 zone Redis
+// 回退之后的第一次铸造越过回退前的一切铸造(前提:SM 副本间时钟偏差小于「回退前最后一次铸造」到「回退后第一次铸造」的
+// 间隔),不会把回退前已经发给某个节点的值再铸一次给另一个节点。除下面「唯一例外」里的同节点 epoch 0
 // 铸造外,bump 回滚是另一种「持有者没换也推进」的情形:它让被回滚掉的那个值作废,仍持有玩家的源 scene
 // 凭 location 里的回滚回执采纳新值。
+// 因为铸造不再是「恰好 +1」,任何判据都不得依赖「铸造恰好前进一格」或「回滚之后恰好比标记 epoch 大 2」:
+// 铸造的重放识别比的是本请求自己算出的目标值(ARGV[9]);C++ 源端采纳回滚只要求回滚后的 epoch ≥ 标记 epoch + 2
+// (player_lifecycle.h travel_outcome::ClassifyOwnership)。
 //
 // 持有者没换就不许推进 —— 同节点换图、同落点重连、dev 旁路下无标记的跨节点
 // 交接都只做「epoch 不变才写 location」的 CAS。原因:持有节点要等 Kafka → gate →

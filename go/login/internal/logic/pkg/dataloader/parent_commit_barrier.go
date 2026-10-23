@@ -50,6 +50,9 @@ type parentLoadSnapshot struct {
 	// historyGap 非空:Redis 没有提交屏障，却有存档历史的迹象(owner 已铸造，或父快照不是建角种子)。
 	// 回退越过首次存盘、屏障整键丢失都会是这个样子。只有 SQL 两行可采纳时放行，否则原样返回它。
 	historyGap error
+	// unsavedNewPlayer 仅保留首存前失败的候选形状供诊断，不能证明玩家从未存盘。
+	// 缺少持久 birth 原件时，两张 SQL 行也缺失仍可能是历史丢失，必须继续拒绝 historyGap。
+	unsavedNewPlayer bool
 }
 
 // errParentBarrierNotCommitted:最近一次存盘还没有两张表都落 SQL。可重试，补投会追平。
@@ -61,6 +64,8 @@ var errParentBarrierNotCommitted = errors.New("parent SQL barrier not committed"
 type parentLoadScripts struct {
 	begin  *redis.Script
 	commit *redis.Script
+	seed   *redis.Script // 建角写种子并写身份戳(new_player_seed.go)
+	committedSeed *redis.Script // 只接收正式 SQL 初始提交回执。
 }
 
 var defaultParentLoadScripts = newParentLoadScripts(savebarrier.LuaInstanceIdentity)
@@ -69,6 +74,8 @@ func newParentLoadScripts(instanceIdentityLua string) parentLoadScripts {
 	return parentLoadScripts{
 		begin:  redis.NewScript(instanceIdentityLua + parentLoadBeginLua),
 		commit: redis.NewScript(parentLoadCommitLua),
+		seed:   redis.NewScript(instanceIdentityLua + seedNewPlayerLua),
+		committedSeed: redis.NewScript(instanceIdentityLua + committedPlayerSeedLua),
 	}
 }
 
@@ -203,8 +210,9 @@ func beginParentLoad(ctx context.Context, rc redis.Cmdable, scripts parentLoadSc
 		if snapshot.pending == "" {
 			// 首次身份补齐与铸造owner之间可断线；只允许身份字段，不猜测任何历史资产的提交上界。
 			// 不是种子就是历史缺口:只有 SQL 两行可采纳时放行(settle),C4 留给采纳出来的 SQL 父快照。
-			if ownerEpoch != 0 || !isUnownedLoginSeed(parent, playerID) {
+			if seed := isUnownedLoginSeed(parent, playerID); ownerEpoch != 0 || !seed {
 				snapshot.historyGap = errors.New("历史父快照缺少提交屏障，需要停写恢复或迁移")
+				snapshot.unsavedNewPlayer = seed
 				return snapshot, nil
 			}
 		} else {
@@ -220,6 +228,7 @@ func beginParentLoad(ctx context.Context, rc redis.Cmdable, scripts parentLoadSc
 		}
 	} else if snapshot.pending == "" && ownerEpoch != 0 {
 		snapshot.historyGap = errors.New("历史玩家父快照与提交屏障缺失，需要停写恢复")
+		snapshot.unsavedNewPlayer = true
 	}
 	return snapshot, nil
 }
@@ -232,15 +241,13 @@ const (
 	parentLoadVerify                            // 读两张 SQL 行，按 settle 判定并提交
 )
 
-// 进核验路径的原因，用作 login_parent_load_verify_total 的 trigger label，集合封闭。
+// 进核验路径的原因，供日志与排查用(指标只按结论分，见 countParentLoadVerify)。
 const (
 	verifyTriggerCold       = "cold"        // 父键缺失
 	verifyTriggerIdentity   = "identity"    // 身份戳不等于本实例身份(含身份未知)
 	verifyTriggerAckAhead   = "ack_ahead"   // ACK 高于 pending:Redis 回退的证据
 	verifyTriggerHistoryGap = "history_gap" // 屏障缺失而有存档历史的迹象
 )
-
-var verifyTriggers = []string{verifyTriggerCold, verifyTriggerIdentity, verifyTriggerAckAhead, verifyTriggerHistoryGap}
 
 // identityVerified:本实例身份已知、是主，且屏障里的身份戳就是它 —— 自上次核验以来这份副本没有丢过已确认的写。
 func (snapshot parentLoadSnapshot) identityVerified() bool {
@@ -262,6 +269,9 @@ func (snapshot parentLoadSnapshot) route(verifyOnIdentityChange bool) (parentLoa
 	switch {
 	case snapshot.historyGap != nil:
 		return parentLoadVerify, verifyTriggerHistoryGap
+	case snapshot.pending == "":
+		// 旧 LastSeq0 缓存种子不是持久基底；即使身份戳相同或止血开关关闭也必须强读 SQL。
+		return parentLoadVerify, verifyTriggerCold
 	case snapshot.state == savebarrier.BarrierAckAhead:
 		return parentLoadVerify, verifyTriggerAckAhead
 	case verifyOnIdentityChange && !snapshot.identityVerified():
@@ -404,9 +414,10 @@ func requireNoSQLHistory(sqlParent *databasepb.PlayerAllData, playerID uint64) e
 // 再经 commit 脚本原子提交。返回 nil 表示父键已就绪(沿用 Redis 父键，或已写入 SQL 组装的父键);
 // 返回的 Verdict 只用于计数，判定之前就失败时为 0。
 func (snapshot parentLoadSnapshot) settle(ctx context.Context, rc redis.Cmdable, scripts parentLoadScripts, parentKey string,
-	playerID uint64, sqlParent *databasepb.PlayerAllData, regressionMode config.PersistSchemaRegressionMode) (savebarrier.Verdict, error) {
+	playerID uint64, sqlParent *databasepb.PlayerAllData, regressionMode config.PersistSchemaRegressionMode) (verdict savebarrier.Verdict, err error) {
+	defer func() { countParentLoadVerify(verdict, err) }()
 	sqlVersion := sqlRowVersion(sqlParent.GetPlayerDatabaseData())
-	verdict, err := savebarrier.Reconcile(savebarrier.Observation{
+	verdict, err = savebarrier.Reconcile(savebarrier.Observation{
 		Pending:   snapshot.pending,
 		AckFirst:  snapshot.ackFirst,
 		AckSecond: snapshot.ackSecond,
@@ -418,13 +429,14 @@ func (snapshot parentLoadSnapshot) settle(ctx context.Context, rc redis.Cmdable,
 	}
 	switch verdict {
 	case savebarrier.VerdictConsistent:
-		if snapshot.historyGap != nil {
-			return verdict, snapshot.historyGap
-		}
 		if snapshot.pending == "" {
 			if err := requireNoSQLHistory(sqlParent, playerID); err != nil {
 				return verdict, err
 			}
+		}
+		// 空 SQL 不能证明从未存盘；没有持久 birth 原件，首存候选形状仍必须按历史缺口拒绝。
+		if snapshot.historyGap != nil {
+			return verdict, snapshot.historyGap
 		}
 		var coldParent []byte
 		if snapshot.raw == "" {

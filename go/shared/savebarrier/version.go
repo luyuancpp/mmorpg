@@ -4,7 +4,34 @@ package savebarrier
 import (
 	"fmt"
 	"strconv"
+
+	databasepb "proto/common/database"
+	"shared/generated/persistschema"
+
+	"google.golang.org/protobuf/proto"
 )
+
+// InitialOwnerEpoch/InitialSaveSeq 只供严格全新 ID 的目录和两张玩家 SQL 行共同提交使用。
+// 这不是 actor 号源：加载先采纳此地板，首任 actor 仍由 SceneManager 从 1 铸为 2。
+const InitialOwnerEpoch uint64 = 1
+const InitialSaveSeq uint64 = 1
+
+// InitialPlayerData 与初始 SQL INSERT 的列值相同，不包含注册、职业或资产等业务初值。
+func InitialPlayerData(playerID uint64) *databasepb.PlayerAllData {
+	return &databasepb.PlayerAllData{
+		PlayerDatabaseData: &databasepb.PlayerDatabase{PlayerId: playerID, FenceOwnerEpoch: InitialOwnerEpoch,
+			FenceSaveSeq: InitialSaveSeq, PersistSchemaGen: persistschema.Gen},
+		PlayerDatabase_1Data: &databasepb.PlayerDatabase_1{PlayerId: playerID, FenceOwnerEpoch: InitialOwnerEpoch,
+			FenceSaveSeq: InitialSaveSeq, PersistSchemaGen: persistschema.Gen},
+		LastSaveSeq: InitialSaveSeq,
+	}
+}
+
+// IsInitialPlayerData 拒绝额外业务内容和未知字段，不能拿任意玩家快照当成可写种子。
+func IsInitialPlayerData(parent *databasepb.PlayerAllData) bool {
+	return parent != nil && parent.GetPlayerDatabaseData().GetPlayerId() != 0 &&
+		proto.Equal(parent, InitialPlayerData(parent.GetPlayerDatabaseData().GetPlayerId()))
+}
 
 // Key 不设 TTL；恢复或合服时必须与父快照、SQL 提交证据一起处理。
 func Key(playerID uint64) string {

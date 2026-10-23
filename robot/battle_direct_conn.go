@@ -106,7 +106,8 @@ func dispatchBattleDirectDefault(client *pkg.GameClient, msg *base.MessageConten
 //
 // account / playerId 写进直连的 GameClient:handler.MessageBodyHandler 按 client.PlayerId 找
 // gameobject.Player,直连上收到的 S2C 才能落到与大厅连接同一个 Player 的状态机上。
-// stats 为 nil 时不计收发(调用方的 onMessage 自己计的情况,见 team-smoke)。
+// stats 为 nil 时不计收发(调用方的 onMessage 自己计的情况,见 team-smoke)。例外:补拉 GetBattleState 收到的
+// 信封错误既不交 onMessage 也不计 MsgRecv(见 stateReplyDone),此时收包统计会比实际少这一条。
 //
 // 参战者(role=PARTICIPANT)握手成功后立即经直连发一条 GetBattleState 补拉全量(D69);
 // 观众不发,首帧由 battle 的握手快照推送。
@@ -242,6 +243,8 @@ func (c *battleDirectConn) pullBattleState(stats *metrics.Stats, onMessage func(
 // 计 stats.MsgRecv,record 按消息号计数(信封错误只计总数并打日志),应答再交给 onMessage。信封错误不交:
 // body 为空,通用分发会把它当成一条成功的空应答(同 dispatchBattleDirectDefault)。没有回包的结局(超时 / 断线)
 // 什么都不计,只打一行告警,由冒烟终局的 state_replies ≥ 1 断言判失败。
+// stats 为 nil 的调用方(team-smoke)在自己的 onMessage 里计 MsgRecv,而信封错误不交 onMessage,所以这条信封错误
+// 漏计一次 MsgRecv;只影响收发统计,冒烟判定不依赖它,不为此改动上面「信封错误不交」的口径。
 //
 // 回包在直连的 RecvLoop 上、超时在定时器 goroutine 上、断线在调用 Close 的 goroutine 上调用,所以它与 onMessage
 // 都不得阻塞。闭包不持状态,同一个可以反复调用(单测这样用);生产中每次 Call 恰好调用一次。

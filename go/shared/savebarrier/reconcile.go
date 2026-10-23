@@ -45,7 +45,7 @@ type Verdict uint8
 const (
 	// VerdictConsistent:SQL 两行、pending、两表 ACK 全部相等(含双方都没有历史)。Redis 一侧可信。
 	VerdictConsistent Verdict = iota + 1
-	// VerdictAdoptSQL:SQL 两行同版本,不低于 pending、两表 ACK 与资产证据,且不是全部相等。
+	// VerdictAdoptSQL:SQL 两行同版本,不低于 pending 与两表 ACK,且不是全部相等。
 	// Redis 丢过已确认的写(或只丢了 ACK),以已提交的 SQL 为准重建父快照与屏障。
 	VerdictAdoptSQL
 	// VerdictInflight:pending 新于 SQL。正常在途,等补投追平。
@@ -53,7 +53,7 @@ const (
 	// VerdictReconciling:SQL 两行版本不同,且较新的一行新于 pending。另一张表的任务多半还在
 	// Kafka 积压或重试队列里,等它落地;长期不收敛转人工 save_barrier_restore。
 	VerdictReconciling
-	// VerdictSQLBehind:某个 ACK 或资产证据高于 SQL 两行。它们都只在 SQL 提交之后才写,
+	// VerdictSQLBehind:某个 ACK 高于 SQL 两行。ACK 只在 SQL 提交之后才写,
 	// 高于 SQL 只能是 SQL 侧回档或损坏,不自动处置(db-write-fencing-mysql.md §9.2)。
 	VerdictSQLBehind
 )
@@ -80,7 +80,6 @@ func (v Verdict) String() string {
 type Observation struct {
 	Pending, AckFirst, AckSecond string // 屏障 hash 的 pending 与两表 ACK,缺失为空串
 	SQLFirst, SQLSecond          string // 两张 SQL 行的行内围栏版本;行不存在或围栏为 (0,0) 为空串,见 RowVersion
-	Evidence                     string // 资产 SQL 提交证据的版本,缺失为空串
 }
 
 // RowVersion 把 SQL 行内围栏换成版本串。(0,0) 表示这一行从未经围栏写入,记为空串。
@@ -94,11 +93,11 @@ func RowVersion(fenceOwnerEpoch, fenceSaveSeq uint64) string {
 // Reconcile 按设计 §4.1.4 的判定表给出结论。规则顺序有含义:先排除「SQL 落后」,再看两行是否一致,
 // 最后比较 SQL 与 Redis 屏障。
 func Reconcile(o Observation) (Verdict, error) {
-	if err := requireVersions(o.Pending, o.AckFirst, o.AckSecond, o.SQLFirst, o.SQLSecond, o.Evidence); err != nil {
+	if err := requireVersions(o.Pending, o.AckFirst, o.AckSecond, o.SQLFirst, o.SQLSecond); err != nil {
 		return 0, err
 	}
 	sqlNewest := max(o.SQLFirst, o.SQLSecond)
-	if max(o.AckFirst, o.AckSecond, o.Evidence) > sqlNewest {
+	if max(o.AckFirst, o.AckSecond) > sqlNewest {
 		return VerdictSQLBehind, nil
 	}
 	if o.SQLFirst != o.SQLSecond {

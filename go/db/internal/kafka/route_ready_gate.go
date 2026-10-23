@@ -9,6 +9,7 @@ package kafka
 //   - 进程级就绪闸(调度,routeReadyGate):每 RouteReadyGateIntervalMs 用读脚本(不带映射键)刷新一次 verdict;不是 Trusted
 //     时消费循环不从 claim 取新消息、重试循环不分拣也不认领 —— 新任务不 ack、不往 Redis 重试队列推,消息留在 Kafka(lag
 //     增长由既有告警覆盖),每次刷新之后复查。闸只决定「取不取新任务」,不替逐条判,已经派进 worker 的任务不再看闸。
+//     存盘补投器(saveoutbox)经 RouteGateOpen 看同一把闸:闸关着时整拍跳过、不认领、不计次(r2-rr#5)。
 //     走 errRouteNotReady 延后(写不耗预算、读耗预算)的有两类:
 //       ① 闸关上那一刻已在 worker 里的任务:每分区 taskCh 1000 条 + SubShardCount×256 条子 shard 缓冲(buildWorker),
 //          加上重试循环当拍正在认领的那一条(内层循环每认领一条前看一次闸)。积压追赶期这是通道深度量级(按 etc/db.yaml 的
@@ -35,6 +36,7 @@ import (
 
 	db_config "db/internal/config"
 	"db/internal/metrics"
+	"db/internal/saveoutbox"
 	"shared/placement"
 
 	"github.com/IBM/sarama"
@@ -456,4 +458,15 @@ func (c *KeyOrderedKafkaConsumer) retryClaimsPaused() bool {
 	}
 	c.routeGate.waits.Add(1)
 	return true
+}
+
+// 存盘补投器按本实例的就绪闸暂停(saveoutbox.RouteGate,r2-rr#5),装配见 db.go。
+var _ saveoutbox.RouteGate = (*KeyOrderedKafkaConsumer)(nil)
+
+// RouteGateOpen 报告本实例的读方就绪闸此刻是否放行新任务,闸为 nil(开关关着)恒为 true。只读、并发安全(routeGate 装配后
+// 不再改,open 是 atomic),不记等待次数 —— waits 只给停在闸前的消费循环与重试循环用。
+// 给存盘补投器用:闸关着时消费循环不取新消息、重试循环不认领,补投出去的任务只会堆在 Kafka 里挤占保留缓冲,broker 确认后
+// 却照常计次;补投器据此整拍跳过、不计次,与重试循环同口径。
+func (c *KeyOrderedKafkaConsumer) RouteGateOpen() bool {
+	return c.routeGate.opened()
 }

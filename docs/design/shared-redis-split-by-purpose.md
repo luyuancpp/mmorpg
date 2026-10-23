@@ -28,6 +28,8 @@
 > - §25 待负责人拍板清单
 > - §26 Java 版
 
+> **2026-10-23 注(上面原文保留)**:负责人 10-23 拍板,玩家归属 / 落点映射改为直读 TiDB,撤掉 Redis 映射副本(经「账号登录逻辑/物理服瓶颈」会话转述;设计以 [player-route-mapping-durability-proposal.md](player-route-mapping-durability-proposal.md) 即将新增的章节为准)。本稿以下内容**被取代、待新章节**:redis-mapping 实例及其迁移(§3.2.2、§5.4)、mapping 三族 hash tag(§21、§25.2 第 7 条及子项)、redis-mapping 的 HA 优先级(§25.2 第 18 条第一项)。go/db `Placement.Redis`、data_service `MappingRedis`、guild `MergeMarkerRedis` 三个句柄的去留,也以新章节为准。控制面按 zone 组分实例(§18)与核心路线(§20)不受影响。
+
 ## 1. 结论
 
 1. **拆成「1 个核心 + 2 个新实例 + 1 个可选实例」**:
@@ -404,6 +406,8 @@ merge_zone 合服与撤销时会按玩家删缓存（`playerCacheKeys`）；清�
   - chat 私有键:已经在 match 的集群里。
 
 #### 3.2.2 映射 → `redis-mapping`(第 1 批)
+
+> **(2026-10-23 注,本节原文保留)被取代、待新章节**:映射改为直读 TiDB、撤掉 Redis 映射副本,见文首 2026-10-23 注。
 
 - **能拆的理由**:
   - C 族的所有 Lua 都在族内;C++ 不读写映射键。
@@ -1740,6 +1744,8 @@ Cluster 下:跨 slot 的 MGET / MULTI 报 CROSSSLOT;SCAN 只扫当前连接的�
 
 ## 21. mapping 三族 hash tag 的裁决材料(2026-10-18 新增)
 
+> **(2026-10-23 注,本节原文保留)被取代、待新章节**:映射改为直读 TiDB、撤掉 Redis 映射副本,mapping 三族不再有 Redis 键名可定,见文首 2026-10-23 注。§21.6 给瓶颈文档的同 tag 指引里,与映射无关的两条(令牌发布脚本、围栏 §5.5 推进脚本)仍有效。
+
 ### 21.1 现状键名与镜像点(2026-10-18 grep)
 
 - 键:`player:zone:<id>`、`player:placement:<id>`、`player:maprev:<id>`,都不带 tag。同族还有 `merge:in_progress:<zone>`、`merge:merged_into:<src>`、`mapping:route:ready` / `:warm` / `:watermark`、`db:capability:zone:<z>`、`lock:player:<id>`、`player:name:<id>`。
@@ -1890,7 +1896,7 @@ Java 版账号与角色已在 MySQL(§26),本项在 Java 是「已做,实现不�
 5. dbctl 组大小与跨组合服:merge_zone 用源、目标两个 dbctl 句柄,还是规定合服只在组内(§18.2、§18.4、§18.5)。
 6. redis-cache 的形态:Cluster,还是按 zone 组分实例(§19)。
    - **(2026-10-18 新增)** 子表缓存 10-17 起已无生产读者:是否还写子表缓存,redis-cache 是否还要单独部署;「写任务只 DEL 不 SET」与缩短 TTL 需要围栏线同意。
-7. mapping 三族 hash tag 的时机、形态与键名(§21);瓶颈文档 §6.5 由 go/db 存盘管线线按 §21.6 的指引加注。
+7. mapping 三族 hash tag 的时机、形态与键名(§21);瓶颈文档 §6.5 由 go/db 存盘管线线按 §21.6 的指引加注。**(2026-10-23 注:本条连同子项被取代、待新章节,映射改为直读 TiDB,见文首 2026-10-23 注。)**
    - **(2026-10-18 新增)** D1 读方就绪脚本 `RouteReadyReadScript` 在 Cluster 下的改形,交 D1 线。已接入:go/db `route_ready_gate.go`(`RequireRouteReady` 开时 lookup 与复核两步都走,每条写任务多 4 次 INFO)、data_service `route_read.go`(批量就绪读;`getHomeZoneFenceReadyScript` 用 ARGV 前缀在脚本内拼围栏键)、guild `merge_fence.go`。
 8. 账号目录落库的位置与主键(account 还是其哈希),与密码表的位置一并定;单独立项授权(§22)。
 9. 核心 maxmemory 初值与冷卸载阈值、触发条件(§23;S1 开服前)。

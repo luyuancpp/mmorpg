@@ -35,6 +35,8 @@ ECS 改造交接见 [总索引](handoff/ecs-refactor/README.md);当前修正与�
 
 Redis 物理水平扩展的用户目标、当前存盘链问题、源码入口与后续验收要求见 [Claude Code 接手文档](handoff/redis-horizontal-scaling-requirements-20261022.md)；具体方案由接手者自主评估，本轮仅整理文档。
 
+全类型节点的平滑停机／缩容、水平扩展、灰度与金丝雀发布需求，及 C++/Go、独立 Java 两版的现状差距与验收口径，见 [节点生命周期与发布需求](design/node-lifecycle-elasticity-release-20261023.md)（2026-10-23，仅文档，尚未完成全类型验收）。
+
 ## 索引
 
 <!-- BEGIN GENERATED INDEX: tools/scripts/gen_docs_index.py -->
@@ -67,8 +69,6 @@ Redis 物理水平扩展的用户目标、当前存盘链问题、源码入口�
 - [client-rpc-router.md](design/client-rpc-router.md) — 客户端 RPC 路由服(client_rpc_router):gate 唯一的 gRPC 目标
 - [dual-token-authentication.md](design/dual-token-authentication.md) — Dual Token Authentication Design (Access + Refresh)
 - [gate-connection-admission-control.md](design/gate-connection-admission-control.md) — gate 连接准入控制：muduo 无条件 accept 的业界解法与本仓落地 (2026-09-03)
-- [gate-entity-id-truncation-fix.md](design/gate-entity-id-truncation-fix.md) — Gate Entity ID Truncation Fix (2026-04-04)
-- [gate-grpc-long-connection-audit-2026-05.md](design/gate-grpc-long-connection-audit-2026-05.md) — Gate→Login gRPC 长连接核查 (2026-05)
 - [gate-load-balancing-design.md](design/gate-load-balancing-design.md) — Gate 负载均衡、票据与重连边界
 - [gate-login-rpc-boundary.md](design/gate-login-rpc-boundary.md) — Gate ↔ Login RPC 边界 (2026-05)
 - [gate-scene-relay-architecture.md](design/gate-scene-relay-architecture.md) — Gate–Scene 连接规模与跨 zone 换 Gate
@@ -77,12 +77,9 @@ Redis 物理水平扩展的用户目标、当前存盘链问题、源码入口�
 - [java-gateway-portal-decision.md](design/java-gateway-portal-decision.md) — Java Gateway Portal Decision (2026-04-14)
 - [k8s-client-entry.md](design/k8s-client-entry.md) — gate / battle 集群外客户端入口(D76–D93)
 - [k8s_gate_exposure_guidance.md](design/k8s_gate_exposure_guidance.md) — K8s Gate Exposure Guidance / K8s gate 暴露方式指南 · [EN](design/k8s_gate_exposure_guidance_en.md) · [中文](design/k8s_gate_exposure_guidance_zh.md)
-- [login-gate-assignment-migration.md](design/login-gate-assignment-migration.md) — Login Gate Assignment Migration Plan · [中文](design/login-gate-assignment-migration_zh.md)
 - [login-node-stateless-no-affinity.md](design/login-node-stateless-no-affinity.md) — Login Node: Stateless, No Session Affinity
 - [account-role-authority.md](design/account-role-authority.md) — 账号角色目录的全局 SQL 权威、登录接线及上线前数据边界
 - [login-queue-2026-05.md](design/login-queue-2026-05.md) — Login Queue (AssignGate Real Queue) — 2026-05
-- [login-simplification-2026-04.md](design/login-simplification-2026-04.md) — Login Service Simplification (2026-04)
-- [login_gate_assignment_migration.md](design/login_gate_assignment_migration.md) — 登录网关分配改造计划：当前架构 → 大厂标准架构
 - [open-server-rate-limit-design.md](design/open-server-rate-limit-design.md) — 开服登录削峰设计 (Gateway 限流 + 排队)
 - [player-locator-gate-session-index.md](design/player-locator-gate-session-index.md) — player_locator 会话对账:按 gate 实例建会话索引(2026-10-18)
 - [player_login_flow.md](design/player_login_flow.md) — 玩家登录/断线/重连/替换登录/超时清理 — 最终态事件流 · [EN](design/player_login_flow_en.md) · [中文](design/player_login_flow_zh.md)
@@ -114,6 +111,7 @@ Redis 物理水平扩展的用户目标、当前存盘链问题、源码入口�
 #### 战斗
 
 - [battle-art-prompts.md](design/battle-art-prompts.md) — 战斗美术生图提示词包与资产契约 v1
+- [battle-spectate-tiered-fanout.md](design/battle-spectate-tiered-fanout.md) — 观战分级扩容：直连席 → gate 中继 → 全服广播(提案,未落码,2026-10-23)
 - [battle-transport-decision.md](design/battle-transport-decision.md) — battle 节点传输选型定谳(gRPC vs muduo TCP RPC vs Go)
 - [pve-team-size-matching.md](design/pve-team-size-matching.md) — PVE 人数档匹配:人越多怪越多
 - [session-extractability-mmo-slg.md](design/session-extractability-mmo-slg.md) — 「战斗抽出去」这套做法能套到哪些玩法:MOBA / MMO / SLG 定谳
@@ -138,9 +136,9 @@ Redis 物理水平扩展的用户目标、当前存盘链问题、源码入口�
 - [friend-client-spec-20260920.md](design/friend-client-spec-20260920.md) — friend 客户端任务规格(Unity,2026-09-20)
 - [friend-persistence-architecture.md](design/friend-persistence-architecture.md) — Friend Service Persistence Architecture
 - [friend-port-20260918.md](design/friend-port-20260918.md) — friend:移植为全局服务 + 客户端经路由服可达
-- [guild-actor-architecture.md](design/guild-actor-architecture.md) — Guild Actor 化架构设计
+- [guild-actor-architecture.md](design/guild-actor-architecture.md) — Guild 存储架构现状与 Actor 历史提案（TiDB 权威直写＋Redis 缓存，Actor 未实施）
 - [guild-zone-client-access.md](design/guild-zone-client-access.md) — 公会:按 zone 隔离的客户端接入
-- [guild_friend_service_notes.md](design/guild_friend_service_notes.md) — Guild & Friend Service Implementation Notes (2025-03-25) · [EN](design/guild_friend_service_notes_en.md) · [中文](design/guild_friend_service_notes_zh.md)
+- [guild_friend_service_notes_zh.md](design/guild_friend_service_notes_zh.md) — 公会与好友服务实现笔记
 - [guild_ranking_architecture.md](design/guild_ranking_architecture.md) — Guild Ranking Architecture (2025-03-25) · [EN](design/guild_ranking_architecture_en.md) · [中文](design/guild_ranking_architecture_zh.md)
 - [jubaozhai-market.md](design/jubaozhai-market.md) — 聚宝斋(玩家间人民币寄售交易)设计 — 2026-09-14
 - [mall-administration.md](design/mall-administration.md) — 商城后台受限经济命令、幂等日志与库存预占保护
@@ -205,8 +203,8 @@ Redis 物理水平扩展的用户目标、当前存盘链问题、源码入口�
 
 #### ID、节点身份与寻址
 
+- [node-lifecycle-elasticity-release-20261023.md](design/node-lifecycle-elasticity-release-20261023.md) — 全类型节点：平滑停机、水平扩展与灰度／金丝雀发布需求
 - [control-plane-topic-partitioning-20260908.md](design/control-plane-topic-partitioning-20260908.md) — 控制面命令 topic:从"一节点一 topic"改为"固定分区 + 按 node_id 取模寻址"
-- [grpc_node_entity_id_collision.md](design/grpc_node_entity_id_collision.md) — GRPC Node Entity ID Collision (Fixed 2026-04-02)
 - [id-routing-session-status-20260909.md](design/id-routing-session-status-20260909.md) — ID / 寻址改造 —— 会话总结与遗留清单(2026-09-09)
 - [node-id-overhaul-changelog-20260908.md](design/node-id-overhaul-changelog-20260908.md) — ID 与寻址身份改造 —— 逐文件改动说明(2026-09-08 最终版)
 - [node-id-overhaul-plan-20260908.md](design/node-id-overhaul-plan-20260908.md) — Node ID / 永久 ID 改造方案(2026-09-08 草案,未落码)
@@ -224,12 +222,10 @@ Redis 物理水平扩展的用户目标、当前存盘链问题、源码入口�
 - [double-buffer-queue-optimizations.md](design/double-buffer-queue-optimizations.md) — DoubleBufferQueue Optimizations (2026-04-16)
 - [error-reporting.md](design/error-reporting.md) — Error Aggregation & Reporting — Design (todo.md #250)
 - [go-zero-rpc-timeout-fix.md](design/go-zero-rpc-timeout-fix.md) — go-zero RPC Client Timeout Fix
-- [grpc-client-deadline-failure-callback.md](design/grpc-client-deadline-failure-callback.md) — C++ 生成 gRPC 客户端:每次调用设 deadline + 失败也回调(2026-09-28)
-- [grpc-muduo-transport.md](design/grpc-muduo-transport.md) — C++ gRPC 传输改由 muduo 驱动(nghttp2 + 自有 gRPC 调用语义)
+- [grpc-muduo-transport.md](design/grpc-muduo-transport.md) — C++ gRPC 传输、节点实体身份与客户端调用契约（§16：deadline、回调、部署预算和完成归属）
 - [hashed-timing-wheel.md](design/hashed-timing-wheel.md) — Hashed Timing Wheel
 - [infra-reconnect-overview.md](design/infra-reconnect-overview.md) — Infrastructure Reconnection Overview
-- [kafka-producer-txn-concurrency-bug.md](design/kafka-producer-txn-concurrency-bug.md) — Kafka Producer Transactional Concurrency Bug
-- [kafka-topic-retention-strategy.md](design/kafka-topic-retention-strategy.md) — Kafka Topic Retention Strategy
+- [kafka-topic-retention-strategy.md](design/kafka-topic-retention-strategy.md) — Kafka topic 保留与耐久策略
 - [muduo-rpc-channel.md](design/muduo-rpc-channel.md) — 节点间 muduo RPC:每次调用的回调、延后回包与完整的完成语义(RpcChannel 改造)
 - [muduo-timer-cancellation-hazards.md](design/muduo-timer-cancellation-hazards.md) — muduo 同批取消、清理重入、单调时钟与两端回归
 - [no-single-node-horizontal-scaling-20261001.md](design/no-single-node-horizontal-scaling-20261001.md) — 消除单节点:所有服务都能水平扩展(2026-10-01)
@@ -262,7 +258,7 @@ Redis 物理水平扩展的用户目标、当前存盘链问题、源码入口�
 #### 测试与机器人
 
 - [data-consistency-stress-testing.md](design/data-consistency-stress-testing.md) — Player-Data Consistency: Stress Testing & Verification
-- [login-test-anti-stuck-system.md](design/login-test-anti-stuck-system.md) — Login Test Anti-Stuck System
+- [login-test-anti-stuck-system.md](design/login-test-anti-stuck-system.md) — 登录回归套件与超时检测
 - [robot-login-test-scenarios.md](design/robot-login-test-scenarios.md) — Robot Login Test Scenarios
 - [robot-zone-auto-select.md](design/robot-zone-auto-select.md) — Robot Zone Auto-Select Feature
 
@@ -342,6 +338,7 @@ Redis 物理水平扩展的用户目标、当前存盘链问题、源码入口�
 - [global-economy-review-20261021.md](handoff/global-economy-review-20261021.md) — 全球交易与角色归属双版审核交接；区分源码、当前运行证据与未完成验收
 - [global-economy-claude-review-20261022.md](handoff/global-economy-claude-review-20261022.md) — Claude Code 精简审核入口：实现接缝、最新源差异、实际证据与未验清单；整体仍待验收
 - [configurable-templates-handoff-20261019.md](handoff/configurable-templates-handoff-20261019.md) — 交接：战斗策略 / 活动 / 玩法模板可配置化（含玩家自定义模板）——设计 v0.2 已定稿、代码未开工，待授权与拍板后按批落码（2026-10-19）
+- [d1-review-fix-handoff-20261023.md](handoff/d1-review-fix-handoff-20261023.md) — 交接:D1 最终语义评审与修复(10-19 ~ 10-23)——移交「映射直读 TiDB」新方向
 - [data-overwrite-audit-r2-20261019/README.md](handoff/data-overwrite-audit-r2-20261019/README.md) — 交接：第二轮数据与覆盖回档审计——第一、二波已完成（3 medium + 22 low），第三、四波与定稿待续，含工作流脚本副本（2026-10-19）
 - [friend-handoff-20260920.md](handoff/friend-handoff-20260920.md) — friend 服务移植 —— 交接文档(2026-09-20)
 - [global-singletons-p0-codex-tasksheet-20261014.md](handoff/global-singletons-p0-codex-tasksheet-20261014.md) — Codex 任务单:全局单点 P0 五项的实测核实(2026-10-14)

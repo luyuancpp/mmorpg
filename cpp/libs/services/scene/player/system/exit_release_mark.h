@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <cstring>
 #include <iterator>
+#include "services/scene/player/system/handoff_sql_barrier.h"
 
 #include "services/scene/player/system/player_exit_intent.h" // ExitCause
 
@@ -177,10 +178,7 @@ namespace exit_release_mark
 	// 两个键形如 "player:<id>:owner_epoch" / "player:<id>:handoff",**没有**哈希标签({}),Redis Cluster 下不同槽、
 	// 脚本会被 CROSSSLOT 拒绝。当前部署不是 Cluster;要上 Cluster 得先统一给这组键加哈希标签
 	// (2026-10-09 更正:原注释写的"同一个 {player_id} 段,集群下同槽"与 player_ownership_comp.h 里实际的键格式不符)。
-	inline constexpr const char *kLuaWriteIfOwnerEpoch =
-		"if redis.call('GET', KEYS[1]) ~= ARGV[1] then return 0 end "
-		"redis.call('SET', KEYS[2], ARGV[2], 'EX', ARGV[3]) "
-		"return 1";
+	inline const std::string& kLuaWriteIfOwnerEpoch = handoff_sql_barrier::kReleaseMarkLua;
 
 	// 条件写的应答分类。一律不重试(R7):写不成的后果只是玩家这一次重登可能回 18、下一次重试放行,
 	// 而重试会把"这一刻已落盘"的凭证推迟到一个不再成立的时刻。
@@ -257,20 +255,7 @@ namespace exit_release_mark
 	//   0 = 没有标记;1 = 删掉的是更旧代际(epoch < N);2 = 删掉的恰好是 epoch == N;
 	//   3 = 标记代际比 N 新,保留(只删 ≤N);4 = 标记写坏了(不是 "数字:数字"),一并删掉。
 	// 代际比较不用 tonumber(uint64 超过 2^53 会丢精度):去掉前导零后先比长度、再按字典序比。
-	inline constexpr const char *kLuaInheritClear =
-		"local cur = redis.call('GET', KEYS[1]) "
-		"if cur == false then cur = '0' end "
-		"if cur ~= ARGV[1] then return -1 end "
-		"local mark = redis.call('GET', KEYS[2]) "
-		"if mark == false then return 0 end "
-		"local e = string.match(mark, '^(%d+):%d+$') "
-		"if e == nil then redis.call('DEL', KEYS[2]) return 4 end "
-		"e = (string.gsub(e, '^0+(%d)', '%1')) "
-		"local n = ARGV[1] "
-		"if #e > #n or (#e == #n and e > n) then return 3 end "
-		"redis.call('DEL', KEYS[2]) "
-		"if e == n then return 2 end "
-		"return 1";
+	inline const std::string& kLuaInheritClear = handoff_sql_barrier::kConfirmFenceLua;
 
 	// 路由不带 owner_epoch(ctx.ownerEpoch == 0,兼容窗口)时的 A2′。KEYS 同上,没有 ARGV。
 	// 不核对归属(无从核对,永不返回 -1),以 Redis 里当前的 owner_epoch(缺键按 0)代替 N:
@@ -278,19 +263,7 @@ namespace exit_release_mark
 	// 返回码与 kLuaInheritClear 共用 ClassifyInheritClearReply。删标记只影响活性(之后一次跨节点落点回 18、
 	// 由交接或租约到期兜底),不会造出第二个持有者,所以删到"≤ 当前代际"是安全的上界。
 	// 代际比较同上:去掉前导零后先比长度、再按字典序比,不用 tonumber。
-	inline constexpr const char *kLuaInheritClearUnknownEpoch =
-		"local cur = redis.call('GET', KEYS[1]) "
-		"if cur == false then cur = '0' end "
-		"cur = (string.gsub(cur, '^0+(%d)', '%1')) "
-		"local mark = redis.call('GET', KEYS[2]) "
-		"if mark == false then return 0 end "
-		"local e = string.match(mark, '^(%d+):%d+$') "
-		"if e == nil then redis.call('DEL', KEYS[2]) return 4 end "
-		"e = (string.gsub(e, '^0+(%d)', '%1')) "
-		"if #e > #cur or (#e == #cur and e > cur) then return 3 end "
-		"redis.call('DEL', KEYS[2]) "
-		"if e == cur then return 2 end "
-		"return 1";
+	inline constexpr const char *kLuaInheritClearUnknownEpoch = "return -1"; // 无原资格禁止删标记
 
 	// A2′ 一次 EVAL 的结果。前五种是"核对通过"(闸门可放行),kEpochMismatch 是"核对不过"(拒建实体、不补发),
 	// 最后两种是失败(有上限重发)。

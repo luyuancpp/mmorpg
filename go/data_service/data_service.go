@@ -186,6 +186,15 @@ func main() {
 		logx.Close()
 		os.Exit(1)
 	}
+	// 读方门禁开着而 route store 没装配起来:不看 Store.Required,无条件拒启(M1-5,规格 §13.2 第 2 条,与 go/db、guild 的
+	// 读方开关同口径;理由见 svc.ServiceContext.RouteReadGateUnassembled)。同样必须在任何 etcd 注册之前。
+	if err := svcCtx.RouteReadGateUnassembled(); err != nil {
+		logx.Errorf("[startup] %v; refusing to start regardless of Store.Required (see the [ServiceContext] errors above for the cause)", err)
+		fmt.Fprintf(os.Stderr, "data_service refuses to start: %v\n", err)
+		svcCtx.Close()
+		logx.Close()
+		os.Exit(1)
+	}
 	defer svcCtx.Close()
 
 	// ── 对账 leader(D1 第 1b-2 批,internal/routereconcile)──────────────

@@ -316,20 +316,40 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	}
 	var directory *store.AccountDirectoryStore
 	var directoryAuth *serviceauth.Verifier
+	newDirectory := store.NewAccountDirectoryStore
+	if c.LegacyNonGlobal {
+		newDirectory = store.NewLegacyAccountDirectoryStore
+	}
 	if schemaReady {
+		// 池上限非法时不装配(不纠正成默认值,理由见 config.AccountDirectoryConfig.MaxOpenConn):MissingStores 带上 account_directory,
+		// 全球服务恒为 Store.Required=true,main 拒启。
 		if auth, err := serviceauth.New(map[string]string{"login": os.Getenv(accountdirectory.SecretEnv)}); err != nil {
 			logx.Errorf("[account-directory] internal caller key is unavailable; account directory RPCs disabled")
-		} else if ds, err := store.NewAccountDirectoryStore(mysqlCfg, mysqlCfg.RequireTiDB || c.AccountDirectory.RoleTradeSQLProof.Enabled || (c.Mode != "dev" && c.Mode != "test"), c.AccountDirectory.MaxRoles()); err != nil {
+		} else if maxOpen, err := c.AccountDirectory.PoolMaxOpenConn(); err != nil {
+			logx.Errorf("[account-directory] invalid AccountDirectory config; account directory RPCs disabled: %v", err)
+		} else if ds, err := newDirectory(mysqlCfg, mysqlCfg.RequireTiDB || c.AccountDirectory.RoleTradeSQLProof.Enabled || (c.Mode != "dev" && c.Mode != "test"), c.AccountDirectory.MaxRoles(), maxOpen); err != nil {
 			logx.Errorf("[account-directory] SQL store init failed: %v", err)
 		} else {
-			directory = ds
-			directoryAuth = auth
+			if !c.LegacyNonGlobal {
+				if !c.RouteStore.DBFirst() {
+					err = errors.New("正式建角初始提交要求 SQL 权威路由")
+				} else {
+					err = ds.ConfigureInitialPlayerCommit(c.AccountDirectory.RoleTradeSQLProof.AllowedStorageIDs)
+				}
+			}
+			if err != nil {
+				_ = ds.Close()
+				logx.Errorf("[account-directory] initial SQL commit unavailable: %v", err)
+			} else {
+				directory = ds
+				directoryAuth = auth
+			}
 		}
 	}
 
 	// 映射提交点的库(docs/design/player-route-mapping-durability-proposal.md §4,第 1a 批):只在 db_first 时装配。
 	// 失败只记 ERROR、保持 nil:RegisterPlayerZone 届时 fail-closed(ErrRouteStore),Store.Required=true 时
-	// MissingStores 带上 "player_route",main 拒启。
+	// MissingStores 带上 "player_route",main 拒启;ReadRequiresReady=true 时不论 Store.Required 都拒启(RouteReadGateUnassembled,M1-5)。
 	//
 	// 同一个 *store.RouteStore 交给两个消费方:PlayerRouteStore(Router 的写入点与回源读者)与对账 leader(routereconcile.Store)。
 	// 两处都在判空之后才赋给接口(规格 d 节「nil 接口陷阱」:把 nil 的 *store.RouteStore 直接转成接口,就是「非 nil 接口包着 nil 指针」,
@@ -364,9 +384,16 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	// 这里的判空才可靠。第 3 批起同一个实例也作为回源读者注入(routeRouterOptions)。
 	routerOpts := routeRouterOptions(playerRouteStore)
 
-	// 第 3 批读方门禁的指标只在开关打开时预置(理由同 metrics.PrimeRoute;开关只许 db_first,Validate 已钉住)。
-	if c.RouteStore.DBFirst() && c.RouteStore.ReadRequiresReady {
-		metrics.PrimeRouteRead()
+	// 读路径指标的启动预置(理由同 metrics.PrimeRoute:sql_error 这类可能一辈子只发生几次的结局,序列不预先存在的话
+	// `increase(...) > 0` 恰好漏掉第一次):
+	//   - R7(GetAllPlayerIDsInZone)在 db_first 下一律读库、与读方开关无关,每次都计 route_read_total{path="enumerate"},
+	//     所以它的两条序列只要 db_first 就预置(M1-6,2026-10-23);
+	//   - 其余 11 条 path × result 与 verdict 只在读方开关打开时才会出现,只在那时预置(开关只许 db_first,Validate 已钉住)。
+	if c.RouteStore.DBFirst() {
+		metrics.PrimeRouteEnumerate()
+		if c.RouteStore.ReadRequiresReady {
+			metrics.PrimeRouteRead()
+		}
 	}
 
 	s := &ServiceContext{

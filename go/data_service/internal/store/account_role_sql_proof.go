@@ -16,6 +16,7 @@ import (
 	"shared/accountdirectory"
 	"shared/generated/persistschema"
 	"shared/placement"
+	"shared/savebarrier"
 )
 
 // SQLRoleFreezeVerifier 只使用同一个 TiDB 权威池/事务。配置白名单不能改写权威落点，
@@ -91,7 +92,24 @@ func (v *SQLRoleFreezeVerifier) VerifyFrozen(ctx context.Context, tx *sql.Tx, r 
 		return nil, accountdirectory.ErrConflict
 	}
 	kind := dspb.AccountRoleFreezeEvidenceKind_ACCOUNT_ROLE_FREEZE_EVIDENCE_KIND_SCENE
-	if epoch == 0 && seq == 0 {
+	if epoch == savebarrier.InitialOwnerEpoch && seq == savebarrier.InitialSaveSeq {
+		if r.RequiredOwnerEpoch != 0 || r.RequiredSaveSeq != 0 || len(holders) != 0 {
+			return nil, accountdirectory.ErrConflict
+		}
+		var marker, revision uint64
+		if err := tx.QueryRowContext(ctx, "SELECT initial_player_commit,owner_revision FROM account_role WHERE player_id=? FOR UPDATE", r.PlayerId).Scan(&marker, &revision); err != nil {
+			return nil, err
+		}
+		if marker != 1 || revision != 1 || r.SellerOwnerRevision != revision {
+			return nil, accountdirectory.ErrConflict
+		}
+		first, err := initialSQLRowMatches(ctx, tx, schema, "player_database", r.PlayerId, (&dbpb.PlayerDatabase{}).ProtoReflect().Descriptor().Fields())
+		if err != nil { return nil, err }
+		second, err := initialSQLRowMatches(ctx, tx, schema, "player_database_1", r.PlayerId, (&dbpb.PlayerDatabase_1{}).ProtoReflect().Descriptor().Fields())
+		if err != nil { return nil, err }
+		if !first || !second { return nil, accountdirectory.ErrConflict }
+		kind = dspb.AccountRoleFreezeEvidenceKind_ACCOUNT_ROLE_FREEZE_EVIDENCE_KIND_INITIAL_COMMIT
+	} else if epoch == 0 && seq == 0 {
 		// 只有实际未进场种子、没有历史存盘下限、没有本轮原生 holder 才能采用此分支。
 		if r.RequiredOwnerEpoch != 0 || r.RequiredSaveSeq != 0 || len(holders) != 0 {
 			return nil, accountdirectory.ErrConflict

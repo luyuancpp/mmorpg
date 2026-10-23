@@ -45,6 +45,14 @@ func (p *recordingPublisher) Publish(ctx context.Context, topic, key string, bod
 	return nil
 }
 
+// routeGateStub 是读方就绪闸(RouteGate)的替身：零值关着，open=true 放行。夹具缺省放行(openRouteGate)，
+// 只有 r2-rr#5 的用例(replay_route_gate_test.go)拨动它。Tick 在用例的 goroutine 里同步执行，不需要加锁。
+type routeGateStub struct{ open bool }
+
+func (g *routeGateStub) RouteGateOpen() bool { return g.open }
+
+func openRouteGate() *routeGateStub { return &routeGateStub{open: true} }
+
 const fixtureID uint64 = 64
 
 func testIntent(t *testing.T, id, epoch, seq uint64, zone uint32) intent {
@@ -83,7 +91,7 @@ const fixtureNowMs int64 = 1_700_000_000_000
 
 func testReplay(t *testing.T, rc *redis.Client, p Publisher) *Replay {
 	t.Helper()
-	r, err := New(rc, rc, p, nil, Config{ZoneID: 1, Batch: 2, Budget: 100 * time.Millisecond, RetryAfter: time.Second, Interval: 10 * time.Millisecond}, prometheus.NewRegistry())
+	r, err := New(rc, rc, p, nil, openRouteGate(), Config{ZoneID: 1, Batch: 2, Budget: 100 * time.Millisecond, RetryAfter: time.Second, Interval: 10 * time.Millisecond}, prometheus.NewRegistry())
 	require.NoError(t, err)
 	r.now = func() time.Time { return time.UnixMilli(fixtureNowMs) }
 	r.jitter = func() time.Duration { return 0 }
@@ -370,7 +378,7 @@ func TestStartRejectsSplitOwnerRedisBeforeStartingWorker(t *testing.T) {
 	app.ServerConfig.Fencing.Mode = dbconfig.FencingModeDual
 	app.ServerConfig.RedisClient.Hosts = "127.0.0.1:1"
 	app.ServerConfig.OwnerEpochRedis = &dbconfig.PlacementRedisConfig{Hosts: "127.0.0.1:2"}
-	s, err := Start(context.Background(), app, nil, nil, nil)
+	s, err := Start(context.Background(), app, nil, nil, nil, openRouteGate())
 	require.Error(t, err)
 	require.Nil(t, s)
 }

@@ -5,7 +5,7 @@
 > **依据**：[S5 实现规格](../handoff/godb-pipeline-impl-20261015/S5-dirty-snapshot-retention-spec.md)（B-01…B-22）；S5a 的落码报告 [batch-reports.md](../handoff/godb-pipeline-impl-20261015/batch-reports.md) §C2；S5b 由主会话在 R3（Go 与部署脚本）与 R5a（复核修正）中落码，没有单独的阶段报告。**表述以截至 2026-10-16 的工作区代码为准**，与规格、阶段报告不一致的地方列在 §A.13 与 §B.9。
 > **归属**：负责人 2026-10-13 把「scene 发 DBTask 失败的脏快照」与「db_task 的 retention / PVC」改判归 godb 交接（规格 B-18；[上线待做](../ops/godb-pipeline-launch-todo.md) §3）。全局单点交接不要重做这两项。
 > **运维版**：`deploy/k8s/README.md`「Kafka 磁盘预算与 db_task retention.bytes」一节是 §B 的操作手册（公式、缺省值、账本行、扩盘 runbook、立即改 topic 配置）。本文讲为什么这样设计，命令以 README 为准。
-> **旧稿**：`docs/design/kafka-topic-retention-strategy.md`（2026-04-12）里 db_task 的数值已过时，以本文 §B 与 README 为准。
+> **总入口**：[Kafka topic 保留与耐久策略](./kafka-topic-retention-strategy.md)已于 2026-10-23 更新；db_task 的盘预算、实际缓冲与操作流程仍以本文 §B 与 README 为准。
 
 ---
 

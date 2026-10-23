@@ -173,6 +173,7 @@
     <ClCompile Include="grpc_runtime_not_initialized_test.cpp" />
     <ClCompile Include="hiredis_command_lifecycle_test.cpp" />
     <ClCompile Include="redis_manager_auth_test.cpp" />
+    <ClCompile Include="redis_slot_test.cpp" />
     <ClCompile Include="inflight_index_test.cpp" />
     <ClCompile Include="rpc_channel_loopback_test.cpp" />
     <ClCompile Include="rpc_chain_test.cpp" />

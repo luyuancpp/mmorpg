@@ -68,7 +68,8 @@ namespace relocate_confirm
 	// scene_manager 一次 Kafka 同步写的上限(scene_manager_service.yaml 的 KafkaWriteTimeoutSeconds,默认 5)。
 	// C++ 侧 gRPC deadline 到期之后服务端的 handler 仍在跑(go-zero 的超时拦截器只是提前返回、不等 handler,
 	// 推路由用的又是 context.Background()),最多再做一次 Kafka 写与失败回滚。
-	// **跨配置契约:调大 KafkaWriteTimeoutSeconds 必须同步本常量。** zrpc Timeout 的变化经 C++ deadline
+	// **跨配置契约:调大 KafkaWriteTimeoutSeconds 必须同步本常量**(2026-10-23 起由
+	// go/scene_manager/internal/logic/relocate_settle_crosslang_test.go 按数字守着)。zrpc Timeout 的变化经 C++ deadline
 	// (部署门禁守着 deadline ≥ Timeout + 2000)自动带进 settle 窗口,不用改这里。
 	inline constexpr std::chrono::seconds kSettleAfterCallDeadline{5};
 
@@ -76,7 +77,8 @@ namespace relocate_confirm
 	// (zrpc Timeout 8s + 2s)之内必有应答或传输失败,其后 handler 最多再跑一个 kSettleAfterCallDeadline,所以
 	// sentAt + deadline + 5s 之后它不会再动 location。10 + 5 = 15。实际取值由 BudgetsFor 从 deadline 派生,
 	// 本常量只是下限(deadline 被配小时窗口不跟着缩)。
-	// 已知残余:回滚 EVAL 在 go-redis 重试下可能更慢;请求在客户端通道里排队到 deadline 前一刻才被服务端收到时,
+	// 已知残余:kafka-go 在冷连接池或 topic 元数据还没缓存时,元数据查询不受 KafkaWriteTimeoutSeconds 约束,handler 可能
+	// 比本常量多跑一段;两者相等时也没给失败回滚的 EVAL 留余量(Go 侧守卫只保证数字没被单边调大)。回滚 EVAL 在 go-redis 重试下可能更慢;请求在客户端通道里排队到 deadline 前一刻才被服务端收到时,
 	// handler 也可能越过本窗口。后果是误踢一次、location 停在目标上,只伤活性(重登即恢复)。
 	inline constexpr std::chrono::seconds kSmSettleWindow{15};
 
@@ -915,6 +917,8 @@ namespace relocate_confirm
 		std::string gateInstanceId; // 发票时 gate 的实例号;空 = 推送时不比对实例
 		uint64_t ownerEpoch{0};		// 派发时实体缓存的 owner_epoch。可能落后于 Redis,**只进日志**
 		uint64_t sourceSceneId{0};	// 退出发起时所在的场景(PlayerExitIntentComp.sceneIdAtExit);0 = 未知
+		std::string holderFence; // 原实体资格，核实读到的新 epoch 不能替它换资格
+		std::string publishedFence;
 		std::string markValue;		// 本次**尝试**写的标记原文 "E:ms";没尝试为空。**只进日志**(见 MarkWrite)
 		// 本节点替他发出的更早 EnterScene 还可能被处理(见 RequestOutcomeUnsettled)。默认取保守的一侧:
 		// 漏填只会多等到 settle、读不到时不盲踢。

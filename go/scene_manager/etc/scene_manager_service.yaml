@@ -5,7 +5,7 @@ ListenOn: 127.0.0.1:60300
 # EnterScene 第一条腿依次做归属查询、Kafka 同步写、失败回滚,然后回 7;服务端先超时的话调用方只拿到 DeadlineExceeded,
 # C++ 把它当"结果未知"的传输失败:交接只记日志,源 scene 仍要冻到 30s 应答看门狗(docs/design/cross-zone-scene-travel.md §12.2)。
 # C++ 每次调用的 deadline 是 bin/etc/base_deploy_config.yaml 的 GrpcClient.CallDeadlineMs.SceneManagerNodeService(10000),
-# 必须 >= 本值 + 2000(上游比下游宽,docs/design/grpc-client-deadline-failure-callback.md §4.2)。本值也是源 scene 还可能
+# 必须 >= 本值 + 2000(上游比下游宽,docs/design/grpc-muduo-transport.md §16.3)。本值也是源 scene 还可能
 # 收到带真实错误码的 EnterScene 应答的最晚时刻(从本服务收到请求起算),须远小于 C++ 的 30s 应答看门狗。
 # <=0 = go-zero 不装超时拦截器(应答时刻无上界)。不要用 MethodTimeouts 只放宽
 # EnterScene:tools/scripts/k8s_deploy.ps1 只镜像标量 Timeout,K8s 上会静默退回全局值。以上由

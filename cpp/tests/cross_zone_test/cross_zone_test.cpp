@@ -1371,7 +1371,7 @@ TEST(ExitPersistEcs, StaleEpochResaveRejectedDiscardsWithoutReleaseMark)
     tlsEcs.actorRegistry.emplace<PlayerOwnerEpochComp>(player).epoch = 7;
     tlsEcs.actorRegistry.remove<PlayerAssetOpLedgerComp>(player);
 
-    PlayerLifecycleSystem::HandlePlayerSaveRejected(kExitPlayerId, "player-save-test", "6");
+    PlayerLifecycleSystem::HandlePlayerSaveRejected(kExitPlayerId, "player-save-test", "6", RedisSaveOwnerRejection{});
 
     EXPECT_FALSE(tlsEcs.actorRegistry.valid(player));
     EXPECT_EQ(tlsEcs.GetPlayer(kExitPlayerId), entt::entity{entt::null});
@@ -1410,7 +1410,7 @@ TEST(ExitPersistEcs, StaleEpochRejectOnOnlinePlayerKeepsEntity)
     tlsEcs.actorRegistry.emplace<PlayerOwnerEpochComp>(player).epoch = 7;
     tlsEcs.actorRegistry.remove<PlayerAssetOpLedgerComp>(player);
 
-    PlayerLifecycleSystem::HandlePlayerSaveRejected(kExitPlayerId, "player-save-test", "6");
+    PlayerLifecycleSystem::HandlePlayerSaveRejected(kExitPlayerId, "player-save-test", "6", RedisSaveOwnerRejection{});
 
     ASSERT_TRUE(tlsEcs.actorRegistry.valid(player));
     EXPECT_FALSE(tlsEcs.actorRegistry.any_of<UnregisterPlayer>(player));
@@ -2461,7 +2461,7 @@ TEST(EnterSceneReplyEcs, NoWaiterAndGonePlayerAreSilent)
 
 // ----------------------------------------------------------------------------
 // EnterScene 传输失败(PlayerLifecycleSystem::DispatchEnterSceneTransportFailure,
-// docs/design/grpc-client-deadline-failure-callback.md §5 #1 / #2)。修复前生成的 gRPC 客户端对非 OK 只打日志,
+// docs/design/grpc-muduo-transport.md §16.5)。修复前生成的 gRPC 客户端对非 OK 只打日志,
 // 这些路径根本走不到:普通换图的槽位只能等 TTL 过期,客户端收不到任何提示。
 // ----------------------------------------------------------------------------
 #include "node/system/grpc_call_deadline.h" // 在途换图 TTL 从 SceneManager 的 deadline 派生
@@ -2845,6 +2845,31 @@ TEST(TravelFreezeCapEcs, BeginTravelHandoffPastDispatchWindowAbortsWithoutMark)
     EXPECT_FALSE(tlsEcs.actorRegistry.any_of<PlayerFrozenComp>(player));
     EXPECT_EQ(after.dispatchWindowClosed, before.dispatchWindowClosed + 1);
     EXPECT_EQ(after.aborted, before.aborted + 1);
+    EXPECT_EQ(after.sqlBarrierExpired, before.sqlBarrierExpired) << "没等过 SQL ACK,不算这一类";
+    EXPECT_FALSE(PlayerLifecycleSystem::IsSceneChangeBusy(player)) << "SET 没发出,不登记撤回";
+}
+
+TEST(TravelFreezeCapEcs, BeginTravelHandoffPastWindowWhileWaitingForSqlAcksCountsSqlBarrierExpiry)
+{
+    // 交接 SQL 屏障:标记脚本因两张子表 SQL ACK 没追平而回 0、每 250ms 重试,直到 35s 晚发闸。窗口在等待中关闭时,
+    // 除了既有的 dispatch_window_closed,还要计 sql_barrier_expired,把"等 SQL ACK 超时"与"存盘落地太晚"分开。
+    // 等待计数只能由 Redis 回调写(宿主里没有 zone Redis),这里直接在组件上置 3,模拟已经等过三轮。
+    const auto player = MakeFrozenHandoffPlayer(kCapSelfZone + 1, /*requestedAtMs=*/0, /*markEpoch=*/0,
+                                                tfc::Clock::now() - (tfc::kDispatchWindow + 1s));
+    tlsEcs.actorRegistry.emplace<PlayerOwnerEpochComp>(player).epoch = 7;
+    tlsEcs.actorRegistry.get<PlayerTravelHandoffComp>(player).sqlBarrierWaits = 3;
+    const auto before = Stats();
+
+    PlayerLifecycleSystem::BeginTravelHandoff(kCapPlayerId);
+
+    const auto after = Stats();
+    ASSERT_TRUE(tlsEcs.actorRegistry.valid(player)) << "SET 没发出:解冻,不销毁";
+    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<PlayerTravelHandoffComp>(player));
+    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<PlayerFrozenComp>(player));
+    EXPECT_EQ(after.dispatchWindowClosed, before.dispatchWindowClosed + 1);
+    EXPECT_EQ(after.sqlBarrierExpired, before.sqlBarrierExpired + 1);
+    EXPECT_EQ(after.aborted, before.aborted + 1);
+    EXPECT_EQ(after.sqlBarrierWaited, before.sqlBarrierWaited) << "等待计数只在回调里第一次等待时加,这里不动";
     EXPECT_FALSE(PlayerLifecycleSystem::IsSceneChangeBusy(player)) << "SET 没发出,不登记撤回";
 }
 
@@ -2918,7 +2943,48 @@ public:
         PlayerLifecycleSystem::JudgeTravelOutcomeReply(playerId, requestedAtMs, cachedEpoch,
             "B5 missing persisted component regression", travel_outcome::Evidence::kNoReply, &reply);
     }
+
+    // AbortTravelHandoff 是私有的:存盘看门狗 / 晚发闸 / 冻结上限都经它收口,这里直接驱动这个共同出口。
+    static void Abort(Guid playerId, const char* reason)
+    {
+        PlayerLifecycleSystem::AbortTravelHandoff(playerId, reason);
+    }
 };
+
+TEST(TravelFreezeCapEcs, SaveWatchdogAbortWhileWaitingForSqlAcksCountsSqlBarrierExpiry)
+{
+    // 主路径:交接存盘在途(kQueued)时挂 30s 存盘看门狗,它先于 35s 晚发闸到期。两次 SQL ACK 重试之间 requestedAtMs 为 0,
+    // 看门狗照常 AbortTravelHandoff —— 归因在这个共同出口做,同样要计 sql_barrier_expired。
+    const auto player = MakeFrozenHandoffPlayer(kCapSelfZone + 1, /*requestedAtMs=*/0, /*markEpoch=*/0, kT0);
+    tlsEcs.actorRegistry.get<PlayerTravelHandoffComp>(player).sqlBarrierWaits = 2;
+    const auto before = Stats();
+
+    PlayerTravelOutcomeTestAccess::Abort(kCapPlayerId, "handoff save did not land in time");
+
+    const auto after = Stats();
+    ASSERT_TRUE(tlsEcs.actorRegistry.valid(player));
+    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<PlayerTravelHandoffComp>(player));
+    EXPECT_EQ(after.sqlBarrierExpired, before.sqlBarrierExpired + 1);
+    EXPECT_EQ(after.aborted, before.aborted + 1);
+    EXPECT_EQ(after.dispatchWindowClosed, before.dispatchWindowClosed) << "不是晚发闸收的口";
+}
+
+TEST(TravelFreezeCapEcs, AbortWithMarkWriteInFlightIsNotSqlBarrierExpiry)
+{
+    // 对照组:标记脚本在途(requestedAtMs != 0)时中止,不是"在等 SQL ACK";没等过(sqlBarrierWaits == 0)也不算。
+    // markEpoch 保持 0,Abort 不登记撤回,宿主里不需要 zone Redis。
+    const auto inFlight = MakeFrozenHandoffPlayer(kCapSelfZone + 1, /*requestedAtMs=*/123, /*markEpoch=*/0, kT0);
+    tlsEcs.actorRegistry.get<PlayerTravelHandoffComp>(inFlight).sqlBarrierWaits = 2;
+    const auto before = Stats();
+
+    PlayerTravelOutcomeTestAccess::Abort(kCapPlayerId, "test abort while the mark write is in flight");
+
+    const auto after = Stats();
+    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<PlayerTravelHandoffComp>(inFlight));
+    EXPECT_EQ(after.sqlBarrierExpired, before.sqlBarrierExpired);
+    EXPECT_EQ(after.aborted, before.aborted + 1);
+}
+
 
 namespace
 {
@@ -7813,12 +7879,13 @@ TEST(OwnerEpochStats, RejectedExitingSaveCountsAsRollbackEvidence)
     tlsEcs.actorRegistry.remove<PlayerAssetOpLedgerComp>(player);
     const auto before = owner_epoch_stats::Read();
 
-    PlayerLifecycleSystem::HandlePlayerSaveRejected(kExitPlayerId, "player-save-test", "6");
+    PlayerLifecycleSystem::HandlePlayerSaveRejected(kExitPlayerId, "player-save-test", "6", RedisSaveOwnerRejection{});
 
     EXPECT_FALSE(tlsEcs.actorRegistry.valid(player)) << "已被废黜:不存盘销毁";
     const auto after = owner_epoch_stats::Read();
     EXPECT_EQ(after.staleOwnerWriteRejected, before.staleOwnerWriteRejected + 1);
     EXPECT_EQ(after.staleOwnerRejectedExiting, before.staleOwnerRejectedExiting + 1);
+    EXPECT_EQ(after.ownerCounterBehind, before.ownerCounterBehind) << "改派不是 Redis 回退";
     EXPECT_TRUE(after.Any());
 }
 
@@ -7832,10 +7899,61 @@ TEST(OwnerEpochStats, RejectedLiveSaveIsNotCountedAsExiting)
     tlsEcs.actorRegistry.remove<PlayerAssetOpLedgerComp>(player);
     const auto before = owner_epoch_stats::Read();
 
-    PlayerLifecycleSystem::HandlePlayerSaveRejected(kExitPlayerId, "player-save-test", "6");
+    PlayerLifecycleSystem::HandlePlayerSaveRejected(kExitPlayerId, "player-save-test", "6", RedisSaveOwnerRejection{});
 
     EXPECT_FALSE(tlsEcs.actorRegistry.valid(player));
     const auto after = owner_epoch_stats::Read();
     EXPECT_EQ(after.staleOwnerWriteRejected, before.staleOwnerWriteRejected + 1);
     EXPECT_EQ(after.staleOwnerRejectedExiting, before.staleOwnerRejectedExiting);
+}
+
+TEST(OwnerEpochStats, CounterBehindDestroysWithoutSavingAndIsNotCountedAsDeposal)
+{
+    // G4(docs/design/zone-redis-regression-guard-20261022.md §4.4):Redis 的 owner 计数器(5)比实体缓存的 epoch(6)还小 =
+    // Redis 回退丢了铸造。只检测、不修复:与废黜同样不存盘销毁(不写释放标记),单独计 owner_counter_behind;
+    // 成因不是双主,stale_owner_write_rejected / stale_owner_rejected_exiting 都不动。用退出中的实体:退出存盘被拒最要紧。
+    ScopedPersistedPlayerCleanup cleanup;
+    const auto player = MakeExitingPlayer(kSessionAtExit, kSessionAtExit);
+    ASSERT_TRUE(MarkPersisted(player));
+    tlsEcs.actorRegistry.emplace<PlayerOwnerEpochComp>(player).epoch = 6;
+    tlsEcs.actorRegistry.remove<PlayerAssetOpLedgerComp>(player);
+    const auto before = owner_epoch_stats::Read();
+    const auto exitBefore = exit_release_stats::Read();
+
+    PlayerLifecycleSystem::HandlePlayerSaveRejected(kExitPlayerId, "player-save-test", "6",
+        RedisSaveOwnerRejection{RedisSaveOwnerRejectReason::kOwnerCounterBehind, "5"});
+
+    EXPECT_FALSE(tlsEcs.actorRegistry.valid(player)) << "只丢不盖:不存盘销毁";
+    EXPECT_EQ(tlsEcs.GetPlayer(kExitPlayerId), entt::entity{entt::null});
+    EXPECT_EQ(SessionMap().count(kSessionAtExit), 0u);
+    EXPECT_EQ(exit_release_stats::Read().decisions, exitBefore.decisions) << "不写释放标记、不发改派";
+    const auto after = owner_epoch_stats::Read();
+    EXPECT_EQ(after.ownerCounterBehind, before.ownerCounterBehind + 1);
+    EXPECT_EQ(after.staleOwnerWriteRejected, before.staleOwnerWriteRejected);
+    EXPECT_EQ(after.staleOwnerRejectedExiting, before.staleOwnerRejectedExiting);
+    EXPECT_TRUE(after.Any()) << "[OwnerEpoch] 汇总行要因它而打出";
+}
+
+TEST(OwnerEpochStats, CounterBehindOnStaleInFlightSaveResavesWithCurrentEpoch)
+{
+    // 被拒的是旧期望值(6),实体已缓存更新的 epoch(7):与改派下的旧代际在途写同一处置 —— 用当前 epoch 重存,由 Lua 按同一判据
+    // 重新回答(仍落后就再回计数器落后,那时两值相等才销毁),这里既不计数也不销毁。本宿主没有 Redis:去掉一个持久组件让重存
+    // 在组装阶段被拒,在线实体保留(同 ExitPersistEcs.StaleEpochRejectOnOnlinePlayerKeepsEntity)。
+    ScopedPersistedPlayerCleanup cleanup;
+    const auto player = MakeOnlinePlayer(kSessionAtExit);
+    ASSERT_TRUE(MarkPersisted(player));
+    tlsEcs.actorRegistry.emplace<PlayerOwnerEpochComp>(player).epoch = 7;
+    tlsEcs.actorRegistry.remove<PlayerAssetOpLedgerComp>(player);
+    const auto before = owner_epoch_stats::Read();
+
+    PlayerLifecycleSystem::HandlePlayerSaveRejected(kExitPlayerId, "player-save-test", "6",
+        RedisSaveOwnerRejection{RedisSaveOwnerRejectReason::kOwnerCounterBehind, "5"});
+
+    ASSERT_TRUE(tlsEcs.actorRegistry.valid(player));
+    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<UnregisterPlayer>(player));
+    EXPECT_EQ(tlsEcs.GetPlayer(kExitPlayerId), player);
+    EXPECT_EQ(SessionMap().count(kSessionAtExit), 1u);
+    const auto after = owner_epoch_stats::Read();
+    EXPECT_EQ(after.ownerCounterBehind, before.ownerCounterBehind) << "当前 epoch 是否也落后要等重存的回答";
+    EXPECT_EQ(after.staleOwnerWriteRejected, before.staleOwnerWriteRejected);
 }

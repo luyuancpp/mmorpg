@@ -578,10 +578,11 @@ namespace battle_settlement
 	// 确认模式落库标记:SET,member = 十进制 player_id,每局一个键(按 battle_id)。
 	// 只表达「本局已经为这名成员写过 pending」:与 pending 两键在同一条脚本里写下,之后没有任何脚本摘成员
 	// (销账脚本不碰它),所以销账之后它仍能证明「写过」。
-	// 寿命:只在落库轮次之间有用。全部成员落定后 battle 立即 DEL(不会再有下一轮);停机、崩溃、轮次用尽时留下的
-	// 随 TTL 过期。TTL 必须活过「上一轮结论未知 → 下一轮」的间隔:Redis 连得上时轮次用尽前最多约 9.5 分钟
-	// (ResultCommit 的 kMaxStagingRounds),能把间隔拉长的只有 battle 节点单边连不上 Redis(连不上时不开轮)。
-	// 取 24 小时;单边断连超过 24 小时不在保证范围内。
+	// 寿命:只在落库轮次之间有用。全部成员落定后 battle 立即 DEL(不会再有下一轮);停机、崩溃、落库判用尽时留下的
+	// 随 TTL 过期。TTL 必须活过整个落库阶段:2026-10-22 起 ResultCommit 从第一次问起落库算起满 kMaxStagingSpan
+	// (6 小时,单调时钟,与 Redis 连不连得上无关)即不再开轮,而标记的写入不早于这个起点,所以任何一轮开出时标记都还在。
+	// 取 24 小时,留 4 倍余量;battle_room_manager.cpp 的 static_assert 与 turn_battle_engine_test 守住两者关系。
+	// (原先只数轮次、没有墙钟上限,battle 节点单边连不上 Redis 超过 24 小时时标记会先过期,已随跨度上限堵上。)
 	// 前缀与按玩家的 pending 两键、积压索引都不同,不会被它们的格式撞上。
 	inline constexpr char kStagedSettlementMembersKeyFmt[] = "battle:settlement:staged:%llu";
 	inline constexpr uint32_t kStagedSettlementMembersTtlSec = 86400;
@@ -606,8 +607,11 @@ namespace battle_settlement
 	//   - 重试轮拖过正式期限 + 60s 时,锁自然过期。
 	// 这些情形按「已收尾」处理会把合法结算静默丢掉(与 scene 侧 StorePendingSettlementIfLockMatch 注释里
 	// 「离线结算常晚于锁到达」是同一个结论)。所以锁不在时照写,与改造前一致;只有锁属于别的局才不写 ——
-	// 那一局能拿到锁,说明这一局要么已销账、要么已被判废,scene 每条路径都会丢弃这一局的结算
-	// (锁值不符丢弃、离线暂存返回 2 后销账),再写只会让旧局覆盖新局的单槽 pending。
+	// 那一局能拿到锁,说明这一局要么已销账、要么已被判废。scene 的**派发路径**都会丢弃这一局的结算
+	// (在线时 InBattleComp 不符、或无组件时锁值不符 → 销账;离线暂存锁不符返回 2 → 销账)。
+	// 不走派发的两条读路径不看锁:登录钩子(CheckPendingSettlementOnEnter → ApplyPendingSettlement)与冻结到期补读。
+	// 改造前旧局 pending 写下之后、新局覆盖之前若走到它们,旧局奖励原本可能被应用;现在返回 3 不写,
+	// 这个窗口里的旧局奖励**有意放弃**,换的是旧局不再覆盖新局的单槽 pending(2026-10-22 措辞更正)。
 	//
 	// 顺序:先判标记,再判锁,两键 SET 之后才写标记,ZADD 放最后。
 	//   - 标记写在两键之后,标记在就说明两键已写。OOM 只在第一条写之前判一次(之后的写为保原子性放行),

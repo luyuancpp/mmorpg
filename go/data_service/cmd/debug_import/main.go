@@ -71,6 +71,9 @@ func main() {
 		replace      = flag.Bool("replace", false, "player-bundle: overwrite an existing local save of the same player_id")
 		allowHosts   = flag.String("allow-target-host", "", "comma-separated non-loopback hosts allowed as write targets (local docker service names)")
 		allowFenced  = flag.Bool("allow-fenced-tables", false, "legacy playerdb: write player_database / player_database_1 rows without aligning the save barrier (the player will NOT load)")
+
+		// r2-ds#1(2026-10-22):身份取不到(TiDB、旧版导出包)且目标库没有本地调试环境标记时,缺省拒绝写入。
+		allowUnverifiedTarget = flag.Bool("allow-unverified-target-identity", false, "player-bundle: write even when a target cannot be proven distinct from the export source (identity unavailable and no local marker table); prints a WARNING per target")
 	)
 	flag.Parse()
 
@@ -95,7 +98,7 @@ func main() {
 		err = runBundleImport(ctx, raw, bundleImportOptions{
 			dbConfigPath: *dbConfigPath, configPath: *configPath, localZone: uint32(*zoneID),
 			source: *source, localAccount: *localAccount, replace: *replace,
-			dryRun: *dryRun, allowHosts: *allowHosts,
+			dryRun: *dryRun, allowHosts: *allowHosts, allowUnverifiedTarget: *allowUnverifiedTarget,
 		})
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "import failed: %v\n", err)

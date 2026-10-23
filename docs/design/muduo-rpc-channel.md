@@ -159,7 +159,7 @@ template <typename Method> bool SendRequest(const typename Method::Request& requ
   不捕获 `RpcChannelPtr`、`TcpConnectionPtr`、controller、request/response 裸指针,不捕获可能先于它析构的对象的 `this`。
 - (c) RESPONSE / RPC_ERROR 的 done 在该连接的 I/O 回调栈上**同步**执行(保持同一连接内"回包与后续请求"的处理顺序,今天的 rpc_replies 也是同步);
   在其中**不得同步销毁**本 channel 所属的 RpcClient 或摘节点(与 handler 侧既有规则一致,`rpc_controller.h:36-38`),需要时 queueInLoop。
-- (d) 失败语义沿用 gRPC 口径"传输失败 = 结果未知"(`grpc-client-deadline-failure-callback.md` §3.3):`OutcomeUnknown()` 时只释放本地在途状态、提示客户端、重试幂等操作,
+- (d) 失败语义沿用 gRPC 口径"传输失败 = 结果未知"(`grpc-muduo-transport.md` §16.2):`OutcomeUnknown()` 时只释放本地在途状态、提示客户端、重试幂等操作,
   不得当作"对端拒绝"去改权威状态;`DefinitelyNotExecuted()` 可安全重试。RPC 层不自动重试。
 - (e) "恰好一次"的唯一例外:EventLoop 已退出后才析构的 channel,在途 done 随容器销毁而不调用(§6.4)。所以不得把资源释放只挂在 done 上;
   也因此 **gRPC sync handler 不得用 future 阻塞等待一次 RPC0 调用的结果**(事故 §7.13 的同形)。
@@ -393,7 +393,7 @@ lambda 捕获 `{sessionId, incarnation, clientRequestId, innerMessageId}`:
 生成的 gRPC 客户端只有按方法的全局 handler。B 要挂起 `RpcDoneCallback`,只能自建 `关联号 → RpcDoneCallback` 表:成功按响应回显的关联号认领,
 失败按 `GrpcCallFailure` 的请求副本认领;下游不回显关联号就不能挂起。后续批次给 `grpc_async_client` 模板加每次调用的 done 与 deadline(§14)。
 
-> **2026-10-17 契约勘误**：§8.4 过渡写法已过时：生成客户端只保留必填 done 的每次调用入口，B 可直接把 `RpcDoneCallback` 按值捕获进 `GrpcDone`，不再靠响应回显或全局失败处理器认领；见 `grpc-client-deadline-failure-callback.md` §12。
+> **2026-10-17 契约勘误**：§8.4 过渡写法已过时：生成客户端只保留必填 done 的每次调用入口，B 可直接把 `RpcDoneCallback` 按值捕获进 `GrpcDone`，不再靠响应回显或全局失败处理器认领；见 `grpc-muduo-transport.md` §16.1。
 
 ## 9. 三个指定对象的去向
 
@@ -519,7 +519,7 @@ C++ 节点没有 Prometheus 出口(`dirty_save_stats.h:25-30`),沿用"relaxed �
 
 - 玩家级 handler 延后完成(`player_service_gen.go` / `PlayerService::CallMethod` 加调用上下文)。2026-10-15 设计已定、建议暂不实施(无合理首个调用方),
   见 [`player-handler-deferred-reply.md`](player-handler-deferred-reply.md)。2026-10-16 用户决定暂不实施;出现第一个需要延后回包的玩家 handler 时再按该文档 §3、§6 做。
-- ~~`grpc_async_client` 模板加每次调用的 done 与 deadline,让 B 的 gRPC 下游也能直接挂 `RpcDoneCallback`。~~ 2026-10-17：已由必填每次调用回调取代，全局处理器删除；现行契约见 `grpc-client-deadline-failure-callback.md` §12。
+- ~~`grpc_async_client` 模板加每次调用的 done 与 deadline,让 B 的 gRPC 下游也能直接挂 `RpcDoneCallback`。~~ 2026-10-17：已由必填每次调用回调取代，全局处理器删除；现行契约见 `grpc-muduo-transport.md` §16.1。
 - `muduo_grpc::Channel` 的在途表迁到同一份 `InflightIndex`;其 `clear<MuduoGrpcChannelPtr>` 挪进关机阶段 0。
 - PlayerEnterGameNode 改 `CallMethod` 拿送达确认(I1 残余),由进场欠账 owner 决定。
 - `client-request-ordering.md` 登记不变式 I5。
@@ -664,14 +664,13 @@ C++ 节点没有 Prometheus 出口(`dirty_save_stats.h:25-30`),沿用"relaxed �
 
 ### 19.2 gRPC 生成客户端的每次调用回调(§14 第 2 项)
 
-见 `docs/design/grpc-client-deadline-failure-callback.md` §11:每个 unary 方法多一个
-`Send<Svc><Method>(registry, entity, req, GrpcDone<Resp>, GrpcCallOptions = {})`,`done` 恰好一次、从不同步、不触发全局处理器;
-既有 API 全部保留。模板与 `grpc_call_tag.h` 已随用户快照提交并 regen;`grpc_client_lifecycle_test.cpp` 补 `PerCallDone*` 三条用例
-(2026-10-16:该文件随 gRPC 传输第 3 批删除,本地拒绝改由 `grpc_client_local_reject_test.cpp` 覆盖,成功 / 停机两条待第 4 批回环重写,
-见 grpc-client-deadline-failure-callback.md §11.4)。
+现行接口见 [gRPC 客户端契约](grpc-muduo-transport.md#grpc-client-callback)：每个 unary 方法显式接收
+`GrpcDone<Resp>`，通用 sender 使用 Erased 入口，done 必填、恰好一次、从不同步，不再安装全局处理器。
+公共类型由 `core/network/grpc_client_call.h` 定义，本地拒绝回归在 `grpc_client_local_reject_test.cpp`；
+验证范围见 [§16.6](grpc-muduo-transport.md#grpc-client-validation)，旧 CQ 用例和兼容重载不作为当前接口。
 §8.4「关联号 → RpcDoneCallback」过渡写法从此不再必要:B 的 gRPC 下游直接把 `RpcDoneCallback` 捕获进 `GrpcDone`。
 
-> **2026-10-17 契约勘误**：done 已成为唯一完成通道且不得为空；“既有 API 全部保留”仅描述增量阶段，旧三参 / metadata 数组 / Message 重载和全局处理器已删除，通用 sender 改走 Erased 入口。
+> **2026-10-17 契约勘误**：增量阶段的“既有 API 全部保留”已失效；旧三参 / metadata 数组 / Message 重载和全局处理器均已删除。
 
 ### 19.3 GM 停机鉴权被拒返回失败
 

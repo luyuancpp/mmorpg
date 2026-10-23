@@ -79,8 +79,7 @@ func readGoldBalance(gc *pkg.GameClient, _ *gameobject.Player, stats *metrics.St
 // goldSlotValue 取 GetCurrencyList 回包里 Gold 槽的值。槽位越界(新号没有货币记录、repeated 比槽位短)按 0,
 // 与改造前经 gameobject.Player.GetCurrencyValue 读出的值一致。
 // 槽位规则放在共享 helper 这一侧,场景按需引用它,不让共享 helper 反过来依赖某个场景的私有函数
-// (那样场景一改名 / 删函数,attribute / pet / equip_forge / currency 会一起编译失败)。
-// travel_smoke_scenario.go 的 travelSmokeGold 目前仍是同规则的一份副本,应改为调用本函数。
+// (那样场景一改名 / 删函数,attribute / pet / equip_forge / currency 会一起编译失败)。travel 的 readGold 也用它。
 func goldSlotValue(response *scene.GetCurrencyListResponse) uint64 {
 	values := response.GetCurrency().GetValues()
 	if int(currencyTypeGold) >= len(values) {
@@ -151,7 +150,7 @@ func currencyReplyRejection(method string, envelopeTip, bodyTip uint32, featureU
 // sceneRequestEnvelopeHint 给 gate 对「发往 scene 的客户端请求」回的信封拒绝码配一句原因(拼在 "tip=<数字>" 后面);
 // 不认识的码返回空串,只打印数字。不提「gate 不认识这个消息号」:未知消息号 gate 不回信封,只会表现为超时。
 // 这几个码的来源与 gate 一侧的定位线索只该写在这一处,共享 helper 与各场景共用;
-// travel_smoke_scenario.go 的 travelSmokeEnvelopeHint 目前仍是一份副本,应改为调用本函数(场景自己的节流常量可另行追加)。
+// 场景只在需要时覆盖个别码的提示(travelSmokeEnvelopeHint 把限流指到它自己的节流常量)。
 func sceneRequestEnvelopeHint(tip uint32) string {
 	switch tip {
 	case uint32(tiptable.CommonError_kFeatureUnavailable):

@@ -51,7 +51,7 @@ DESIGN_RULES = [
     ]),
     ("ID、节点身份与寻址", [
         "snowflake-*", "node-*", "node_id_*", "id-routing-session-status-*",
-        "routing-identity-audit-*", "grpc_node_entity_id_collision.md",
+        "routing-identity-audit-*",
         "control-plane-topic-partitioning-*",
     ]),
     ("跨服、合服与回档", [
@@ -83,7 +83,7 @@ DESIGN_RULES = [
     ]),
     ("基础设施与中间件", [
         "kafka-*", "infra-reconnect-overview.md", "go-zero-rpc-timeout-fix.md",
-        "grpc-client-deadline-failure-callback.md", "grpc-muduo-transport.md",
+        "grpc-muduo-transport.md",
         "muduo-timer-cancellation-hazards.md",
         "muduo-rpc-*", "player-handler-deferred-reply.md",
         "hashed-timing-wheel.md", "double-buffer-queue-optimizations.md",

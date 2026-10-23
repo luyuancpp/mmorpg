@@ -539,6 +539,11 @@ func TestHandleWatchPut_ZoneFlipRetiresOldZoneIdentity(t *testing.T) {
 		logic := NewEnterSceneLogic(context.Background(), sc)
 		assert.False(t, logic.playerLocationOwnerGone(staleLoc, testZoneId))
 		assert.False(t, logic.playerLocationOwnerDead(staleLoc, testZoneId))
+		// 撤掉本地消失记录,验证挡住它们的是 GO-6 那几层:节点留在负载集(ZCARD > 0、IsNodeAlive 为真),
+		// 本领导者推迟队列里有它(CanReclaimDeadNode 恒拒)。旧代码写失败照样 ZREM,这两条在这里会变绿。
+		forgetLocalGoneObservationForTest(t, testZoneId, "10")
+		assert.False(t, logic.playerLocationOwnerGone(staleLoc, testZoneId), "death_at 没落地:节点留在负载集,不得当作已下线")
+		assert.False(t, logic.playerLocationOwnerDead(staleLoc, testZoneId), "death_at 没落地:节点留在负载集,不得接管")
 	})
 
 	t.Run("follower_leaves_redis_alone", func(t *testing.T) {

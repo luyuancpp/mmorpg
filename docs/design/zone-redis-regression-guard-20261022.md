@@ -1,7 +1,7 @@
 # zone Redis 回退防护：「Redis 回退一族」6 条 low 的合并设计
 
 - 日期：2026-10-22
-- 状态：**设计稿，未落码、未编译、未测试**。待负责人按 §13 拍板后分批落码；落码与验证按 AGENTS §10.1 交 Codex。
+- 状态：**2026-10-23 起落码中，未编译、未测试**。负责人 2026-10-22 授权「按最标准的方式做完」，§13 各项按推荐取；项目未上线、玩家数据可以完全清空，§6 的混版与回退兼容不再实现。编译、测试、压测按 AGENTS §10.1 交 Codex。落码相对本稿的取舍见 §14。
 - 来源：[数据一致性等级核对](data-consistency-guarantee-map-20261020.md) §2.2 的 6 条 low（player-save#1、identity-routing-redis-v#2、cross-service-assets-v#1、player-save#2 / identity-routing-redis-v#1、identity-routing-redis#1）。
 - 关联：[存盘围栏](db-write-fencing-mysql.md) §9.1（B1）与 §14 第 7、15 条；[再入屏障与 owner_epoch](scene-owner-reentry-barrier.md)；[共享 Redis 按用途拆分](shared-redis-split-by-purpose.md)；`deploy/k8s/manifests/infra/redis-ha.yaml`；路由就绪标记的身份判据 `go/shared/placement/route_ready.go`。
 - 取证方式：只读源码，未运行任何命令。行号以 2026-10-22 工作区为准。
@@ -134,7 +134,7 @@ P1 + P2 做完之后，回退**不再造成覆盖或永久拒登**，残余只�
 #### 4.1.3 核验路径
 
 1. 发两张 SQL 行的读任务。复用冷路径机制，**不采信子表缓存**（`validateSQLSub` 的现有口径）。
-2. 同时取资产 SQL 证据 `player:{id}:asset_sql_commit` 的版本，作为第三个「SQL 已提交」证人。go/db 只在 SQL 提交后才写它（`player_cache_publish.go`）。
+2. ~~同时取资产 SQL 证据的版本作为第三个证人~~（落码时取消，见 §14：证据与 player_database 的 ACK 在 go/db 同一段 Lua、同一版本原子写入，不提供额外信息）。
 3. 按 §4.1.4 判定。
 4. 判为一致或采纳时，执行**核验发布脚本**（新）：
    - 原子复核：owner、pending、两表 ACK 的原文与第 1 步读到的一致；INFO 身份仍是本次读到的身份；role 是 master。
@@ -155,6 +155,7 @@ P1 + P2 做完之后，回退**不再造成覆盖或永久拒登**，残余只�
 | V4 两行不一致 | `S1 ≠ S2`，且 `max(S1, S2) > P` | 不写 | 新的可重试失败 `barrier_reconciling`：另一张表的任务多半还在 Kafka 积压或重试队列里 |
 | V5 SQL 落后于证据 | `max(A1, A2, C) > max(S1, S2)`，或 Redis 有历史而 SQL 行缺失 | 不写，critical | fail-closed：SQL 侧回档或损坏，走 §9.2 |
 | V6 无历史 | P 空、owner 为 0、父键是建角种子，两张 SQL 行为空 | 只写戳 | 成功 |
+| V6′ 首存候选形状（r2-login#1，2026-10-23 安全裁决） | P 空、owner 已铸、父键是建角种子或缺失，两张 SQL 行为空或缺失 | 拒绝 historyGap，不补空父键、不写身份戳、不降低 owner | 空 SQL 不能证明从未存盘。新的建角链必须先完成真实初始 SQL 提交，按下述初始持久基底与既有 Reconcile 恢复；历史缺行不能借新号旁路放行 |
 | V7 P 空，SQL 有历史 | P 空，`S1 == S2` 非零 | 按 V2 采纳 | 成功。今天这种情形报「需要停写恢复」；它正是回退越过首次存盘、或整键丢失的样子 |
 
 V2 / V7 自动采纳的依据：

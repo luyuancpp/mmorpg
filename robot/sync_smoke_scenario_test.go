@@ -865,8 +865,8 @@ func TestTravelSmokeReplyRejection(t *testing.T) {
 		wantErr     string // 空 = 应放行
 	}{
 		{"accepted", 0, &scene.GmAddCurrencyResponse{BalanceAfter: 18}, ""},
-		{"gate GM guard", gmGuard, &scene.GmAddCurrencyResponse{}, "GM 闸拒绝"},
-		{"other envelope rejection", tipSyncRateLimited, &scene.GetCurrencyListResponse{}, "被 gate 信封拒绝"},
+		{"gate GM guard", gmGuard, &scene.GmAddCurrencyResponse{}, "gate GM guard rejected it"},
+		{"other envelope rejection", tipSyncRateLimited, &scene.GetCurrencyListResponse{}, "travelSmokeRequestSpacing"},
 		{"business rejection", 0, &scene.GetCurrencyListResponse{ErrorMessage: &base.TipInfoMessage{Id: 9}}, "scene 业务拒绝 tip=9"},
 	}
 	for _, c := range cases {
@@ -889,7 +889,8 @@ func TestTravelSmokeReplyRejection(t *testing.T) {
 }
 
 // 金币槽越界按 0(新号没有任何货币记录时空列表是合法回包),与改造前经 Player.GetCurrencyValue 读出的值一致。
-func TestTravelSmokeGold(t *testing.T) {
+// goldSlotValue 是 currency_crash_window_scenario.go 的共享规则,travel 的 readGold 与 readGoldBalance 共用它。
+func TestGoldSlotValue(t *testing.T) {
 	cases := []struct {
 		name     string
 		response *scene.GetCurrencyListResponse
@@ -901,7 +902,7 @@ func TestTravelSmokeGold(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			if got := travelSmokeGold(c.response); got != c.want {
+			if got := goldSlotValue(c.response); got != c.want {
 				t.Fatalf("got %d, want %d", got, c.want)
 			}
 		})

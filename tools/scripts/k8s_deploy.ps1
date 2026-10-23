@@ -1369,7 +1369,7 @@ function Get-AuthoritativeYamlBlock {
 }
 
 # ─────────────────────────────────────────────────────────────────
-# C++ gRPC 客户端 deadline 预算(docs/design/grpc-client-deadline-failure-callback.md §4.2 / §4.4)
+# C++ gRPC 客户端 deadline 预算(docs/design/grpc-muduo-transport.md §16.3 / §16.4)
 # ─────────────────────────────────────────────────────────────────
 
 <#
@@ -1519,7 +1519,7 @@ function Get-ZrpcMethodTimeouts {
 	    一律算「C++ 会调用」,不许登记。
 	表里登记了、服务 yaml 里却没有对应 MethodTimeouts 条目的过期项同样判失败。
 	这道守护在跑契约测试时生效:CI 在 tools/scripts、各 etc 配置、k8s 清单等有改动时跑,发版流程必跑;
-	只改 C++ 的提交不会当场触发(原因与后续做法见设计文档 §4.4)。部署脚本自身不扫 C++ 源码。
+	只改 C++ 的提交不会当场触发(触发边界见 grpc-muduo-transport.md §16.4)。部署脚本自身不扫 C++ 源码。
 
 	全方法名大小写敏感、逐字匹配,与 go-zero 按 info.FullMethod 查表的方式一致。
 #>
@@ -1540,7 +1540,7 @@ function Get-GrpcClientMethodsNotCalledFromCpp {
 .DESCRIPTION
 	为什么是部署门禁而不只是注释:两个数分属两份配置(bin/etc 的 GrpcClient 块与 go/<svc>/etc 的 Timeout),
 	改一边忘另一边不会有任何报错。C++ deadline 不比服务端超时宽时,C++ 先按自己的 DeadlineExceeded 收尾,
-	拿不到服务端带真实错误码的应答,而服务端可能仍在执行 —— 本可确定的结果变成「结果未知」(设计 §3.3)。
+	拿不到服务端带真实错误码的应答,而服务端可能仍在执行 —— 本可确定的结果变成「结果未知」(grpc-muduo-transport.md §16.2)。
 
 	判定口径(每一项都是违例,不是警告):
 	  - 目标必须在 GrpcClient.CallDeadlineMs 里显式写成正整数:缺席 / 0 在 C++ 侧落到内置默认 10000
@@ -1575,7 +1575,7 @@ function Get-GrpcClientDeadlineBudgetViolations {
 		[Parameter(Mandatory = $true)][System.Collections.IDictionary]$Targets
 	)
 
-	# 余量与 go-zero 默认值是这条契约本身(设计 §4.2 不等式 1),不是调参旋钮,所以不开参数。
+	# 余量与 go-zero 默认值是这条契约本身(grpc-muduo-transport.md §16.3),不是调参旋钮,所以不开参数。
 	$marginMs = 2000
 	$goZeroDefaultServerTimeoutMs = 2000
 
@@ -1729,7 +1729,7 @@ function Assert-GrpcClientDeadlineBudget {
 	$violations = @(Get-GrpcClientDeadlineBudgetViolations -DeployScalars $deployScalars -Targets $targets)
 	if ($violations.Count -gt 0) {
 		throw ("C++ gRPC 客户端 deadline 预算不成立,拒绝部署(上游比下游宽:C++ deadline ≥ Go zrpc Timeout + 2000," +
-			"docs/design/grpc-client-deadline-failure-callback.md §4.2):`n  - " + ($violations -join "`n  - "))
+			"docs/design/grpc-muduo-transport.md §16.3):`n  - " + ($violations -join "`n  - "))
 	}
 	$exemptedNote = ''
 	if ($exempted.Count -gt 0) { $exemptedNote = "; MethodTimeouts exempt (never called from C++): " + ($exempted -join ', ') }
@@ -5231,6 +5231,24 @@ function Get-CppZoneRedisAuthAnnotations {
 	return $annotations
 }
 
+<#
+.SYNOPSIS
+	校验 C++ 节点 LogLevel 的结构并返回整数:只认 0..5(muduo Logger::LogLevel 的 TRACE..FATAL),其余一律 throw。
+
+.DESCRIPTION
+	纯函数,New-NodeConfigMapYaml 用它把 bin/etc/base_deploy_config.yaml 的 LogLevel 镜像进 node-config / battle-node-config;
+	契约测试按 AST 抽出来直接喂非法值。生产下界(>= 2,不开 DEBUG / TRACE)是发布策略,由 release_preflight.ps1 判,不在这里。
+#>
+function ConvertTo-CppNodeLogLevel {
+	param([Parameter(Mandatory = $true)][AllowEmptyString()][string]$Value)
+
+	$level = 0
+	if (-not [int]::TryParse($Value, [ref]$level) -or $level -lt 0 -or $level -gt 5) {
+		throw "生成 node ConfigMap 失败:bin/etc/base_deploy_config.yaml 的 LogLevel 必须是 0..5 的整数(muduo 枚举 0=TRACE 1=DEBUG 2=INFO 3=WARN 4=ERROR 5=FATAL;当前 '$Value')。"
+	}
+	return $level
+}
+
 function New-NodeConfigMapYaml {
 	param(
 		[Parameter(Mandatory = $true)][int]$CurrentZoneId,
@@ -5320,7 +5338,7 @@ function New-NodeConfigMapYaml {
 	# 键名 / 结构必须与 C++ 读法逐字对上(见下面模板处的注释),抄一份就是等着漂移。
 	$idSegmentsBlock = Get-AuthoritativeYamlBlock -RelativePath 'bin/etc/base_deploy_config.yaml' -Key 'IdSegments'
 
-	# C++ unary gRPC 调用的 deadline(docs/design/grpc-client-deadline-failure-callback.md §4.4)。与 IdSegments 同法整块搬运:
+	# C++ unary gRPC 调用的 deadline(docs/design/grpc-muduo-transport.md §16.4)。与 IdSegments 同法整块搬运:
 	# 这份 ConfigMap 遮蔽镜像里的 bin/etc,不搬 = K8s 上所有目标都落回 C++ 内置默认 10000,而号段 fetchTimeout、
 	# 换图在途 TTL 都从 deadline 派生,会跟着偏离仓库口径。预算不等式(≥ 服务端 Timeout + 2000)由写路径入口的
 	# Assert-GrpcClientDeadlineBudget 核过,这里只负责逐字搬运;缺 GrpcClient 块则生成期直接 throw(fail-closed)。
@@ -5363,6 +5381,16 @@ function New-NodeConfigMapYaml {
 		throw "生成 node ConfigMap 失败:bin/etc/base_deploy_config.yaml 的 PersistSchemaRegressionMode 只能是 warn 或 enforce(当前 '$persistSchemaRegressionMode')。"
 	}
 
+	# C++ 节点日志级别。数值直接按 muduo Logger::LogLevel 枚举解释(0=TRACE 1=DEBUG 2=INFO 3=WARN 4=ERROR 5=FATAL;
+	# node.cpp 的 Node::InitLogSystem 直接 static_cast,没有映射表)。真源是 bin/etc/base_deploy_config.yaml,
+	# release_preflight.ps1 的 debug.cpp.loglevel 查的也是这一键,staging / prod 部署入口先跑预检(要求 >= 2)。
+	# 2026-10-22 之前这里写死 1:K8s 上 gate / scene / battle 全部带着 DEBUG 跑,而预检只看 bin/etc 那份(2),两边各说各话。
+	# 生成期只核结构(ConvertTo-CppNodeLogLevel),取值范围与 C++ 侧 cpp/libs/engine/config/node_log_level.h 相同(0..5 的整数);
+	# 写法上这里更宽([int]::TryParse 放过 +2 / 首尾空白),但写进 ConfigMap 的是规整后的整数,C++ 一定接受。
+	# C++ 读配置时对缺键 / 空值 / 非整数 / 越界一律拒启(2026-10-22 起;此前缺键落到 proto 默认 0 = TRACE、非整数抛 yaml-cpp 异常),
+	# 这里先拦下,不必等 Pod 起不来才发现。这一键必须写出:这份 ConfigMap 整目录遮蔽镜像里的 bin/etc。
+	$cppLogLevel = ConvertTo-CppNodeLogLevel -Value (Get-AuthoritativeScalar -RelativePath 'bin/etc/base_deploy_config.yaml' -KeyPath 'LogLevel')
+
 	$baseDeployConfig = (@"
 Etcd:
   Hosts:
@@ -5379,7 +5407,8 @@ ${battleSettingsBlock}
 ClusterId: ${CurrentClusterId}
 TableDataDirectory: "../generated/generated_tables/"
 DataRootDirectory: "/app/"
-LogLevel: 1
+# 从 bin/etc/base_deploy_config.yaml 镜像,muduo 枚举 0=TRACE 1=DEBUG 2=INFO 3=WARN 4=ERROR 5=FATAL;生成期已校验是 0..5 的整数。
+LogLevel: ${cppLogLevel}
 HealthCheckInterval: 1
 service_discovery_prefixes:
   - "SceneNodeService.rpc"
@@ -5451,7 +5480,7 @@ Kafka:
 # 注:Kind 名要与 data-service 的 IdSegment.BootstrapTags 及 id_segment 表的种子行一一对应
 # (生产缺行 = ErrCodeIdSegmentUnknownTag,不自动补种)。
 ${idSegmentsBlock}
-# C++ 节点每次 unary gRPC 调用的 deadline(毫秒),键 = 目标 ENodeType 枚举名(docs/design/grpc-client-deadline-failure-callback.md §4)。
+# C++ 节点每次 unary gRPC 调用的 deadline(毫秒),键 = 目标 ENodeType 枚举名(docs/design/grpc-muduo-transport.md §16.3)。
 # config.cpp::readBaseDeployConfig 读 GrpcClient.CallDeadlineMs,grpc_call_deadline::Apply 校验后写进生成的客户端;
 # 不认识的键 / 0 记 ERROR 后该类型按内置默认 10000。gate / scene / battle 共用这一块(battle-node-config 同样生成)。
 # 下面整块由 Get-AuthoritativeYamlBlock 从 bin/etc/base_deploy_config.yaml 原样搬运,单一真相在那份文件;
@@ -8402,7 +8431,7 @@ function New-GoSvcConfigMapYaml {
 	# zrpc 服务端 Timeout(毫秒)从服务 yaml 镜像,与 scene-manager / match 同一条纪律。以前模板里写死 100000:
 	# 部署门禁 Assert-GrpcClientDeadlineBudget 核对的是 login.yaml,两边一分家,门禁放行的就不是集群里真正生效的值。
 	# 非正整数在这里就拒 —— 0 = go-zero 不装超时拦截器(服务端没有上界),非数字 go-zero 起服即失败,都不该写进 ConfigMap。
-	# 值本身 2026-09-29 已由笔误 100000 改正为 10000(LoginNodeService 同步 12000,见 grpc-client-deadline-failure-callback.md §4.3);
+	# 值本身 2026-09-29 已由笔误 100000 改正为 10000(LoginNodeService 同步 12000,见 grpc-muduo-transport.md §16.3);
 	# 以后再改只需动 login.yaml 与 bin/etc 的 GrpcClient.CallDeadlineMs.LoginNodeService 两处,这里自动跟随,不用动生成器。
 	$loginTimeout           = Get-AuthoritativeScalar -RelativePath 'go/login/etc/login.yaml' -KeyPath 'Timeout'
 	$loginTimeoutMs         = [long]0
@@ -8467,7 +8496,7 @@ function New-GoSvcConfigMapYaml {
 	# zrpc 服务端 Timeout 连同它必须盖住的两段预算(归属查询、Kafka 同步写)一起从服务 yaml 取。
 	# 不写 Timeout 就会落到 go-zero 默认 2000ms,比 Kafka 写超时还短:服务端先超时,EnterScene 的业务失败应答回不到
 	# C++ 源 scene,只剩一个「结果未知」的传输失败,交接仍要等满 30s 看门狗裁决(cross-zone-scene-travel.md §12.2;
-	# 失败语义见 grpc-client-deadline-failure-callback.md §3.3)。三者之间的不等式由 tests/k8s_deploy_contract.tests.ps1 守着;
+	# 失败语义见 grpc-muduo-transport.md §16.2)。三者之间的不等式由 tests/k8s_deploy_contract.tests.ps1 守着;
 	# 反方向的 C++ deadline(GrpcClient.CallDeadlineMs.SceneManagerNodeService)≥ 本 Timeout + 2000 由写路径入口的
 	# Assert-GrpcClientDeadlineBudget 守着 —— 调大这里的 Timeout 必须同步调那边,否则部署被拒。
 	$sceneManagerYaml                  = 'go/scene_manager/etc/scene_manager_service.yaml'
@@ -9304,13 +9333,15 @@ SceneManagerRpc:
   Timeout: 5000
   Middlewares:
     Breaker: false
-# DataService gRPC 客户端:PlayerId 号段(AllocateIdSegment)、角色名登记、以及**每次登录**角色列表上的
-# 归属查询(BatchGetPlayerHomeZone)共用这一条连接。(2026-10-18 更正:原注释「只用它领号段」已过时。)
-# NonBlock: true —— 号段是弱依赖(node-id-overhaul-plan §6.5):data-service 没起时 login 照常起服,
-# 领段失败按 IdSegment.FallbackToSnowflake 决定回退还是拒绝建角。
-# Breaker: true —— 与 go/login/etc/login.yaml 一致(2026-10-18 起,此前 K8s 写 false):data-service 僵住但
-# etcd 键还在时,熔断器让登录的归属查询快速失败、按「保留建角 zone」放行,而不是每次登录都白等满查询预算。
-# 建角的号段与名字登记本来就 fail-closed,熔断只让它们失败得更快。
+# DataService gRPC 客户端:SQL 账号目录(ReadAccountDirectory / CreateAccountRole / LookupAccountRole …)、PlayerId 号段
+# (AllocateIdSegment)、归属登记与查询(RegisterPlayerZone / GetPlayerHomeZone / BatchGetPlayerHomeZone)、角色名登记与回源
+# 共用这一条连接。
+# 2026-10-22 更正:账号目录改走 data-service 之后,它是 Login 的**硬依赖** —— 每次 Login(HTTP 与 gate 各一次)先读账号目录,
+# 读失败即登录失败;建角、EnterGame 的目录读写同样 fail-closed。只有角色列表上的归属 / 名字回填是 fail-open 的展示数据
+# (查不到按建角 zone、空名字原样返回)。原注释「data-service 是弱依赖、熔断后按保留建角 zone 放行」已不成立。
+# NonBlock: true —— 只让 login 起服时不被 data-service 的拨号卡住;data-service 不可用期间登录照样失败,不是降级放行。
+# Breaker: true —— 与 go/login/etc/login.yaml 一致:data-service 僵住但 etcd 键还在时,让调用快速失败(登录 / 建角直接回故障码,
+# 角色列表的回填按建角 zone 返回),而不是每次都白等满各自的预算。
 DataServiceRpc:
   Etcd:
     Hosts:
@@ -9369,6 +9400,17 @@ Kafka:
   # db_task topic 的保留期与每分区保留量:与 db 的 ConfigMap 同值(k8s_deploy.ps1 的 Apply-KafkaProfileDefaults / Get-KafkaDiskPlan)。
   RetentionMs: ${dbTaskRetentionMs}
   RetentionBytes: ${dbTaskRetentionBytes}
+# Prometheus 抓取端点(go-zero 自带 agent:zrpc.MustNewServer → ServiceConf.SetUp → prometheus.StartAgent;Host 为空时直接 return,
+# 端点根本不存在,go-zero metric 包记的样本 —— 内置 RPC 指标与 login 用它注册的自定义指标 —— 也被直接丢弃)。
+# 以前 K8s 上不写本段,集群里一条 login 序列都抓不到。
+# 9101 与 manifests/go-svc/login.yaml 的 metrics 容器端口及 prometheus.io/port 注解一致,三处必须同批发布(或先发本段):
+# 只有注解、进程没在 9101 监听时,按注解抓取的目标是 down。登录链路对 data-service 的调用耗时与结果码
+# (rpc_client_requests_duration_ms / rpc_client_requests_code_total)、gate 目录读来源、任务结果投递都只从这里导出
+# (L-18 压测的 t<N>m_login.txt 快照)。契约测试:tools/scripts/tests/login_metrics_contract.tests.ps1。
+Prometheus:
+  Host: 0.0.0.0
+  Port: 9101
+  Path: /metrics
 "@
 		}
 		"player-locator" {
@@ -10723,7 +10765,10 @@ function Apply-OneGoSvc {
 	# secretKeyRef(不写 optional,Secret 缺失的 Pod 卡在 CreateContainerConfigError,而不是带着空密钥起来 —— login 对空密钥本来也拒启);
 	# Pod 模板带密钥指纹注解 —— 只改 Secret 时模板不变、apply 是 no-op,旧 Pod 一直拿旧 AppSecret 调微信;指纹让轮换自动滚动。
 	# 两条指纹必须一次写入(同一个 Pod 模板只能有一个 annotations: 段):排队开时削峰指纹恒排第一行(契约测试按这个位置取),
-	# 微信指纹作附加项跟在后面;排队关时微信指纹自己排第一行。两项都没有就不写 annotations:,模板与接入前相同。
+	# 微信指纹作附加项跟在后面;排队关时微信指纹自己排第一行。
+	# Prometheus 抓取注解(prometheus.io/scrape / port / path)恒写,排在两条指纹之后、不抢第一行;它不能像 player-locator 那样
+	# 手写进 manifest(手写的 annotations: 段会让上面的指纹写入 throw)。端口 9101 与 login ConfigMap 的 Prometheus 段、manifest 的
+	# metrics 容器端口三处一致,契约测试 tools/scripts/tests/login_metrics_contract.tests.ps1 钉住。
 	# 服务名判断留在 -and 左边 / 块最外层(理由同上)。
 	$isLoginOAuth = ($SvcName -eq 'login' -and -not [string]::IsNullOrEmpty($LoginWeChatAppId))
 	if ($SvcName -eq 'login') {
@@ -10737,6 +10782,9 @@ function Apply-OneGoSvc {
 				-EnvName $script:LoginWeChatAppSecretEnv -SecretName $script:LoginOAuthSecretName -SecretKey $script:LoginOAuthWeChatSecretKey
 			$loginAnnotations[$script:LoginOAuthSecretHashAnnotation] = Get-InjectedSecretFingerprint -SecretName $script:LoginOAuthSecretName -Value $script:LoginWeChatAppSecret
 		}
+		$loginAnnotations['prometheus.io/scrape'] = 'true'
+		$loginAnnotations['prometheus.io/port'] = '9101'
+		$loginAnnotations['prometheus.io/path'] = '/metrics'
 		if ($loginAnnotations.Count -gt 0) {
 			$loginAnnotationKeys = @($loginAnnotations.Keys)
 			$loginExtraAnnotations = [ordered]@{}

@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strings"
 	"unicode/utf8"
+	"shared/savebarrier"
 
 	base "proto/common/base"
 	dspb "proto/data_service"
@@ -44,8 +45,17 @@ func ValidFreezeEvidence(e *dspb.AccountRoleFreezeEvidence) bool {
 	case dspb.AccountRoleFreezeEvidenceKind_ACCOUNT_ROLE_FREEZE_EVIDENCE_KIND_NO_ADMISSION:
 		return e.OwnerEpoch == 0 && e.SaveSeq == 0
 	case dspb.AccountRoleFreezeEvidenceKind_ACCOUNT_ROLE_FREEZE_EVIDENCE_KIND_SCENE:
-		return e.OwnerEpoch > 0 && e.SaveSeq > 0
+		return e.OwnerEpoch > 0 && e.SaveSeq > 0 &&
+			!(e.OwnerEpoch == savebarrier.InitialOwnerEpoch && e.SaveSeq == savebarrier.InitialSaveSeq)
+	case dspb.AccountRoleFreezeEvidenceKind_ACCOUNT_ROLE_FREEZE_EVIDENCE_KIND_INITIAL_COMMIT:
+		return e.OwnerEpoch == savebarrier.InitialOwnerEpoch && e.SaveSeq == savebarrier.InitialSaveSeq
 	default:
 		return false
 	}
+}
+
+// NoActorFreezeEvidence 的两类原件都不能携带原生 holder；初始 SQL 提交不冒充 scene 保存。
+func NoActorFreezeEvidence(e *dspb.AccountRoleFreezeEvidence) bool {
+	return e != nil && (e.Kind == dspb.AccountRoleFreezeEvidenceKind_ACCOUNT_ROLE_FREEZE_EVIDENCE_KIND_NO_ADMISSION ||
+		e.Kind == dspb.AccountRoleFreezeEvidenceKind_ACCOUNT_ROLE_FREEZE_EVIDENCE_KIND_INITIAL_COMMIT)
 }

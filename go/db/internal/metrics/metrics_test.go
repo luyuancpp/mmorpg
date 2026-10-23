@@ -399,6 +399,9 @@ func TestFenceSeriesPrecreated(t *testing.T) {
 	assertExactSeries(t, "db_fence_rejected_bytes_total", []string{"outcome"}, []string{
 		"equal", "older_seq", "stale_owner", "owner_epoch_regressed", "legacy_after_seq", "epoch_override", "schema_regression",
 	}, true)
+	// G2 回退证据(docs/design/zone-redis-regression-guard-20261022.md §7):告警按绝对值 > 0 读,首抓取就必须有 0;
+	// 取值经 SaveBarrierAck* 常量注册,这里用字面量钉住,常量一改名先红。
+	assertExactSeries(t, "db_save_barrier_ack_ahead_total", []string{"kind"}, []string{"above_pending", "pending_missing"}, true)
 	assertExactSeries(t, "db_owner_epoch_guard_total", []string{"outcome"}, []string{
 		"match", "legacy_zero", "first", "advance", "stale", "read_error", "regressed",
 	}, true)

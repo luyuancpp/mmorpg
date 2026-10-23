@@ -332,7 +332,7 @@ Presence Consumer 收到 X 上线 →
 
 **优化：** 单玩家好友通常 < 100 人，全量推送可承受。万人粉丝场景（主播）走单独"订阅"模型，不走好友通知。
 
-我们项目有 [friend-persistence-architecture.md](../../design/friend-persistence-architecture.md) 和 [guild_friend_service_notes.md](../../design/guild_friend_service_notes.md) 类似实现。
+本项目的当前实现见 [好友持久化架构](../../design/friend-persistence-architecture.md)：好友关系与申请列表直接读权威 SQL，在线状态随查询拉取；上面的 Redis 列表缓存与 Presence 推送是通用方案示例。
 
 ---
 

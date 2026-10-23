@@ -48,7 +48,7 @@ namespace
 	using player_inbox_rules::Durability;
 	using player_inbox_rules::ItemAction;
 
-	// 在途请求的兜底期限 = 该类节点的 gRPC deadline + 5s(上游比下游宽,grpc-client-deadline-failure-callback.md §4.2)。
+	// 在途请求的兜底期限 = 该类节点的 gRPC deadline + 5s(上游比下游宽,grpc-muduo-transport.md §16.3)。
 	// 生成的客户端保证每次调用在 deadline 内以应答或失败之一收场,正常走不到这里;它只防"完成通知永远不来"。
 	constexpr uint64_t kInflightSlackMs = 5000;
 

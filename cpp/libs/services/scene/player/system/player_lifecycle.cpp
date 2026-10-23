@@ -212,6 +212,22 @@ namespace
 							 SceneClientPlayerCommonSendTipToClientMessageId, tip, "SendTipToPendingSession");
 	}
 
+	// 交接 SQL 屏障(handoff_sql_barrier.h)的超时归因。本次交接等过冻结快照两张子表的 SQL ACK(sqlBarrierWaits > 0),
+	// 却在标记写成之前收口(AbortTravelHandoff 的共同出口:30s 存盘看门狗 / 35s 晚发闸 / 冻结上限),或标记写成得太晚、
+	// 在 enter_scene 阶段被晚发闸拦下时调用:计 sql_barrier_expired 并打一行 WARN,把"等 SQL ACK 超时"和"存盘落地太晚"
+	// 分开。没等过就什么都不做。调用方紧接着就摘组件或销毁实体,所以每次交接最多走到一次。
+	void ReportSqlBarrierExpiry(Guid playerId, const PlayerTravelHandoffComp &travel, const char *endedBy)
+	{
+		if (travel.sqlBarrierWaits == 0)
+		{
+			return;
+		}
+		travel_handoff_stats::Inc(travel_handoff_stats::Get().sqlBarrierExpired);
+		LOG_WARN << "[ZoneTravel][SqlBarrier] player=" << playerId << " sql_barrier_waits=" << travel.sqlBarrierWaits
+				 << " ended_by=\"" << endedBy << "\": the frozen snapshot's two SQL ACKs did not catch up with the"
+				 << " pending save in time (go/db slow or stalled) (metric=sql_barrier_expired)";
+	}
+
 	// 疏散 / 排空改派核实出"没生效"之后的客户端出口:实体早已销毁,只能按票据里抄下的会话直推 —— 先回失败 tip,
 	// tip 交出去了才紧跟踢线 KickPlayer(34,reason.id = 同一个 tip),客户端断线回选服重登。
 	// 与 SendTipAndKickToClient 是两条路、同一份契约(先 tip 后 34、reason 同码):那个按实体踢,对象是还活着的冻结实体;
@@ -269,7 +285,7 @@ namespace
 				  "PlayerTravelHandoffComp::frozenAtSteady 必须是 travel_freeze_cap::Clock::time_point");
 
 	// PlayerSceneChangeInFlightComp 的有效期 = SceneManager 的 gRPC deadline + 1s,运行期取值
-	// (docs/design/grpc-client-deadline-failure-callback.md §4.2「上游比下游宽」)。
+	// (docs/design/grpc-muduo-transport.md §16.3「上游比下游宽」)。
 	// 生成的 gRPC 客户端保证每次调用在 deadline 内以应答或失败收场,两者都会摘掉在途组件
 	// (DispatchEnterSceneReply / DispatchEnterSceneTransportFailure);TTL 只兜"完成通知永远不来"
 	// (例如 SceneManager 节点在调用途中被摘除),不能把玩家永久挡在换图之外。
@@ -383,7 +399,10 @@ namespace
 					 << " handoff_fastpath_forced=" << stats.handoffFastpathForced
 					 << " rolled_back_adopted=" << stats.rolledBackAdopted
 					 << " returned_after_grant=" << stats.returnedAfterGrant
-					 << " rollback_receipt_anomaly=" << stats.rollbackReceiptAnomaly;
+					 << " rollback_receipt_anomaly=" << stats.rollbackReceiptAnomaly
+					 << " sql_barrier_waited=" << stats.sqlBarrierWaited
+					 << " sql_barrier_expired=" << stats.sqlBarrierExpired
+					 << " sql_owner_rejected=" << stats.sqlOwnerRejected;
 		});
 	}
 
@@ -949,6 +968,7 @@ namespace
 	{
 		Guid playerId{kInvalidGuid};
 		uint32_t outstandingReplies{0};
+        std::string holderFence;
 	};
 	thread_local std::unordered_map<uint64_t, AbandonedInheritClear> tlsAbandonedInheritClears;
 
@@ -1121,8 +1141,16 @@ namespace
 	// 与存盘、A2′、标记撤回、改派的核实读同一条连接(FIFO):退出存盘的落地回调已经到了,这条写必然排在它之后执行。
 	// **一律不重试**(R7):写不成的后果只是这一次重登可能回 18、下一次重试放行;重试会把"这一刻已落盘"的
 	// 凭证推迟到一个不再成立的时刻。在途计数:发出前 +1,回调或派发失败时 -1(R6)。
-	void SendConditionalMarkWrite(Guid playerId, uint64_t epoch, MarkWriteSite site)
+	void SendConditionalMarkWrite(Guid playerId, uint64_t epoch, MarkWriteSite site, const std::string& holderFence)
 	{
+        const auto original = handoff_sql_barrier::ParseFence(holderFence);
+        const auto published = handoff_sql_barrier::RotateFence(holderFence, handoff_sql_barrier::FenceState::kFrozen);
+        if (!original || !published || original->state != handoff_sql_barrier::FenceState::kHeld || original->ownerEpoch != epoch) {
+            CountMarkWrite(site, exit_release_mark::MarkWriteResult::kFailed);
+            LOG_WARN << "[ExitRelease] missing original holder; refusing credential write";
+            return;
+        }
+
 		const std::string markValue = player_ownership::HandoffRedisValue(epoch, TimeSystem::NowMillisecondsUTC());
 		auto &redis = tlsRedis.GetZoneRedis();
 		if (!redis || !redis->connected())
@@ -1163,8 +1191,10 @@ namespace
 					break;
 				}
 			},
-			"EVAL %s 2 %s %s %s %s %d", exit_release_mark::kLuaWriteIfOwnerEpoch, ownerEpochKey.c_str(),
-			handoffKey.c_str(), epochText.c_str(), markValue.c_str(), player_ownership::kHandoffMarkTtlSec);
+			"EVAL %s 3 %s %s %s %s %s %d %b %b", exit_release_mark::kLuaWriteIfOwnerEpoch.c_str(), ownerEpochKey.c_str(),
+            ("player:{" + std::to_string(playerId) + "}:save_barrier").c_str(), handoffKey.c_str(), epochText.c_str(),
+            markValue.c_str(), player_ownership::kHandoffMarkTtlSec,
+            holderFence.data(), holderFence.size(), published->data(), published->size());
 		if (ret != REDIS_OK)
 		{
 			// 命令没发出去,回调不会来:自己把计数还回去。
@@ -1215,7 +1245,8 @@ namespace
 		exit_release_stats::Inc(exit_release_stats::Get().decisions[static_cast<std::size_t>(decision)]);
 		if (decision == exit_release_mark::ExitReleaseDecision::kWrite)
 		{
-			SendConditionalMarkWrite(playerId, facts.ownerEpoch, MarkWriteSite::kExitRelease);
+			const auto* holder = tlsEcs.actorRegistry.try_get<PlayerOwnerEpochComp>(playerEntity);
+            SendConditionalMarkWrite(playerId, facts.ownerEpoch, MarkWriteSite::kExitRelease, holder ? holder->handoffFence : "");
 			return;
 		}
 		// 常态的不写(原因不在可写集合 / 开关关闭 / epoch 未铸造 / 实体已无效)打 DEBUG:ReleasePlayer 每次跨节点
@@ -1249,7 +1280,7 @@ namespace
 			LOG_INFO << "[ExitRelease][InheritClear] load abandoned (" << reason << ") after the inherited mark of"
 					 << " epoch " << state.rewriteEpoch << " was deleted (or may have been); re-writing it player="
 					 << playerId;
-			SendConditionalMarkWrite(playerId, state.rewriteEpoch, MarkWriteSite::kInheritRewrite);
+			SendConditionalMarkWrite(playerId, state.rewriteEpoch, MarkWriteSite::kInheritRewrite, state.holderFence);
 			return;
 		}
 		if (state.lifecycle != 0 && state.outstandingReplies > 0)
@@ -1257,15 +1288,18 @@ namespace
 			AbandonedInheritClear abandoned;
 			abandoned.playerId = playerId;
 			abandoned.outstandingReplies = state.outstandingReplies;
+            abandoned.holderFence = state.holderFence;
 			tlsAbandonedInheritClears.insert_or_assign(state.lifecycle, abandoned);
 		}
 	}
 
 	// 拒建实体(M2 / M10)。写法照 HandlePlayerAsyncLoadFailed 的 RedisError 分支:回 kEnterSceneFailed、擦掉预登记
 	// 会话与待入场条目(之后到达的载入结果找不到条目,按"孤儿载入"跳过);随后按 M7 处理删掉过的标记。
-	void RefuseInheritedEntry(Guid playerId, const char *reason, const PlayerEnterContext& context,
-						 uint32_t tipId = kEnterSceneFailed)
+	// 推给客户端的固定是 kEnterSceneFailed,不接受调用方另传码:login 的进场失败契约是"tip 固定为 kEnterSceneFailed,
+	// 具体原因只进服务端日志"(entergamelogic.go notifyEnterGameFailed),原因由调用方写进 reason 或自己的日志。
+	void RefuseInheritedEntry(Guid playerId, const char *reason, const PlayerEnterContext& context)
 	{
+		constexpr uint32_t tipId = kEnterSceneFailed;
 		const SessionId sessionId = context.enterInfo.session_id();
 		const uint64_t ownerEpoch = context.ownerEpoch;
 		InheritClearState state = context.inheritClear;
@@ -1352,6 +1386,7 @@ namespace
 			if (epoch != 0 && exit_release_mark::MayHaveDeletedCurrent(result))
 			{
 				const Guid abandonedPlayer = abandonedIt->second.playerId;
+                const auto abandonedFence = abandonedIt->second.holderFence;
 				tlsAbandonedInheritClears.erase(abandonedIt);
 				// 补写前先看本节点是否已由更新的一轮接手(判定与理由见 exit_release_mark::DecideAbandonedRewrite)。
 				// 移交时:更新一轮建出实体即作废;它也放弃时由 AbandonInheritClear 补写,那时补写必然排在任何
@@ -1368,22 +1403,11 @@ namespace
 							 << " player; not re-writing it player=" << abandonedPlayer;
 					return;
 				}
-				if (rewriteDecision == exit_release_mark::AbandonedRewriteDecision::kHandToNewerLoad)
-				{
-					auto &newerState = newerIt->second.inheritClear;
-					if (newerState.rewriteEpoch == 0)
-					{
-						newerState.rewriteEpoch = epoch;
-					}
-					exit_release_stats::Inc(exit_release_stats::Get().inheritRewriteHandedOver);
-					LOG_INFO << "[ExitRelease][InheritClear] late reply for an abandoned load deleted (or may have"
-							 << " deleted) the mark of epoch " << epoch << "; a newer load (lifecycle "
-							 << newerState.lifecycle << ") now owns the re-write player=" << abandonedPlayer;
-					return;
-				}
+                if (rewriteDecision == exit_release_mark::AbandonedRewriteDecision::kHandToNewerLoad) return;
+
 				LOG_INFO << "[ExitRelease][InheritClear] late reply for an abandoned load deleted (or may have deleted)"
 						 << " the mark of epoch " << epoch << "; re-writing it player=" << abandonedPlayer;
-				SendConditionalMarkWrite(abandonedPlayer, epoch, MarkWriteSite::kInheritRewrite);
+				SendConditionalMarkWrite(abandonedPlayer, epoch, MarkWriteSite::kInheritRewrite, abandonedFence);
 				return;
 			}
 			if (abandonedIt->second.outstandingReplies <= 1)
@@ -1473,11 +1497,10 @@ namespace
 				ReplyFailureSuffix(reply));
 		};
 		// epoch == 0:路由不带 owner_epoch(兼容窗口),无从核对,改删 ≤ 当前 owner_epoch 的标记(见 exit_release_mark.h)。
-		const int ret = epoch == 0
-							? redis->command(onReply, "EVAL %s 2 %s %s", exit_release_mark::kLuaInheritClearUnknownEpoch,
-											 ownerEpochKey.c_str(), handoffKey.c_str())
-							: redis->command(onReply, "EVAL %s 2 %s %s %s", exit_release_mark::kLuaInheritClear,
-											 ownerEpochKey.c_str(), handoffKey.c_str(), epochText.c_str());
+        const auto& holder = pendingIt->second.handoffFence;
+        const std::string barrierKey = "player:{" + std::to_string(playerId) + "}:save_barrier";
+        const int ret = redis->command(onReply, "EVAL %s 3 %s %s %s %s %b", exit_release_mark::kLuaInheritClear.c_str(),
+            ownerEpochKey.c_str(), barrierKey.c_str(), handoffKey.c_str(), epochText.c_str(), holder.data(), holder.size());
 		if (ret != REDIS_OK)
 		{
 			// 命令没发出去,回调不会来。command() 期间没有改过待入场表,state 引用仍有效。
@@ -1629,7 +1652,7 @@ namespace
 		relocate_confirm_stats::Inc(stats.credentialActions[static_cast<std::size_t>(credentialAction)]);
 		if (credentialAction == relocate_confirm::CredentialAction::kAttempt)
 		{
-			SendConditionalMarkWrite(playerId, credentialEpoch, MarkWriteSite::kRelocateRefresh);
+			SendConditionalMarkWrite(playerId, credentialEpoch, MarkWriteSite::kRelocateRefresh, entry.holderFence);
 		}
 
 		// 4. 推送。gate 已不在 / 已换实例时推不出去,客户端仍然卡着:如实记成 push_gate_gone / push_gate_replaced。
@@ -2601,7 +2624,15 @@ PlayerLifecycleSystem::EnterGameNodeOutcome PlayerLifecycleSystem::HandleEnterGa
 		: PlayerSceneSystem::CheckEnterScene(playerId, targetScene);
 	if (entryResult != kSuccess)
 	{
-		SendTipToPendingSession(sessionId, playerId, entryResult);
+		// 推给客户端的固定是 kEnterSceneFailed(3023),具体原因只进日志:login 的进场失败契约就是"服务端经 gate 推
+		// SendTipToClient,tip 固定为 kEnterSceneFailed"(entergamelogic.go notifyEnterGameFailed 的注释;
+		// cross-zone-scene-travel.md §12.5.2 / §12.5.4 CL-1),客户端 IsEnterFailureTip 也只认 3023。生产入口
+		// SceneHandler::PlayerEnterGameNode 先经 RoleAdmissionSystem::RequestEnter 用同一个 CheckEnterScene 预检,
+		// 失败时 RejectRoleAdmission 推的就是 3023;这里覆盖的是登记窗口里场景消失的竞态,口径与它对齐。
+		LOG_WARN << "[EnterGameNode] target scene check refused entry player=" << playerId << " session=" << sessionId
+				 << " scene_id=" << ctx.enterInfo.scene_id() << " code=" << entryResult
+				 << "; pushing kEnterSceneFailed to the client";
+		SendTipToPendingSession(sessionId, playerId, kEnterSceneFailed);
 		return EnterGameNodeOutcome::kRejected;
 	}
 
@@ -2694,7 +2725,7 @@ PlayerLifecycleSystem::EnterGameNodeOutcome PlayerLifecycleSystem::HandleEnterGa
 		}
 		// A2′ 的清理状态(生命周期号、已确认 / 在途的 epoch、删过哪一代标记、暂存的载入结果)属于"这一次载入",
 		// 覆盖在途条目时原样沿用 —— AsyncLoad 对在途 key 不重发 GET,载入仍是同一个(§12.6.3 第三步)。
-		ctx.inheritClear = previous.inheritClear;
+		if (ctx.handoffFence == previous.handoffFence) ctx.inheritClear = previous.inheritClear;
 	}
 	tlsPendingEnterMap[playerId] = std::move(ctx);
 
@@ -2716,7 +2747,10 @@ bool PlayerLifecycleSystem::EnterScene(const entt::entity player, const PlayerEn
 	if (guid == nullptr || guid->value == 0) return false;
 	const Guid playerId = guid->value;
 	if (tlsEcs.GetPlayer(playerId) != player) return false;
-	if (!RoleAdmissionSystem::Allows(playerId, ctx.roleAdmissionGeneration, ctx.ownerRevision)) return false;
+	if (!RoleAdmissionSystem::ConfirmedIdentityForContext(playerId, ctx)) return false;
+    const auto admissionFence = handoff_sql_barrier::ParseFence(ctx.handoffFence);
+    if (!admissionFence || admissionFence->state != handoff_sql_barrier::FenceState::kHeld
+        || admissionFence->ownerEpoch != ctx.ownerEpoch || admissionFence->generation != ctx.roleAdmissionGeneration) return false;
 	LOG_DEBUG << "EnterScene: Player " << playerId << " entering scene node"
 	         << " session=" << enterInfo.session_id()
 	         << " scene_id=" << enterInfo.scene_id()
@@ -2748,7 +2782,12 @@ bool PlayerLifecycleSystem::EnterScene(const entt::entity player, const PlayerEn
 	const SceneEntity targetScene = PlayerSceneSystem::FindSceneById(enterInfo.scene_id());
 	if (const auto result = PlayerSceneSystem::CheckEnterScene(player, targetScene); result != kSuccess)
 	{
-		SendTipToPendingSession(enterInfo.session_id(), playerId, result);
+		// 与 HandleEnterGameNode 的场景预检同一口径:原码只进日志,推给客户端的固定是 kEnterSceneFailed。两个调用方
+		// 进来之前都做过同一个检查,这里是纵深防御;复用实体那条路(HandleEnterGameNode 第 4 步)失败时只有这一条 tip。
+		LOG_WARN << "[EnterScene] target scene check refused entry player=" << playerId
+				 << " session=" << enterInfo.session_id() << " scene_id=" << enterInfo.scene_id() << " code=" << result
+				 << "; pushing kEnterSceneFailed to the client";
+		SendTipToPendingSession(enterInfo.session_id(), playerId, kEnterSceneFailed);
 		return false;
 	}
 
@@ -2797,6 +2836,12 @@ bool PlayerLifecycleSystem::EnterScene(const entt::entity player, const PlayerEn
 					 << " for player " << playerId << " (cached " << ownerEpoch.epoch << ")";
 		}
 		ownerEpoch.epoch = std::max(ownerEpoch.epoch, ctx.ownerEpoch);
+        if (ownerEpoch.handoffFence != ctx.handoffFence) {
+            // Redis 新 H 已原子撤销旧资格；迟到回调靠 holder 原文判定，不能再修改复用实体。
+            tlsEcs.actorRegistry.remove<PlayerTravelHandoffComp>(player);
+            if (!RoleAdmissionSystem::IsSealed(playerId)) tlsEcs.actorRegistry.remove<PlayerFrozenComp>(player);
+        }
+        ownerEpoch.handoffFence = ctx.handoffFence;
 	}
 
 	// 1. Bind session: map session_id -> player_id on this Scene node
@@ -3802,7 +3847,10 @@ bool PlayerLifecycleSystem::DispatchEmergencyRelocate(Guid playerId, bool earlie
 	// ErrHandoffPending 挡回来,而本地实体马上就要销毁,玩家只能自己重登。
 	// 标记落地之后再发 EnterScene;实体此后立刻销毁,回调只用按值捕获的票据与条目号。
 	auto &redis = tlsRedis.GetZoneRedis();
-	const bool writeMark = ownerEpoch != 0 && redis && redis->connected();
+	const auto* originalHolder = tlsEcs.actorRegistry.try_get<PlayerOwnerEpochComp>(playerEntity);
+    const std::string holderFence = originalHolder ? originalHolder->handoffFence : "";
+    const auto publishedFence = handoff_sql_barrier::RotateFence(holderFence, handoff_sql_barrier::FenceState::kFrozen);
+    const bool writeMark = ownerEpoch != 0 && redis && redis->connected() && publishedFence.has_value();
 	// 本次**尝试**写的标记原文;不写时为空。只记到条目上进日志。
 	const std::string value =
 		writeMark ? player_ownership::HandoffRedisValue(ownerEpoch, TimeSystem::NowMillisecondsUTC()) : std::string();
@@ -3818,6 +3866,8 @@ bool PlayerLifecycleSystem::DispatchEmergencyRelocate(Guid playerId, bool earlie
 	registration.ownerEpoch = ownerEpoch; // 可能落后于 Redis(回滚把 epoch 推进了而本节点还没取证),只进日志
 	registration.sourceSceneId = exitIntent != nullptr ? exitIntent->sceneIdAtExit : 0;
 	registration.markValue = value;
+    registration.holderFence = holderFence;
+    registration.publishedFence = publishedFence.value_or("");
 	registration.earlierEnterSceneMayReply = earlierEnterSceneMayReply;
 	const relocate_confirm::Clock::time_point registeredAt = relocate_confirm::Clock::now();
 	// "更早请求"还有第三个来源:同一玩家**上一次改派**自己的请求。上一条条目还没收口(只可能在等载入:他刚被一条
@@ -3928,8 +3978,9 @@ bool PlayerLifecycleSystem::DispatchEmergencyRelocate(Guid playerId, bool earlie
 			}
 			TrackRelocateDispatch(playerId, seq, ticket, markWrite);
 		},
-		"EVAL %s 2 %s %s %s %s %d", exit_release_mark::kLuaWriteIfOwnerEpoch, ownerEpochKey.c_str(), key.c_str(),
-		epochText.c_str(), value.c_str(), player_ownership::kHandoffMarkTtlSec);
+		"EVAL %s 3 %s %s %s %s %s %d %b %b", exit_release_mark::kLuaWriteIfOwnerEpoch.c_str(), ownerEpochKey.c_str(),
+        ("player:{" + std::to_string(playerId) + "}:save_barrier").c_str(), key.c_str(), epochText.c_str(), value.c_str(),
+        player_ownership::kHandoffMarkTtlSec, holderFence.data(), holderFence.size(), publishedFence->data(), publishedFence->size());
 	if (ret != REDIS_OK)
 	{
 		// 命令没发出去,回调不会来:自己把计数还回去。
@@ -4246,7 +4297,10 @@ entt::entity PlayerLifecycleSystem::InitPlayerFromAllData(const PlayerAllData &p
 	const auto targetScene = PlayerSceneSystem::FindSceneById(ctx.enterInfo.scene_id());
 	if (const auto result = PlayerSceneSystem::CheckEnterScene(playerId, targetScene); result != kSuccess)
 	{
-		RefuseInheritedEntry(playerId, "目标场景不存在或无入场权限", ctx, result);
+		// 原码只进日志,推给客户端的走 RefuseInheritedEntry 的缺省 kEnterSceneFailed,理由同 HandleEnterGameNode 的场景预检。
+		LOG_WARN << "[InitPlayerFromAllData] target scene check refused entry player=" << playerId
+				 << " scene_id=" << ctx.enterInfo.scene_id() << " code=" << result;
+		RefuseInheritedEntry(playerId, "目标场景不存在或无入场权限", ctx);
 		return entt::null;
 	}
 	auto player = tlsEcs.actorRegistry.create();
@@ -4630,12 +4684,16 @@ PlayerLifecycleSystem::SaveResult PlayerLifecycleSystem::SavePlayerToRedisImpl(
 	return SaveResult::kQueued;
 }
 
-void PlayerLifecycleSystem::HandlePlayerSaveRejected(Guid playerId, const std::string &redisKey, const std::string &rejectedEpoch)
+void PlayerLifecycleSystem::HandlePlayerSaveRejected(Guid playerId, const std::string &redisKey, const std::string &rejectedEpoch,
+													 const RedisSaveOwnerRejection &rejection)
 {
+	const bool counterBehind = rejection.reason == RedisSaveOwnerRejectReason::kOwnerCounterBehind;
 	// 被拒的是"发出那次存盘时缓存的 epoch"。实体此刻缓存的值若已经不同,说明那只是
 	// 一笔旧代际的在途写(存盘发出之后、应答回来之前,新的路由事件把更新的 epoch 送到了
 	// 本实体)——本节点仍是合法持有者,不能自毁,用当前 epoch 重新存一次把状态落地。
 	// 只有被拒的值就是实体当前缓存的值,才说明 scene_manager 已把玩家改派给别人。
+	// 计数器落后(counterBehind)同样先走这一支:被拒的只是旧期望值,当前值是否也落后由 Lua 按同一判据重新回答
+	// (仍落后就再回 {4, 存储值},那时两值相等,落到下面的处置)。这里不前推计数器。
 	if (const auto playerEntity = tlsEcs.GetPlayer(playerId); tlsEcs.actorRegistry.valid(playerEntity))
 	{
 		const auto *epochComp = tlsEcs.actorRegistry.try_get<PlayerOwnerEpochComp>(playerEntity);
@@ -4644,6 +4702,7 @@ void PlayerLifecycleSystem::HandlePlayerSaveRejected(Guid playerId, const std::s
 		{
 			LOG_WARN << "HandlePlayerSaveRejected: stale in-flight save rejected for player " << playerId
 					 << " key=" << redisKey << " rejected_epoch=" << rejectedEpoch
+					 << (counterBehind ? " stored_epoch=" + rejection.stored_owner + " (owner counter behind)" : std::string())
 					 << " current_epoch=" << currentEpoch << " — still the owner, re-saving with current epoch";
 			const auto saveResult = SavePlayerToRedisImpl(playerEntity, /*allowSkipWhenPersisted=*/true);
 			if (saveResult == SaveResult::kQueued)
@@ -4675,12 +4734,29 @@ void PlayerLifecycleSystem::HandlePlayerSaveRejected(Guid playerId, const std::s
 		}
 	}
 
-	owner_epoch_stats::IncStaleOwnerWriteRejected();
-	// 退出中的实体被拒 = 这次退出的存盘从未落地,内存差额随实体一起丢弃:回档的直接证据,单独计数
-	// (docs/design/location-release-binding.md §3.7)。典型成因是 location 在持有者落盘之前就被删、下一次进场铸了新 epoch。
 	const auto rejectedEntity = tlsEcs.GetPlayer(playerId);
 	const bool exiting = tlsEcs.actorRegistry.valid(rejectedEntity) &&
 						 tlsEcs.actorRegistry.any_of<UnregisterPlayer>(rejectedEntity);
+	if (counterBehind)
+	{
+		// G4(docs/design/zone-redis-regression-guard-20261022.md §4.4):Redis 里的 owner 计数器比本实体缓存的 epoch 还小。
+		// 计数器只由铸造抬高,只可能是 Redis 回退(崩溃丢 AOF 尾 / 异步复制切主 / 恢复旧备份)丢掉了把玩家派给本节点的那次铸造。
+		// 只检测、不修复:本实体分不清自己载入的父键是新是旧,前推计数器再写可能让旧内容以更高的 epoch 写穿 SQL 行围栏;
+		// 所以与废黜一样不存盘销毁(本次在线未落盘的进度随实体丢弃,只丢不盖),玩家重登时由 login 加载侧核验兜底。
+		// 成因是 Redis 回退而不是双主,不计 stale_owner_write_rejected。C++ 节点没有 Prometheus 出口,LogQL 按 metric= 计数。
+		owner_epoch_stats::IncOwnerCounterBehind();
+		LOG_ERROR << "HandlePlayerSaveRejected: owner_epoch counter in Redis is behind the cached epoch for player " << playerId
+				  << " key=" << redisKey << " stored_epoch=" << rejection.stored_owner << " cached_epoch=" << rejectedEpoch
+				  << " exiting=" << exiting
+				  << " — Redis lost the mint that assigned this node (crash / failover / restore); dropping local state"
+				  << " without saving, not advancing the counter (metric=owner_counter_behind)";
+		DestroyDeposedPlayer(playerId, "owner_counter_behind");
+		return;
+	}
+
+	owner_epoch_stats::IncStaleOwnerWriteRejected();
+	// 退出中的实体被拒 = 这次退出的存盘从未落地,内存差额随实体一起丢弃:回档的直接证据,单独计数
+	// (docs/design/location-release-binding.md §3.7)。典型成因是 location 在持有者落盘之前就被删、下一次进场铸了新 epoch。
 	if (exiting)
 	{
 		owner_epoch_stats::IncStaleOwnerRejectedExiting();
@@ -5003,7 +5079,9 @@ uint32_t PlayerLifecycleSystem::StartTravelHandoff(entt::entity player, uint32_t
 
 	// 逐字段赋值,不用聚合初始化(见 PlayerTravelHandoffComp 的说明)。
 	auto &travel = tlsEcs.actorRegistry.emplace<PlayerTravelHandoffComp>(player);
-	travel.targetZoneId = targetZoneId;
+	const auto* originalHolder = tlsEcs.actorRegistry.try_get<PlayerOwnerEpochComp>(player);
+    travel.holderFence = originalHolder ? originalHolder->handoffFence : "";
+    travel.targetZoneId = targetZoneId;
 	travel.sceneId = sceneId;
 	travel.sceneConfigId = sceneConfigId;
 	travel.requestedAtMs = 0; // 0 = 等这次存盘落地;BeginTravelHandoff 写标记时才占代际
@@ -5609,7 +5687,8 @@ void PlayerLifecycleSystem::HandleSessionEndedRelease(Guid playerId, uint64_t ex
 	}
 	LOG_INFO << "[ReleaseFence] session-ended release: player " << playerId
 			 << " is not held by this node; writing credential mark for owner_epoch " << expectedOwnerEpoch;
-	SendConditionalMarkWrite(playerId, expectedOwnerEpoch, MarkWriteSite::kSessionEndedCredential);
+	// 原实体和原待确认条目均缺席，不能从一个 epoch 读值重建发布资格。
+    LOG_WARN << "[ReleaseFence] no cached holder credential; session-ended mark refused";
 }
 
 bool PlayerLifecycleSystem::DiscardStaleHandoffEntity(entt::entity player, uint64_t incomingOwnerEpoch)
@@ -5765,16 +5844,21 @@ void PlayerLifecycleSystem::BeginTravelHandoff(Guid playerId)
 	const auto frozenAt = travel->frozenAtSteady;
 
 	// 先占住代际再发命令:回调与看门狗都拿它判断"还是不是这一次传送"。
-	travel->requestedAtMs = nowMs;
+	if (travel->publishedFence.empty()) {
+        const auto published = handoff_sql_barrier::RotateFence(travel->holderFence, handoff_sql_barrier::FenceState::kFrozen);
+        if (!published) { AbortTravelHandoff(playerId, "handoff original holder missing"); return; }
+        travel->publishedFence = *published;
+    }
+    travel->requestedAtMs = nowMs;
 
 	const int ret = redis->command(
-		[playerId, nowMs, frozenAt](hiredis::Hiredis *, redisReply *reply)
+		[playerId, nowMs, frozenAt, originalHolder = travel->holderFence](hiredis::Hiredis *, redisReply *reply)
 		{
 			// 墙钟请求号之外再比单调冻结代次,旧连接 / 已退出 / 已重建的回包不能修改新交接。
 			const auto entity = tlsEcs.GetPlayer(playerId);
 			auto *current = tlsEcs.actorRegistry.valid(entity)
 				? tlsEcs.actorRegistry.try_get<PlayerTravelHandoffComp>(entity) : nullptr;
-			if (current == nullptr || current->requestedAtMs != nowMs || current->frozenAtSteady != frozenAt)
+			if (current == nullptr || current->requestedAtMs != nowMs || current->frozenAtSteady != frozenAt || current->holderFence != originalHolder || current->cancellationPending)
 			{
 				return;
 			}
@@ -5790,6 +5874,16 @@ void PlayerLifecycleSystem::BeginTravelHandoff(Guid playerId)
 				// 原存盘看门狗此刻仍可安全 Abort;不能把等待 ACK 误当成 EnterScene 已发。
 				current->requestedAtMs = 0;
 				current->markEpoch = 0;
+				// 每次交接只在第一次等待时打一行、计一次:之后每 250ms 重试一轮,逐次打会刷屏。
+				if (current->sqlBarrierWaits++ == 0)
+				{
+					travel_handoff_stats::Inc(travel_handoff_stats::Get().sqlBarrierWaited);
+					LOG_INFO << "[ZoneTravel][SqlBarrier] player=" << playerId
+							 << " waiting for the frozen snapshot's two SQL ACKs to catch up with the pending save before"
+							 << " writing the handoff mark; retrying every "
+							 << handoff_sql_barrier::kRetryInterval.count() << "ms until it lands or the handoff ends"
+							 << " (save watchdog / dispatch window / freeze cap) (metric=sql_barrier_waited)";
+				}
 				const auto dueAt = handoff_sql_barrier::RetryDueAt(frozenAt, travel_freeze_cap::Clock::now());
 				if (!RunAtMonotonic(dueAt, [playerId, frozenAt]()
 				{
@@ -5808,11 +5902,12 @@ void PlayerLifecycleSystem::BeginTravelHandoff(Guid playerId)
 				}
 				return;
 			}
-			if (reply != nullptr && reply->type == REDIS_REPLY_INTEGER && reply->integer == -1)
+			if (reply != nullptr && reply->type == REDIS_REPLY_INTEGER && (reply->integer == -1 || reply->integer == -2))
 			{
 				// 同一冻结代次已被 Redis 归属明确废黜。不能解冻旧内存,也不能采纳读到的新 epoch 再存盘。
 				current->requestedAtMs = 0;
 				current->markEpoch = 0;
+				travel_handoff_stats::Inc(travel_handoff_stats::Get().sqlOwnerRejected);
 				DestroyDeposedPlayer(playerId, "handoff_sql_owner_rejected");
 				return;
 			}
@@ -5839,9 +5934,10 @@ void PlayerLifecycleSystem::BeginTravelHandoff(Guid playerId)
 			}
 			RequestTravelEnterScene(playerId);
 		},
-		"EVAL %s 3 %b %b %b %b %b %d", handoff_sql_barrier::kPublishMarkLua,
+		"EVAL %s 3 %b %b %b %b %b %d %b %b", handoff_sql_barrier::kPublishMarkLua.c_str(),
 		ownerKey.data(), ownerKey.size(), barrierKey.data(), barrierKey.size(), key.data(), key.size(),
-		epochText.data(), epochText.size(), value.data(), value.size(), player_ownership::kHandoffMarkTtlSec);
+		epochText.data(), epochText.size(), value.data(), value.size(), player_ownership::kHandoffMarkTtlSec,
+        travel->holderFence.data(), travel->holderFence.size(), travel->publishedFence.data(), travel->publishedFence.size());
 	if (ret != REDIS_OK)
 	{
 		// 命令没进 hiredis 的输出缓冲,标记确定没写:markEpoch 保持 0,Abort 不需要撤回。
@@ -5910,6 +6006,7 @@ void PlayerLifecycleSystem::RequestTravelEnterScene(Guid playerId)
 				 << std::chrono::duration_cast<std::chrono::milliseconds>(frozenFor).count()
 				 << ": handoff mark reply arrived too late to verify ownership before the freeze cap;"
 				 << " not sending EnterScene";
+		ReportSqlBarrierExpiry(playerId, *travel, "enter_scene dispatch window closed after the mark landed");
 		ConcludeHandoffAfterMarkSent(playerId, travel_freeze_cap::MarkSentSite::kDispatchWindow, now);
 		return;
 	}
@@ -6485,6 +6582,7 @@ void PlayerLifecycleSystem::BeginInheritedMarkClear(Guid playerId)
 	EnsureExitStatsTimer();
 	PlayerEnterContext &ctx = pendingIt->second;
 	InheritClearState &state = ctx.inheritClear;
+    state.holderFence = ctx.handoffFence;
 	if (state.lifecycle == 0)
 	{
 		state.lifecycle = ++tlsInheritClearLifecycleSeq;
@@ -6525,6 +6623,7 @@ void PlayerLifecycleSystem::RetryInheritedMarkClears(bool reconnected)
 	{
 		if (RoleAdmissionSystem::IsSealed(playerId)) continue;
 		const InheritClearState &state = ctx.inheritClear;
+    state.holderFence = ctx.handoffFence;
 		const bool waiting = state.phase == exit_release_mark::InheritClearPhase::kRetryWait;
 		const bool inFlight = state.phase == exit_release_mark::InheritClearPhase::kInFlight;
 		if (!waiting && !inFlight)
@@ -6746,6 +6845,12 @@ void PlayerLifecycleSystem::AbortTravelHandoff(Guid playerId, const char *reason
 	const bool crossZone = (travel->targetZoneId != GetZoneId());
 	const uint64_t handoffMarkEpoch = travel->markEpoch;
 	const uint64_t handoffRequestedAtMs = travel->requestedAtMs;
+	// 标记还没写成(requestedAtMs == 0:两次重试之间)却等过 SQL ACK 的,这次中止就是"等 SQL ACK 超时"。
+	// 收口点是哪一个(30s 存盘看门狗 / 35s 晚发闸 / 冻结上限)都从这里过,所以归因放在这个共同出口。
+	if (handoffRequestedAtMs == 0)
+	{
+		ReportSqlBarrierExpiry(playerId, *travel, reason);
+	}
 	tlsEcs.actorRegistry.remove<PlayerTravelHandoffComp>(playerEntity);
 
 	if (notifyFailure)

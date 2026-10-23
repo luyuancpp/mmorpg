@@ -346,6 +346,8 @@ message account_role {
   uint64 owner_revision = 4; // 账号归属修订号，绝不等同 scene owner_epoch。
   uint64 updated_ms = 5;
   uint64 trade_listing_id = 6; // 0 表示无交易锁；非零时入场、身份补齐和删除均拒绝。
+  // 仅首次目录与两张玩家行同事务提交为 1；旧角色及导入保持 0。
+  uint64 initial_player_commit = 7;
 }
 
 // listing 级永久冻结收据；取消后保留，旧冻结请求重放不能再次冻结。

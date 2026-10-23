@@ -38,10 +38,10 @@ func TestReconcileVerdictTable(t *testing.T) {
 		obs  Observation
 		want Verdict
 	}{
-		{"V1 全部相等", Observation{Pending: cur, AckFirst: cur, AckSecond: cur, SQLFirst: cur, SQLSecond: cur, Evidence: cur}, VerdictConsistent},
+		{"V1 全部相等", Observation{Pending: cur, AckFirst: cur, AckSecond: cur, SQLFirst: cur, SQLSecond: cur}, VerdictConsistent},
 		{"V6 双方都没有历史", Observation{}, VerdictConsistent},
 		{"V2 主结局:ACK 被推到 SQL 版本", Observation{Pending: old, AckFirst: cur, AckSecond: cur, SQLFirst: cur, SQLSecond: cur}, VerdictAdoptSQL},
-		{"V2 次结局:ACK 也回退了", Observation{Pending: old, AckFirst: old, AckSecond: old, SQLFirst: cur, SQLSecond: cur, Evidence: cur}, VerdictAdoptSQL},
+		{"V2 次结局:ACK 也回退了", Observation{Pending: old, AckFirst: old, AckSecond: old, SQLFirst: cur, SQLSecond: cur}, VerdictAdoptSQL},
 		{"V2 SQL 已提交 pending、只丢了 ACK", Observation{Pending: cur, AckFirst: old, AckSecond: cur, SQLFirst: cur, SQLSecond: cur}, VerdictAdoptSQL},
 		{"V2 新 epoch 的 SQL 行", Observation{Pending: cur, AckFirst: cur, AckSecond: cur, SQLFirst: newer, SQLSecond: newer}, VerdictAdoptSQL},
 		{"V7 屏障缺失而 SQL 有历史", Observation{SQLFirst: cur, SQLSecond: cur}, VerdictAdoptSQL},
@@ -50,7 +50,6 @@ func TestReconcileVerdictTable(t *testing.T) {
 		{"V3 两行不同但都不新于 pending", Observation{Pending: cur, AckFirst: cur, AckSecond: old, SQLFirst: cur, SQLSecond: old}, VerdictInflight},
 		{"V4 两行不同且一行新于 pending", Observation{Pending: old, AckFirst: old, AckSecond: old, SQLFirst: cur, SQLSecond: old}, VerdictReconciling},
 		{"V5 ACK 高于 SQL", Observation{Pending: cur, AckFirst: cur, AckSecond: cur, SQLFirst: old, SQLSecond: old}, VerdictSQLBehind},
-		{"V5 证据高于 SQL", Observation{Pending: old, AckFirst: old, AckSecond: old, SQLFirst: old, SQLSecond: old, Evidence: cur}, VerdictSQLBehind},
 		{"V5 有 ACK 而 SQL 行缺失", Observation{Pending: cur, AckFirst: cur, AckSecond: cur}, VerdictSQLBehind},
 	} {
 		t.Run(tc.name, func(t *testing.T) {

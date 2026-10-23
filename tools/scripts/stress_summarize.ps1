@@ -23,6 +23,26 @@
        name_orphan 在「有 stage 序列但无孤儿序列」时打印 0(规则见该段注释)]
           when | mint | name | register | seed | account_write | name_orphan
 
+      [L1 Login outbound RPC(login :9101 的 go-zero rpc_client_requests_*,2026-10-23 起):登录链路调
+       data_service 的 5 个方法各自的次数 / 累计均值 / p99(桶插值)/ 非 OK 码数;缺序列打印 n/a]
+          when | bgz_n bgz_avg bgz_p99 bgz_err | bpn_* | ghz_* | rad_* | lar_*
+
+      [L2 Login gate directory reads(login_gate_directory_reads_total):gate 目录读镜像还是回落直读 etcd]
+          when | cache etcd_unsynced etcd_stale | cache%
+
+      [L3 Login task:result delivery(login_task_result_delivery_total):读回执送达终态与附加信号]
+          when | inst legacy salvaged timed_out | late missing | deliv% salv% tmo% legacy%
+
+      [S1 SceneManager home_zone / role_lookup(*_sm):归属查询结果分布 + 两个新 stage 的 n / 均值 / p99]
+          when | mapped unmapped unconfig error | hz_n hz_avg hz_p99 | rl_n rl_avg rl_p99
+
+      [D1 data_service home-zone reads(*_ds,:9260):GetPlayerHomeZone / BatchGetPlayerHomeZone 服务端耗时与结果、
+       每批 id 数、读方门禁回源计数]
+          when | h_ok h_nf h_err h_avg h_p99 | b_ok b_nf b_err b_avg b_p99 | ids/b | rr_cache rr_sql rr_sqlerr
+
+      [D2 data_service account directory RPC(*_ds):每个快照 × 每个账号目录 RPC 一行]
+          when | rpc | n avg p99 | nf rej err
+
       [DB write path(Round 20+,*_db 快照):db 新 stage 均值、子 shard 批大小、排序守卫 / 失租 / 释放计数、
        go-redis 连接池等待与超时;缺序列打印 n/a]
           when | w_sql w_task w_queue w_e2e | r_sql r_task | batch | no_cursor lease_lost rel_notown | rpool_wait rpool_tmo
@@ -36,6 +56,17 @@
       [DB task:result notify(*_db 快照,2026-10-18 起):读回执到达通知按 target × result 的累计数,
        实例频道无人接收占比与回落旧频道占比;缺序列打印 n/a,分母为 0 打印 -]
           when | inst_ok inst_nr inst_err | unset_ok unset_nr unset_err | inval_ok inval_nr inval_err | inst_nr% legacy%
+
+      [R1 Redis instance load(stress_snap.ps1 抓的 t<N>m_redis_<name>.txt,INFO 相邻两份求差 + 首末整体窗口)]
+          target | window | secs ops/s cpu% main% in_KB/s out_KB/s | clients used_MB mem% | rej_conn err_rep oom aof_dfs | note
+
+      [R2 Redis top commands(commandstats 求差 + latencystats 累计百分位)]
+          target | window | cmd | calls/s usec/call | p50 p99 p99.9 | failed rejected
+
+      [M1 Mapping read path at a glance:按 t<N>m 把 login / ds / sm / db / redis 的关键均值连成一行]
+          tag | l_bgz l_rad | ds_batch ds_home ds_dir | sm_hz sm_rl | db_plc_lkp db_plc_rck | rd_ops/s rd_main%
+
+    新表在缺文件时打印标题加一行「(无数据 no data: …)」,缺序列打印 n/a,退出码不变。
 
       [optional: Kafka consumer lag (final)]
           partition | current | log_end | lag
@@ -171,6 +202,393 @@ function Get-MetricSumOrNull {
     return $null
 }
 
+# 下面 5 个函数(Get-SeriesPattern … Format-RatioCell)原先定义在 2d 段之前,2026-10-23 原样搬到这里:
+# PowerShell 脚本里的函数不提升,login 段之后的新表也要调用它们。
+
+# 一条序列的精确匹配正则;$Labels 为空表示无 label 的序列。
+function Get-SeriesPattern {
+    param([string]$Name, [string]$Labels = "")
+    if ($Labels) { return '^' + [regex]::Escape($Name) + '\{' + [regex]::Escape($Labels) + '\}$' }
+    return '^' + [regex]::Escape($Name) + '$'
+}
+
+# histogram 均值(秒)。sum / count 任一序列缺失返回 $null(→ n/a);count 为 0 返回 NaN(→ "-")。
+function Get-HistogramAvgOrNull {
+    param([hashtable]$M, [string]$Name, [string]$Labels = "")
+    $sumV = Get-MetricSumOrNull $M (Get-SeriesPattern "${Name}_sum" $Labels)
+    $cntV = Get-MetricSumOrNull $M (Get-SeriesPattern "${Name}_count" $Labels)
+    if ($null -eq $sumV -or $null -eq $cntV) { return $null }
+    if ($cntV -le 0) { return [double]::NaN }
+    return $sumV / $cntV
+}
+
+# 秒 → 毫秒文本;≥10s 改用秒(同 Format-Avg)。
+function Format-AvgCell {
+    param($AvgSeconds, [int]$Decimals = 1)
+    if ($null -eq $AvgSeconds) { return "n/a" }
+    if ([double]::IsNaN([double]$AvgSeconds)) { return "-" }
+    $ms = [double]$AvgSeconds * 1000.0
+    if ($ms -ge 10000) { return "{0:N1}s" -f ($ms / 1000.0) }
+    return "{0:N$Decimals}ms" -f $ms
+}
+
+# 计数文本;$null(缺序列)→ n/a。
+function Format-CountCell {
+    param($Value)
+    if ($null -eq $Value) { return "n/a" }
+    return "{0:N0}" -f [double]$Value
+}
+
+# 百分比文本;分子或分母缺序列 → n/a,分母为 0 → "-"(同 Format-Avg 的「没有样本」)。
+function Format-RatioCell {
+    param($Numerator, $Denominator)
+    if ($null -eq $Numerator -or $null -eq $Denominator) { return "n/a" }
+    if ([double]$Denominator -le 0) { return "-" }
+    return "{0:N1}%" -f (100.0 * [double]$Numerator / [double]$Denominator)
+}
+
+# 小数文本;$null → n/a,NaN → "-"(没有样本 / 分母为 0)。
+function Format-DecimalCell {
+    param($Value, [int]$Decimals = 1, [string]$Suffix = "")
+    if ($null -eq $Value) { return "n/a" }
+    if ([double]::IsNaN([double]$Value)) { return "-" }
+    return ("{0:N$Decimals}" -f [double]$Value) + $Suffix
+}
+
+# 几个可能为 $null 的数相加;任一为 $null 结果就是 $null(→ n/a),不把缺序列折成 0。
+# $Values 不标类型:传数组字面量或字典的 .Values 都行,含 $null 的元素逐个遍历到。
+function Get-SumOrNull {
+    param($Values)
+    $sum = 0.0
+    foreach ($v in $Values) {
+        if ($null -eq $v) { return $null }
+        $sum += [double]$v
+    }
+    return $sum
+}
+
+# ----- 按 label 过滤的序列读取(2026-10-23,L-18 观测批的新表用) ------------
+#
+# Get-SeriesPattern 系列按 /metrics 输出的 label 原文精确匹配,label 必须按字母序写全;下面这组按 label 名取值,
+# 与顺序无关,没列出的 label(scene_manager 的 zone_id、histogram 的 le 以外)跨值求和。
+
+# 拆出一条序列 key("name{a=\"x\",b=\"y\"}" 或 "name")的 label 字典;不属于 $Name 这一族返回 $null。
+# name_sum / name_count / name_bucket 各算一族。
+function Get-SeriesLabels {
+    param([string]$Key, [string]$Name)
+    if ($Key -ceq $Name) { return @{} }
+    if (-not $Key.StartsWith($Name + '{', [System.StringComparison]::Ordinal)) { return $null }
+    $labels = @{}
+    foreach ($pair in [regex]::Matches($Key.Substring($Name.Length), '([a-zA-Z_][a-zA-Z0-9_]*)="((?:[^"\\]|\\.)*)"')) {
+        $labels[$pair.Groups[1].Value] = $pair.Groups[2].Value
+    }
+    return $labels
+}
+
+function Test-LabelsMatch {
+    param([hashtable]$Labels, [hashtable]$Match)
+    foreach ($k in $Match.Keys) {
+        if (-not $Labels.ContainsKey($k) -or $Labels[$k] -cne [string]$Match[$k]) { return $false }
+    }
+    return $true
+}
+
+# 一族序列按 $Match 过滤后求和。一条都没匹配到返回 $null(→ n/a),区分「指标不存在」与「存在但为 0」。
+function Get-SeriesSumOrNull {
+    param([hashtable]$M, [string]$Name, [hashtable]$Match = @{})
+    $sum = 0.0
+    $found = $false
+    foreach ($k in $M.Keys) {
+        $labels = Get-SeriesLabels -Key $k -Name $Name
+        if ($null -eq $labels -or -not (Test-LabelsMatch $labels $Match)) { continue }
+        $sum += [double]$M[$k]
+        $found = $true
+    }
+    if ($found) { return $sum }
+    return $null
+}
+
+# 一族 histogram 按 $Match 过滤、跨其余 label 求和。没有 _count 序列返回 $null(→ n/a)。
+# Buckets 是按 le 升序的 { Le; Cum }(累计数,跨 label 逐 le 相加);没有 _bucket 序列时为空数组。
+function Get-HistogramOrNull {
+    param([hashtable]$M, [string]$Name, [hashtable]$Match = @{})
+    $count = Get-SeriesSumOrNull $M "${Name}_count" $Match
+    if ($null -eq $count) { return $null }
+    $sum = Get-SeriesSumOrNull $M "${Name}_sum" $Match
+    $byLe = @{}
+    foreach ($k in $M.Keys) {
+        $labels = Get-SeriesLabels -Key $k -Name "${Name}_bucket"
+        if ($null -eq $labels -or -not $labels.ContainsKey('le')) { continue }
+        if (-not (Test-LabelsMatch $labels $Match)) { continue }
+        $le = if ($labels['le'] -eq '+Inf') { [double]::PositiveInfinity }
+              else { [double]::Parse($labels['le'], [System.Globalization.CultureInfo]::InvariantCulture) }
+        if (-not $byLe.ContainsKey($le)) { $byLe[$le] = 0.0 }
+        $byLe[$le] += [double]$M[$k]
+    }
+    $buckets = @($byLe.Keys | Sort-Object | ForEach-Object { [pscustomobject]@{ Le = [double]$_; Cum = [double]$byLe[$_] } })
+    return [pscustomobject]@{
+        Count   = [double]$count
+        Sum     = $(if ($null -eq $sum) { 0.0 } else { [double]$sum })
+        Buckets = $buckets
+    }
+}
+
+# 分位数,同 PromQL histogram_quantile:在累计桶上线性插值,第一个桶的下界取 0。
+# 返回 $null(没有桶)、NaN(总数为 0),或 { Value; Overflow }:目标秩落在 +Inf 桶时 Value 取最高的有限上界、
+# Overflow=$true(打印时加 '>',表示「至少这么大」)。值是累计口径(进程启动以来),桶越粗插值越不准。
+function Get-HistogramQuantile {
+    param($Hist, [double]$Q)
+    if ($null -eq $Hist -or $Hist.Buckets.Count -eq 0) { return $null }
+    $total = $Hist.Buckets[-1].Cum
+    if ($total -le 0) { return [double]::NaN }
+    $rank = $Q * $total
+    $prevLe = 0.0
+    $prevCum = 0.0
+    foreach ($b in $Hist.Buckets) {
+        if ($b.Cum -ge $rank) {
+            if ([double]::IsPositiveInfinity($b.Le)) { return [pscustomobject]@{ Value = $prevLe; Overflow = $true } }
+            if ($b.Cum -le $prevCum) { return [pscustomobject]@{ Value = $b.Le; Overflow = $false } }
+            return [pscustomobject]@{ Value = $prevLe + ($b.Le - $prevLe) * ($rank - $prevCum) / ($b.Cum - $prevCum); Overflow = $false }
+        }
+        $prevLe = $b.Le
+        $prevCum = $b.Cum
+    }
+    return [pscustomobject]@{ Value = $prevLe; Overflow = $true }
+}
+
+# histogram 的「n / 均值 / p99」三格。$UnitScale 把观测值换算成秒:秒级 histogram 传 1,go-zero 的 *_ms 传 0.001。
+# 缺序列 → 三格 n/a;count 为 0 → n 打 0、均值与 p99 打 "-";有 count 没有 bucket → p99 打 n/a。
+function Get-HistogramCells {
+    param($Hist, [double]$UnitScale = 1.0, [int]$Decimals = 1)
+    if ($null -eq $Hist) { return @('n/a', 'n/a', 'n/a') }
+    $n = Format-CountCell $Hist.Count
+    if ($Hist.Count -le 0) { return @($n, '-', '-') }
+    $avg = Format-AvgCell ($Hist.Sum / $Hist.Count * $UnitScale) $Decimals
+    $q = Get-HistogramQuantile -Hist $Hist -Q 0.99
+    $p99 = if ($null -eq $q) { 'n/a' }
+           elseif ($q -is [double]) { '-' }
+           else { $(if ($q.Overflow) { '>' } else { '' }) + (Format-AvgCell ($q.Value * $UnitScale) $Decimals) }
+    return @($n, $avg, $p99)
+}
+
+# 只要均值一格(M1 总览用)。
+function Get-HistogramAvgCell {
+    param($Hist, [double]$UnitScale = 1.0, [int]$Decimals = 1)
+    return (Get-HistogramCells $Hist $UnitScale $Decimals)[1]
+}
+
+# 「族内存在规则」:没有预建的 counter(scene_manager_home_zone_lookup_total、login_gate_directory_reads_total)
+# 在第一次事件之前整族一条序列都没有。整族都没有 → 每个取值 $null(→ n/a:分不清旧版本与零事件,如实标 n/a);
+# 族内有任一序列 → 缺的取值记 0(同一进程的同一个计数器,有一条序列即证明已注册、采集已开,缺的取值只是
+# 还没发生过)。先例是 CreatePlayer 段 name_orphan 的 $stageSeen 兜底。返回按 $Values 顺序的 取值 → 数。
+function Get-FamilyCountsOrNull {
+    param([hashtable]$M, [string]$Name, [string]$Label, [string[]]$Values, [hashtable]$Match = @{})
+    $familySeen = $null -ne (Get-SeriesSumOrNull $M $Name $Match)
+    $counts = [ordered]@{}
+    foreach ($v in $Values) {
+        if (-not $familySeen) { $counts[$v] = $null; continue }
+        $one = $Match.Clone()
+        $one[$Label] = $v
+        $c = Get-SeriesSumOrNull $M $Name $one
+        $counts[$v] = if ($null -eq $c) { 0.0 } else { $c }
+    }
+    return $counts
+}
+
+# 按段打印「无数据」行。带 ASCII 的 no data,方便脚本与测试在任意控制台编码下匹配。
+function Write-NoData {
+    param([string]$Reason)
+    Write-Host "  (无数据 no data: $Reason)" -ForegroundColor DarkGray
+}
+
+# ----- Redis INFO 快照(stress_snap.ps1 -RedisTargets 写的 t<N>m_redis_<name>.txt) --------------
+
+# "calls=21,usec=175,usec_per_call=8.33" → @{ calls = 21; usec = 175; usec_per_call = 8.33 }。
+function ConvertFrom-RedisKvList {
+    param([string]$Text)
+    $h = @{}
+    foreach ($part in $Text.Split(',')) {
+        $j = $part.IndexOf('=')
+        if ($j -le 0) { continue }
+        $d = 0.0
+        if ([double]::TryParse($part.Substring($j + 1), [System.Globalization.NumberStyles]::Float,
+                [System.Globalization.CultureInfo]::InvariantCulture, [ref]$d)) {
+            $h[$part.Substring(0, $j)] = $d
+        }
+    }
+    return $h
+}
+
+# 解析一份 INFO 快照。首行 '# stress_snap …' 是抓取元信息,跳过;'# Xxx' 是 section 头,记进 Sections
+# (区分「section 没抓」与「section 在、该字段只是没出现」,如 errorstat_OOM 只在发生过 OOM 后才有);
+# cmdstat_<cmd> / latency_percentiles_usec_<cmd> / errorstat_<ERR> 的 k=v 列表分别进 Cmd / Lat / Err,其余进 Fields。
+function Read-RedisInfoSnapshot {
+    param([System.IO.FileInfo]$File)
+    if (-not ($File.BaseName -match '^t(?<n>\d+)m_redis_(?<name>[a-z][a-z0-9-]*)$')) { return $null }
+    $snap = [pscustomobject]@{
+        Tag      = [int]$Matches['n']
+        Name     = $Matches['name']
+        Fields   = @{}
+        Cmd      = @{}
+        Lat      = @{}
+        Err      = @{}
+        Sections = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+    }
+    foreach ($raw in [System.IO.File]::ReadLines($File.FullName)) {
+        $line = $raw.Trim()
+        if ($line.Length -eq 0 -or $line.StartsWith('# stress_snap ')) { continue }
+        if ($line.StartsWith('#')) { $null = $snap.Sections.Add($line.TrimStart('#').Trim()); continue }
+        $i = $line.IndexOf(':')
+        if ($i -le 0) { continue }
+        $key = $line.Substring(0, $i)
+        $value = $line.Substring($i + 1)
+        if ($key.StartsWith('cmdstat_')) { $snap.Cmd[$key.Substring('cmdstat_'.Length)] = ConvertFrom-RedisKvList $value }
+        elseif ($key.StartsWith('latency_percentiles_usec_')) { $snap.Lat[$key.Substring('latency_percentiles_usec_'.Length)] = ConvertFrom-RedisKvList $value }
+        elseif ($key.StartsWith('errorstat_')) { $snap.Err[$key.Substring('errorstat_'.Length)] = ConvertFrom-RedisKvList $value }
+        else { $snap.Fields[$key] = $value }
+    }
+    return $snap
+}
+
+function Get-RedisNumberOrNull {
+    param($Snap, [string]$Key)
+    if (-not $Snap.Fields.ContainsKey($Key)) { return $null }
+    $d = 0.0
+    if ([double]::TryParse($Snap.Fields[$Key], [System.Globalization.NumberStyles]::Float,
+            [System.Globalization.CultureInfo]::InvariantCulture, [ref]$d)) { return $d }
+    return $null
+}
+
+# 若干累计字段之和在窗口内的增量。任一字段在任一端缺失返回 $null(→ n/a);$Prev 为 $null 时以 0 为起点(自实例启动)。
+function Get-RedisDeltaOrNull {
+    param($Prev, $Cur, [string[]]$Keys)
+    $total = 0.0
+    foreach ($k in $Keys) {
+        $c = Get-RedisNumberOrNull $Cur $k
+        if ($null -eq $c) { return $null }
+        $p = 0.0
+        if ($null -ne $Prev) {
+            $p = Get-RedisNumberOrNull $Prev $k
+            if ($null -eq $p) { return $null }
+        }
+        $total += $c - $p
+    }
+    return $total
+}
+
+# errorstat_<Type> 的累计次数。Errorstats section 没抓 → $null;抓了但没有这一行 → 0(该类错误还没发生过)。
+function Get-RedisErrorCountOrNull {
+    param($Snap, [string]$Type)
+    if (-not $Snap.Sections.Contains('Errorstats')) { return $null }
+    if ($Snap.Err.ContainsKey($Type) -and $Snap.Err[$Type].ContainsKey('count')) { return [double]$Snap.Err[$Type]['count'] }
+    return 0.0
+}
+
+# 一个窗口的实例负载(R1 / M1 共用)。口径:
+#   Δt = Δuptime_in_seconds(Redis 自己的时钟,不受采集时刻漂移影响)。run_id 变了或 Δuptime ≤ 0 = 重启 / 切主,
+#   Restart=$true,增量列一律不出数(不把两个实例的计数相减)。$Prev 为 $null = 单份快照,以实例启动为起点
+#   (Δx = 累计值,Δt = uptime)。
+#   ops/s = Δtotal_commands_processed / Δt;cpu% = Δ(used_cpu_sys + used_cpu_user) / Δt × 100;
+#   main% = Δ(used_cpu_sys_main_thread + used_cpu_user_main_thread) / Δt × 100,是单线程是否饱和的判据,
+#   老版本没有这两个字段时为 $null(→ n/a);网络 KB/s 用 Δtotal_net_input_bytes / Δtotal_net_output_bytes;
+#   rej_conn / err_rep / oom / aof_dfs 是窗口内增量;clients / used_MB / mem% 取窗口末的瞬时值,maxmemory=0 时 mem% 为 NaN(→ "-")。
+function Get-RedisWindow {
+    param($Prev, $Cur)
+    $curUp = Get-RedisNumberOrNull $Cur 'uptime_in_seconds'
+    $win = [ordered]@{ Restart = $false; Secs = $null; Ops = $null; Cpu = $null; Main = $null; InKBs = $null; OutKBs = $null
+        RejConn = $null; ErrRep = $null; Oom = $null; AofDfs = $null; Clients = $null; UsedMB = $null; MemPct = $null }
+
+    $win.Clients = Get-RedisNumberOrNull $Cur 'connected_clients'
+    $used = Get-RedisNumberOrNull $Cur 'used_memory'
+    if ($null -ne $used) { $win.UsedMB = $used / 1048576.0 }
+    $maxMem = Get-RedisNumberOrNull $Cur 'maxmemory'
+    if ($null -ne $used -and $null -ne $maxMem) { $win.MemPct = if ($maxMem -le 0) { [double]::NaN } else { 100.0 * $used / $maxMem } }
+
+    if ($null -eq $curUp) { $win.Restart = $true; return [pscustomobject]$win }
+    $secs = $curUp
+    if ($null -ne $Prev) {
+        $prevUp = Get-RedisNumberOrNull $Prev 'uptime_in_seconds'
+        if ($null -eq $prevUp -or $Prev.Fields['run_id'] -cne $Cur.Fields['run_id'] -or $curUp -le $prevUp) {
+            $win.Restart = $true
+            return [pscustomobject]$win
+        }
+        $secs = $curUp - $prevUp
+    }
+    if ($secs -le 0) { $win.Restart = $true; return [pscustomobject]$win }
+    $win.Secs = $secs
+
+    $perSec = { param($d) if ($null -eq $d) { $null } else { $d / $secs } }
+    $win.Ops = & $perSec (Get-RedisDeltaOrNull $Prev $Cur @('total_commands_processed'))
+    $cpu = Get-RedisDeltaOrNull $Prev $Cur @('used_cpu_sys', 'used_cpu_user')
+    if ($null -ne $cpu) { $win.Cpu = 100.0 * $cpu / $secs }
+    $main = Get-RedisDeltaOrNull $Prev $Cur @('used_cpu_sys_main_thread', 'used_cpu_user_main_thread')
+    if ($null -ne $main) { $win.Main = 100.0 * $main / $secs }
+    $in = & $perSec (Get-RedisDeltaOrNull $Prev $Cur @('total_net_input_bytes'))
+    if ($null -ne $in) { $win.InKBs = $in / 1024.0 }
+    $out = & $perSec (Get-RedisDeltaOrNull $Prev $Cur @('total_net_output_bytes'))
+    if ($null -ne $out) { $win.OutKBs = $out / 1024.0 }
+    $win.RejConn = Get-RedisDeltaOrNull $Prev $Cur @('rejected_connections')
+    $win.ErrRep = Get-RedisDeltaOrNull $Prev $Cur @('total_error_replies')
+    $win.AofDfs = Get-RedisDeltaOrNull $Prev $Cur @('aof_delayed_fsync')
+    $oomCur = Get-RedisErrorCountOrNull $Cur 'OOM'
+    $oomPrev = if ($null -eq $Prev) { 0.0 } else { Get-RedisErrorCountOrNull $Prev 'OOM' }
+    if ($null -ne $oomCur -and $null -ne $oomPrev) { $win.Oom = $oomCur - $oomPrev }
+    return [pscustomobject]$win
+}
+
+# ----- 跨语言钉名的取值数组(2026-10-23,L-18 观测批) -----------------------
+#
+# 下面的数组与 Go 侧常量逐项对应,Go 的钉名测试按 `$名字 = @( … )` 读出这些数组再比对(仿
+# go/db/internal/metrics 的 TestRedisStepNamesMatchStressSummarize):两边不一致时整列会静默变成 n/a,
+# 只有钉名测试能先红。改名或加取值要同改 Go 常量、本数组与 test_stress_summarize.ps1;括号里不写注释。
+#
+# $loginRpcMethods:login 调 data_service 的 gRPC 方法全名(go-zero rpc_client_requests_* 的 method label),
+#   与 dspb.DataService_<Method>_FullMethodName 逐项对应;$loginRpcColumns 是 L1 / M1 的列名前缀,与之同序:
+#   bgz = BatchGetPlayerHomeZone、bpn = BatchGetPlayerName、ghz = GetPlayerHomeZone(只在 RedirectOnEnterEnabled
+#   打开时调用,通常没有序列)、rad = ReadAccountDirectory、lar = LookupAccountRole(EnterGame 每次 3 次)。
+$loginRpcMethods = @('/data_service.DataService/BatchGetPlayerHomeZone', '/data_service.DataService/BatchGetPlayerName', '/data_service.DataService/GetPlayerHomeZone', '/data_service.DataService/ReadAccountDirectory', '/data_service.DataService/LookupAccountRole')
+$loginRpcColumns = @('bgz', 'bpn', 'ghz', 'rad', 'lar')
+# $gateDirectorySources:login_gate_directory_reads_total 的 source,同 go/login/internal/logic/pkg/node/node_cache.go
+#   的 readSourceCache / readSourceUnsynced / readSourceStale。
+$gateDirectorySources = @('cache', 'etcd_unsynced', 'etcd_stale')
+# $deliveryOutcomes:login_task_result_delivery_total 的 outcome,与 go/login/internal/dispatcher/metrics.go 的
+#   deliveryOutcomes 同序。
+$deliveryOutcomes = @('instance_notify', 'legacy_notify', 'late_notify', 'result_missing', 'salvaged', 'timed_out')
+#   L3 表的列名 → outcome(列序按「终态在前、附加信号在后」,与上面的 Go 顺序不同;下面的检查保证一一对应)。
+$l3Columns = [ordered]@{ inst = 'instance_notify'; legacy = 'legacy_notify'; salvaged = 'salvaged'; timed_out = 'timed_out'; late = 'late_notify'; missing = 'result_missing' }
+# $smEnterSceneStages:scene_manager_enter_scene_stage_seconds 的全部 stage,同 go/scene_manager/internal/metrics
+#   的 EnterSceneStage* 常量(前 7 个是原 SM stages 表的列,列序不动;home_zone / role_lookup 由 S1 表出)。
+#   $smLookupStages 声明哪几个进 S1 表,必须是 $smEnterSceneStages 的子集。
+$smEnterSceneStages = @('dedup', 'scene_resolve', 'reserve', 'update_loc', 'route_gate', 'release_dispatch', 'cross_zone', 'home_zone', 'role_lookup')
+$smLookupStages = @('home_zone', 'role_lookup')
+# $homeZoneLookupOutcomes:scene_manager_home_zone_lookup_total 的 outcome(go/scene_manager/internal/metrics 的 Help)。
+$homeZoneLookupOutcomes = @('mapped', 'unmapped', 'unconfigured', 'error')
+# $homeZoneReadRpcs / $homeZoneReadResults:data_service_home_zone_read_seconds 的 rpc / result 取值
+#   (home = GetPlayerHomeZone,batch = BatchGetPlayerHomeZone;not_found 只在 home 出现,两种 rpc 都预建全部组合)。
+$homeZoneReadRpcs = @('home', 'batch')
+$homeZoneReadResults = @('ok', 'not_found', 'error')
+# $accountDirectoryRpcs:data_service_account_directory_rpc_seconds 的 rpc 取值。规则:
+#   go/data_service/internal/server/account_directory.go 里的每个账号目录 RPC,方法名去掉 AccountDirectory /
+#   AccountRole / AccountRoles 前后缀后转小写,按该文件中的方法顺序:ReadAccountDirectory → read、CreateAccountRole →
+#   create、LookupAccountRole → lookup、RepairAccountRole → repair、RemoveAccountRoles → remove。角色交易
+#   (account_role_trade.go)与入场登记(account_role_admission.go)不在该文件,不计入。
+# $accountDirectoryResults:result 取值。rejected = 鉴权失败或业务拒绝(InvalidArgument / PermissionDenied /
+#   ResourceExhausted / FailedPrecondition),error = 依赖故障(Unavailable),not_found = NotFound。
+$accountDirectoryRpcs = @('read', 'create', 'lookup', 'repair', 'remove')
+$accountDirectoryResults = @('ok', 'not_found', 'rejected', 'error')
+# $redisAlwaysCommands:R2 在 Δcalls 前 8 名之外必列的命令(有就列),对应 mapping 读路径与核心读写。
+$redisAlwaysCommands = @('mget', 'evalsha', 'eval', 'get', 'set')
+
+if ($loginRpcMethods.Count -ne $loginRpcColumns.Count) {
+    throw "`$loginRpcMethods 与 `$loginRpcColumns 长度不一致"
+}
+foreach ($st in $smLookupStages) {
+    if ($smEnterSceneStages -cnotcontains $st) { throw "`$smLookupStages 的 $st 不在 `$smEnterSceneStages 里" }
+}
+if ($l3Columns.Count -ne $deliveryOutcomes.Count -or @($l3Columns.Values | Where-Object { $deliveryOutcomes -cnotcontains $_ }).Count -gt 0) {
+    throw "`$l3Columns 必须与 `$deliveryOutcomes 一一对应"
+}
+
 # ----- 1. robot stats ---------------------------------------------------
 
 $RunDirResolved = (Resolve-Path $RunDir).Path
@@ -222,22 +640,31 @@ $snapDir = Join-Path $RunDirResolved "prom-snapshots"
 $snapshots = @()
 $smSnapshots = @()
 $dbSnapshots = @()
+$dsSnapshots = @()
+$redisSnapshots = @()
 
 if (Test-Path $snapDir) {
     $allTxt = Get-ChildItem $snapDir -Filter "*.txt" | Sort-Object Name
+    # Redis INFO 快照(stress_snap.ps1 -RedisTargets 写的 t{N}m_redis_<name>.txt)先剔出去,其余才是 prom 快照。
+    # 它们按分钟数数值排序:Name 字典序里 t10m 排在 t2m 前面,求差会把窗口倒过来。
+    $redisPattern = '^t\d+m_redis_[a-z][a-z0-9-]*$'
+    $redisSnapshots = @($allTxt | Where-Object { $_.BaseName -match $redisPattern } |
+        ForEach-Object { Read-RedisInfoSnapshot $_ } | Sort-Object Tag, Name)
+    $promTxt = @($allTxt | Where-Object { $_.BaseName -notmatch $redisPattern })
     # New multi-endpoint layout (Round 16+) uses suffixes: t{N}m_login.txt,
-    # t{N}m_sm.txt, t{N}m_db.txt. Old single-endpoint layout used bare
-    # t{N}m.txt and only ever contained login metrics.
-    $loginTxt = $allTxt | Where-Object { $_.BaseName -match '_login$' }
-    $smTxt    = $allTxt | Where-Object { $_.BaseName -match '_sm$' }
-    $dbTxt    = $allTxt | Where-Object { $_.BaseName -match '_db$' }
+    # t{N}m_sm.txt, t{N}m_db.txt, t{N}m_ds.txt (data_service, 2026-10-23+).
+    # sm / db / ds 一律按后缀归组(2026-10-23 起;此前只在存在 _login 时才认,login 全部抓取失败的目录会把
+    # sm / db 文件当成 login 快照)。Old single-endpoint layout used bare t{N}m.txt and only ever contained
+    # login metrics:没有任何 _login 时,只把不带已知后缀的 txt 当 login 快照,纯 legacy 目录的行为不变。
+    $loginTxt    = @($promTxt | Where-Object { $_.BaseName -match '_login$' })
+    $smSnapshots = @($promTxt | Where-Object { $_.BaseName -match '_sm$' })
+    $dbSnapshots = @($promTxt | Where-Object { $_.BaseName -match '_db$' })
+    $dsSnapshots = @($promTxt | Where-Object { $_.BaseName -match '_ds$' })
     if ($loginTxt.Count -gt 0) {
-        $snapshots   += $loginTxt
-        $smSnapshots += $smTxt
-        $dbSnapshots += $dbTxt
+        $snapshots += $loginTxt
     } else {
         # Legacy: bare t{N}m.txt files all hold login metrics.
-        $snapshots += $allTxt
+        $snapshots += @($promTxt | Where-Object { $_.BaseName -notmatch '_(login|sm|db|ds)$' })
     }
 }
 
@@ -402,6 +829,106 @@ if ($snapshots.Count -eq 0) {
     }
 }
 
+# ----- 2a. Login 出站 RPC / gate 目录 / 读回执送达(L-18 观测批,login :9101) ----
+#
+# 与上面三张 login 表共用 login 快照($snapshots),但放在那个 if / else 之外:一份 login 快照都没有时也打印标题与
+# 「无数据」行,复盘时能分清「没抓到」和「表没了」。
+
+# L1:go-zero 客户端拦截器的 rpc_client_requests_duration_ms{method}(毫秒,桶 1,2,5,10,25,50,…)与
+#     rpc_client_requests_code_total{code,method}(code 是 gRPC 数字码,0 = OK)。每个方法四列:
+#       _n    _count(累计调用次数);_avg 累计均值;_p99 由桶线性插值(桶粗,只看量级;落在 +Inf 桶打 '>最高上界')
+#       _err  code≠0 的次数(含 NotFound 等业务码,不全是故障)
+#     这是客户端侧耗时,含网络、熔断与选点,不能与 D1 / D2 的服务端耗时直接相减。只有 login.yaml 带 Prometheus 段
+#     时 go-zero 才出这些序列(K8s 的 login ConfigMap 目前没有),缺序列打印 n/a。方法与列名见 $loginRpcMethods。
+$l1Fmt = '  {0,-30}'
+$l1Header = @('snapshot')
+$l1Rule = @('--------')
+for ($i = 0; $i -lt $loginRpcColumns.Count; $i++) {
+    $base = 1 + 4 * $i
+    $l1Fmt += (' | {{{0},-6}} {{{1},-8}} {{{2},-8}} {{{3},-5}}' -f $base, ($base + 1), ($base + 2), ($base + 3))
+    foreach ($suffix in @('n', 'avg', 'p99', 'err')) {
+        $title = "$($loginRpcColumns[$i])_$suffix"
+        $l1Header += $title
+        $l1Rule += ('-' * $title.Length)
+    }
+}
+$l1Legend = for ($i = 0; $i -lt $loginRpcColumns.Count; $i++) { "$($loginRpcColumns[$i])=$($loginRpcMethods[$i] -replace '^.*/', '')" }
+Write-Host ""
+Write-Host "=== L1 Login outbound RPC (rpc_client_requests_duration_ms / _code_total, login :9101) ===" -ForegroundColor Yellow
+Write-Host "  $($l1Legend -join ' ')"
+Write-Host ""
+if ($snapshots.Count -eq 0) {
+    Write-NoData "没有 login 快照"
+} else {
+    Write-Host ($l1Fmt -f $l1Header)
+    Write-Host ($l1Fmt -f $l1Rule)
+    foreach ($snap in $snapshots) {
+        $m = Read-PromSnapshot $snap.FullName
+        $cells = @($snap.BaseName)
+        foreach ($method in $loginRpcMethods) {
+            $cells += Get-HistogramCells (Get-HistogramOrNull $m 'rpc_client_requests_duration_ms' @{ method = $method }) 0.001 1
+            $codeAll = Get-SeriesSumOrNull $m 'rpc_client_requests_code_total' @{ method = $method }
+            $codeOk = Get-SeriesSumOrNull $m 'rpc_client_requests_code_total' @{ method = $method; code = '0' }
+            if ($null -eq $codeOk) { $codeOk = 0.0 }
+            $cells += $(if ($null -eq $codeAll) { 'n/a' } else { Format-CountCell ($codeAll - $codeOk) })
+        }
+        Write-Host ($l1Fmt -f $cells)
+    }
+}
+
+# L2:login_gate_directory_reads_total{source}(go-zero 计数器,没有预建,第一次读之前整族没有序列 → 族内存在规则,
+#     见 Get-FamilyCountsOrNull)。cache% = cache / 全部,稳态应接近 100%;etcd_stale 持续增长说明 etcd 不可达或
+#     watch 反复卡住,登录又回到了逐请求打 etcd(L-18 第 4 步)。
+$l2Fmt = "  {0,-30} | {1,-8} {2,-13} {3,-10} | {4}"
+Write-Host ""
+Write-Host "=== L2 Login gate directory reads (login_gate_directory_reads_total) ===" -ForegroundColor Yellow
+Write-Host ""
+if ($snapshots.Count -eq 0) {
+    Write-NoData "没有 login 快照"
+} else {
+    Write-Host ($l2Fmt -f (@('snapshot') + $gateDirectorySources + @('cache%')))
+    Write-Host ($l2Fmt -f (@('--------') + @($gateDirectorySources | ForEach-Object { '-' * $_.Length }) + @('------')))
+    foreach ($snap in $snapshots) {
+        $m = Read-PromSnapshot $snap.FullName
+        $counts = Get-FamilyCountsOrNull $m 'login_gate_directory_reads_total' 'source' $gateDirectorySources
+        $cells = @($snap.BaseName) + @($gateDirectorySources | ForEach-Object { Format-CountCell $counts[$_] })
+        $cells += Format-RatioCell $counts[$gateDirectorySources[0]] (Get-SumOrNull $counts.Values)
+        Write-Host ($l2Fmt -f $cells)
+    }
+}
+
+# L3:login_task_result_delivery_total{outcome}(client_golang,六个取值起服即预建为 0;缺序列 = 不导出它的 login,打印 n/a)。
+#     终态 inst / legacy / salvaged / timed_out 之和作分母(一条登记最多落在其中一个上);late / missing 是附加信号,
+#     不进分母。deliv% = (inst + legacy) / 终态,salv% = salvaged / 终态,tmo% = timed_out / 终态,
+#     legacy% = legacy / (inst + legacy)(两侧全量升级后应约为 0)。口径同 go/login/internal/dispatcher/metrics.go
+#     文件头;与 2g 段 db 发布方的 db_task_result_notify_total 对照看。列与 outcome 的对应见 $l3Columns。
+$l3Fmt = "  {0,-30} | {1,-6} {2,-6} {3,-8} {4,-9} | {5,-5} {6,-7} | {7,-7} {8,-6} {9,-6} {10}"
+Write-Host ""
+Write-Host "=== L3 Login task:result delivery (login_task_result_delivery_total) ===" -ForegroundColor Yellow
+Write-Host ""
+if ($snapshots.Count -eq 0) {
+    Write-NoData "没有 login 快照"
+} else {
+    Write-Host ($l3Fmt -f (@('snapshot') + @($l3Columns.Keys) + @('deliv%', 'salv%', 'tmo%', 'legacy%')))
+    Write-Host ($l3Fmt -f (@('--------') + @($l3Columns.Keys | ForEach-Object { '-' * $_.Length }) + @('------', '-----', '----', '-------')))
+    foreach ($snap in $snapshots) {
+        $m = Read-PromSnapshot $snap.FullName
+        $v = @{}
+        foreach ($col in $l3Columns.Keys) {
+            $v[$col] = Get-SeriesSumOrNull $m 'login_task_result_delivery_total' @{ outcome = $l3Columns[$col] }
+        }
+        $notified = Get-SumOrNull @($v['inst'], $v['legacy'])
+        $terminal = Get-SumOrNull @($v['inst'], $v['legacy'], $v['salvaged'], $v['timed_out'])
+        $cells = @($snap.BaseName) + @($l3Columns.Keys | ForEach-Object { Format-CountCell $v[$_] })
+        $cells += @(
+            (Format-RatioCell $notified $terminal),
+            (Format-RatioCell $v['salvaged'] $terminal),
+            (Format-RatioCell $v['timed_out'] $terminal),
+            (Format-RatioCell $v['legacy'] $notified))
+        Write-Host ($l3Fmt -f $cells)
+    }
+}
+
 # ----- 2b. SceneManager EnterScene stage breakdown (Round 16+) ----------
 
 if ($smSnapshots.Count -gt 0) {
@@ -411,7 +938,8 @@ if ($smSnapshots.Count -gt 0) {
     "  snapshot                       dedup     scene_res reserve  upd_loc  route_gt rel_disp cross_zn" | Write-Host
     "  --------                       --------- --------- -------- -------- -------- -------- --------" | Write-Host
 
-    $stages = @('dedup','scene_resolve','reserve','update_loc','route_gate','release_dispatch','cross_zone')
+    # 原有 7 列(dedup … cross_zone),列序与 prev-summary 对齐、不动;home_zone / role_lookup 进下面的 S1 表。
+    $stages = @($smEnterSceneStages | Where-Object { $smLookupStages -cnotcontains $_ })
     foreach ($snap in $smSnapshots) {
         $m = Read-PromSnapshot $snap.FullName
         $cells = @()

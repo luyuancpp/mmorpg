@@ -649,24 +649,35 @@ func (r *Router) AcquirePlayerLock(ctx context.Context, dataClient goredis.Cmdab
 	// 请求 ctx 已超时 / 取消也照常释放(lockReleaseContext)。
 	ok, err = r.mappingRedis.SetnxExCtx(ctx, mappingPlayerLockKey(playerID), token, r.lockTTLSec)
 	if err != nil || !ok {
-		return "", false, lockAcquireFailure(err, r.releaseMappingLock(ctx, playerID, token))
+		return "", false, r.lockAcquireFailure(playerID, "mapping", err, r.releaseMappingLock(ctx, playerID, token))
 	}
 
 	ttl := time.Duration(r.lockTTLSec) * time.Second
 	ok, err = dataClient.SetNX(ctx, PlayerDataLockKey(playerID), token, ttl).Result()
 	if err != nil || !ok {
-		return "", false, lockAcquireFailure(err, r.ReleasePlayerLock(ctx, dataClient, playerID, token))
+		return "", false, r.lockAcquireFailure(playerID, "data", err, r.ReleasePlayerLock(ctx, dataClient, playerID, token))
 	}
 	return token, true, nil
 }
 
-// lockAcquireFailure 决定拿锁失败时返回的错误:拿锁本身的错误优先;拿锁只是没抢到(acquireErr == nil)
-// 而回滚释放失败时返回释放错误 —— 锁可能还挂在服务端,不能当成普通的锁冲突。
-func lockAcquireFailure(acquireErr, releaseErr error) error {
+// lockAcquireFailure 决定拿锁失败时返回的错误,并记下回滚释放的失败:
+//   - 拿锁本身的错误优先返回;
+//   - 拿锁只是没抢到(acquireErr == nil)而回滚释放失败时返回释放错误:锁可能还挂在服务端,不能当成普通的锁冲突。
+//
+// 回滚释放失败一律记日志:之后最多 PlayerLockTTLSec 内该玩家的写都回 LockConflict,日志是唯一的解释
+// (与 lockAndRecheckRoute 释放失败同一口径)。failedLock 只用于日志,标明哪把锁的 SETNX 没成功。
+func (r *Router) lockAcquireFailure(playerID uint64, failedLock string, acquireErr, releaseErr error) error {
+	if releaseErr != nil {
+		logx.Errorf("[PlayerLock] rollback after a failed %s lock acquire could not release the locks, they expire in %ds: player=%d acquire_err=%v: %v",
+			failedLock, r.lockTTLSec, playerID, acquireErr, releaseErr)
+	}
 	if acquireErr != nil {
 		return acquireErr
 	}
-	return releaseErr
+	if releaseErr != nil {
+		return fmt.Errorf("player %d: releasing locks after a lock conflict failed: %w", playerID, releaseErr)
+	}
+	return nil
 }
 
 // writeRoute 是写门禁读到的路由快照,home 与合服围栏同一瞬间读出(GetPlayerHomeZoneAndMergeFence)。
@@ -781,6 +792,10 @@ const playerLockReleaseTimeout = time.Second
 // 释放发生在 defer 和获取失败的回滚里,这时请求 ctx 往往已经超时或被取消;go-redis 取连接前先看
 // ctx.Done(),沿用它释放命令根本发不出去,两把锁只能等 PlayerLockTTLSec 过期,期间同一玩家的写
 // 全部回 LockConflict。WithoutCancel 保留 ctx 里的值(trace 等),另套短超时,免得挂住的 Redis 卡住 defer。
+//
+// 1s 约束的是取连接、拨号与重试退避,不是单次读写:数据 / mapping 客户端都没开 ContextTimeoutEnabled,
+// go-redis 的套接字读写截止只取 ReadTimeout / WriteTimeout(缺省 3s)。所以 Redis 挂住时释放一份副本最坏约 3s,
+// 超过 1s 后不再重试。
 func lockReleaseContext(ctx context.Context) (context.Context, context.CancelFunc) {
 	return context.WithTimeout(context.WithoutCancel(ctx), playerLockReleaseTimeout)
 }

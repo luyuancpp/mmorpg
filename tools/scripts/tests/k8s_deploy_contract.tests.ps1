@@ -424,7 +424,7 @@ Test-Case "自检:scene-manager 超时预算判定对 5000 / 2000 / 7999 / 0 / �
 }
 
 # ─────────────────────────────────────────────────────────────────
-# C++ gRPC 客户端 deadline 预算(docs/design/grpc-client-deadline-failure-callback.md §4.2 / §4.4)
+# C++ gRPC 客户端 deadline 预算(docs/design/grpc-muduo-transport.md §16.3 / §16.4)
 # ─────────────────────────────────────────────────────────────────
 # 上面守的是 scene-manager 服务端 Timeout 盖住它自己的内部预算;这里守反方向:C++ deadline ≥ 目标 Go 服务的
 # zrpc Timeout + 2000(上游比下游宽),以及 node ConfigMap 把 GrpcClient 块原样搬进集群。
@@ -2181,6 +2181,50 @@ Test-Case 'node ConfigMap 的 Kafka.GroupID 从 bin/etc 镜像、不再写死共
         Assert-NotMatch -Text $block -Pattern 'game-consumer-group' -Because "$($target.Name) 不得再出现生成器自带的共享组名常数(2026-05-27 本机改空后模板一直没跟)"
         Assert-Equal -Expected 'true' -Actual (Get-FlatValue -Flat $flat -KeyPath 'data.base_deploy_config.yaml.Kafka.DisableLegacyPerNodeTopic') -Because "$($target.Name) 必须关掉旧路径:与 GroupID 镜像同批,否则旧路径换到新消费组后会从 earliest 重放旧 topic"
     }
+}
+# C++ 节点 LogLevel(2026-10-22):数值直接按 muduo Logger::LogLevel 枚举解释(0=TRACE 1=DEBUG 2=INFO 3=WARN 4=ERROR 5=FATAL,
+# node.cpp 的 Node::InitLogSystem 直接 static_cast)。以前生成器写死 1,K8s 上 gate / scene / battle 全部带着 DEBUG 跑,
+# 而 release_preflight.ps1 的 debug.cpp.loglevel 只查 bin/etc 那份(2),看不见集群里实际生效的值。现在两份 ConfigMap 都从
+# bin/etc 镜像,结构校验在 ConvertTo-CppNodeLogLevel(按 AST 抽出来直接喂非法值,不另抄一份判定)。
+foreach ($logLevelFnAst in $deadlineDeployAst.FindAll({ param($a) $a -is [System.Management.Automation.Language.FunctionDefinitionAst] }, $false)) {
+    if ($logLevelFnAst.Name -eq 'ConvertTo-CppNodeLogLevel') {
+        Set-Item -Path "Function:script:$($logLevelFnAst.Name)" -Value $logLevelFnAst.Body.GetScriptBlock()
+    }
+}
+if (-not (Test-Path 'Function:ConvertTo-CppNodeLogLevel')) { throw 'k8s_deploy.ps1 缺少函数 ConvertTo-CppNodeLogLevel(LogLevel 结构校验被删了?后续断言无意义)' }
+Test-Case 'node-config 与 battle-node-config 的 LogLevel 从 bin/etc 镜像、生成器不写死;仓库值 >= 2(muduo 2=INFO,与发布预检同一下界)' {
+    $authoritative = Get-EtcValue -RelativePath 'bin/etc/base_deploy_config.yaml' -KeyPath 'LogLevel'
+    Assert-True -Condition ([int]$authoritative -ge 2) -Because "仓库默认值必须过 release_preflight.ps1 的 debug.cpp.loglevel(>= 2):1 = DEBUG、0 = TRACE(当前 '$authoritative')"
+    foreach ($target in @(
+        @{ Name = 'node-config'; Output = $devOut },
+        @{ Name = 'battle-node-config'; Output = $battleInfraRun.Output }
+    )) {
+        $flat = ConvertTo-FlatManifest -Block (Select-ManifestByName -Output $target.Output -Name $target.Name)
+        Assert-Equal -Expected $authoritative -Actual (Get-FlatValue -Flat $flat -KeyPath 'data.base_deploy_config.yaml.LogLevel') -Because "$($target.Name) 整目录遮蔽镜像里的 bin/etc,LogLevel 必须等于 bin/etc 的权威值(以前写死 1 = DEBUG)"
+    }
+}
+Test-Case '自检:ConvertTo-CppNodeLogLevel 对 0..5 返回整数,对 6 / -1 / 空串 / INFO / 2.5 一律 throw 并给出 muduo 枚举对照(守卫不得静默放行)' {
+    foreach ($ok in 0..5) {
+        Assert-Equal -Expected $ok -Actual (ConvertTo-CppNodeLogLevel -Value "$ok") -Because "$ok 是 muduo 枚举项"
+    }
+    foreach ($bad in @('6', '-1', '', 'INFO', '2.5')) {
+        $message = ''
+        try { ConvertTo-CppNodeLogLevel -Value $bad | Out-Null } catch { $message = $_.Exception.Message }
+        Assert-Match -Text $message -Pattern '0\.\.5 的整数' -Because "'$bad' 不是 muduo 枚举项,生成期必须 throw"
+        Assert-Match -Text $message -Pattern '1=DEBUG 2=INFO' -Because '错误文本要给出枚举对照,别让人再按「0=DEBUG」去猜'
+    }
+}
+Test-Case 'release_preflight.ps1 的 debug.cpp.loglevel 查 bin/etc 的 LogLevel、下界 2(以前按「0=DEBUG」写成 1,恰好放过 DEBUG)' {
+    # 预检的 PASS 行不打印下界,跑一遍只能看到 [PASS],钉不住下界;所以按 AST 静态核对这一次调用。
+    $preflightTokens = $null
+    $preflightErrors = $null
+    $preflightAst = [System.Management.Automation.Language.Parser]::ParseFile((Join-Path (Get-ToolsScriptsDir) 'release_preflight.ps1'), [ref]$preflightTokens, [ref]$preflightErrors)
+    Assert-True -Condition ($preflightErrors.Count -eq 0) -Because "release_preflight.ps1 必须能解析: $($preflightErrors.Message -join '; ')"
+    $calls = @($preflightAst.FindAll({ param($a) $a -is [System.Management.Automation.Language.CommandAst] -and $a.GetCommandName() -eq 'Test-NumericFloor' -and $a.Extent.Text -match "-Id\s+'debug\.cpp\.loglevel'" }, $true))
+    Assert-Equal -Expected 1 -Actual $calls.Count -Because 'debug.cpp.loglevel 必须恰好有一处 Test-NumericFloor 调用'
+    $text = $calls[0].Extent.Text
+    Assert-Match -Text $text -Pattern "-RelativePath\s+'bin/etc/base_deploy_config\.yaml'\s+-KeyPath\s+'LogLevel'" -Because '预检必须查 node-config 镜像的同一个键,否则又是两份各说各话'
+    Assert-Match -Text $text -Pattern '-Floor\s+2(\s|$)' -Because 'muduo 枚举 1 = DEBUG、0 = TRACE,生产下界是 2(INFO)'
 }
 Test-Case 'infra-up 默认部署一个 battle 并等待 rollout；zone-up 不重复部署全局池' {
     Assert-Equal -Expected 0 -Actual $battleInfraRun.ExitCode -Because 'battle 全局装配 DryRun 必须成功'

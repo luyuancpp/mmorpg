@@ -83,7 +83,8 @@ type dispatchJob struct {
 // dispatchWorkerCount sizes the per-process pool. 16 comfortably absorbs the
 // observed Round 14 peak (~4k notifies/s burst → each worker handles ~250/s
 // of LPop+Unmarshal, well within a single Redis round-trip budget). Bump if
-// future stress shows pool saturation in `pubsub_dispatch_overflow_total`.
+// future stress shows pool saturation in `login_task_result_dispatch_overflow_total`
+// (metrics.go; counted on the saturation fallback in dispatch).
 const dispatchWorkerCount = 16
 
 // dispatchJobsBuffer absorbs short bursts before the workers catch up.
@@ -363,6 +364,8 @@ func (d *TaskResultDispatcher) dispatch(ctx context.Context, channel, taskID str
 		// and replay the Round 13 "notify dropped, data present" failure
 		// mode. Better to occasionally pay a goroutine-spawn at the tail
 		// of a burst than stall the subscriber.
+		// 计数让这条退路可观测(login_task_result_dispatch_overflow_total):压测与告警据此判断池子是否偏小。
+		countDispatchOverflow()
 		safego.Go(pointWorker, func() { d.runDispatchJob(ctx, job) })
 	}
 }

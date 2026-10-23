@@ -23,6 +23,7 @@ public:
     struct LocalNode { std::string instanceId, nodeId; uint32_t zoneId{0}; };
     struct SqlAck { std::string ownerEpoch, pending, playerDatabase, playerDatabase1; };
     using RegisterReply = std::function<void(bool, const data_service::RegisterRoleAdmissionResponse*)>;
+    using FenceReply = std::function<void(bool, std::optional<std::string>)>;
     using CloseReply = std::function<void(bool, const data_service::CloseRoleAdmissionsResponse*)>;
     // 依赖只在当前逻辑线程使用；true表示已接管回调，false不得再回调。可同步完成。
     // 未替换的依赖沿正式HMAC/RPC/Redis适配器执行，不存在默认允许的授权分支。
@@ -33,6 +34,8 @@ public:
         std::function<bool(data_service::CloseRoleAdmissionsRequest, CloseReply)> closeAdmissions;
         std::function<bool(data_service::AckRoleTradeDrainRequest, std::function<void(bool)>)> ackDrain;
         std::function<bool(Guid, std::function<void(std::optional<SqlAck>)>)> readSqlAck;
+        // expectedPrior 首次读取后固定；重试保留同一 candidate 与 prior，不从当前身份补资格。
+        std::function<bool(Guid, std::string, std::optional<std::string>, FenceReply)> registerHandoffFence;
         std::function<void(Guid, PlayerEnterContext)> activate;
         std::function<void(Guid)> freeze;
         std::function<void(Guid, uint32_t)> reject;
@@ -54,6 +57,9 @@ public:
     static bool Allows(Guid playerId, uint64_t generation, uint64_t ownerRevision);
     static bool IsSealed(Guid playerId);
     static std::optional<common::base::RoleAdmissionIdentity> ConfirmedIdentity(Guid playerId);
+    // 只确认调用方原入场上下文；不能用当前 identity 给旧异步调用补新世代或新会话。
+    static std::optional<common::base::RoleAdmissionIdentity> ConfirmedIdentityForContext(
+        Guid playerId, const PlayerEnterContext& context);
     static bool Seal(const common::base::RoleTradeSeal& seal);
     static bool AcceptSeal(const SealAccountRoleTradeRequest& request);
     static void ObserveSave(Guid playerId, uint64_t ownerEpoch, uint64_t saveSeq);

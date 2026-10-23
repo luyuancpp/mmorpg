@@ -733,11 +733,10 @@ func (b *travelSmokeBot) call(messageId uint32, request, response proto.Message)
 // readGold / addGold 读 / 加金币:只等本次请求自己的回包(按请求号认领)并直接解回包,被拒一律是失败
 // (gate 信封拒绝与回包体 tip 非 0,判定见 travelSmokeReplyRejection)。
 //
-// 为什么不用 currency_crash_window_scenario.go 的 readGoldBalance / gmAddGold:它们等的是生成 handler 写进
-// gameobject.Player 的就绪通道,分不清"余额是 0"和"请求被拒"——GetCurrencyList 的 handler 在回包带 error_message 时
-// 记一份空列表,读出来是 (0, nil);gate 信封拒绝(限流)时回包体为空,解出来同样是空列表 / balance_after=0。
-// 本场景的断言全建立在余额上,把拒绝读成 0 会让失败原因指错方向(出发值为 0 的那一瞬间还会直接放过)。
-// 它们也不认请求号,上一次超时请求的迟到回包会被当成本次结果。共享 helper 别的冒烟还在用,不改。
+// 没有直接用 currency_crash_window_scenario.go 的 readGoldBalance / gmAddGold(它们同样按请求号认领、区分信封与业务拒绝):
+// 本场景要让金币读写与传送请求共用 pace / lastRequestAt 节流(gate 按消息号限流),超时也要包裹本场景的
+// errTravelSmokeTimeout。金币槽规则与信封原因复用共享的 goldSlotValue / sceneRequestEnvelopeHint,不另写一份。
+// 本场景的断言全建立在余额上,把拒绝读成 0 会让失败原因指错方向,所以被拒一律报错。
 //
 // 不按"列表为空 / 长度不足"判失败:新号还没有任何货币记录时,空列表是合法回包(T1 的第一次读就是它)。
 // 需要非 0 的地方由调用点拿余额与期望值比。
@@ -750,7 +749,7 @@ func (b *travelSmokeBot) readGold() (uint64, error) {
 	if err != nil {
 		return 0, fmt.Errorf("GetCurrencyList: %w", err)
 	}
-	return travelSmokeGold(response), nil
+	return goldSlotValue(response), nil
 }
 
 func (b *travelSmokeBot) addGold(amount int64) (uint64, error) {
@@ -772,23 +771,14 @@ type travelSmokeTipReply interface {
 	GetErrorMessage() *base.TipInfoMessage
 }
 
-// travelSmokeEnvelopeHint 给 gate 信封拒绝码配一句原因(拼在 "tip=<数字>" 后面);不认识的码返回空串,只打印数字。
-// 本场景三处信封分支(金币读写、传送等待、负向传送)共用,同一个码的原因只写在这里。
-// 不提"gate 不认识这个消息号":未知消息号 gate 不回信封,只会表现为超时。
-// kServiceUnavailable 有两个来源:gate 自己选不到 scene 节点([TCP Node] WARN),以及 R1 之后 scene 在派发前
-// 早退、由 gate 补回带请求号的 1003(会话不在 / 玩家仍在加载 / 请求解析失败)。
+// travelSmokeEnvelopeHint 给 gate 信封拒绝码配一句原因(拼在 "tip=<数字>" 后面),本场景三处信封分支
+// (金币读写、传送等待、负向传送)共用。码的来源与定位线索以共享的 sceneRequestEnvelopeHint 为准,
+// 这里只把限流的提示指到本场景自己的节流常量。
 func travelSmokeEnvelopeHint(tip uint32) string {
-	switch tip {
-	case uint32(tiptable.CommonError_kRateLimitExceeded):
+	if tip == uint32(tiptable.CommonError_kRateLimitExceeded) {
 		return " (kRateLimitExceeded: gate rate limit, the request never reached the scene; see travelSmokeRequestSpacing)"
-	case uint32(tiptable.CommonError_kServiceUnavailable):
-		return " (kServiceUnavailable: the gate session is not bound to a scene node yet (Scene not ready) or the scene RpcClient " +
-			"is not attached, see the gate's [TCP Node] WARN; or the scene dropped the request before dispatch " +
-			"(session not in the scene / player still loading / request failed to parse))"
-	case uint32(tiptable.CommonError_kFeatureUnavailable):
-		return " (kFeatureUnavailable: gate GM 闸拒绝，请求未到 scene；gate 的 GATE_RUN_MODE 不是 dev)"
 	}
-	return ""
+	return sceneRequestEnvelopeHint(tip)
 }
 
 // travelSmokeReplyRejection 判一次请求-响应调用是否被拒:envelopeTip 是 gate 信封拒绝码(非 0 时 reply 未填充),
@@ -803,17 +793,7 @@ func travelSmokeReplyRejection(envelopeTip uint32, reply travelSmokeTipReply) er
 	return nil
 }
 
-// travelSmokeGold 取 GetCurrencyList 回包里金币槽的值。槽位越界(新号没有货币记录、repeated 比槽位短)按 0,
-// 与改造前经 gameobject.Player.GetCurrencyValue 读出的值一致。
-func travelSmokeGold(response *scene.GetCurrencyListResponse) uint64 {
-	values := response.GetCurrency().GetValues()
-	if int(currencyTypeGold) >= len(values) {
-		return 0
-	}
-	return values[currencyTypeGold]
-}
-
-// gateAddr 返回当前连着的 gate("ip:port";重定向后是新 zone 的 gate)。
+// gateAddr返回当前连着的 gate("ip:port";重定向后是新 zone 的 gate)。
 func (b *travelSmokeBot) gateAddr() string {
 	ip, port := b.gc.GateAddr()
 	return net.JoinHostPort(ip, strconv.Itoa(port))

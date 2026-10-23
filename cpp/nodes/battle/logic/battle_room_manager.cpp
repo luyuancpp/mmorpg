@@ -1617,7 +1617,8 @@ void BattleRoomManager::StagePersonalSettlements(BattleRoom &room, const turnbat
                 case battle_settlement::StageVerdict::kSuperseded:
                     LOG_WARN << "metric=battle_personal_settlement_superseded battle_id=" << battleId
                              << " player_id=" << playerId
-                             << ",battle lock held by another battle;pending not written(scene discards this settlement on every path)";
+                             << ",battle lock held by another battle;pending not written(scene dispatch discards this settlement,"
+                             << "login/unfreeze re-read is forgone so the newer battle's pending is not overwritten)";
                     break;
                 case battle_settlement::StageVerdict::kUnconfirmed:
                     LOG_ERROR << "metric=battle_personal_settlement_stage_failed battle_id=" << battleId
@@ -1667,7 +1668,8 @@ void BattleRoomManager::OnPersonalSettlementsStaged(const uint64_t battleId, con
         }
         return;
     }
-    RetireExhaustedStaging(*room);
+    // 还有成员没落定:什么都不做。房间仍在 resultRooms_ 里,下一次 pump 先判总跨度(ExhaustStagingIfOverdue),
+    // 没到点再按退避开下一轮。用尽只在没有在途轮次时判,所以不会在这里出现。
 }
 
 void BattleRoomManager::RetireExhaustedStaging(BattleRoom &room)
@@ -1676,14 +1678,18 @@ void BattleRoomManager::RetireExhaustedStaging(BattleRoom &room)
     const auto &commit = *room.resultCommit;
     // 总跨度用尽(审计 r2-battle#4):不再开新轮,也不放弃落库直接发结果(那会退回 social-match-battle#2)。
     // 终局保持未知:房间移出 resultRooms_ 不再 pump,但留在房间表里 —— 结果不发、DestroyBattle 不作废、
-    // 新行动照旧拒绝,直到停机 AbortAllRooms(说明见头文件 AbortAllRooms)。只在移出那一刻响一次。
+    // 新行动照旧拒绝,直到停机 AbortAllRooms(说明与值班处置见头文件 AbortAllRooms)。这一行只在移出那一刻响一次;
+    // 之后由积压报数定时器每 60s 再报一行 staging_exhausted_rooms(ReportExhaustedStagingRooms),直到房间被清掉。
     if (commit.StagingExhausted() && resultRooms_.erase(battleId) != 0)
     {
+        // Redis 一直没连上时本节点可能还没开过一轮、报数定时器还没装填:这里补装,周期提醒才有人发。
+        EnsureSettlementBacklogReporter();
         LOG_ERROR << "metric=battle_personal_settlement_staging_exhausted battle_id=" << battleId
                   << " rounds=" << commit.StagingFailures()
                   << " members=" << room.personalSettlementPayloads.size()
                   << " unstaged=" << commit.UnstagedMembers().size()
-                  << ";terminal remains unknown,result not published,room retained until node shutdown";
+                  << ";terminal remains unknown,result not published,room retained until node shutdown"
+                  << "(drain this game server,wait for other rooms to finish,then delete it)";
         for (const auto playerId : commit.UnstagedMembers())
         {
             LOG_ERROR << "battle personal settlement not staged after staging exhausted: battle_id=" << battleId
@@ -1914,7 +1920,7 @@ void BattleRoomManager::AbortAllRooms(const std::string &reason)
         // 不结算:战斗作废,scene reaper 按 InBattleComp.deadline_ms 解冻(§3.2)。
         // 等结果回执的房间例外:个人结算在结果发出之前已写进 pending,这里不动它。框架随后 flush producer,
         // 结果可能到达 broker;无论到没到,scene 都会在登录钩子 / 冻结到期补读时应用(审计 social-match-battle#2)。
-        // 还在落库或落库轮次已用尽(r2-battle#4)的房间同样清掉:结果从未发出,已落定成员的 pending 照常应用,
+        // 还在落库或落库已到总跨度上限(r2-battle#4)的房间同样清掉:结果从未发出,已落定成员的 pending 照常应用,
         // 没落定的成员按作废处理(同局不对称,r2-battle#2 残余)。本局落库标记随 TTL 过期。
         // 停机作废无胜负:观众收 ABORTED + ONGOING
         if (!room->resultCommit)
@@ -2350,9 +2356,43 @@ void BattleRoomManager::EnsureSettlementBacklogReporter()
                                      {
                                          if (const auto self = weakSelf.lock())
                                          {
+                                             // 先报滞留房间:它不依赖 Redis,Redis 断着时也要响。
+                                             self->ReportExhaustedStagingRooms();
                                              self->ReportPendingSettlementBacklog();
                                          }
                                      });
+}
+
+void BattleRoomManager::ReportExhaustedStagingRooms()
+{
+    // 落库到总跨度上限的房间(RetireExhaustedStaging)留在房间表里,节点排不空;那一行一次性告警过了值班查询窗口
+    // 就再没有信号。这里每轮从房间表现数一遍,不另记集合:房间表是唯一真相,房间被清掉后计数自然归零。
+    // battle_id 只放日志正文,不写成 key=value 字段(LogQL 解析字段会把它变成高基数 label)。
+    // node_rooms = 本节点房间总数:值班打排空标签后等它降到与 count 相等,说明其余房间都已打完,再删 GameServer。
+    // 房间数受节点容量约束,一行列全即可。
+    std::size_t exhausted = 0;
+    std::string battleIds;
+    for (const auto battleId : rooms_.Ids())
+    {
+        const auto *room = FindRoom(battleId);
+        if (room == nullptr || !room->resultCommit || !room->resultCommit->StagingExhausted())
+        {
+            continue;
+        }
+        ++exhausted;
+        if (!battleIds.empty())
+        {
+            battleIds += ' ';
+        }
+        battleIds += std::to_string(battleId);
+    }
+    if (exhausted == 0)
+    {
+        return;
+    }
+    LOG_ERROR << "metric=battle_personal_settlement_staging_exhausted_rooms count=" << exhausted
+              << " node_rooms=" << rooms_.Size()
+              << ";results unpublished,this node cannot drain until these rooms are cleared;stuck battles: " << battleIds;
 }
 
 void BattleRoomManager::ReportPendingSettlementBacklog()

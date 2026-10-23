@@ -1,4 +1,5 @@
 #include "role_admission_system.h"
+#include "player/system/handoff_sql_barrier.h"
 
 #include <algorithm>
 #include <chrono>
@@ -37,6 +38,9 @@ struct RoleAdmissionState {
     uint64_t authorized{0}, sealedThrough{0}, closedThrough{0};
     uint64_t requiredEpoch{0}, requiredSeq{0};
     uint32_t registerCalls{0}, callbacks{0}, attempts{0};
+    bool waitingFence{false}, fenceInFlight{false};
+    uint32_t fenceAttempts{0};
+    std::optional<std::string> fencePrior;
     bool waitingRegister{false}, controlInFlight{false}, sqlInFlight{false}, sqlReady{false}, drained{false};
     bool tradeSaveRequired{false}, tradeSaveQueued{false};
     std::optional<common::base::RoleTradeSeal> seal;
@@ -98,6 +102,75 @@ void ArmTimer() {
         loop->runEvery(0.5, [original] { if (Owns(original)) RoleAdmissionSystem::Tick(); });
     }
 }
+// Redis 适配器不持有连接；HGET 原件随后只作为同一候选的 CAS 输入。
+// 上层弱 state/原 generation 在两次异步边界均复核，迟到完成不会激活新实体。
+bool RegisterFence(Guid player, std::string candidate, std::optional<std::string> expected,
+    RoleAdmissionSystem::FenceReply completed) {
+    const auto parsed = handoff_sql_barrier::ParseFence(candidate);
+    if (!parsed || parsed->state != handoff_sql_barrier::FenceState::kHeld) return false;
+    auto submit = [player, candidate, completed](std::string prior) {
+        auto& redis = tlsRedis.GetZoneRedis();
+        if (!redis || !redis->connected()) { completed(false, prior); return; }
+        const auto record = handoff_sql_barrier::ParseFence(candidate);
+        const std::string owner = "player:" + std::to_string(player) + ":owner_epoch";
+        const std::string barrier = "player:{" + std::to_string(player) + "}:save_barrier";
+        const std::string mark = "player:" + std::to_string(player) + ":handoff";
+        const auto epoch = std::to_string(record->ownerEpoch);
+        const int sent = redis->command([completed, prior](hiredis::Hiredis*, redisReply* reply) {
+            completed(reply && reply->type == REDIS_REPLY_INTEGER && reply->integer == 1, prior);
+        }, "EVAL %s 3 %b %b %b %b %b %b", handoff_sql_barrier::kRegisterFenceLua.c_str(),
+            owner.data(), owner.size(), barrier.data(), barrier.size(), mark.data(), mark.size(),
+            epoch.data(), epoch.size(), candidate.data(), candidate.size(), prior.data(), prior.size());
+        if (sent != REDIS_OK) completed(false, prior);
+    };
+    if (expected) { submit(*expected); return true; }
+    auto& redis = tlsRedis.GetZoneRedis();
+    if (!redis || !redis->connected()) return false;
+    const std::string barrier = "player:{" + std::to_string(player) + "}:save_barrier";
+    return redis->command([submit, completed](hiredis::Hiredis*, redisReply* reply) {
+        if (reply && reply->type == REDIS_REPLY_NIL) submit("");
+        else if (reply && reply->type == REDIS_REPLY_STRING && reply->str)
+            submit(std::string(reply->str, reply->len));
+        else completed(false, std::nullopt);
+    }, "HGET %b handoff_fence", barrier.data(), barrier.size()) == REDIS_OK;
+}
+void SendFence(Guid playerId) {
+    auto found = state->roles.find(playerId);
+    if (found == state->roles.end()) return;
+    auto& role = found->second;
+    if (!role.waitingFence || role.fenceInFlight) return;
+    if (Now() >= role.registerDeadline || role.fenceAttempts >= 3) {
+        role.waitingFence = false;
+        Reject(playerId, role.context.enterInfo.session_id()); return;
+    }
+    const auto generation = role.identity.generation();
+    if (generation <= role.closedThrough || generation <= role.sealedThrough) { role.waitingFence = false; return; }
+    role.fenceInFlight = true; ++role.fenceAttempts; ++role.callbacks;
+    const std::weak_ptr<RoleAdmissionState> original = state;
+    auto completed = [original, playerId, generation](bool ok, std::optional<std::string> prior) {
+        if (!Owns(original)) return;
+        auto it = state->roles.find(playerId);
+        if (it == state->roles.end()) return;
+        auto& current = it->second;
+        if (current.callbacks) --current.callbacks;
+        current.fenceInFlight = false;
+        if (!current.waitingFence || current.identity.generation() != generation) return;
+        if (prior && !current.fencePrior) current.fencePrior = std::move(prior);
+        if (Now() >= current.registerDeadline || generation <= current.closedThrough || generation <= current.sealedThrough) {
+            current.waitingFence = false; Reject(playerId, current.context.enterInfo.session_id()); return;
+        }
+        if (!ok) { current.retryAt = Now() + std::chrono::seconds(1); return; }
+        current.waitingFence = false; current.authorized = generation;
+        Activate(playerId, current.context);
+    };
+    const bool sent = state->dependencies.registerHandoffFence
+        ? state->dependencies.registerHandoffFence(playerId, role.context.handoffFence, role.fencePrior, completed)
+        : RegisterFence(playerId, role.context.handoffFence, role.fencePrior, completed);
+    if (!sent) {
+        role.fenceInFlight = false; --role.callbacks;
+        role.retryAt = Now() + std::chrono::seconds(1);
+    }
+}
 void SendRegister(Guid playerId) {
     auto it = state->roles.find(playerId);
     if (it == state->roles.end()) return;
@@ -144,8 +217,8 @@ void SendRegister(Guid playerId) {
             current.seal.reset(); current.drained = false;
             current.tradeSaveRequired = false; current.tradeSaveQueued = false;
         }
-        current.authorized = generation;
-        Activate(playerId, current.context);
+        current.waitingFence = true;
+        SendFence(playerId);
     };
     bool sent = false;
     if (state->dependencies.registerAdmission) sent = state->dependencies.registerAdmission(request, completed);
@@ -298,7 +371,7 @@ void RoleAdmissionSystem::RequestEnter(Guid playerId, PlayerEnterContext context
     }
     auto& role = state->roles[playerId];
     if (role.controlInFlight || (role.seal && !role.drained)) { Reject(playerId, session); return; }
-    if (role.waitingRegister) {
+    if (role.waitingRegister || role.waitingFence) {
         // 原未知登记不得换世代重建；相同原路由由计时器重投。
         if (role.context.ownerRevision != context.ownerRevision || role.context.ownerEpoch != context.ownerEpoch
             || role.context.loginGeneration != context.loginGeneration || role.context.enterInfo.SerializeAsString() != context.enterInfo.SerializeAsString()) {
@@ -308,7 +381,14 @@ void RoleAdmissionSystem::RequestEnter(Guid playerId, PlayerEnterContext context
     }
     if (role.registerCalls != 0) { Reject(playerId, session); return; }
     context.roleAdmissionGeneration = ++state->nextGeneration;
+    const auto admissionToken = handoff_sql_barrier::NewFenceToken();
+    const auto candidate = handoff_sql_barrier::EncodeFence({context.ownerEpoch, local.instanceId,
+        context.roleAdmissionGeneration, admissionToken, handoff_sql_barrier::FenceState::kHeld,
+        handoff_sql_barrier::NewFenceToken()});
+    if (!candidate) { Reject(playerId, session); return; }
+    context.handoffFence = *candidate;
     role.context = context; role.waitingRegister = true; role.attempts = 0;
+    role.waitingFence = false; role.fenceInFlight = false; role.fenceAttempts = 0; role.fencePrior.reset();
     role.registerDeadline = Now() + std::chrono::seconds(15);
     auto& identity = role.identity;
     identity.set_player_id(playerId); identity.set_scene_instance_id(local.instanceId);
@@ -335,6 +415,21 @@ std::optional<common::base::RoleAdmissionIdentity> RoleAdmissionSystem::Confirme
     if (found == state->roles.end()) return std::nullopt;
     const auto& identity = found->second.confirmedIdentity;
     if (!Allows(playerId, identity.generation(), identity.owner_revision())) return std::nullopt;
+    return identity;
+}
+std::optional<common::base::RoleAdmissionIdentity> RoleAdmissionSystem::ConfirmedIdentityForContext(
+    Guid playerId, const PlayerEnterContext& context) {
+    if (!Allows(playerId, context.roleAdmissionGeneration, context.ownerRevision)) return std::nullopt;
+    const auto found = state->roles.find(playerId);
+    if (found == state->roles.end()) return std::nullopt;
+    const auto& identity = found->second.confirmedIdentity;
+    if (identity.player_id() != playerId || identity.generation() != context.roleAdmissionGeneration
+        || identity.owner_revision() != context.ownerRevision || identity.owner_epoch() != context.ownerEpoch
+        || identity.session_id() != context.enterInfo.session_id()
+        || identity.login_generation() != context.loginGeneration
+        || identity.scene_id() != context.enterInfo.scene_id() || identity.scene_instance_id().empty()) {
+        return std::nullopt;
+    }
     return identity;
 }
 bool RoleAdmissionSystem::Seal(const common::base::RoleTradeSeal& seal) {
@@ -400,6 +495,7 @@ void RoleAdmissionSystem::Tick() {
         if (role.retryAt > Now()) continue;
         role.retryAt = Now() + std::chrono::seconds(1);
         if (role.waitingRegister) { SendRegister(playerId); continue; }
+        if (role.waitingFence) { SendFence(playerId); continue; }
         if (role.registerCalls != 0 || role.callbacks != 0 || tlsEcs.GetPlayer(playerId) != entt::null) continue;
         const auto& client = tlsRedisSystem.GetPlayerDataRedis();
         if (state->dependencies.hasPendingLoad ? state->dependencies.hasPendingLoad(playerId)

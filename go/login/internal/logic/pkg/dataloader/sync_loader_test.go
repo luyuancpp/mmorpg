@@ -129,7 +129,7 @@ func TestEnsurePlayerAllDataInRedisAsync_StampsRegistrarReplyInstance(t *testing
 	rec := &replyStampRecorder{instance: testReplyInstance}
 	calls := 0
 	var gotErr error
-	EnsurePlayerAllDataInRedisAsync(context.Background(), rc, rec, rec, 42, 0, func(err error) {
+	ensureTestPlayerAllDataInRedisAsync(context.Background(), rc, rec, rec, 42, 0, func(err error) {
 		calls++
 		gotErr = err
 	})
@@ -166,7 +166,7 @@ func TestEnsurePlayerAllDataInRedisAsync_SendFailureCancelsRegistrations(t *test
 	rec := &replyStampRecorder{instance: testReplyInstance, sendErr: sendErr}
 	calls := 0
 	var gotErr error
-	EnsurePlayerAllDataInRedisAsync(context.Background(), rc, rec, rec, 42, 0, func(err error) {
+	ensureTestPlayerAllDataInRedisAsync(context.Background(), rc, rec, rec, 42, 0, func(err error) {
 		calls++
 		gotErr = err
 	})

@@ -64,7 +64,7 @@ func TestTiDBEmptyRouteBootstrapDoesNotTreatExistingPlayerHistoryAsFresh(t *test
 	require.True(t, history, "非空未知旧目录不是无角色证明")
 	_, err = rows.ExecContext(ctx, "UPDATE user_accounts SET simple_players=NULL WHERE account='password-only'")
 	require.NoError(t, err)
-	_, err = d.Create(ctx, "original-owner", &base.AccountSimplePlayer{PlayerId: 22})
+	_, err = createInitialRoleForTest(d, ctx, "original-owner", &base.AccountSimplePlayer{ZoneId: 1, PlayerId: 22})
 	require.NoError(t, err)
 	history, err = route.HasHistoricalPlayers(ctx, []uint32{id})
 	require.NoError(t, err)

@@ -28,11 +28,17 @@
 #   info    : count_over_time({app="scene"} |= "metric=battle_settlement_freeze_expiry_pending_hit" [1h]) > 0(在线补读命中,观察用)
 #   critical: count_over_time({app="battle"} |= "metric=battle_activity_result_not_durable" [10m]) > 0
 #   critical: count_over_time({app="battle"} |= "metric=battle_activity_result_serialize_failed" [10m]) > 0
-#   critical: count_over_time({app="battle"} |= "metric=battle_personal_settlement_staging_exhausted" [10m]) > 0
-#             全球对局发结果之前的个人结算落库轮次用尽(审计 r2-battle#4,cross-zone-matchmaking.md §13.6):
-#             结果不发、房间留在节点上,节点不会自然排空。每房间只响一次,同一行带 battle_id;
-#             紧随其后的 "not staged after staging exhausted" 行列出没落库的成员。先排除 zone Redis 故障
-#             (OOM / NOAUTH / ACL / 键类型错),再删除该 battle Pod,停机收尾 AbortAllRooms 清房。
+#   critical: count_over_time({app="battle"} |= "metric=battle_personal_settlement_staging_exhausted_rooms" [10m]) > 0
+#             全球对局发结果之前的个人结算落库到总跨度上限(6 小时,审计 r2-battle#4,cross-zone-matchmaking.md §13.6
+#             「2026-10-22 修复」):结果不发、房间留在节点上,节点不会自然排空。积压报数定时器每 60s 报一行
+#             count=滞留房间数 node_rooms=本节点房间总数,正文列出 battle_id,房间清掉之前一直会响(2026-10-22 起按这条判,
+#             不再按每房间只响一次的 metric=battle_personal_settlement_staging_exhausted;那一行与紧随其后的
+#             "not staged after staging exhausted" 行仍保留,用来查没落库的成员)。
+#             处置:先排除 zone Redis 故障(OOM / NOAUTH / ACL / 键类型错),再分三步,不要直接删 Pod
+#             (会把同节点上正在打的房间一起作废):
+#               1. kubectl -n mmorpg-infra label gs <name> mmorpg.io/drain=true(进程 5s 内读到,拒绝新房间);
+#               2. 等提醒行的 node_rooms 降到与 count 相等(其余房间打完,单局上限 BattleMaxDurationSeconds 默认 300s);
+#               3. kubectl -n mmorpg-infra delete gs <name>,优雅停机由 AbortAllRooms 清房。
 #
 # Severity conventions(与 scene-manager-alerts.yaml 相同):
 #   critical = pager, someone wakes up

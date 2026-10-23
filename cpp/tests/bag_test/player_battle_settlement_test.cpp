@@ -1255,6 +1255,41 @@ TEST(PendingSettlementContract, ConfirmedStagingWritesWithoutLockButNeverOverAno
     ASSERT_NO_FATAL_FAILURE(ExpectString(redis.Run({"GET", redis.keys[0]}), "blob-852-v"));
 }
 
+// 2026-10-22 补:脚本「ZADD 放最后」的运行证据(此前只有下一条的静态顺序断言)。
+// 积压索引被写坏(键类型错)时 ZADD 报 WRONGTYPE、脚本回 ERROR,但 Redis 脚本不回滚,pending 两键与本局落库标记
+// 已经写下。battle 把这一轮记作「结论未知」,下一轮重写该成员时读到标记返回 2:不重写、pending 不变,落库照常收口。
+// 索引只影响报数。
+TEST(PendingSettlementContract, ConfirmedStagingPartialWriteOnBrokenIndexSettlesNextRound) {
+    const char* address = std::getenv("MMORPG_TEST_REDIS_ADDR");
+    if (address == nullptr || *address == '\0')
+        GTEST_SKIP() << "未设置 MMORPG_TEST_REDIS_ADDR，跳过真实 Redis 落库契约";
+    SettlementRedisFixture redis;
+    ASSERT_NO_FATAL_FAILURE(redis.Connect(address));
+
+    // 积压索引被写成字符串(运维误操作;冒烟时人为制造)。
+    {
+        const auto reply = redis.Run({"SET", redis.keys[4], "not-a-zset"});
+        ASSERT_NE(nullptr, reply);
+        ASSERT_EQ(REDIS_REPLY_STATUS, reply->type);
+    }
+    // 第 1 轮:最后一步 ZADD 报 WRONGTYPE,调用方只看到 ERROR(ClassifyStageReply → 未确认)。
+    {
+        const auto reply = redis.Stage("blob-853", "853", 0);
+        ASSERT_NE(nullptr, reply);
+        ASSERT_EQ(REDIS_REPLY_ERROR, reply->type);
+        EXPECT_NE(std::string::npos, std::string(reply->str, reply->len).find("WRONGTYPE"));
+    }
+    // 它之前的写都已落地:pending 两键与标记。
+    ASSERT_NO_FATAL_FAILURE(ExpectString(redis.Run({"GET", redis.keys[0]}), "blob-853"));
+    ASSERT_NO_FATAL_FAILURE(ExpectString(redis.Run({"GET", redis.keys[1]}), "853"));
+    ASSERT_NO_FATAL_FAILURE(ExpectInteger(redis.Run({"SISMEMBER", redis.markers[0], "player"}), 1));
+    // 第 2 轮重写该成员:读到标记返回 2。这里故意换一份字节,好让「没重写」看得见(生产里两轮字节相同)。
+    ASSERT_NO_FATAL_FAILURE(ExpectInteger(redis.Stage("blob-853-retry", "853", 0), 2));
+    ASSERT_NO_FATAL_FAILURE(ExpectString(redis.Run({"GET", redis.keys[0]}), "blob-853"));
+    ASSERT_NO_FATAL_FAILURE(ExpectString(redis.Run({"GET", redis.keys[1]}), "853"));
+    ASSERT_NO_FATAL_FAILURE(ExpectString(redis.Run({"GET", redis.keys[4]}), "not-a-zset"));
+}
+
 // 判定都在第一条写之前;标记写在两键之后;ZADD 最后;EXPIRE 只作用在标记上;锁不在时不提前返回。
 // 键位与 battle_room_manager.cpp StagePersonalSettlements 的 EVAL 参数顺序一一对应,改脚本时这里先红。
 TEST(PendingSettlementContract, ConfirmedStagingDecidesBeforeAnyWriteAndMarksAfterPending) {
@@ -1301,7 +1336,9 @@ TEST(PendingSettlementContract, ConfirmedStagingKeysAreFormatSafeAndDistinct) {
         EXPECT_STRNE(staged, pendingId);
         EXPECT_STRNE(staged, battle_settlement::kPendingSettlementIndexKey);
     }
-    // 标记必须活过落库轮次之间的间隔:至少覆盖一整轮用尽窗口(约 9.5 分钟)外加单边断连的余量。
+    // 标记必须活过整个落库阶段。2026-10-22 起与 ResultCommit 总跨度(6 小时)的 4 倍余量关系由
+    // turn_battle_engine_test 的 StagingSpanLeavesStagedMarkerTtlMargin 与 battle_room_manager.cpp 的 static_assert 守住,
+    // 这里只留一条与 battle 节点无关的下限。
     EXPECT_GE(battle_settlement::kStagedSettlementMembersTtlSec, 3600u);
 }
 

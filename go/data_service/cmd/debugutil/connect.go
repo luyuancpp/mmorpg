@@ -98,18 +98,76 @@ func mysqlConfig(ep MySQLEndpoint) (*mysql.Config, error) {
 	return cfg, nil
 }
 
-// MySQLServerIdentity 返回实例身份(@@server_uuid)。取不到(例如 TiDB 不支持该变量)时返回空串,调用方按「未知」处理。
+const (
+	// tidbVersionQuery 与 shared/authoritysql 同一判据:tidb_version() 只有 TiDB 有,且不受 tidb.toml
+	// server-version 改写 VERSION() 的影响。
+	tidbVersionQuery = "SELECT tidb_version()"
+	serverUUIDQuery  = "SELECT @@server_uuid"
+)
+
+// MySQLServerIdentity 返回 MySQL 实例身份(@@server_uuid,存在数据目录的 auto.cnf 里,重启不变)。
+// 取不到时返回空串;调用方必须按「身份未知」处理(debug_import 对未知身份 fail-closed),不得当成「不是同一个实例」。
+//
+// TiDB 一律返回空串(2026-10-22,r2-ds#1):TiDB 是多个 tidb-server 挂在负载均衡后面的集群,即便某个变量能取到值,
+// 也只能标识单个 tidb-server 进程;导出与导入经同一个 port-forward 打到不同 Pod 时会得到不同的值,把同一个集群
+// 误判成两个实例,闸门因此放行。TiDB 上能唯一标识整个集群的变量 / 系统表本仓库没有核实过,所以不猜:
+// TiDB 写目标改由本地调试环境标记(HasLocalTargetMarker)证明自己是本地库。
 func MySQLServerIdentity(ctx context.Context, q Queryer) string {
-	rows, err := q.QueryContext(ctx, "SELECT @@server_uuid")
-	if err != nil {
+	var tidbVersion sql.NullString
+	if queryOne(ctx, q, tidbVersionQuery, &tidbVersion) == nil {
 		return ""
+	}
+	var id sql.NullString
+	if queryOne(ctx, q, serverUUIDQuery, &id) != nil {
+		return ""
+	}
+	return strings.TrimSpace(id.String)
+}
+
+// 本地调试环境标记:一张只在本地隔离环境里手工建的表,debug_import 在取不到实例身份、无法与导出来源比对时,
+// 凭它确认写目标是本地库。标记建在导入要写的每个库里(落点库 zone_<N>_db 与全局库),因为导入只连这些库、
+// 只有这些库的权限。
+//
+// 不放进 deploy/mysql-init:K8s 的 mysql-init-sql ConfigMap 原样带入那份脚本,标记会跟着出现在集群 MySQL 上,
+// 也就证明不了「这是本地」。建标记必须是操作者对本地库的一次有意操作(语句见 LocalTargetMarkerSetupSQL)。
+const (
+	LocalTargetMarkerTable = "debug_import_local_target"
+	LocalTargetMarkerValue = "local-debug-import-target"
+
+	// LocalTargetMarkerSetupSQL 写进拒绝信息与运维手册;只在确认是本地隔离环境的库上执行。
+	LocalTargetMarkerSetupSQL = "CREATE TABLE IF NOT EXISTS " + LocalTargetMarkerTable + " (marker VARCHAR(64) NOT NULL PRIMARY KEY); " +
+		"INSERT IGNORE INTO " + LocalTargetMarkerTable + " (marker) VALUES ('" + LocalTargetMarkerValue + "');"
+
+	localTargetMarkerQuery = "SELECT COUNT(*) FROM " + LocalTargetMarkerTable + " WHERE marker = '" + LocalTargetMarkerValue + "'"
+)
+
+// HasLocalTargetMarker 判断当前连接的库里有没有本地调试环境标记。查询失败(表不存在、无权限、连接错误)一律按
+// 「没有」处理:标记只用来放行,读不到就不能放行。
+func HasLocalTargetMarker(ctx context.Context, q Queryer) bool {
+	var count int64
+	if queryOne(ctx, q, localTargetMarkerQuery, &count) != nil {
+		return false
+	}
+	return count > 0
+}
+
+// queryOne 执行一条只返回一行一列的查询并扫进 dest;没有行也算失败。
+func queryOne(ctx context.Context, q Queryer, query string, dest any) error {
+	rows, err := q.QueryContext(ctx, query)
+	if err != nil {
+		return err
 	}
 	defer rows.Close()
-	var id sql.NullString
-	if !rows.Next() || rows.Scan(&id) != nil {
-		return ""
+	if !rows.Next() {
+		if err := rows.Err(); err != nil {
+			return err
+		}
+		return sql.ErrNoRows
 	}
-	return id.String
+	if err := rows.Scan(dest); err != nil {
+		return err
+	}
+	return rows.Close()
 }
 
 // RedisServerIdentity 返回 INFO server 里的 run_id(进程级唯一);取不到时返回空串。
@@ -149,7 +207,8 @@ func OpenRedis(ctx context.Context, ep RedisEndpoint) (*redis.Client, error) {
 // 精确匹配主机名)里显式放行。线上数据只许进隔离环境,把生产 yaml 误当本地 yaml 是最可能的事故。
 //
 // 它挡不住「127.0.0.1 上是 port-forward 出来的生产实例」:导入端还要比对实例身份(导出包 sources 里记的
-// Redis run_id / MySQL server_uuid),目标就是导出来源时拒绝,见 debug_import 的 checkNotExportSource。
+// Redis run_id / MySQL server_uuid),目标就是导出来源时拒绝;任一侧身份取不到(TiDB、旧版导出包)时,
+// 目标库要带本地调试环境标记或显式放行,见 debug_import 的 checkNotExportSource。
 func CheckLocalWriteTarget(what, hostPort, allowHosts string) error {
 	host := hostPort
 	if h, _, err := net.SplitHostPort(hostPort); err == nil {

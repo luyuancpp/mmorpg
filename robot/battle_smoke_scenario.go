@@ -339,7 +339,18 @@ func battleSmokeWaitStart(player *gameobject.Player, timeout time.Duration, figh
 // 每次现建一个 smokeCaller:它同一时刻只服务一次等待,不与场景里别的 caller(如 rank-smoke 的)共用等待槽。
 // 必须在大厅连接的 RecvLoop 已经起来之后、且不在 RecvLoop goroutine 上调用(prepareBehaviorClient /
 // rankSmokeLogin 起 RecvLoop,调用方是参战 goroutine)。
-func battleSmokeJoinQueue(bot *battleSmokeBot, stats *metrics.Stats, request *match.JoinQueueRequest, timeout time.Duration) error {
+func battleSmokeJoinQueue(bot *battleSmokeBot, stats *metrics.Stats, request *match.JoinQueueRequest, timeout time.Duration) (err error) {
+	defer func() {
+		if err != nil {
+			// 调用方可能先报另一侧的失败并直接退出(rank-smoke 的 collect 先读 A 再读 B),本侧的拒绝原因就没人呈现;
+			// 迁移前由 MatchServiceJoinQueueHandler 打的拒绝日志随回包不再经 handler 而消失,所以在这里先留一行。
+			zap.L().Warn("[battle-smoke] JoinQueue failed",
+				zap.String("account", bot.account),
+				zap.String("mode", request.GetMode().String()),
+				zap.Error(err))
+		}
+	}()
+
 	resp := &match.JoinQueueResponse{}
 	caller := newSmokeCaller(bot.gc, stats, bot.account, timeout, nil)
 	envelopeTip, err := caller.call(game.MatchServiceJoinQueueMessageId, request, resp)
@@ -347,8 +358,9 @@ func battleSmokeJoinQueue(bot *battleSmokeBot, stats *metrics.Stats, request *ma
 		return fmt.Errorf("JoinQueue: %w", err)
 	}
 	if envelopeTip != 0 {
-		return fmt.Errorf("JoinQueue envelope rejected tip=%d (gate / client_rpc_router refused it before match logic; "+
-			"tip=%d usually means no reachable match instance or a gRPC error)", envelopeTip, smokeTipServiceUnavailable)
+		// 1003 不只表示「没到 match」:路由 lane / rpc_reply_bridge 在 match 的调用失败或超时后也回它,此时 match 可能已受理。
+		return fmt.Errorf("JoinQueue envelope rejected tip=%d by gate / client_rpc_router (tip=%d: no reachable match instance, "+
+			"or the match call failed / timed out with outcome unknown)", envelopeTip, smokeTipServiceUnavailable)
 	}
 	if resp.GetErrorCode() != 0 || resp.GetErrorMessage().GetId() != 0 {
 		return fmt.Errorf("JoinQueue rejected error_code=%d tip=%d params=%v",
@@ -367,7 +379,16 @@ func battleSmokeJoinQueue(bot *battleSmokeBot, stats *metrics.Stats, request *ma
 // 迁移前回包按消息号落进 MatchServiceWatchBattleHandler,它只打日志、不写 Player 状态,所以这里直接解析回包。
 // 拒绝(信封,或响应体 error_message,如对局已销毁时回的 kMatchBattleNotWatchable)立即返回 error,不必等满观众
 // 分配的预算才看到一条笼统的超时;观众分配仍等 NotifyBattleAssigned 推送。调用约束同 battleSmokeJoinQueue。
-func battleSmokeWatchBattle(bot *battleSmokeBot, stats *metrics.Stats, timeout time.Duration) (uint64, error) {
+func battleSmokeWatchBattle(bot *battleSmokeBot, stats *metrics.Stats, timeout time.Duration) (battleId uint64, err error) {
+	defer func() {
+		if err != nil {
+			// 与 battleSmokeJoinQueue 对称:拒绝原因在帮助函数里先留一行,不依赖调用方怎样呈现。
+			zap.L().Warn("[battle-smoke] WatchBattle failed",
+				zap.String("account", bot.account),
+				zap.Error(err))
+		}
+	}()
+
 	request := &match.WatchBattleRequest{PlayerId: bot.gc.PlayerId, BattleId: 0}
 	resp := &match.WatchBattleResponse{}
 	caller := newSmokeCaller(bot.gc, stats, bot.account, timeout, nil)
@@ -376,8 +397,9 @@ func battleSmokeWatchBattle(bot *battleSmokeBot, stats *metrics.Stats, timeout t
 		return 0, fmt.Errorf("WatchBattle: %w", err)
 	}
 	if envelopeTip != 0 {
-		return 0, fmt.Errorf("WatchBattle envelope rejected tip=%d (gate / client_rpc_router refused it before match logic; "+
-			"tip=%d usually means no reachable match instance or a gRPC error)", envelopeTip, smokeTipServiceUnavailable)
+		// 1003 的含义同 battleSmokeJoinQueue:可能根本没到 match,也可能 match 的调用失败或超时、结果未知。
+		return 0, fmt.Errorf("WatchBattle envelope rejected tip=%d by gate / client_rpc_router (tip=%d: no reachable match instance, "+
+			"or the match call failed / timed out with outcome unknown)", envelopeTip, smokeTipServiceUnavailable)
 	}
 	if tip := resp.GetErrorMessage().GetId(); tip != 0 {
 		return 0, fmt.Errorf("WatchBattle rejected tip=%d params=%v", tip, resp.GetErrorMessage().GetParameters())

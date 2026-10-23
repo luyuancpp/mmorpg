@@ -5,7 +5,7 @@
 - 范围:C++ 节点(gate / scene / battle)作为 gRPC 客户端与服务端的传输层。Go / Java 服务与线上协议不变
 - 授权:负责人 2026-10-14 拍板「分 5 批推进、本次做第 1 批」「引入 nghttp2 v1.70.0 子模块」「etcd 走原生 gRPC 接口」
 - 关联:[client-rpc-router.md](client-rpc-router.md)(第 1 批接入点)、
-  [grpc-client-deadline-failure-callback.md](grpc-client-deadline-failure-callback.md)(deadline 与失败回调契约)、
+  [§16 客户端调用契约](#grpc-client-contract)(deadline、完成回调与调用点归属)、
   [scene-grpc-server-design.md](scene-grpc-server-design.md)(第 4 批替换对象)、
   [thread-count-monitoring.md](thread-count-monitoring.md)(现有 gRPC 线程构成)、
   AGENTS.md §11.7(连接与回调生命周期)
@@ -74,6 +74,7 @@ nghttp2(HTTP/2 帧、HPACK、流控、SETTINGS、PING ACK)
 - 工具层:`status`(状态码与 HTTP / RST_STREAM 映射)、`metadata`(键校验、`-bin` 的 base64、`grpc-message`
   百分号编码)、`grpc_timeout`、`message_framing`(5 字节前缀的拼装与增量拆包)。
 - 生成客户端与业务调用方共享的调用结果、回调、选项和 metadata 类型由手写公共头 `cpp/libs/engine/core/network/grpc_client_call.h` 定义，以 `core/network/grpc_client_call.h` 引用。2026-10-19 将其从 `cpp/generated/grpc_client/grpc_call_tag.h` 迁出：`GrpcTag` 已删除，文件名改为表达现有类型职责，公共头归属 core，生成模板只引用、不产出该文件。历史实施记录中的旧路径保留作历史；调用语义与线上协议不变。
+- 节点的业务 `node_id` 与带版本的 EnTT 实体句柄是不同身份。`NodeConnector` 的 TCP / gRPC 路径均由 `registry.create()` 分配实体，按 `node_uuid` 识别同一进程，摘除也按 UUID 查找；业务查询使用 UUID 或 `FindNodeEntityByZoneAndNodeId`，不得把 `node_id` 强转成实体句柄。身份解析与跨 zone 回归见 [路由身份审计](routing-identity-audit-20260908.md)，句柄寿命见 [组件访问规则](ecs-component-access-rules.md#实体类型与生命周期边界)。旧故障中的“node_id 仅 zone 内唯一”和“TCP 仍直接使用 node_id 作句柄”均不作为当前约束。
 
 ## 4. 线上契约(必须逐字节保持)
 
@@ -495,7 +496,7 @@ EtcdHelper(唯一出口,EtcdManager 的 keepalive 也收进来)
   `GetServerInitialMetadata` 同义),所以按回显认领的调用方(gate 会话、号段 `x-idseg-seq`)只改一行。
   `GrpcCallFailure` 里的 `grpc::ClientContext& / grpc::Status&` 换成 `const GrpcCallOutcome& outcome`。
 
-  > **2026-10-17 契约勘误**：以上是第 3 批的兼容阶段。删除全局处理器 A–C 落地后，`GrpcReplyContext / GrpcCallFailure` 与所有全局处理器、安装入口删除，done 必填且是唯一完成通道；详见 `grpc-client-deadline-failure-callback.md` §12。
+  > **2026-10-17 契约勘误**：以上是第 3 批的兼容阶段。删除全局处理器 A–C 落地后，`GrpcReplyContext / GrpcCallFailure` 与所有全局处理器、安装入口删除，done 必填且是唯一完成通道；详见 `grpc-muduo-transport.md` §16.1。
 
 - **`GrpcDone` 不变**,`GrpcCallOutcome` 多带响应 metadata,纯增字段。
 - **调用状态不进 ECS**:请求副本、发出的 metadata 原值、done 放在 `shared_ptr` 里,随完成回调走;不再有对象池、tag、
@@ -1706,7 +1707,7 @@ FinalizeShutdownInLoop(阶段 0)
 #### 原第三批适配说明
 
 §14.1 落地时只改了模板与 core,手写调用方仍引用已删除的符号,重生成后编不过。本节补齐,**未编译、未测试**,
-验证步骤见 [grpc-client-deadline-failure-callback.md](grpc-client-deadline-failure-callback.md) §12。
+当前验证范围见 [§16.6](#grpc-client-validation)，本段保留当时的适配说明。
 
 - **应答 / 失败处理器签名**:所有 `SetIfEmptyHandler` / `SetHandler` lambda 改收 `const GrpcReplyContext&`,
   失败侧一律用 `failure.code()` / `failure.message()`(gate 失败桥、号段、收件箱、scene_manager 应答)。
@@ -1731,3 +1732,91 @@ FinalizeShutdownInLoop(阶段 0)
 - **链接项**:本批改了源码的三个测试工程(`rpc_controller_test`、`cross_zone_test`、`routing_identity_test`)的 Debug|x64
   已补 `muduo_grpc.lib;nghttp2.lib` 与 nghttp2 库目录(照 gate.vcxproj)。其余链 core / grpc_client 的测试工程(如 `bag_test`)
   仍未补,按 §14.1 归第 5 批;在那之前编它们若报 LNK2019,按报错补同样两项即可。
+
+<a id="grpc-client-contract"></a>
+
+## 16. C++ 出站客户端调用契约（2026-10-23 按当前源码整理）
+
+本节统一生成客户端的接口、截止预算、部署门禁及业务完成归属。§8、§14 与第三批适配说明保留实施历史；当前调用规则以本节和源码为准，不重新启用全局处理器、官方 CQ 或旧重载。配置值只反映本次核对的仓库输入，后续修改须同步核对配置、调用方与门禁，不以本节替代实际验证记录。
+
+<a id="grpc-client-callback"></a>
+
+### 16.1 接口与生命周期
+
+- 手写公共头 `cpp/libs/engine/core/network/grpc_client_call.h` 是 `GrpcCallOutcome`、`GrpcDone<Resp>`、`GrpcMessageDone`、`GrpcCallOptions` 和 metadata 的权威定义；生成模板引用它，不生成第二份类型。模板位于 `tools/proto_generator/protogen/internal/template/grpc_async_client.{h,cpp}.tmpl`。
+- 每个 unary 方法只有显式传入 `GrpcDone<Resp>` 的 typed 入口和供通用 sender 使用的 `Erased` 入口，两者汇入同一发送路径。`done` 必须非空，空值是调用方错误并触发 `LOG_FATAL`；没有全局应答 / 失败处理器、安装函数或无 done 的兼容重载。流式方法不生成这些入口，etcd Watch / LeaseKeepAlive 由手写 `MuduoEtcdTransport` 维护。
+- 完成只经本次 `done`，恰好一次、只在所属 EventLoop 上、从不在 `Send` 栈内同步执行；缺通道、序列化失败、Erased 类型不符等本地拒绝也经 `QueueGrpcLocalCompletion` 延后。Erased 同时检查 protobuf descriptor 与真实 C++ 类型，不能把同 descriptor 的 `DynamicMessage` 强转为生成类型。
+- 成功时响应指针非空且只在回调期间有效，需要留用必须拷贝；非 OK 时响应指针为空。`GrpcCallOutcome` 保存状态及收到的 initial / trailing metadata。`GrpcCallOptions.metadata` 填应用层编码前的原值，发送时按 §4.2 编码；`deadline > 0` 覆盖本次调用，否则使用该目标类型的默认配置。
+- 请求在建立任何异步闭包前同步序列化，gate 的共享请求原型随后可被下一次调用覆盖。回调按值捕获本次业务上下文，不保留 request 的引用或指针，不长期捕获 `TcpConnectionPtr`；若将来延后序列化，必须先取得独立请求副本。
+- 摘除节点时，销毁通道将未完成调用以 `UNAVAILABLE` 排队完成，回调可能在节点实体销毁后才执行，不能依赖实体、组件或连接仍存在。停机先清通道并排队完成，再拆 ECS / Redis / 日志；拆除还须等待 `GrpcClientLocalCompletionsDrained()`，顺序见 §6 与 §15.10。
+
+<a id="grpc-client-outcome"></a>
+
+### 16.2 失败表示结果未知
+
+`DEADLINE_EXCEEDED`、`UNAVAILABLE`、`CANCELLED` 都不能证明对端没有执行，超时或断线后服务端仍可能提交。完成方只能释放本次本地在途状态、提示客户端，或按业务幂等契约做有界退避重试；不能把传输失败当业务拒绝去改权威状态。交接去留继续由 owner_epoch、权威查询与既有看门狗裁决，不因传输失败立即解冻或提前核实。
+
+调用方不按状态码臆断“停机”与“传输故障”：通道实现变化可能改变返回码。生成客户端不添加重试；传输内部只允许 §4.6 中可证明未处理的透明重试。
+
+<a id="grpc-client-deadline"></a>
+
+### 16.3 配置与预算
+
+配置真源为 `proto/common/base/config.proto` 的 `BaseDeployConfig.grpc_client = 21`（`GrpcClientConfig.call_deadline_ms`），部署值在 `bin/etc/base_deploy_config.yaml` 的 `GrpcClient.CallDeadlineMs`，键为目标 `eNodeType` 名称。未配置的类型使用 `kDefaultGrpcCallDeadlineMs = 10000`；未知名称或值为 0 时记 ERROR 并忽略该项，保留默认值。
+
+`Node::Initialize` 在 `LoadConfigs()` 后、`InitEtcdService()` 前调用 `grpc_call_deadline::Apply`，将值写入生成客户端各文件的原子默认值，并留存供 `grpc_call_deadline::Get(nodeType)` 查询。业务调用的截止以 `steady_clock` 计算。
+
+预算同时满足两条约束：C++ deadline 至少比目标 Go 服务端 Timeout 多 2000ms；依赖结果的本地在途 TTL / 看门狗又须比该 deadline 宽，并从 `Get` 派生。方法级 `MethodTimeouts` 也要核对，不能只看服务顶层 Timeout。
+
+| 目标节点类型 | C++ deadline（ms） | 当前 Go 顶层 Timeout（ms） | 本地派生预算 |
+|---|---:|---:|---|
+| SceneManagerNodeService | 10000 | 8000 | 普通换图 / 镜像在途 TTL = deadline + 1000ms；交接另有原权威裁决预算 |
+| DataServiceNodeService | 4000 | 未写，默认 2000 | 号段 fetchTimeout = deadline + 1s |
+| ClientRpcRouterNodeService | 8000 | 6000 | 路由内部预算另见 [请求顺序契约](client-request-ordering.md) |
+| MatchNodeService | 7000 | 4000 | gate 直连模式 |
+| LoginNodeService | 12000 | 4000 | gate 直连模式 |
+| PlayerInboxNodeService | 6000 | 3000 | Fetch / Ack 在途兜底 = deadline + 5000ms |
+| BattleNodeService | 5000 | 不适用 | C++ 服务端截止见 §15 |
+| EtcdNodeService | 5000 | 无对应配置 | 仍须小于 etcd 的 10s Txn 看门狗 / LeaseGrant 重试预算 |
+
+服务端值分别核自 `go/{scene_manager,data_service,client_rpc_router,match,login,player_inbox}/etc/` 的服务 YAML。不要沿用迁移初期 login=10000、match=5000 的服务端旧值，也不要将跨服务后台总预算混作单次 unary 超时。
+
+<a id="grpc-client-deploy-budget"></a>
+
+### 16.4 部署门禁
+
+`tools/scripts/k8s_deploy.ps1` 的 `Assert-GrpcClientDeadlineBudget` 在 zone-up / infra-up / all-up 的集群写入前核对上表六个 Go 目标。六项 C++ deadline 必须显式为正整数；服务顶层 Timeout 缺席按 2000ms，写出后必须为正整数。任一预算不成立即拒绝部署，down / status 不经此门禁。node 与 battle-node ConfigMap 从 `bin/etc` 原样镜像整个 `GrpcClient` 块，缺块在生成期拒绝；Go ConfigMap 的服务端超时必须与其服务 YAML 一致。
+
+`Get-ZrpcMethodTimeouts` 逐条解析方法超时，`Get-GrpcClientDeadlineBudgetViolations` 同时核对顶层和方法预算。唯一免于与 C++ deadline 比大小的例外，由 `Get-GrpcClientMethodsNotCalledFromCpp` 显式登记：当前仅 DataService 的 `/data_service.DataService/RollbackPlayer`、`RollbackZone`、`RollbackAll`。例外仍须有合法方法名、可解析时长和对应 YAML 条目；data-service ConfigMap 现已镜像这些 MethodTimeouts，旧版“不镜像”的限制已失效。
+
+登记“不由 C++ 调用”必须同时排除手写代码的 typed / Erased / 消息号调用，以及 gate 根据生成 `IsClientMessageId` 的直连转发。契约测试还拒绝已不在 YAML 中的过期登记；部署脚本自身不扫描 C++。当前 deploy-config-tests 的路径触发不覆盖仅 C++ 的改动，发版流程必跑；增加调用方时须主动运行相应契约测试，不能等部署入口发现。
+
+解析只支持顶层不带引号的 `MethodTimeouts` 块式列表或显式 `[]`；每项仅含 `FullMethod` / `Timeout`。重复、缺键、未知键、无法辨认的写法、异常换行及两种解析的条数不一致均拒绝。时长仅接受正数 ms / s / m / h 的子集，不支持符号、`.5s` 或 `5.s`。这是防配置漂移的文本门禁，不是完整 YAML 校验器；转义拼接键名、顶层 Timeout 的合并键 / 多文档等仍有解析边界，不据此宣称完整语义覆盖。
+
+<a id="grpc-client-call-sites"></a>
+
+### 16.5 调用点与完成归属
+
+| 调用 | 认领与校验 | 失败、迟到与客户端行为 |
+|---|---|---|
+| EnterScene | `SendCorrelatedEnterScene` 捕获 playerId + 非零关联号，交 `DispatchEnterSceneReply` / `DispatchEnterSceneTransportFailure`；响应非零 player_id / correlation_id 逐字段核对，不符记 ERROR、计 unmatched 后丢弃，零回显仍按捕获值认领 | 普通换图释放本次槽，玩家主动请求回 `kEnterSceneServerBusy`（3028），跟随只记日志；交接仍按 §16.2 处理。先分发再记录完成日志，不能按 player_id 误认另一请求 |
+| 镜像 CreateScene | `HandleMirrorCreateDone` 按捕获 playerId + token 认领；只认当前 token，随后要求 `now >= sentAtMs && now - sentAtMs < TTL` | token 不符不动新槽；匹配但过期或完成时检测到时间回拨，只摘自己的槽并静默丢弃，不推 tip、不自动进场。有效槽内业务拒绝、零 scene_id 或已进战斗回 `kEnterSceneFailed`，传输失败 / 无可用 SceneManager 回 3028 |
+| AllocateIdSegment | `IdSegmentTransport` 捕获 seq 认领 inflight / abandoned，不依赖 `x-idseg-seq` 响应 metadata | 保留单飞和迟到窗口；正常传输失败交 `OnTransportFailure`，已放弃请求不重复判失败 |
+| 收件箱 Fetch / Ack | 捕获 playerId + domain + correlationId 及 confirmed admission；先核当前归属身份仍一致，再进入具名完成函数；非零回显逐字段核对后按捕获值认领 | 旧完成不清新在途；保留原退避、UNIMPLEMENTED 与 Ack 幂等语义，失败不阻断进场 |
+| gate 直连通用转发 | 捕获 session_id / incarnation、发送时 SessionDetails 原始字节及原请求 id / message_id；成功失败都先核对会话代次 | 拒绝 session_id 复用后的旧完成；成功不依赖服务端回显，成功包装和失败 1003 信封均携带原请求 id / message_id；失败仍走既有桥和 lane 认领 |
+| gate Login.Disconnect | 显式 typed done，只捕获 sessionId | 成功无后续；失败每 1024 次采样 WARN，不向已断开或复用该 session_id 的新会话推 tip |
+| gate 路由 Forward | `router_muduo_forward.cpp` 的 `SendForward`；成功按响应头回显的原值会话交桥，失败按发送时捕获会话交失败桥 | 保留路由 lane 的队头、代次和信封契约，不自动重试；不能把直连“不依赖响应会话回显”套到 Forward |
+
+镜像建场在途也占 `IsSceneChangeBusy`；客户端换图、队伍跟随与跨 zone 传送不能绕过。普通换图登记、交接全部预检通过、退出新挂 `UnregisterPlayer`、权威落点成功这四个提交点主动撤销旧镜像令牌，永久取消旧提示 / 自动进场资格；被撤销的旧请求即使在 UTC 回拨后恢复到原 TTL 内也不能复活。只读忙碌检查不删除组件，交接预检失败不取消仍有效的旧镜像。详情见 [场景创建架构](scene-creation-architecture.md) 与 [组件访问规则](ecs-component-access-rules.md)。
+
+<a id="grpc-client-validation"></a>
+
+### 16.6 验证范围与证据边界
+
+修改生成规则时，按 AGENTS.md §4 先构建生成器、运行受影响的 Go 生成器测试，再用 no-unity 配置正规重生成，不手改产物。受影响 C++ 工程按 §15.14 串行构建（MSBuild `/m:1`），运行相应行为回归；配置与部署门禁变化还须运行 `tools/scripts/tests/k8s_deploy_contract.tests.ps1`。仅更新文档引用和注释无需重生成协议或重跑业务构建。
+
+验证重点：typed / Erased 的唯一完成通道与同步序列化；本地拒绝异步恰好一次及排空；EnterScene 非零不一致和零回显认领；镜像过期、回拨、撤销和新令牌隔离；Inbox 归属变化与旧完成隔离；号段失败及迟到窗口；gate 会话复用和原请求 id 的成功 / 失败信封。已有本地拒绝用例在 `cpp/tests/rpc_controller_test/grpc_client_local_reject_test.cpp`，业务回归分布在 cross_zone / bag / currency / routing_identity 测试工程，具体结果以执行回执为准。
+
+启动生效值日志 `[GrpcClient] unary call deadlines (ms)` 与正常排空完成日志均为 INFO；muduo 的 `LogLevel: 2` 即 INFO，可以看到，无需为此降低日志级别。缺 done 会触发 `requires a done callback`，不再检查已删除的全局处理器漏装日志。
+
+本次合并仅依据当前源码和配置整理契约，不代表编译、单测、Linux、联机或压测已通过；历史未验计划和当时故障数量不作为现状。Java 内部传输不由本节约束，本次没有功能或共享客户端契约变更，无需同步 Java 实现或登记 PARITY。

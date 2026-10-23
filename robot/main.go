@@ -872,7 +872,11 @@ func loginAndEnterLocal(gc *pkg.GameClient, password string, stats *metrics.Stat
 // failure we transparently fall back to the configured primary auth provider.
 //
 // 例外:前一种方式因握手超时失败(errLoginStuck)时不回落,直接返回该错误——超时后连接上留着阻塞的读者,
-// 这条连接已不能再用。重定向重登录(pkg.SetRedirectRelogin)走的也是本函数,同样适用。
+// 这条连接已不能再用。返回之后怎样取决于调用方:压测主路径(runRobotOnce / data_stress)登录失败即结束本次会话,
+// 外层退避后换新连接重来。重定向重登录(pkg.SetRedirectRelogin)也走本函数,同样不回落,但那里没有外层重连:
+// FollowRedirect 返回的错误目前只被 logic/handler 的重定向处理器记一行日志,RecvLoop 继续读这条未认证的新连接
+// (muduo 的 Close 也唤不醒它),会话就此空转到 stop,仍按已连接计数。这是「确定失败、不做有竞态的回落」的代价;
+// 让重定向失败结束会话要改 logic/handler 与 pkg,不在本文件范围。
 func loginAndEnterWithAuth(gc *pkg.GameClient, cfg *config.Config, stats *metrics.Stats, prevAccessToken string, prevAccessExpire int64) error {
 	// Use access_token reconnect when available and with at least 60s of TTL left.
 	if prevAccessToken != "" && (prevAccessExpire == 0 || time.Now().Unix() < prevAccessExpire-60) {
@@ -882,7 +886,8 @@ func loginAndEnterWithAuth(gc *pkg.GameClient, cfg *config.Config, stats *metric
 			return nil
 		} else if errors.Is(err, errLoginStuck) {
 			// 握手超时后这条连接上还留着一个阻塞在 RecvOne 的读者,在同一连接上换认证方式重试会和它抢回包
-			// (回落发的同样是 Login,同号回包可能被它吞掉),所以不回落:本次会话失败,由外层换新连接重来。
+			// (回落发的同样是 Login,同号回包可能被它吞掉),所以不回落,直接返回;返回后主路径换新连接重来、
+			// 重定向路径会话空转,见函数注释。
 			return err
 		} else {
 			stats.AccessReconnectFallback()
@@ -978,7 +983,7 @@ func loginAndEnterViaHttpGateway(gc *pkg.GameClient, cfg *config.Config, stats *
 // 见到它的调用方必须丢弃这条连接,不能在同一个 gc 上继续握手或起 RecvLoop:等回包的读者 goroutine
 // 仍阻塞在 RecvOne 上(vendored muduo 的 Recv 读的是永不关闭的 incoming channel,Close 也唤不醒它),
 // 之后同一连接上的任何读者都会和它抢收包——同号回包可能被它吞掉,其余消息被它塞进暂存队列。
-// loginAndEnterWithAuth 因此在它之后不再换认证方式回落,而是让本次会话失败、由外层换新连接重来。
+// loginAndEnterWithAuth 因此在它之后不再换认证方式回落,直接把它返回给调用方(各调用方的后果见该函数注释)。
 var errLoginStuck = errors.New("STUCK")
 
 // sendAndRecvLocal 是 loginAndEnterLocal 的同步握手,形状与 login.go 的 sendAndRecvTimeout 相同:跑在 RecvLoop 之前,

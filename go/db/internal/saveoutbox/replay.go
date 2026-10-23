@@ -27,6 +27,14 @@ type StoreHealth interface {
 	CoolingDown(storageID uint32) bool
 }
 
+// RouteGate 是本实例 go/db 读方就绪闸的只读视图(kafka/route_ready_gate.go,D1 第 3 批)。闸关着(mapping Redis 副本不可信:
+// 重启、切主、就绪标记被对账 leader 撤掉、读脚本出错)时消费循环不从 Kafka 取新消息、重试循环不认领,补投出去的任务只会
+// 堆在 Kafka 里;补投器据此整拍跳过、不认领、不计次(r2-rr#5),与重试循环同口径。
+// 生产由 *kafka.KeyOrderedKafkaConsumer 实现:Placement.RequireRouteReady=false 时没有闸,恒放行。实现必须并发安全。
+type RouteGate interface {
+	RouteGateOpen() bool
+}
+
 type Config struct {
 	ZoneID          uint32
 	TopicGeneration uint32
@@ -100,6 +108,7 @@ type Replay struct {
 	mapping redis.Cmdable
 	pub     Publisher
 	health  StoreHealth
+	route   RouteGate
 	cfg     Config
 	now     func() time.Time
 	// jitter 返回本次排程附加的抖动；同一故障里大量意图同时到期时错开重投。
@@ -112,11 +121,16 @@ type Replay struct {
 
 // 结果 label 是封闭集合，启动时以 0 建出全部序列。
 var replayResults = []string{"published", "completed", "migrated", "conflict", "invalid", "redis_error", "publish_error",
-	"observed", "inflight_deferred", "terminal", "exhausted", "store_cooldown", "legacy_alive", "publish_paused"}
+	"observed", "inflight_deferred", "terminal", "exhausted", "store_cooldown", "legacy_alive", "publish_paused", "route_not_ready"}
 
-func New(rc, mapping redis.Cmdable, pub Publisher, health StoreHealth, cfg Config, reg prometheus.Registerer) (*Replay, error) {
+// New 装配补投器。health 为 nil 表示不判主库冷却；route 不得为 nil：漏传就绪闸时补投会在消费停摆期间照常重投并计次(r2-rr#5)，
+// 装配错误按依赖缺失拒启，不静默当作恒放行。
+func New(rc, mapping redis.Cmdable, pub Publisher, health StoreHealth, route RouteGate, cfg Config, reg prometheus.Registerer) (*Replay, error) {
 	if rc == nil || mapping == nil || pub == nil {
 		return nil, errors.New("save outbox Redis/publisher 依赖缺失")
+	}
+	if route == nil {
+		return nil, errors.New("save outbox 读方就绪闸依赖缺失")
 	}
 	cfg, err := cfg.normalized()
 	if err != nil {
@@ -142,7 +156,7 @@ func New(rc, mapping redis.Cmdable, pub Publisher, health StoreHealth, cfg Confi
 		counter.WithLabelValues(label)
 	}
 	retryJitter := cfg.RetryAfter / 2
-	return &Replay{rc: rc, mapping: mapping, pub: pub, health: health, cfg: cfg, now: time.Now, results: counter,
+	return &Replay{rc: rc, mapping: mapping, pub: pub, health: health, route: route, cfg: cfg, now: time.Now, results: counter,
 		jitter: func() time.Duration { return rand.N(retryJitter + 1) }}, nil
 }
 
@@ -170,6 +184,12 @@ func (r *Replay) Tick(ctx context.Context) (int, error) {
 	// broker 刚发布失败:整拍跳过 RetryAfter,不在 Kafka 故障期间逐拍认领、推迟别的意图并刷 ERROR(r2-db#1)。
 	if r.now().Before(r.publishPausedUntil) {
 		r.results.WithLabelValues("publish_paused").Inc()
+		return 0, nil
+	}
+	// 本实例读方就绪闸关着(r2-rr#5)：消费循环不取新消息，投出去的任务只会堆在 Kafka 里挤占 retention.bytes 的保留缓冲，
+	// broker 确认后却照常计次，停摆久了意图被耗到 exhausted，而原任务与补投副本可能已被裁掉。整拍跳过、不认领、不计次；
+	// 闸重开后从各意图原有的到期时刻接着补投。
+	if r.routeGateClosed() {
 		return 0, nil
 	}
 	// 主库冷却期间投出去的任务只会在选库处被挡回、各自开一条重试链；整拍跳过，不消耗尝试次数。
@@ -201,6 +221,10 @@ func (r *Replay) Tick(ctx context.Context) (int, error) {
 	for _, id := range ids {
 		if err := ctx.Err(); err != nil {
 			return published, err
+		}
+		// 闸在本拍中途关上：剩下的玩家留到闸重开(与重试循环每认领一条前看一次闸同口径)，当拍至多多投正在处理的那一名。
+		if r.routeGateClosed() {
+			return published, nil
 		}
 		playerID, err := strconv.ParseUint(id, 10, 64)
 		if err != nil || playerID == 0 || kafkautil.DBTaskKey(playerID) != id || playerID%BucketCount != bucket {
@@ -282,7 +306,14 @@ func (r *Replay) Tick(ctx context.Context) (int, error) {
 		}
 		if zone != r.cfg.ZoneID {
 			home, err := r.mapping.Get(ctx, placement.HomeZoneKey(playerID)).Result()
-			if err != nil || home != strconv.FormatUint(uint64(zone), 10) {
+			if err != nil && !errors.Is(err, redis.Nil) {
+				// mapping Redis 读不到(重启、切主、超时)与意图本身无关，不计次，与发布失败同口径(r2-rr#5)；
+				// 认领时已按本次退避推迟了该意图，下一次到期再读。
+				r.results.WithLabelValues("redis_error").Inc()
+				return published, errors.New("save outbox 读取权威home_zone失败，原意图保留")
+			}
+			// 键不存在时 home 为空串，按不匹配处理。
+			if home != strconv.FormatUint(uint64(zone), 10) {
 				r.results.WithLabelValues("invalid").Inc()
 				logx.Errorf("[SaveOutbox] 跨zone索引迁移缺少匹配的权威home_zone，原意图保留")
 				if err := r.consumeAttempt(ctx, playerID, in.version, attempts); err != nil {
@@ -317,6 +348,18 @@ func (r *Replay) Tick(ctx context.Context) (int, error) {
 		}
 	}
 	return published, nil
+}
+
+// routeGateClosed 报告本实例的读方就绪闸此刻是否关着，关着时计一次 route_not_ready。
+// 闸由消费者每个刷新间隔(RouteReadyGateIntervalMs，缺省 1s)刷新一次，单次刷新最长约一个 Redis 读超时：mapping Redis 刚出事、
+// 闸还没刷新的那几拍仍可能认领并补投。认领会把意图推迟至少 RetryAfter(缺省 10s)，所以每次出事每个意图多计的次数有界
+// (缺省配置下至多一次)，与停摆时长无关，不会因停摆累计到 exhausted。
+func (r *Replay) routeGateClosed() bool {
+	if r.route.RouteGateOpen() {
+		return false
+	}
+	r.results.WithLabelValues("route_not_ready").Inc()
+	return true
 }
 
 // consumeAttempt 在两条任务都经 broker 确认(或意图本身不合法)后计一次。版本或计数已变(并发认领、新版本存盘)时落空，不算错误。

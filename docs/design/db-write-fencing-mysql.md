@@ -1,5 +1,7 @@
 # 玩家存盘 MySQL 条件写（围栏）：go/db、C++、proto、schema 详细设计
 
+> **2026-10-23 建角初始提交合同（实现与验证中）**：仅正常 `CreateAccountRole` 对严格全新 ID 的目录首次 INSERT，可与权威落点的两张玩家 SQL 行在同一个 TiDB 事务中产生保留初始版本 `(1,1)`。此版本表示无 actor 的真实持久基底，不是“空 SQL 可放行”的例外；缺失的历史行不得补种。首次加载沿现有 SQL 采纳原子地建立 owner 地板 1，随后仍由 SceneManager 唯一发号为首任 actor 2；实际存盘的 SaveSeqAllocator 采用载入下限并严格前进。已有更高 owner 不回退，任何并发 pending/ACK/owner 变化仍由原提交 Lua 拒绝。完整的锁序、提交回执与缓存开关合同见 [建角初始持久提交](new-player-first-enter-no-cold-read.md#建角初始持久提交)。本注不代表已经编译或取得运行证据。
+
 > **2026-10-17 实施状态补充（Codex，未提交）**：负责人已授权统一接手并保留各线改动；下文 v0.4 草案的「未落码」和旧会话等待信号属于历史状态。当前工作区已合并 SQL 行内围栏、真实锁定行收据、双表 SQL ACK、父快照持久补投、缺父键强读恢复及交接标记 SQL 屏障；定向 C++ 构建和完整受影响单测通过。隔离 zone 990017/990018 的真实邮件和跨区交易到账测试均已执行通过、0 跳过，含 SQL 行锁负例、原件成长保留和真实重投。证据见 `build/asset-arrival-20261017/fullstack/logs/fullstack-mail-2.result.json`、`fullstack-trade-1.result.json` 与 `docs/PROGRESS.md` 本日追加条目。默认 `legacy`、历史屏障维护补种及停旧写者切换门禁仍在；此状态不表示已生产切换、Redis Cluster 同槽支持、跨洲故障或目标容量验收。
 
 > **状态**：设计稿 v0.4（2026-10-16，Claude）。v0.4 由两件事触发：一是 v0.3 的补审（[fence-v03-review.md](../handoff/landing-fencing-takeover-20261016/fence-v03-review.md)，fix_plan 第二节 1–9 条全部采纳）；二是工作区里出现了一套来源不明的在途围栏实现（[fence-inflight.md](../handoff/landing-fencing-takeover-20261016/fence-inflight.md)，来源是「全域到账续批」写入方）。负责人 2026-10-16 拍板：在途实现由本线「合并并继续，按最标准的做」。**路线以 v0.3 为准，把在途实现收敛过来**（§0.2），保留在途已占的号位 `DBTask.save_seq = 9`、`PlayerAllData.last_save_seq = 7`。§14 的待拍板项按负责人授权取推荐项定稿，只剩两项要负责人亲自确认。**仍未落码、未编译、未测试**（AGENTS.md §10.1）。各版来由见 §17。
@@ -1118,6 +1120,7 @@ F-5（§1.2）的成立条件就是上表第 2、5 行：没有旧二进制，�
 - 子表缓存键没有新增，`playerCacheKeys` 不用改。资产 SQL 提交证据键要加进 `tools/merge_zone/player_rows.go` 的 `invalidatePlayerCaches` 删除清单，并补用例（§6.6）。
 - **2026-10-20 修复（r2-mz#1）**：前向 copy 合服不再删 `player:{id}:save_barrier`（`invalidatePlayerCachesKeepBarrier`），撤销与 PITR 照删；`-verify-merged` 新增 `verify:save_barrier` 逐人核对，`save_barrier_restore` 新增 plan 期开关 `-allow-home-fallback`。理由与边界见文末「上线状态」之前的同日附注。
 - `go/data_service/cmd/debug_import` 会把导出时的围栏值一起写回。从别的环境导入的行如果围栏比本环境的 epoch 大，之后的存盘会进死信；`fence_save_seq` 超出 §7.2 上界时，冷加载会触发 `Observe` 的超界处置（§7.2）。两种情况都按 §9.1 抬计数器处置，不建议归零。
+- **2026-10-22 修复（r2-ds#1 / r2-ds#2，未编译、未测试，待 Codex）**：上一条描述的是旧 playerdb 导入；player-bundle 导入不搬线上围栏，在本地重铸版本 E = max(线上, 本地 owner_epoch, 本地两行围栏, 本地屏障令牌) + 1，并在本地行围栏或屏障令牌高于本地 owner_epoch（本地 Redis 丢过状态、Kafka 可能有看不见的更高代次残留）时拒绝导入，所以本地残留 DBTask 的代次都低于 E、会被行内围栏判 stale_owner。写前身份闸对取不到身份的一侧（TiDB、旧版导出包）fail-closed，要目标库带本地标记表或显式 `-allow-unverified-target-identity`。细节与操作见 [online-debug-data-fetch.md](../ops/online-debug-data-fetch.md) §7。
 
 ### 9.4 死信里的条件写条目（`fence_stale_owner` / `owner_epoch_regressed` / `fence_legacy_after_seq`）
 
@@ -1647,6 +1650,9 @@ DBTask TopicGeneration 换代的排空集合同时包含旧代 Kafka、retry 与
 4. **终态**：同版本的 `outbox_terminal` 存在时不补投，计 `terminal`，告警 `DbSaveOutboxTerminal`。新版本到来时清掉过期终态。
 5. **在途重试**：`outbox_retry_ms` 在 `InflightWindow=2min` 内时只推迟，不计次数（`inflight_deferred`）。
 6. **主库冷却**：本 zone 主库冷却期内整拍跳过，不认领、不计次数（`store_cooldown`），与 L-04 §3.5 的重试循环同口径。
+7. **读方就绪闸关着**（2026-10-23 补，r2-rr#5）：本实例 go/db 的就绪闸关着时整拍跳过，不认领、不计次数（`route_not_ready`），本拍中途关上时剩下的玩家也不再认领；与消费循环、重试循环看同一把闸。此前补投器不看闸，详见下文「2026-10-23 第二轮审计修复（r2-rr#5 数据侧）」。
+
+整拍跳过的条件按判定顺序共四个：发布失败后的暂停（`publish_paused`，见下文 r2-db#1）、读方就绪闸关着、本 zone 主库冷却、legacy 存活（`legacy_alive`，见上文「混跑」）。四者都不认领、不推迟索引、不计次数，条件消失后从各意图原有的到期时刻接着补投。
 
 **go/db 消费侧的提示**（`kafka/save_outbox_note.go`）
 - 只在 `dual` 下写，只针对带 `(owner_epoch, save_seq)` 的两张玩家表写，且只在该版本仍是当前意图时写，绝不凭空创建 barrier。
@@ -1718,6 +1724,41 @@ DBTask TopicGeneration 换代的排空集合同时包含旧代 Kafka、retry 与
   - `go/db/cmd/save_barrier_restore/home_fallback_test.go`：开关只在 plan 生效；计划文件携带开关，去掉后摘要改变且 `Validate` 拒绝。
 - **残余**：`verify:save_barrier` 只在 Step 5 跑；Step 5 之后到开服之间的写入不再复核，与其他 verify 行相同。撤销没有对应的 verify 行，靠 `save_barrier_restore` 的逐人回执与受控测试号冷登录确认。
 - **Java 版**：不适用。Java 没有 Redis 父快照提交屏障与 `save_barrier_restore`，沿用 player / player_state 同 SQL 事务；Java 合服作业随批次 7.3 待做，届时按其自身存储协议设计，不照抄本条。
+
+**2026-10-23 第二轮审计修复（r2-rr#5 数据侧，Claude，未编译、未测试，待 Codex 验证）**
+
+来源：[data-overwrite-rollback-audit-r2-20261019.md](data-overwrite-rollback-audit-r2-20261019.md) §3.7 r2-rr#5。先对照代码复核：`replay.go` 的 `Tick` 只看发布暂停、主库冷却、legacy 存活三个条件，确实不看就绪闸，数据侧成立后才修。本段只修数据侧（补投在停摆期间放大与计次）；停摆时长本身归 D1，见「残余」。上文 r2-db#1 段「跨 zone 迁移缺权威 home_zone 仍计次」以本段为准。
+
+- **问题**：
+  - mapping Redis 一次重启或切主后，对账 leader 撤掉就绪标记，全部 zone 的 go/db 就绪闸同时关上：消费循环不从 Kafka 取新消息，重试循环不认领。
+  - 补投器不看闸，对每个未 ACK 的意图照常按退避重发两条整行任务，broker 确认后计次，约 21 分钟进 exhausted；Kafka 写入同时放大约 6 倍。
+  - `db_task` 的 `retention.bytes` 按「设计写入速率 × 2h」定，闸关得久时最旧的段被裁。停摆早期下线玩家的最后存盘与补投副本都没了，意图又已 exhausted，返场永远报 `parent SQL barrier not committed`。
+- **修复**（`saveoutbox/replay.go`、`service.go`，`kafka/route_ready_gate.go`，`db.go`）：
+  - 补投器经构造参数显式注入本实例消费者的就绪闸只读视图 `saveoutbox.RouteGate`。生产实现是 `*kafka.KeyOrderedKafkaConsumer` 的 `RouteGateOpen`，读的就是消费循环与重试循环用的那把闸；`Placement.RequireRouteReady=false` 时没有闸、恒放行，与消费者一致。`New` / `Start` 拒收 nil，装配漏传即拒启，不静默当作放行。
+  - 闸关着（标记不在、畸形、身份不符，或读脚本出错）时整拍跳过：不认领、不发布、不推迟索引、不计次，计 `db_save_outbox_total{result="route_not_ready"}`。本拍中途关上时，剩下的玩家不再认领，与重试循环每认领一条前看一次闸同口径。
+  - 闸重开后，索引到期时刻没动，从各意图原有的到期时刻接着补投；停摆期间新出现的意图按首见宽限登记。
+  - 跨 zone 索引迁移读权威 home_zone 时，mapping Redis 读失败（非 `redis.Nil`）不再按意图不合法计次，改计 `redis_error` 并报错；认领时已按本次退避推迟了它。键缺失或值不符仍计次。
+- **不变量**：
+  - 停摆时长不推进 `outbox_attempts`；停摆期间意图原字节、pending 与桶成员都不动。
+  - exhausted 只来自「闸开着、broker 已确认、两表 ACK 迟迟不齐」，告警 `DbSaveOutboxExhausted` 的归因不变。
+  - Kafka 段在停摆中被裁时，闸重开后仍能从意图补回，不再出现「原任务与副本都没了、意图又已 exhausted」的组合。
+- **同口径核对的其它路径**（结论：都不会在闸关时把意图推向终态，本批不改）：
+  - 重试循环：`consumeRetryQueue` 在闸关时不分拣、不认领；shared / owner 两路的认领循环每认领一条前再看一次闸。认领时预算耗尽进死信（`parseClaimedRetry`）因此也不会在闸关时发生。
+  - 闸关上那一刻已派进 worker 的任务：逐条判 `errRouteNotReady` 后走 `deferFailedTask`。写不耗预算（`retryBudgetExempt`）；给补投器只记在途戳（`noteSaveOutboxDeferral`），终态只认 `blob_too_large` 与 `asset_evidence_conflict`。
+  - `durable_enqueue`：只把 Kafka 源失败任务的唯一副本按 WAITAOF 落进重试 ready；确认失败就不 ack、位点不提交，不计次、不丢弃。
+  - `retry_stranded`：只重搬已结束执行的收据；收据已不在 processing 才摘掉登记，不计次、不丢弃。
+- **残余**：
+  - 闸是进程级的，每 `RouteReadyGateIntervalMs`（缺省 1s）刷新一次，单次刷新最长约一个 Redis 读超时。出事到闸刷新之间的几拍仍可能补投并计次；认领会把意图推迟至少 `RetryAfter`（缺省 10s），缺省配置下每次出事每个意图至多多计一次，与停摆时长无关。各副本的闸各自刷新，彼此的收敛差同为一个刷新间隔。
+  - 闸重开后的追赶期，补投器照常按退避补投：原任务还在积压里时，副本追加到队尾并计次。追赶超过整段退避（约 21~30 分钟）的意图会进 exhausted，但原任务或已投出的副本被消费、两表 ACK 齐全后，下一次复查（`RecheckAfter`）照常回收；只有它们也被保留期裁掉才需要人工。补投器不感知消费积压是 10-18 起就有的限制（`FirstReplayAfter` 只给 30s），本批不改；根治须让补投器按本实例的消费 lag 暂停，另立设计。
+  - 停摆本身超过保留缓冲时，未消费的原任务仍会被 Kafka 删除。修复后意图不再 exhausted，闸重开后由补投补回；停摆期间所有返场玩家照旧被拒登（fail-closed）。
+  - 不在本条：data_service 对账 leader 重挂标记要等「候选任务开始之后才开始的一整轮围栏镜像 SCAN」扫完全键空间（`routereconcile/reconciler.go` 的 `tryArm`，每拍 2 页），停摆约「修补耗时 + 1~2 × 键数 / 2000 秒」。这条可用性问题与 `GoDbRouteGateClosed` 告警、[player-route-mapping-durability-proposal.md](player-route-mapping-durability-proposal.md) 的 RTO /「不丢盘」说法，由 D1 映射持久化会话负责。
+- **测试**（未运行，交 Codex）：
+  - `saveoutbox/replay_route_gate_test.go`：闸关着的多拍（跨过整段退避、为次数上限的两倍）不碰 broker、不计次、不推迟索引、不进 exhausted，重开后第一拍照常补投并计一次；本拍中途关上时停止认领；mapping 读失败不计次、不迁索引；`New` 拒收 nil 闸。
+  - `kafka/route_gate_open_test.go`：`RouteGateOpen` 跟着每次刷新走（标记不在、读脚本出错都关），不记等待次数，nil 闸恒放行。
+  - 既有夹具 `replay_test.go`、`replay_bounds_test.go`、`replay_integration_test.go` 改为注入恒放行的闸，断言不变。
+  - 新接口改了 `New` / `Start` 的签名，新用例无法在旧代码上编译出红；文件头写了变异核对方法（去掉两处 `routeGateClosed` 判定即红）。
+- **指标**：`db_save_outbox_total{result}` 新增 `route_not_ready`，启动即以 0 建出。不加新告警：闸关着由 `GoDbRouteGateClosed` 覆盖。
+- **Java 版**：不适用。Java 不经 Kafka / go/db 落库，没有补投器与读方就绪闸（AGENTS §12）。
 
 **上线状态（负责人 2026-10-18 确认：尚未上线）**
 

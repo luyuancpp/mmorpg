@@ -15480,3 +15480,311 @@ Friend原随机自有MySQL库五CLI真实创建F18DCC2C…；原空口令guard/�
 - Go data_service 旧替身接口漏接已修，完整 Unit 1653 PASS、90 外部 SKIP，Vet/RuntimeBuild 通过；db 旧恢复断言与最新 SQL 最小 schema 世代合同同步后，完整 Unit/Vet/RuntimeBuild 后继通过，原失败保留。受影响其他服务普通回归和专项仍在执行。
 - 独立 Java 首个剩余 Chat3 真 TiDB 阶段实际得到三个 SQL 错误（`FD483EFC...`）：正式 PlayerRouteAuthority 使用的共享锁语法在当前 TiDB 不可执行，尚未进入业务断言。已授权显式 TiDB 排他锁方言、保 MySQL/H2 原合同、禁止 noop；新 Common 普通构建和原 Chat3/Data17 真锁回归待实际结果。meta/zone 排他锁可能串行化写入口，不作无限容量或横向吞吐不变承诺。
 - 仅在他人最新源上做必要修复；未覆盖客户端 CurrentMaps、未 commit/push/tag。剩余 SQL 外测、两版 33/36 角色双区及真实资产故障恢复未全闭合，整体仍未完成；完整实际路径、SHA 与审核细节继续维护在 `docs/handoff/global-economy-claude-review-20261022.md`。
+
+## 2026-10-23：当前 C++ 29 程序与互通闭合，后续验收按最新提交继续
+
+- 补三程序实际 ECS 8、AOI 21、muduo gRPC 196 PASS，0 FAIL/SKIP（`930AF055...`）；本轮 29 个唯一程序合计 2632 PASS，另 2 个原有 disabled benchmark。Go/C++ 互通原五必需项与真实 Go 客户端通过（`0018D6EF...`），所属家族全部退出；router 按原监管清理记录退出 1，不伪造全 native 0。组合原件 `3F513421...` 只组合真实结果。
+- 独立 Java Common 正规库 150 PASS、0 SKIP（`30EE611E...`），修后 Chat3 真 TiDB 3 PASS、0 SKIP（`E8A8B619...`）。Data17 原套取得 14 PASS、3 ERROR；三个测试仍读 MySQL 专属观察接口，后继仅修测试以读取 TiDB 实际索引和同会话事务写集合，保留原索引名、写集合严格增加及两表共同回滚断言，修后整套仍待实际运行。所有嵌入新 Common 的 30 模块完整构建、剩余 12 外测阶段及 33/36 角色业务仍未完成。
+- 当前最新提交为主仓 `2c07f2c2`、独立 Java `e16d2f9c`、客户端 `242e3506`；保留负责人新提交及全部既有子模块状态。最新客户端 Guild 正常 Import 与整程序集回归计划已核，尚无新 Unity 绿灯，不覆盖 CurrentMaps 或任何资源/meta。Go 与 Java 只在本任务约定目录验收，明确排除另一方向的 `D:/luyuan/xuanming-server`。
+- 负责人再次确认未上线，授权验收需要时直接清理、重建本项目本地数据库。运行仍保持原 7 GiB 启动/2.75 GiB 运行门禁、原句柄清理及完整源码前后核对；零 native 的内存等待截止不能计为编译失败或业务通过。审核入口继续更新，不以准备完成代替实际验收。
+
+## 2026-10-23 Codex：混版本持久保护 §11.4、§11.7–§11.9 验证首次运行被 protoc 版本错配阻塞
+
+- 按负责人指定顺序开始验证；保留既有文档、Go 未跟踪测试与第三方子模块状态。无 commit、push、tag；未读取或修改独立客户端。
+- 正规 `proto-gen-run -ConfigPath tools/proto_generator/protogen/etc/proto_gen.no-unity.yaml` 实际退出 0，C++/Go 产物中字段 23 `persist_schema_regression_mode` 存在。但进程 PATH 选中 WinGet 的 `protoc` 35.0，生成标记为 7.35.0；仓内 C++ protobuf runtime 为 7.35.1（7035001），与原有生成物一致。本次 423 个生成文件的 diff 逐行核对均仅含版本变化，没有业务内容变化；保留现场，不手改或回退生成产物。
+- `game.sln` 按 `/m:1 /p:Configuration=Debug /p:Platform=x64 /nr:false /p:CL_MPCount=1` 实际启动，首错是 `battle_data.pb.h:17` C1189（生成代码与 protobuf runtime 版本不兼容）。发现后仅停止本次经 PID、父 PID、创建时间和命令核对的 MSBuild 16324 及其子树，包装命令实际退出 1；不是完整构建通过。未连续重试，未跳过静态门禁或改断言。
+- 只读定位出仓内已有匹配工具：`third_party/grpc/.build_ninja_debug/third_party/protobuf/protoc.exe --version` 返回 `libprotoc 35.1`。建议获负责人决策后，仅对本次子进程前置该目录到 PATH，按原正规命令重新生成，再按原顺序编译与测试；无需安装、升级工具或修改系统 PATH。
+- 按 AGENTS.md §10.2 的失败与 30+ 文件门禁停止并等待决策。currency_test、cross_zone_test、Redis 7.2 / 8.10.x 各 8 条零跳过用例、go/login build/vet/test、go/db barrierrestore、PowerShell 契约测试均未在本次执行，不能记 PASS。缓存 Redis latest 只读版本探针为 8.10.2，探针一次性容器已自动删除；未借用或清理其它环境。
+- 证据：`build/verification/persist-3b-20261023T071743608Z/`，含输入 3754 路径哈希、启动前后状态、原始生成日志、生成 diff、构建日志/退出码、停止进程身份与 `summary.json`。
+- Java 版：设计文档本主题仍标为待做；本次仅执行 C++/Go 仓交接验证，未修改 Java 仓或 PARITY.md，不代表两版功能已对齐。
+## 2026-10-23 Codex：match 指定三步验证通过，gate worktree 缺依赖暂停
+
+- **match**：工作目录 `D:/luyuan/xuanming-server-mmo-cpp/go/match`，Go 1.27.2 windows/amd64，显式 `GOTOOLCHAIN=local`、`GOPROXY=off`；依次执行 `go build ./...`、`go vet ./...`、`go test ./... -count=1`，三条均退出 0，按负责人指定标准通过。11 个有测试包均为 ok，4 个包无测试文件；没有运行显式真 TiDB/Kafka 集成验收，不把普通测试的成功视为外部集成通过。
+- **gate**：定位到 `.claude/worktrees/laughing-wright-5dc98a`，分支 `claude/nervous-liskov-e5e98c`，HEAD `940ef9746`，保留该分支 6 个代码/工程变更输入。按其 PROGRESS 同日「gate 直连模式会话头 player_id 归一」条目，实际只执行第一步 `MSBuild cpp/nodes/gate/gate.vcxproj /m:1 /p:Configuration=Debug /p:Platform=x64 /nologo /v:minimal`，退出 1。首错为 `third_party/muduo/muduo/base/Timestamp.h:12` 找不到 `boost/operators.hpp`，静态检查退出 2 并触发 `Directory.Build.targets:59` 的 MSB3073；还确认该 worktree 缺 gRPC、Protobuf、spdlog 等依赖头。按 AGENTS §10.2 停止该项，未重试、未绕过检查；`routing_identity_test` 工程编译、全量运行及 `SessionDetailsBuilder.*` 9 条专项均未执行，等待负责人决定是否补齐依赖后继续。
+- **证据与边界**：完整 stdout/stderr、命令与退出码、前后哈希、汇总保存于 `C:/Users/luyua/AppData/Local/Temp/codex-match-gate-verify-20261023T072228639Z/`。监测的 717 个 Go 源码/模块输入中，其他会话改了 `shared/savebarrier/reconcile.go` 和 `reconcile_test.go`；`go list -deps -test ./...` 实际退出 0 并证明该包不在 match 的生产/测试依赖中，其余监测输入及文件集合未变。gate 的 6 个变更输入前后 SHA256 全同；不宣称全仓冻结。未改业务源码、未提交或推送；当前环境没有 gh CLI，未能读取打开的 PR/Issue。
+- **Java 版（AGENTS §12）**：本次仅执行指定 C++/Go 验证，未改功能或客户端契约；Java 验证未运行，未改 PARITY.md。
+
+## 2026-10-23：回滚脚本第 0 步核对 B0-4 nofile 豁免（已落码、未验证）
+
+- **起因**：B0-4 的 `-NodeOpenFileLimitMode` 不粘滞。回滚 Step 1 删掉整个 zone namespace，Step 6 只按本次参数重建。以 `NODE_OPEN_FILE_LIMIT_MODE=warn` 运行的 zone 漏传会落回 enforce；节点池 nofile 硬限仍不够时，gate / scene 在 Step 6 拒启。那时已停服、已回档、积压已丢弃，只能补参数重跑 Step 6。以前第 0 步不读这个 env，只靠摘要行提醒。
+- **改动**（`tools/scripts/k8s_zone_rollback.ps1`）：
+  - 第 0 步 a：`-NodeOpenFileLimitMode` 留空时，入口核对的同一次 kubectl 另读 `deployment/scene`、`scene-world`、`scene-instance`。scene Fleet 是 CRD，不能并进那一次：先用 lib `Test-AgonesFleetCrdPresent` 探测 Agones，装了再按名读 `fleets.agones.dev`（新函数 `Get-ClusterSceneFleets`）。
+  - 折算口径同进程 `open_file_limit.h` 的 `ParseMode`：只有逐字 `warn` 是豁免，未设、`enforce` 与其它值都是 enforce（`Get-OpenFileLimitModeFromPodSpec`）。汇总规则在 `Resolve-ZoneOpenFileLimitMode`：任一个 warn 即 warn；没有 gate、Agones 探测或 Fleet 读取失败、`valueFrom`、变量重复都判为读不到。
+  - 放行条件跟着 `k8s_deploy.ps1 -NodeOpenFileLimitMode` 的默认值走（按语法树读，空串 = 不写 env，折算为 enforce），口径同 `-GateRouterMode`；读不到默认值也拒。
+  - 不一致或判不出，都在 Step 1 停服之前拒绝。集群带 warn 时报错给出照传的 `-NodeOpenFileLimitMode warn`，判不出时要求显式传 `warn` 或 `enforce`。显式给值即操作者的决定，不核对、不探测 Agones。
+  - 入口决定存档 `entry-state.json` 升到 Schema 3：集群现状加 `OpenFileLimitMode` / `OpenFileLimitDetail`（本次显式给值、没核对时记为判不出），同一 rid 重跑、namespace 已删时据此核对。它不进入口决定、不按存档比较：硬限没修好时，重跑改传 warn 是合法出路。更早的存档没有这两个字段，namespace 已删时 nofile 判为读不到，要求显式传值，存档文件不改写。
+  - 摘要行、参数注释、脚本头说明、重跑提示同步改；四项都显式时才跳过集群读取（提示文本改为 `All three entry values and -NodeOpenFileLimitMode were supplied explicitly`）。
+- **测试**：
+  - `tools/scripts/tests/lib/k8s_zone_rollback_sandbox.ps1`：假 `dev_tools.ps1` 声明 `-NodeOpenFileLimitMode`（以前显式传值会报找不到参数）；假 `k8s_deploy.ps1` 声明同名默认值（`-DeployOpenFileLimitDefault`）；假 kubectl 对 Agones 探测与 Fleet 读取单独记账（`AgonesCalls`，不进 `KubectlCalls`）。沙箱缺省显式传 `-NodeOpenFileLimitMode enforce`，已有用例不受这道核对影响。
+  - `tools/scripts/tests/k8s_zone_rollback_gate_router_mode.tests.ps1`：新增 9 条（warn 拒绝四种形态、显式放行、无 warn 放行、判不出拒绝九种、默认值跟随、存档重跑与旧存档、scene 名与 `Resolve-SceneDeploymentPlan` 按语法树对齐、dry-run 预告、大小写入口拒绝）。改了 3 条既有断言：预检 kubectl 前缀加三个 scene Deployment，「不读集群」提示文本，存档 Schema 3。
+- **文档**：`deploy/k8s/README.md`、`docs/ops/gate-kernel-tuning-runbook.md` §3.1 加更正注（原文保留），`docs/design/zone_data_rollback.md` 流程表 0 a 补一句。
+- **提交状态**：本条前半（新纯函数、kubectl 参数加 scene Deployment、`New-UnknownZoneEntryState` 字段）2026-10-22 已随整体提交 `7a23b4fed` 进了 HEAD，HEAD 上的既有用例前缀断言与它不一致；其余改动在工作区，未提交。
+- **未验证**：Claude 未运行任何构建或测试，待 Codex 执行：先 `Get-ChildItem Env:MMORPG_* | Remove-Item`，再在仓库根目录依次 `pwsh -NoProfile -File` 跑 `tools/scripts/tests/k8s_zone_rollback_gate_router_mode.tests.ps1`、`k8s_zone_rollback_discard.tests.ps1`（共用沙箱）、`dev_tools_merge_zone_contract.tests.ps1`、`k8s_client_entry_contract.tests.ps1`。
+- **Java 版（AGENTS §12）**：不适用，Java 版没有 K8s 生成器与回滚脚本；不改 PARITY.md。
+
+## 2026-10-23 Codex：全类型节点平滑停机、水平扩展与灰度／金丝雀需求（仅文档）
+
+- **用户范围**：负责人明确“先别改代码”，询问所有类型节点能否无感关闭、水平扩展、灰度与金丝雀发布，并要求记入文档。本次没有代码、协议、生成产物、配置或运行环境改动，没有构建、测试、压测、部署、commit、push 或 tag。
+- **结论**：当前不能宣称全类型支持。Gate 普通停机会关闭存量连接，deadline 排空不等于零玩家；Scene 有单场景排空／改派与存盘屏障，普通节点退出仍以玩家存盘退出为主，活跃世界在线搬迁不完整；Battle 有 Agones 准入排空，但普通退出仍作废房间。多副本基础、选主备份与完整无感维护分开核对；统一版本／业务分组路由、兼容与金丝雀观测／中止闭环仍待完成或验收。
+- **文档**：新增 `docs/design/node-lifecycle-elasticity-release-20261023.md`，记录两版目标、范围、TCP 与业务无感区别、节点能力矩阵、排空／交接不变量、稳定业务分组、数据回退限制、未定体验预算及逐类型验收清单。既有水平扩展总纲与历史滚动实验加入口／历史阅读边界，`docs/README.md` 登记。未把源码盘点当在线运行证据，也未替用户选定完整技术方案。
+- **文档验证**：新文档相对链接逐项检查、修改文档 `git diff --check` 均退出 0；只读并行复核未发现必须修正项。按入口运行过文档索引生成器，但它会重排原有分类、改既有标题描述并移除手工登记；已仅撤销本次生成器引入的无关变动，保留原索引与本需求两个新入口，不宣称全量生成索引已同步。当前远端 PR／Issue 未取得（无附加 PR、无 gh、公开 API 工具入口不可访问），结论限定本地源码与文档。
+- **Java 版（AGENTS §12）**：`0.1.0-SNAPSHOT`，基线 `e16d2f9c`。已在 Java `docs/design/architecture.md` 与 `PARITY.md` 追加同一需求入口／待做状态；Gate／Scene／Battle 的普通退出同样不构成全类型无感保证，跨节点疏散及正式 K8s 发布仍有待做项。两版均为需求已记录、实现与全类型验收未完成；保留两仓他人既有变更。
+
+- **交付复核补记**：本聊天将 README 索引收窄为 3 行新增后，最终只读检查又观察到索引被并行刷新（41 行新增／35 行删除），本需求入口仍在；保留最新索引，不再次覆盖，也不把这些并行差异归为本聊天。两仓本次文档范围的 `git diff --check` 最终均退出 0，新文档空白与跨仓入口检查通过。
+
+## 2026-10-23 Claude：观战分级扩容提案（直连席 → gate 中继 → 全服广播，仅文档）
+
+- 负责人要求取消「每场 20 个观众」的硬上限，做成英雄联盟式的全服观战：人少走直连，人多改走 Kafka 经 gate 扇出，逐级提升。新增提案 [battle-spectate-tiered-fanout.md](design/battle-spectate-tiered-fanout.md)，候选决策 D94–D98，已在 `docs/README.md` 登记，`turn-based-battle-server.md` §10.6 加了指引。
+- 提案结论：观众在进场时定档（L0 直连席 / L1 按 gate 定点中继 / L2 全服广播 topic），之后不迁移，一场战斗只升档不降档。中继建议按 gate 定点发，而不是按 zone 广播。L1 / L2 观众凭 match 签的令牌在 gate 本地订阅，每个观众不产生 Kafka 控制面消息。gate 侧要做到编码一次、分批扇出、超软水位跳帧、合成首帧 161。
+- 依据是两轮只读工作流：5 份调研、3 份方案、1 份对抗评审，第二轮核实了 31 条代码事实（27 条属实，4 条部分属实，已按实际情况改正文）。核实时顺带确认了几处现存问题：
+  - 满员与墓碑表满都回 `kRateLimitExceeded`；
+  - 掉线观众占着直连席，没有回收，可以被用来占座；
+  - 生产（全局模式）把满员等业务拒绝都报成 16004，而且没有观战指标；
+  - 按 battle_id 观战没有可见性闸；
+  - gate 的 Kafka 推送没有身份栅栏，`BroadcastToScene` / `BroadcastToAll` 的 handler 是空实现；
+  - 命令 topic 代号的默认值不一致（g1 / g2）。
+- 待负责人拍板：文中 §13 的 Q1–Q6（L1 / L2 软互斥、按 gate 定点发、L2 触发方式、直连席预留、阈值初值、跨机房 Kafka 拓扑）。P0（修缺陷、去硬编码、实测帧大小与 gate 扇出上限）不改客户端契约，可以先做。
+- 只改文档，没有改代码，也没有编译或运行。Java 版（0.1.0-SNAPSHOT）的观战与 C++ 同形，本提案在 Java 版全部待做；还没有落码，所以没有往 PARITY.md 加行。
+
+## 2026-10-23 D1 最终语义评审与修复:方向变更后停手并移交(Claude,评审 + 部分修复 + 文档;未编译、未测试)
+
+- **做了什么**(10-19 ~ 10-23,会话「D1映射持久化交接文档」):两轮独立的 D1 最终语义评审(本会话一轮、「D1 剩余收尾交接」一轮,各 6 个维度 + 逐维对抗复核),合并后约 50 条独立问题(原始 103 条,must 3 条);按文件分轨修复三轮,中途多次被额度和协调失误打断。
+- **为什么停**:负责人 10-23 在会话「账号登录逻辑/物理服瓶颈」拍板映射改为**直读 TiDB**(去掉 Redis 映射副本、就绪标记、对账 leader、预热、发布等待;库为真源、路由表、围栏落库保留),并在本会话确认新方向「交给那个会话统一做」。本会话已停掉全部修复工作流,不再改 D1 代码。
+- **新方向下仍成立、已落码未验证的**:merge_zone 围栏接手失败只保留围栏(must)、接手核 zone 对 / 清单 / 片数、续期间隔 `min(ttl/3,30s)`、失权中止文案、unmerge 各步 db 源走 `abortKeepingFence`、两份清单记 route source 且换源一律拒绝、`verify:merge_fence` 与 storage-audit 的 db 源处置;五张路由表的 proto 列漂移守卫(本会话补了四张表 DDL 的 `pb:N` 与五表字段号核对);`data_consistency_check` 读失败判 fail、单条 COUNT;落点告警 `deploy/k8s/player-placement-alerts.yaml` 与 go/db `metrics.PrimePlacement`;data_service SQL 读的调用方取消口径。
+- **新方向下作废的**:对账 leader 全部发现(含 must A1-1)、r2-rr#5、go/db 就绪闸、读方门禁、发布专用 Redis 客户端与 WAITAOF、就绪相关告警、k8s_deploy D1 开关的粘滞核对。
+- **交接**:[d1-review-fix-handoff-20261023.md](handoff/d1-review-fix-handoff-20261023.md)(已登记 `docs/README.md`;`placement-line-handoff-20261019.md` 文首加了指向)。内含逐条结论、他线归属(r2-mz#1、`AcquirePlayerLock`、`saveoutbox/replay.go`)、协作踩坑与验证要点。
+- **未提交改动**:只剩 ds-read 轨的读方门禁收尾(`go/data_service/data_service.go`、`internal/svc/servicecontext.go`、`internal/metrics/metrics.go`、`internal/config/config.go` 与 `etc/data_service.yaml` 的注释、两份新测试),已告知接手会话按新方向删改。
+- **交 Codex**:本条不单独验证——相关文件都要随新方向重写,由接手会话落码后统一出验证单。文档索引:仓库根 `python tools/scripts/gen_docs_index.py --check`,退出码应为 0(工作区里别的会话新增但未登记的文档也会让它报,逐行看是哪份)。
+- **Java 版(AGENTS §12)**:本条不改代码。映射副本机制对 Java 不适用(单库);合服围栏、撤销合服随 7.3 的待做状态不变,对应 Java 版本号无,PARITY 不新增行。
+
+## 2026-10-23 开服线无主小项:login 读回执派发溢出补指标、release-checklist 补「写过落点记录后禁止回滚 go/db」(Claude,未编译、未测试,待 Codex 验证)
+
+- **来源**:开服线交接 `handoff-launch-line-remaining-20261019.md` §3 第 5 项 B0-3 与落点线交接 `placement-line-handoff-20261019.md` §4 第 4 步第 3 条,两条都没有会话认领。D1 本身仍归「D1映射持久化交接文档」会话(负责人 10-23 另定映射层改为直读 TiDB),本条不碰 D1 文件。
+- **B0-3:派发池饱和退路可观测**:
+  - `go/login/internal/dispatcher/metrics.go` 新增无 label 计数器 `login_task_result_dispatch_overflow_total`,与 `login_task_result_delivery_total` 同一个 `sync.Once` 注册,注册即有 0 序列。
+  - 它不是送达结果:那条通知照样计 instance_notify / legacy_notify,所以不进 `delivery_total` 的 outcome 与送达率分母。B0-3 规格 §末写的「outcome 加 pool_overflow」没采纳,理由同上。
+  - `task_result_dispatcher.go` 的 `dispatch` 在队列满、改走临时 goroutine 的 default 分支计一次;`dispatchWorkerCount` 注释里引用的不存在的 `pubsub_dispatch_overflow_total` 改成新名字。
+  - 用例(`task_result_dispatcher_test.go`):`TestDispatch_PoolSaturatedFallsBackAndCountsOverflow`(不 Start,先用占位任务填满队列,再 dispatch 一条:回调经临时 goroutine 拿到结果,溢出 +1,instance_notify +1,队列长度不变)、`TestDispatch_QueuedJobDoesNotCountOverflow`(队列没满不计)。
+- **release-checklist**:`docs/ops/release-checklist.md` §4 回滚加一条:写过落点记录之后禁止把 go/db 回滚到不认落点记录的版本,写明判定方法(`player_route.storage_id` 非空或 `player:placement:*` 存在)、还没写过时的 90s 等待、开过 `Placement.Required` 后对 login / data_service 的连带禁令。规则出自 player-storage-placement §13 与 merge-zone-runbook §14 红线第 5、8 条,本清单原来没有。
+- **没做、为什么**(都与别的会话的在途改动撞文件,另开任务时先核对):
+  - 删 `TriggerPlayerDataPreload`(B0-3,死代码):`go/login/internal/logic/pkg/dataloader/` 下 8 个文件有别的会话的未提交改动(含 `sync_loader_test.go`);
+  - 删 `MessageSyncRedisClient` 与死工程 `cpp/tests/redis_test`(B0-2):`cpp/libs/engine/infra/storage/redis_client/redis_client.h` 有别的会话的未提交改动,另要改 game.sln;
+  - B0-5 A1(scene_manager 按 zone 选主、watch 收窄):scene_manager 同时有 3 个会话在改;
+  - B0-1 etcd 存活集合理性闸门:阈值待负责人拍板(决策清单 B1-1);
+  - X-3 压测前置指标:登录归属读路径正按「直读 TiDB」改造,等它落定再补。
+- **文件**:`go/login/internal/dispatcher/{metrics.go, task_result_dispatcher.go, task_result_dispatcher_test.go}`、`docs/ops/release-checklist.md`、本条。没改 proto,不需要协议生成。
+- **交 Codex**(工作目录 `go/login`,`GOTOOLCHAIN=local`;红了保留首个失败的完整 `-v` 输出,不改断言、不连续重试):
+  1. `gofmt -l internal/dispatcher/` 无输出;`go vet ./internal/dispatcher/...` 退出 0。
+  2. `go test -count=1 -v ./internal/dispatcher/ -run "PoolSaturatedFallsBackAndCountsOverflow|QueuedJobDoesNotCountOverflow|DeliverySeriesPreCreated|Dispatch_"`:全部 PASS,`-v` 里能看到两条新用例。
+  3. `go test -count=1 ./internal/dispatcher/...` 与 `go test -count=1 ./...` 全绿;既有失败逐个点名归因,不是本条文件的如实报告。
+  4. 可选红跑(不回退主仓代码):临时 worktree 检出 HEAD,只拷入新的 `task_result_dispatcher_test.go`,两条新用例应以「login_task_result_dispatch_overflow_total series missing」FAIL(旧代码没有这个计数器);用完删掉 worktree。
+- **Java 版(AGENTS §12)**:login 读回执派发池是本仓 go/login 的实现细节,Java 版的读回执走法不同,本条不适用,对应 Java 版本号无,不登记 PARITY;release-checklist 的 go/db 回滚禁令对 Java 单库不适用(PARITY 第 143 行已记落点为有意差异)。
+
+## 2026-10-23 Codex：db／login／guild／friend 与 GUID 发号的维护能力细化（仅文档）
+
+- 承接负责人追问“db login guid friend这种呢”，保持不改代码。`node-lifecycle-elasticity-release-20261023.md` §3.2 单列四服务：go/db 已有六步消费排空及重试收据接管，但受分区、再平衡与退出总预算约束；login 无需实例亲和且不持有玩家游戏 TCP，仍有预加载／异步等待／排队在途；friend 已有注销→真实 gRPC 有界排空→关资源的显式协调；guild 已有共享 SQL、租约与结果消费，但注销／RPC／后台退出顺序尚不等同 friend。不能将四类笼统宣称全部无状态或全部没有排空。
+- `guid` 含义未最终确认，§3.3 同时覆盖 GUID 发号：主仓 data_service 事务分配不重叠号段、login 按配置使用号段／Snowflake 回退；重启不能复用已发水位或 worker 身份。Java 无 go/db 存档消费者、未移植号段，使用直接 SQL 与 Snowflake 租约；已有 PARITY 同日需求行补记这些映射，不把两版机制互当验收。
+- 旧 `login-node-stateless-no-affinity.md` 加历史阅读边界并指向新详表；纠正本需求范围里把仅生成常量的 go/team 当独立服务的歧义。没有新增文档文件或修改代码／配置／生成物，没有构建、测试、压测、部署或 Git 提交。
+- 两仓本次修改文档 `git diff --check` 退出 0，主需求与旧 login 文档的相对链接、尾随空白检查通过。证据为本轮只读源码核对，未新增维护演练、故障或金丝雀运行结果；两版全类型目标仍待实现与整体验收，Java 版本 0.1.0-SNAPSHOT。
+
+## 2026-10-22 C++ 节点 LogLevel 口径统一:K8s node ConfigMap 改为从 bin/etc 镜像、发布预检下界改为 2(Claude,未执行,待 Codex 验证)
+
+- **背景**:接「2026-10-22 match 旧格式队列兼容删除与存盘日志降级」条目里的「新发现,未处理」。`Node::InitLogSystem` 把 `BaseDeployConfig.log_level` 直接 `static_cast<muduo::Logger::LogLevel>`。muduo 枚举(`cpp/libs/engine/muduo_windows/src/muduo/base/Logging.h`、`third_party/muduo/muduo/base/Logging.h`)是 0=TRACE 1=DEBUG 2=INFO 3=WARN 4=ERROR_ 5=FATAL。`LOG_TRACE` / `LOG_DEBUG` / `LOG_INFO` 按级别过滤,`LOG_WARN` 及以上不过滤。三处口径错开:
+  - `k8s_deploy.ps1` 的 node ConfigMap 写死 `LogLevel: 1`。K8s 上 gate / scene / battle 实际一直跑在 DEBUG,10-20 的存盘日志降级在 K8s 上不减日志。
+  - `release_preflight.ps1` 的 `debug.cpp.loglevel` 按「0=DEBUG」把下界设成 1,放过了 DEBUG。而且它查的是 bin/etc 那份(2),看不到 ConfigMap 实际写的值。
+  - `bin/etc/base_deploy_config.yaml` 的注释写「0=DEBUG,1=INFO,2=WARN…」。
+- **改动**:
+  - `tools/scripts/k8s_deploy.ps1`:
+    - 新增纯函数 `ConvertTo-CppNodeLogLevel`:只认 0..5 的整数,其余 throw,错误文本带枚举对照。
+    - `New-NodeConfigMapYaml` 用 `Get-AuthoritativeScalar` 读 bin/etc 的 `LogLevel`,校验后写进 ConfigMap,不再写死。node-config 与 battle-node-config 共用这个生成函数,两份都跟着变。
+    - bin/etc 缺这一键时 `Get-AuthoritativeScalar` 照旧 throw;C++ 侧缺键会落到 proto 默认 0 = TRACE。
+  - `tools/scripts/release_preflight.ps1`:`debug.cpp.loglevel` 下界改为 2,注释改为 muduo 枚举。没有另加 ConfigMap 渲染检查,理由:
+    - ConfigMap 现在从同一个键镜像;
+    - staging / prod 的写路径入口先跑预检(`Invoke-ReleasePreflight`),再生成 ConfigMap;
+    - 镜像关系由契约测试钉住。
+  - `bin/etc/base_deploy_config.yaml`:值不变(2 = INFO)。注释改为 muduo 枚举,并写明三点:缺键 = TRACE;K8s 从这里镜像;预检下界是 2。
+  - `tools/scripts/tests/k8s_deploy_contract.tests.ps1` 新增三条:
+    - node-config / battle-node-config 的 `LogLevel` 等于 bin/etc,且仓库值 >= 2;
+    - `ConvertTo-CppNodeLogLevel` 自检:0..5 通过,6 / -1 / 空串 / INFO / 2.5 都 throw;
+    - 按 AST 核对预检的 `debug.cpp.loglevel` 查 bin/etc 的 `LogLevel`、`-Floor 2`。预检的 PASS 行不打印下界,跑一遍钉不住。
+  - 文档更正注(原文都保留):
+    - 演练手册 §3.1 第 7 条:K8s 默认也是 INFO 了;写明怎么调级,以及要手动重启。
+    - 事故复盘 §7.9:加处理进展。
+    - `gate-connection-admission-control.md` P0-3:加部分落地说明。
+    - `grpc-client-deadline-failure-callback.md`:更正两处「LogLevel 为 0 / 1 才看得到」。那两行是 `LOG_INFO`,默认 2 就看得到。
+    - 以下各加一条注:`cpp/nodes/gate/SECURITY.md` 第 ② 点、开服线交接 §3、`global-singletons-p0-findings` 第 13 项、`global-singletons-p0-measure-steps` 的修前期望。
+- **生效与风险**:
+  - node-config 没有配置指纹注解(`Get-CppZoneRedisAuthAnnotations` 只哈希口令),C++ 只在启动时读一次。所以部署后已在跑的 gate / scene / battle 仍是 DEBUG,要等下一次滚动或手动重启。项目未上线,没有存量集群要处理。
+  - K8s 上原先靠 DEBUG 才看得到的日志默认不再输出,如 `TcpConnection::dtor`、10-20 降级的两条存盘日志。演练与排障按演练手册 §3.1 第 7 条调级。
+  - **未做**:
+    - `Node::InitLogSystem` 的越界 / 缺键校验(P0-3 后半)。
+    - 生产值要不要定到 3(WARN)未决:运维手册大量依赖 INFO 行,另行决策。
+- **Codex 验证**(按顺序;Claude 未跑任何命令):
+  1. 仓库根:`pwsh -NoProfile -File tools/scripts/tests/k8s_deploy_contract.tests.ps1`。
+     - 通过标准:退出 0;新增三条全部 PASS,标题分别含「LogLevel 从 bin/etc 镜像」「ConvertTo-CppNodeLogLevel」「debug.cpp.loglevel 查 bin/etc」;其余用例与改动前基线一致。
+     - 失败时保留:失败用例标题与断言文本。
+  2. 仓库根:`pwsh -NoProfile -File tools/scripts/tests/release_common_version.tests.ps1`(子进程跑真实预检),期望退出 0。
+  3. 仓库根:`pwsh -NoProfile -File tools/scripts/release_preflight.ps1 -ReleaseProfile dev -NoFailExit`。
+     - 期望输出 `[PASS] debug.cpp.loglevel`,其余项与改动前一致(dev 档密钥类本来就是 WARN)。
+  4. 渲染核对(只 DryRun,不连集群):
+     - 环境变量:先设 `$env:MMORPG_DB_ALLOWED_DATABASES='zone_1_db,zone_2_db,zone_101_db,zone_102_db'`,与契约测试夹具一致。
+     - 命令:`pwsh -NoProfile -File tools/scripts/k8s_deploy.ps1 -Command zone-up -ZoneName lvl-check -ZoneId 101 -DryRun -GlobalAuthorityTiDBHost tidb.invalid:4000 -GoSvcRegistry registry.invalid/test -JavaSvcRegistry registry.invalid/test`。
+     - 期望:node-config 的 `base_deploy_config.yaml` 段为 `LogLevel: 2`,不再有 `LogLevel: 1`。
+  5. 可选负例:多会话共用工作区,做完立刻还原 bin/etc,不要提交。
+     - 把 `LogLevel` 临时改成 1:第 3 步应为 `[FAIL] debug.cpp.loglevel`,明细含「值 1 < 下界 2」。
+     - 改成 `INFO`:第 4 步应在生成期 throw「LogLevel 必须是 0..5 的整数」。
+- **Java 版(AGENTS §12)**:不适用。
+  - Java 版各服务用 Spring Boot 日志,默认 root INFO。没有数值枚举、生成器写死或发布预检这类问题。
+  - `game-proto` 里的 `BaseDeployConfig.log_level` 只是共享 proto 副本,Java 代码不读。
+  - 不登记 PARITY.md。
+- **文件**:
+  - 脚本与配置:`tools/scripts/k8s_deploy.ps1`、`tools/scripts/release_preflight.ps1`、`bin/etc/base_deploy_config.yaml`、`tools/scripts/tests/k8s_deploy_contract.tests.ps1`。
+  - 文档:`docs/ops/cross-zone-failure-test-runbook.md`、`docs/ops/incident-gate-tcpconnection-dtor-assert-2026-09-13.md`、`docs/design/gate-connection-admission-control.md`、`docs/design/grpc-client-deadline-failure-callback.md`、`cpp/nodes/gate/SECURITY.md`。
+  - 交接:`docs/handoff/handoff-launch-line-remaining-20261019.md`、`docs/handoff/global-singletons-p0-findings-20261014.md`、`docs/handoff/global-singletons-p0-measure-steps-20261014.md`。
+  - 本条。
+
+## 2026-10-22 C++ 节点 LogLevel 启动期校验:缺键 / 越界拒启(gate 准入 P0-3 后半;Claude,未编译,待 Codex 验证)
+
+- **背景**:接同日「C++ 节点 LogLevel 口径统一」条目里的「未做」。`BaseDeployConfig.log_level` 是 proto3 uint32,没有 presence:缺键 = 0 = muduo TRACE,不报错;越界值(> 5)原样 `static_cast` 成枚举(未定义行为);`INFO` 这类非整数让 yaml-cpp `as<uint32_t>()` 抛异常,启动栈上没人接,看不出是哪个键错了。
+- **语义(写进设计文档 P0-3)**:fail-closed。缺键、YAML 空值、序列 / 映射、非十进制整数、越界一律拒启;不回落 INFO。
+  - 理由:项目未上线;仓库里所有实际配置来源都写了这一键;回落会把「生成器漏键」再藏一次(K8s 写死 1 = DEBUG 就是同类静默);与 `PersistSchemaRegressionMode`、fd 上限门槛口径一致。
+  - C++ 侧只核结构(0..5),不核下界:0 / 1 本机调级合法,生产下界 2 仍归 `release_preflight.ps1`。没有引入映射表。
+- **改动**:
+  - 新增 `cpp/libs/engine/config/node_log_level.h`:纯判定 `Parse(std::string_view)`(`std::from_chars`,只认十进制 0..5,允许前导 0)与 `IsValidValue(uint32_t)`;不依赖 muduo。
+  - `cpp/libs/engine/config/config.cpp::readBaseDeployConfig`:取 YAML 标量原文(非标量 / 缺键折成空串)交给 `Parse`;失败时先同步写一行 stderr `FATAL LogLevel config: ...`(带枚举对照与文件名),再 `LOG_FATAL`。写法同 `node.cpp` 的 `FatalStartupConfig`(异步日志在 abort 前可能来不及落盘)。
+  - `cpp/libs/engine/core/node/system/node/node.cpp::Node::InitLogSystem`:`static_cast` 前用 `IsValidValue` 再核一次,越界经 `FatalStartupConfig` 拒启;`static_assert` 把上界钉在 `muduo::Logger::FATAL`、下界钉在 `TRACE == 0`。
+  - 单测:新增 `cpp/tests/client_endpoint_test/node_log_level_test.cpp`(6 条),登记进 `client_endpoint_test.vcxproj`;两个配置的头文件路径加了 `../../libs/`。不加链接依赖。
+  - 注释与文档:`bin/etc/base_deploy_config.yaml`(值不变,仍是 2;注释改为「必填,非法即拒启」)、`tools/scripts/k8s_deploy.ps1` 生成器注释、设计文档 P0-3 新增同日说明、事故复盘 §7.9 加后续注。
+- **依赖顺序**:本条的补丁叠在同日「LogLevel 口径统一」补丁之上(两者都改 `bin/etc` 注释、P0-3 与 `k8s_deploy.ps1` 同一段)。主工作区先打那份,再打本条。
+- **Codex 验证**(按顺序;Claude 未跑任何命令):
+  1. 前置:主工作区先打同日 loglevel-unify 补丁,再打本条补丁(见共享笔记 README)。仓库根执行,MSBuild 串行(AGENTS §10.1):
+     - `$msb = 'D:\Program Files\Microsoft Visual Studio\18\Enterprise\MSBuild\Current\Bin\MSBuild.exe'`
+     - `$c = '/m:1','/nr:false','/p:Configuration=Debug','/p:Platform=x64','/p:CL_MPCount=1','/v:minimal','/nologo'`
+     - 依次:`& $msb cpp\libs\engine\config\config.vcxproj @c`、`cpp\libs\engine\core\core.vcxproj`、`cpp\nodes\gate\gate.vcxproj`、`cpp\nodes\scene\scene.vcxproj`、`cpp\nodes\battle\battle.vcxproj`。
+     - 通过标准:每步退出 0,无 `error C`/`error LNK`;`node.cpp` 的 `static_assert` 不触发。
+  2. 单测:`pwsh -NoProfile -File tools/scripts/run_cpp_tests.ps1 -Build -Filter client_endpoint`。
+     - 通过标准:退出 0;新增 `NodeLogLevelParse.*`(5 条)与 `NodeLogLevelIsValidValue.BoundaryAtFatal` 全部 PASS,其余用例与改动前一致。
+  3. 读 `bin/etc` 的测试工程(经 `test_config_helper.h` 调 `readBaseDeployConfig`,现在受拒启约束):对 `bag_test configuration_table_test cool_down_time_test currency_test kafka_command_test missions_test reward_test skill_test turn_battle_engine_test` 逐个 `run_cpp_tests.ps1 -Build -Filter <名>`。
+     - 通过标准:输出里没有 `FATAL LogLevel config`;通过 / 失败集合与改动前基线一致(bag_test 的既有失败见 09-28 条目)。
+  4. 脚本:`pwsh -NoProfile -File tools/scripts/tests/k8s_deploy_contract.tests.ps1`,结果与 loglevel-unify 条目的期望一致(本条只改了 `k8s_deploy.ps1` 一段注释)。
+  5. 可选负例(不改共享工作区的 `bin/etc`):在 `%TEMP%\loglevel-neg` 建 `etc\`、`logs\cpp_nodes\`,复制 `bin\etc\game_config.yaml`;把 `bin\etc\base_deploy_config.yaml` 复制过去后分别改成「删掉 LogLevel 行」「`LogLevel: INFO`」「`LogLevel: 6`」「`LogLevel: -1`」,以该目录为工作目录启动 `bin\gate.exe`(DLL 从 exe 目录加载),每次限时 20 秒,超时就结束进程(Debug CRT 的 abort 可能弹框)。
+     - 期望:stderr 首个 FATAL 行为 `FATAL LogLevel config: LogLevel must be an integer 0..5 ...`(缺键时写 `missing / empty value`),进程非 0 退出;改回 `LogLevel: 2` 时不出现这一行(之后因没有 etcd / Redis 失败属预期,结束进程即可)。
+     - 失败时保留:stderr 前 20 行与退出码。
+- **文件**:`cpp/libs/engine/config/node_log_level.h`(新)、`cpp/libs/engine/config/config.cpp`、`cpp/libs/engine/core/node/system/node/node.cpp`、`cpp/tests/client_endpoint_test/node_log_level_test.cpp`(新)、`cpp/tests/client_endpoint_test/client_endpoint_test.vcxproj`、`bin/etc/base_deploy_config.yaml`、`tools/scripts/k8s_deploy.ps1`、`docs/design/gate-connection-admission-control.md`、`docs/ops/incident-gate-tcpconnection-dtor-assert-2026-09-13.md`、本条。
+- **评审**:多代理只读评审(正确性 / 完整性 / 构建接线三视角 + 反驳核验)无确认缺陷;唯一一条(生成器注释「同一口径」措辞不准)已改。
+- **Java 版(AGENTS §12)**:不适用。Java 版用 Spring Boot 日志,不读 `BaseDeployConfig.log_level`;不登记 PARITY.md。
+
+## 2026-10-23 Codex：全部 NodeType、实际应用入口与预留角色盘点（仅文档）
+
+- 负责人继续要求“所有其他节点”，本轮对 `proto/common/base/node.proto` 全量盘点：29 项含 Unknown；28 个非 Unknown＝17 个已有应用角色＋Redis／etcd 两个基础设施标识＋9 个无独立常驻入口的预留角色。Team 与 Match 同进程、同端口；独立 db、HTTP Gateway、商城以及配置／认证辅助应用在枚举外，不能按枚举项数推导进程或 Pod 数。
+- 主需求 `node-lifecycle-elasticity-release-20261023.md` 新增 §3.4–§3.6：逐行覆盖全部 28 类型的实际入口与维护边界，补 Chat／Mail／Rank／Trade／Inbox 已有的注销与有界排空，Match／Team 成局工作租约、Locator／SceneManager leader 接手、Router 在途转发与 DataService flush 预算；预留类型将来启用仍必须验收。商城非支付节点，配置热重载与认证示例不冒正式多副本部署；主仓旧 go README、auth 部署目录表与旧标签不能当现状。
+- 另区分 `proto/db/proto_option.proto` 的 32 项生成选项 `NodeType` 与运行时编号；Centre 等旧标签不等于当前独立进程。没有改协议、代码、配置或生成物，没有构建、测试、压测、部署或 Git 提交。
+- 验证：文档类型表与源枚举机械比对，28 个值／名称全部一一匹配、无重复或缺项；相对链接与尾随空白检查通过。并行只读复核未发现必须纠正项；Java PARITY 文档 `git diff --check` 退出 0。以上均为静态文档证据，不代表在线维护、容量或金丝雀验收通过。
+- Java `0.1.0-SNAPSHOT`：已有同日 PARITY 需求段补充全量范围索引；独立 Java 按自身模块映射与实现验收，不能套主仓类型数或目录。两版仍为需求已记录、全类型维护与渐进发布未整体验收。
+
+## 2026-10-23 Codex：持久保护验证续跑，protoc 错配已消除；同仓并行构建与输入变化再次阻塞
+
+- 负责人明确授权按已提方案继续，使用仓内 protoc 35.1 重新生成并按原顺序跑完，真 Redis 两版本必须零跳过。本次子进程 PATH 前置 `third_party/grpc/.build_ninja_debug/third_party/protobuf`，实际选中 `libprotoc 35.1`；未安装工具、未修改系统 PATH。
+- 正规 no-unity `proto-gen-run` 实际退出 0，前次 423 个仅版本差异全部消失；`cpp/generated/proto`、`go/proto`、`robot/vendor` 相对当前 Git 的生成差异为 0，字段 23 保持存在。前次失败日志未覆盖。
+- 再次执行 `game.sln` Debug|x64，保持 `/m:1 /nr:false /p:CL_MPCount=1`。版本不兼容未重现，但实际报 `rpc.lib`、`modules.lib` LNK1104 无法打开库文件。发现时进程快照同时存在本次 MSBuild 26844（父 20512）及另外两路同仓构建 37632（scene，父 40092）、44896（battle，父 50216）；可能有文件占用竞争，尚未证明具体持锁者，不将其冒称业务缺陷或已修复。
+- 本次构建前后 1643 个已列入的 C++ 输入中有 13 路径 SHA256 变化，包含 redis_client.h、player_lifecycle.cpp/.h、currency_test.cpp、cross_zone_test.cpp、redis.cpp、config.cpp、node.cpp、player_ownership_comp.h、relocate_confirm.h、两份测试工程与 battle_result_activity_test.cpp。最新源码持续变化，此次不能形成稳定输入下的验收结果。全部变化保留，没有覆盖或回退。
+- 按 AGENTS.md §10.2 失败门禁，只停止已核对 PID、父 PID、创建时间及命令的本次 MSBuild 26844 子树，包装命令实际退出 1；未终止其它会话进程、未连续重试，等待协调独占构建窗口。currency_test、cross_zone_test、两轮真 Redis、Go 与 PowerShell 仍未执行，不能记 PASS。独立 Redis 测试容器尚未启动，无待清理资源。
+- 证据：`build/verification/persist-3b-20261023T071743608Z/continue-35_1-20261023T072940619Z/`，含 protoc 身份/哈希、生成日志、构建日志/退出码、并行进程快照、停止身份、输入前后哈希与差异、summary.json。精确必验清单 expected-cases.json 已静态核对；verify-results.ps1、Go 与临时 Redis 执行脚本仅已准备，均没有作为通过证据。
+- Java 版：本主题设计仍记待做，本次没有修改 Java 仓或 PARITY.md；不代表双版本功能对齐。
+
+## 2026-10-23 Codex：全球同服续验交接与剩余安全恢复问题
+
+- 负责人再次要求继续完成，保留三仓全部最新改动；明确排除不同方向的 `D:/luyuan/xuanming-server`，Go 来源仍为本仓 `go/`，独立 Java 为 `D:/luyuan/xuanming-server-mmo`，客户端继续使用 CurrentMaps，没有覆盖地图、资源或他人源码。
+- 上一轮 C++ 已取得 29 个唯一测试程序 2632 PASS、2 个原 disabled 及 Go/C++ 互通证据；随后他方又更新生命周期、存读、配置与协议，历史结果只保留其原输入范围，仍须对最新源补验。审核入口已纠正完成清单，不能把旧二进制当作所有最新源已验证。
+- Go Login 已按最新注入脚本模型接齐调用点；无持久创建资格时，即使 Redis 与双表 SQL 均空也拒绝历史缺口，保留他方 seed、路由和指标改动，并保留原测试后按安全合同改为拒绝及状态不变回归。修后完整模块尚未运行；首存前新号活性恢复仍待安全方案，不能宣称逻辑全部完成。
+- 独立 Java `0.1.0-SNAPSHOT`：保留最新公会查重故障修复及新增回归，Data17 重跑与完整 30 模块将以该来源继续；此前 Chat3 真库已通过，Data17 原 14 PASS/3 ERROR、修后未完成结果均保留。迟到释放标记、历练丢失 Battle 终局的安全恢复和两版完整双区故障链仍未闭合。
+- 用户授权向“应用并验证启动日志级别补丁”“执行部署验证与测试”“验证 match 和 gate”发送协调消息；已实际请求保留全部成果、当前阶段完成后暂缓后续写入、生成及构建测试。只正常清理本项目已停旧 TiKV 对应的旧依赖，保留数据卷；旧 TiDB 停止后退出 137、非 OOM，如实记录，不冒充干净退出或自动重试。
+- 本任务 Kafka 三节点已停止，其中一台退出 137，仍须按同 CID/卷恢复并重新取得当前启动身份与 RF/ISR 协议，旧协议通过记录不代表现在在线。整体实现、编译、真库与双区验收均未完成，详情见 `docs/handoff/global-economy-claude-review-20261022.md`。
+## 2026-10-23 Codex：LogLevel 两补丁已依序应用，四工程通过，battle 并行 C1041 后按协调暂缓（未提交）
+
+- **范围与应用**：按共享笔记依序 `git apply --check` / `git apply` 应用 `loglevel-unify-20261022.patch`、`loglevel-startup-validation-20261022.patch`，两条原交接进度均纯追加。合计 17 个补丁文件，未覆盖既有并行改动；本聊天未执行提交、推送、打标签或协议生成。配置值仍为 `LogLevel: 2`。
+- **实际构建**：仓库根使用本机真实 `C:\Program Files\Microsoft Visual Studio\18\Enterprise\MSBuild\Current\Bin\MSBuild.exe`（交接所写 D 盘路径本机不存在），统一参数 `/m:1 /nr:false /p:Configuration=Debug /p:Platform=x64 /p:CL_MPCount=1 /v:minimal /nologo`。依次构建 `cpp/libs/engine/config/config.vcxproj`、`cpp/libs/engine/core/core.vcxproj`、`cpp/nodes/gate/gate.vcxproj`、`cpp/nodes/scene/scene.vcxproj` 均原生退出 0，随后 `cpp/nodes/battle/battle.vcxproj` 原生退出 1。
+- **首错与责任**：battle 的 `battle_room_manager.cpp:1` 报 C1041，无法打开 `build/cpp/intermediate/nodes/battle_node/vc145.pdb`。本轮虽用 `/m:1`，仍与其它聊天 MSBuild 并行；本聊天误判其它构建已结束后启动，没有隔离共享构建产物。首错完整日志保留，没有加 `/FS` 掩盖或自动重试。用户曾允许等待其它构建结束后重试，但随后负责人在“全球同服迁移查漏与双区故障验收”明确授权协调三个聊天，本聊天已只读核实该授权，按新协调暂缓后续源码写入、生成、构建与测试。当前本聊天所属构建已结束，无仍运行的所属构建/测试进程，不终止其它聊天进程，也未主动回消息。
+- **未执行**：`client_endpoint_test`、9 个读 `bin/etc` 的测试工程、K8s 契约、release_common_version、发布预检、渲染核对和可选负例均尚未开始，不能称验证完成。后续测试应直接串行 MSBuild 保存日志并检查原生退出码，再调用 `run_cpp_tests.ps1`（不带 `-Build`）；该脚本当前 `-Build` 分支只匹配错误文本、未核 MSBuild 退出码，准备的独立运行器修正了验证方法，但未修改仓库脚本、也未执行。
+- **证据**：`C:/Users/luyua/AppData/Local/Temp/codex-loglevel-verify-20261023T074436019Z/`，含两补丁 SHA、应用前/后原件和哈希、各工程完整日志、原生退出码/命令/时刻、并行进程信息及 `handoff.json`。17 个补丁文件应用后到交接核对未漂移，`git diff --check` 已通过；849 项广泛输入只在节点构建末段采集，不能称整个构建窗口的全仓输入冻结。没有用旧测试或其它聊天结果冒充本轮运行。
+- **Java 版（AGENTS §12）**：不适用；Spring Boot 日志不消费 `BaseDeployConfig.log_level`，无共享客户端契约变化，未改 PARITY.md。
+
+## 2026-10-23 Codex：gate 独立 worktree 验证通过，match 新依赖待协调窗口后复验
+
+- **gate 最终实际结果**：承接前条缺依赖暂停，负责人在本聊天明确选择「补齐依赖并继续」。在 `.claude/worktrees/laughing-wright-5dc98a`（分支 `claude/nervous-liskov-e5e98c`、HEAD `940ef9746` 加原有 6 个代码/工程变更输入）完成本轮串行验证：`config`、`infra`、`modules`、`scene` 四库 → `cpp/nodes/gate/gate.vcxproj` → `cpp/tests/routing_identity_test/routing_identity_test.vcxproj`，六次 MSBuild 均退出 0；全部使用 `/m:1 /p:Configuration=Debug /p:Platform=x64 /nologo /v:minimal /nr:false /p:CL_MPCount=1`。工具为 `C:/Program Files/Microsoft Visual Studio/18/Enterprise/MSBuild/Current/Bin/MSBuild.exe`。没有跳过 NoRaw 检查，构建日志 0 个编译/链接错误；测试工程出现 5 条第三方 hiredis `sds.h` 的 C4200 零长度数组警告，未修改告警或依赖头来消除它们。
+- **实际测试**：从该 worktree 根运行 `build/cpp/tests/routing_identity_test.exe`，全量 **149/149 PASS、20 套、0 FAIL/ERROR/SKIP/DISABLED**；再运行 `--gtest_filter=SessionDetailsBuilder.*`，9 条精确用例全部 PASS、0 FAIL/ERROR/SKIP/DISABLED。专项 9 条包含在全量 149 内，不相加冒充 158 个唯一用例。测试没有启动游戏服务。XML、stdout/stderr 和退出码均保留；专项 XML 因辅助参数拼接落在 worktree 根，已按原 SHA256 移入证据目录，没有为归档重跑测试。
+- **依赖准备与边界**：仅从本机对象缓存检出 206 个仓库；按该分支 `third_party/releases.lock.json` 的 20 项版本和 8 份登记补丁恢复，`verify_release_lock.py --apply-patches` 实际退出 0。没有联网、登录或安装工具，也未暂存 gitlink。复制到 worktree 私有目录的 150 个库、gRPC/nghttp2 Debug SDK、16,413 个 Boost 聚合头均核哈希；实际依赖读日志及源码差异确认四库需重编，其余使用本机缓存。未共享可写 lib/PDB/构建输出，未覆盖主仓库产物。新 gate 与测试 EXE 绑定本分支输入，不能作为主仓最新 main 的整体验收。1643 个 C++ 源码/头/工程输入前后 SHA256 零变化，原业务源码和生成物未改。首次缺 Boost 的失败原件仍在，不改判首次成功。
+- **match 的有效范围**：03:22–03:26 EDT 在主仓 `go/match`、`GOTOOLCHAIN=local`、`GOPROXY=off` 下的 build/vet/test 三条实际退出 0，原证据有效；结束后其他任务又修改了监测输入中的 171 个文件，其中 **137 个协议文件位于原 match 依赖图**，不是仅换行差异。主仓 match 最新共享依赖尚未重新验证，不能用旧绿灯替代。没有回退、覆盖或重新生成这些他人改动。
+- **协调交接**：只读核实「全球同服迁移查漏与双区故障验收」聊天中的负责人原授权（用户消息 `01a167c3-9740-77b0-a676-6a8b592f86ce`，回答「授权协调这三个任务」）。本聊天已启动的 gate 串行批次自然结束后，暂停本仓后续源码写入、生成、构建和测试，保留全部最新输入及产物，让该任务连续验收。六个 MSBuild 和两次测试调用均已退出 0；额外只读检查未发现命令行指向本 worktree 的编译/测试进程，没有终止其他任务进程。当前仅追加本验证交接。待协调窗口释放并获继续指令后，再按同样三步验证最新 match 依赖；不要无变化重跑 gate。
+- **证据**：`C:/Users/luyua/AppData/Local/Temp/codex-match-gate-verify-20261023T072228639Z/summary.json`、`coordination-handoff.json`、`gate-resumed-results.json`、`gate-test-verified-counts.json`、两份 `gate-routing-*.xml`、`gate-built-outputs.json`；同目录保存依赖版本/补丁、原始失败、库/头/SDK 哈希、实际命令、完整日志与输入哈希。本聊天除原依赖准备及忽略产物外，只追加主仓和 gate worktree 的 `docs/PROGRESS.md`，未改业务代码、未 commit/push/tag。Java 版未运行，本次无功能或客户端契约变更，未改 PARITY.md。
+
+## 2026-10-23 Codex：删除已被现行规范覆盖的 Gate 实体号截断旧说明（仅文档）
+
+- 经负责人询问并核对，删除 2026-04-04 的 Gate 实体号截断修复说明；旧文中的 uint64_t 存储、UINT64_MAX 哨兵与 GetEffectiveNodeId 已被后续 ECS 重构替代。
+- 现行事实为 SessionInfo::NodeEntityMap 保存 entt::entity，SetNodeEntity / GetNodeEntity 保留完整版本位，缺失用 entt::null；规范见 [组件访问规则](design/ecs-component-access-rules.md#实体类型与生命周期边界)，重构记录见 [ECS 第 4 批交接](handoff/ecs-refactor/batch4-external-id.md)。原故障经过可从 Git 历史恢复。
+- 同步清理 docs/README.md 与 docs/design/ARCH.md 中的两处旧文链接，保留既有未提交改动。已有 SceneRouteEntry.RecycledNodeIndexWithAnotherVersionCountsAsChanged 测试源码覆盖槽位回收后的版本区分，本次未运行构建或测试。
+- Java 版：不适用；仅清理本仓历史 C++ / EnTT 说明，没有业务实现或共享客户端契约变化。
+
+## 2026-10-23 Codex：删除已被 muduo 传输设计替代的 Gate gRPC 长连接旧审计（仅文档）
+
+- 经负责人询问并核对，删除 2026-05 的 Gate→Login 长连接审计；其中 GrpcChannelCache 与官方 grpc::Channel 的证据已过期，原内容可从 Git 历史恢复。
+- 现行事实为 NodeConnector 为每个发现节点创建并持有 MuduoGrpcChannelPtr，发现即预连、调用复用通道；GOAWAY 时允许 READY 与排空连接并存，不保证始终只占一个端口。权威说明见 [gRPC 传输设计](design/grpc-muduo-transport.md) §3、§4.4–§4.5、§14。
+- 旧文建议的 30 秒空闲 PING 曾触发 too_many_pings；业务通道现默认关闭周期 keepalive，使用截止触发探测。同步更新 docs/README.md、ARCH.md 与 Gate↔Login 边界文档的四处引用，并修正内核调优手册中关联的旧 channel 单例排查提示；保留各文件原有未提交改动。
+- Java 版：不适用；本次只清理本仓 C++ 内部传输的过期说明，没有业务实现或共享客户端契约变化，未改 PARITY.md。本次不运行构建、测试或压测，仅检查引用、相对链接与差异空白；未提交、推送或打标签。
+
+## 2026-10-23 Codex：删除已由服务设计承接的公会与好友实现旧笔记（仅文档）
+
+- 经负责人询问并核对，删除旧实现笔记及其两份中英文副本；有效契约已由好友持久化架构、帮会二期存储与管理设计、公会排行设计及现行配置承接。好友的 cache-aside 列表读描述已被权威 SQL 直读取代，关键授权与发号约束没有随文档清理删除。
+- 当前入口：[好友持久化架构](design/friend-persistence-architecture.md)、[帮会二期设计](design/guild-phase2/README.md)、[帮会存储](design/guild-phase2/01-storage.md)、[帮会管理与授权](design/guild-phase2/02-management.md)；号段默认开启、禁止失败回退的精确配置仍见 go/guild/etc/guild.yaml 与 guild_id_minter.go。
+- 同步移除 docs/README.md 索引行，并将面试笔记中的旧链接改为现行好友架构，明确缓存与 Presence 推送示例不代表当前实现。保留历史批次和移植决策里的纯文本文件名，原文可从 Git 历史追溯；保留所有既有未提交改动。
+- Java 版：不适用；本次仅清理本仓重复文档，没有业务实现或共享客户端契约变化，未改 PARITY.md。不运行构建、测试或压测；仅静态核对替代覆盖、引用和差异空白，未提交、推送或打标签。
+- 引用复核补记：并行会话新写入 guild-actor-architecture.md 的现状段曾引用本次删除的中文副本；仅将该引用改为好友持久化架构，保留其余并行新增内容。
+
+### 同轮并行改动更正：中文副本已被另一会话重写，停止进一步清理
+
+- 上条“三份删除”是首次操作时的状态，已被后续并行写入改变：原文件与英文副本仍为删除状态，中文副本在本轮检查期间被另一会话重建为 2026-10-23 的现行架构说明。本会话保留该新内容，不再次删除或回退。
+- 首次核对辅助脚本因终端 GBK 输出异常中断；修正为进程内 UTF-8 后发现并行新增旧链接，已仅修正 guild-actor-architecture.md 的对应一句引用。末次检查又发现中文副本被重建，因此三份删除与完整引用检查未取得最终通过结果，不能宣称清理全部完成。限定文件的 git diff --check 实际退出 0。
+- 按 AGENTS.md §10.2 的并行冲突边界停止后续清理，等待协调决定是否保留新版中文说明；其索引归属也待同批收口。本会话没有运行构建或测试，没有提交、推送或打标签。
+
+
+## 2026-10-23 Codex：合并 gRPC 客户端现行契约并删除两份旧设计说明（仅文档与引用）
+
+- 负责人明确要求将旧客户端 deadline / 失败回调文档的有效规则合入主传输设计、更新全部有效引用后删除，并确认允许 30+ 文件的引用清理范围。现行入口统一为 [gRPC 传输设计 §16](design/grpc-muduo-transport.md#grpc-client-contract)：必填 typed / Erased done、异步恰好一次、请求与响应寿命、结果未知、配置预算、部署门禁及调用归属。
+- 按当前源码校正 Login / Match 服务端 Timeout 为 4000ms，PlayerInbox 为 3000ms，门禁为六目标；补当前 Inbox confirmed admission 和 gate 原请求 id / message_id 的成功失败信封，保留镜像精确 TTL 与四个提交点撤销规则。旧全局处理器、CQ、迁移步骤、过期编译计划和“data-service 不镜像 MethodTimeouts”等旧限制未搬入。旧文中已有的 INFO / LogLevel 2 勘误已收进 §16.6。
+- 删除 `grpc-client-deadline-failure-callback.md`；当前代码注释、proto 源注释、配置说明、运维与部署入口均改指主文 §16，清理文档索引生成器的旧分类项。历史交接中的旧行号、旧接口与当时文件清单改为固定 Git 历史链接；本文件按 AGENTS.md §5 只追加，既有历史条目及旧链接保留，当前规则以本条新入口为准。生成产物中的历史注释不手改，本轮无需协议重生成。
+- 同时核对并删除 `grpc_node_entity_id_collision.md`：其“node_id 仅 zone 内唯一”“TCP 仍直接使用 node_id 作实体句柄”已过期。主传输设计 §3 补当前身份契约，TCP / gRPC 均自动分配实体，按 UUID 判同进程并摘除，业务 node_id 不得强转实体；同步修正 NodeConnector 两段旧注释并清索引。
+- 验证：新增相对链接及相关锚点 29 处静态检查通过；除保留的历史进度条目外，没有有效本地链接再指向被删除文档；固定历史链接的 Git 对象存在。PowerShell 两脚本语法解析零错误，索引生成器 Python AST 解析通过，`git diff --check` 通过；与修改前备份比对的 C++ / proto / YAML 14 个文件仅注释变化，NodeConnector 另仅修改两段注释。未运行协议生成、构建、单元测试、联机或压测，不将静态检查作为运行证据。
+- Java 版：不适用；本次整理本仓内部传输契约、注释和文档入口，无功能或共享客户端协议变化，未修改 Java 仓或 PARITY.md。保留既有未提交改动，未 commit / push / tag。
+
+## 2026-10-23 Codex：按当前实现修订公会 Actor 文档与公会／好友中文笔记（仅文档）
+
+- 负责人明确要求更新 `guild-actor-architecture.md`，并追加要求更新 `guild_friend_service_notes_zh.md`。前者新增当前实现入口：TiDB `mmorpg_guild` 权威事务、Redis 展示缓存与排行投影、进程内临时状态；明确 ActorRouter／GuildActor／FlushScheduler 与 100ms flush 未落地。原 Actor 正文标为历史提案，修正完成状态、框架决策与后续动作，撤回无对比压测依据的性能结论、捐献可丢失与 lease 预检已验证防双主的表述。
+- 中文笔记区分公会 cache-aside 展示与好友／申请列表 SQL 直读，补充独占 schema 事实源、生产 TiDB 门禁、本地 friend 的 MySQL 开发兼容配置、SQL 历练大厅，以及积分 SQL 提交后更新 Redis ZSET 的非原子边界。没有将配置合同冒称实际部署验收。
+- 与并行清理旧笔记的工作交叉：按本聊天负责人较新的明确要求保留并更新中文版，英文及原文的既有删除保持原样；在 docs/README.md 为中文版登记现状入口并更新 Actor 文档说明。保留对方对旧引用的替换及其余全部既有改动。本条纯追加，补充此前“三份笔记均删除”的历史条目，不回改旧进度。
+- 验证：按源码复核并经只读交叉检查，修正前台 inTx／后台 WithTxRetry 的事务入口区别，以及 UpdateGuildScore 提交后仍可能因 Redis 报错的例外；两篇文档共 39 个去重本地链接均存在，代码块围栏成对，相关文档与索引 git diff --check 通过。未改业务代码／配置，未构建、测试、启动服务或压测，未提交、推送或打标签。
+- Java 版：不适用；本次只更新本仓 C++／Go 服务实现说明，没有业务实现或共享客户端契约变化，未改独立 Java 仓与 PARITY.md，不代表两版完成状态相同。
+
+
+## 2026-10-23 Codex：保留公会与好友新版中文说明，完成索引和引用清理（仅文档）
+
+- 负责人明确决定保留[新版中文说明](design/guild_friend_service_notes_zh.md)，继续清理剩余索引和引用。本轮未修改中文正文，SHA256 与本轮操作前完全一致；旧主文与英文副本保持删除状态。此前等待协调的事项已按本条决定收口。
+- docs/README.md 保留唯一中文入口，标题与索引生成器对该文档的输出一致；帮会二期存储计划、一致性清单与移植决策中的三处多语言 wildcard 和失效行号均替换为现行中文入口。移植决策保留当时未修文档的历史事实，并标明 2026-10-23 已清理。
+- 实际静态核对通过：本轮四个文档各只改一行；新增五处本地链接及中文说明原有的 25 个不同本地链接均存在，目标均在本仓；docs、.github、tools 与根规范入口的已跟踪文本中，除按规则保留的进度历史外，无旧主文、英文副本或旧多语言 wildcard 引用。未全量重生成索引，保留其它并行改动。
+- Java 版：不适用；仅清理本仓文档入口，没有功能或共享客户端契约变化，未改 PARITY.md。未运行构建、测试或压测，未提交、推送或打标签。
+
+
+## 2026-10-23 Codex：迁移登录超时配置待办并删除 Kafka 事务并发旧说明（仅文档）
+
+- 按负责人要求，将 `TaskWaitTimeout`、`LoginTotalTimeout` 未接线的两项待办迁入[玩家登录事件流 §6](design/player_login_flow.md)。明确本地 YAML 的 30s／10s 尚无运行时读取，后续需确定接入现有预算或清理废弃配置；同步记录现行 RPC 4000ms、后台入场链 5min 与预加载回调登记 TTL 8s 的独立来源，避免把配置待办误当成当前没有超时。
+- 删除 `docs/design/kafka-producer-txn-concurrency-bug.md`，从 docs/README.md 移除唯一索引行；旧事务问题、已实现的顶号 handler 与过期错误码不再作为现行设计保留。未全量重生成索引，保留工作区已有改动。
+- 验证：新增的四处相对链接均存在，两项待办明确标为未完成；除本条历史记录外，docs／tools／.github 与根规范入口没有旧文件名引用；与操作前快照核对，登录文档仅新增一节、索引仅删一行，既有内容保留。相关文档 git diff --check 通过。本轮仅文档变更，未运行构建、单元测试、联机或压测。
+- Java 版：不适用；未改业务代码、配置或共享客户端契约，未修改 Java 仓库和 PARITY.md。未提交、推送或打标签。
+
+## 2026-10-23 Codex：收口 Kafka 保留策略与登录旧设计（仅文档）
+
+- 负责人依次询问 Kafka 保留策略、两种文件名的 Gate 分配迁移稿、登录简化与登录防卡死说明。按当前配置与源码交叉核对后，保留并中文重写 [Kafka topic 保留与耐久策略](design/kafka-topic-retention-strategy.md)和[登录回归套件与超时检测](design/login-test-anti-stuck-system.md)；删除三份重复迁移稿（含中文副本）及登录简化旧说明，原文仍可从 Git 历史恢复。
+- Kafka 文档改为统一配置入口：命令 topic 显式 1h、broker dev 30min / prod-like 与 prod 1h、Compose 命名卷与 K8s PVC；补 DBTask 按档位与容量共同限制、审计 30d 受容量限制、战斗结果 7d、旧评分快照链及 SQL 收件箱提醒边界。DBTask 盘预算仍由专项设计 §B 与部署手册维护，修正该设计顶部的旧稿注，没有修改运行配置。
+- Gate 分配旧稿中的 Go Gateway、60s 票据、第三方认证待接入及双格式迁移描述已过期；现行入口由 Gateway 决策、第三方登录设计与 Gate 票据设计承接。登录简化稿中的 loginstep / pkg/consistent 与同步 EnterGame 已退役；有效 UUID + Lua 按令牌释放／续租规则收进 [ARCH §3.3](design/ARCH.md#33-并发安全)，说明单次拿锁、异步续租、丢锁取消与提交栅栏，保留旧连接身份缺失时跳过 sessionfence 的兼容边界。
+- 超时文档按当前 23 场景与源码表收口：15s 是单次请求等待，LoginStuckDetection 另有 10s 过慢阈值，场景就绪另等通知；EnterGame 无错仅表示受理。补批量场景允许部分失败、套件 FAIL 不自动非零退出、CSV 部分字段默认 0，以及 ML 与实栈 CI 门禁未实现的事实，不把原设想写成已落地能力。
+- 同步清理 docs/README.md 与 ARCH 旧入口，替换现状盘点和开服限流设计的有效链接；历史交接中的纯文件名与原行号保留。保留各文件既有并行改动，PROGRESS 纯追加。仅做源码交叉阅读、相对链接、代码围栏、失效引用和差异空白检查；未运行构建、单测、服务、实栈或压测，未提交、推送或打标签。
+- Java 版：不适用；本次整理本仓现状文档，没有业务实现或共享客户端契约变化，未修改独立 Java 仓与 PARITY.md，不代表两版功能完成状态相同。

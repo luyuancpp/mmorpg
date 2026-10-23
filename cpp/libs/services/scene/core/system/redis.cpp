@@ -125,14 +125,16 @@ void RedisSystem::Initialize(muduo::net::EventLoop* loop)
             LOG_WARN << "[PlayerSave] save_marshal_refused=" << stats.marshalRefused;
         }
         // 归属健康计数单独一行、单独前缀,不动 [DirtySave] 的解析格式。
-        // 三个值在链路升级完成后都应恒 0;任一非 0 都是要查的信号(含义见 owner_epoch_stats)。
+        // 各项在链路升级完成后都应恒 0;任一非 0 都是要查的信号(含义见 owner_epoch_stats)。
+        // owner_counter_behind(Redis 回退丢了铸造,zone-redis-regression-guard-20261022.md §4.4)追加在最后,不动前几项的顺序。
         const auto ownerStats = owner_epoch_stats::Read();
         if (ownerStats.Any())
         {
             LOG_WARN << "[OwnerEpoch] stale_owner_write_rejected=" << ownerStats.staleOwnerWriteRejected
                      << " home_zone_unknown=" << ownerStats.homeZoneUnknown
                      << " owner_epoch_unknown=" << ownerStats.ownerEpochUnknown
-                     << " stale_owner_rejected_exiting=" << ownerStats.staleOwnerRejectedExiting;
+                     << " stale_owner_rejected_exiting=" << ownerStats.staleOwnerRejectedExiting
+                     << " owner_counter_behind=" << ownerStats.ownerCounterBehind;
         }
         // 混版本持久字段保护 C3 的结局计数(persist_schema_stats),单独一行、单独前缀,不动上面几行的解析格式。
         // 两项正常都应恒 0;非 0 时逐次的 metric=persist_schema_regression 日志里有玩家号与 key。

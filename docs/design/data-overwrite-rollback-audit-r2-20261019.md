@@ -168,7 +168,7 @@
 - 第一轮 §2.5 social-match-battle#0（全球票据与 battle 实例 uuid 强绑定、节点替换后永久卡住）：当前代码仍未修（`go/match/internal/authority/store.go:908-921`、`global_match.go:360-373` 只重排 retry_at，没有到期出口）。
 - r2-battle#1、r2-battle#4：已修（未编译）；按"默认可达的资产复制"口径，验证通过前应计 high。r2-battle#2（同局成员结算不对称）仍开着。
 - 一致性核对 cross-service-assets#1 的全球确认模式变种。
-- **要负责人二选一**：(a) 首发就开全球匹配：r2-battle#1/#4 的 Codex 验证列为上线门禁，social-match-battle#0 与 r2-battle#2 改为上线阻塞；(b) 首发不开：改 `k8s_deploy.ps1` 允许 staging / prod 显式关闭，同时把 Redis 兼容路径（`rating.go` 的 Redis 分支、`party*.go`、`queue.go`、`team/store.go`）纳入上线审计，它现在被当作 dev 专用。
+- ~~要负责人二选一~~ **负责人 2026-10-23 拍板：首发就开全球匹配。** r2-battle#1/#4 的 Codex 验证列为上线门禁；social-match-battle#0 与 r2-battle#2 改为上线阻塞。没选的另一条路是改 `k8s_deploy.ps1` 允许 staging / prod 关闭全球匹配，并把 Redis 兼容路径纳入上线审计。同日负责人确认：项目未上线，玩家数据可以完全清空，修复不需要考虑存量数据迁移。
 
 **路由默认模式也变了（route-reconcile-rest 的更正）：** 全球配置强制 `db_first` + `ArmReadyMarker` + `ReadRequiresReady` + 对账开启（`go/data_service/internal/config/global_authority.go:27-29`、`data_service.yaml:212-240`），go/db 强制 `Placement.Required` 与 `RequireRouteReady`（`go/db/internal/config/config.go:732-737`），`k8s_deploy.ps1:741-745` 拒绝其他形态。所以 r2-rr#1、r2-rr#4 由"门控"变为缺省可达；r2-rr#2、r2-rr#3 与 §3.5「catch_up 置 VI」在全球服务里已不可达；第一轮 data-service#3 的前提（映射只在 Redis）已被 db_first 取代。r2-rr#1 的受害面：W1 发布失败时 login 拒绝建角、该 id 作废，孤儿行由 leader 下一次增量补发；剩下的只有工具写入（merge_zone、relocate、pin、backfill）后发布失败又没重跑的行，读方对这类行是 fail-closed（go/db 判 missing_required 进死信），不会写错库。
 

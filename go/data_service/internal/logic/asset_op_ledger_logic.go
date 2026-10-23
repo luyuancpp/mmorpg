@@ -73,11 +73,15 @@ func GetPlayerAssetOpLedger(ctx context.Context, svcCtx *svc.ServiceContext, pla
 		return nil, false, nil
 	}
 
-	ledger := player.GetAssetOpLedger()
-	if ledger == nil {
-		// 从未有过资产操作:回空消息而不是 nil,让调用方区分"有 blob、账本为空"与"没有 blob"。
-		ledger = &componentpb.PlayerAssetOpLedgerComp{}
-	}
 	result = assetOpLedgerReadFound
-	return ledger, true, nil
+	return assetOpLedgerOf(player), true, nil
+}
+
+// assetOpLedgerOf 取 blob 里的资产账本。从未有过资产操作时回空消息而不是 nil,
+// 让调用方区分"有 blob、账本为空"与"没有 blob"(found=true ⇒ 账本非 nil 是语义表的一部分)。
+func assetOpLedgerOf(player *dbpb.PlayerDatabase) *componentpb.PlayerAssetOpLedgerComp {
+	if ledger := player.GetAssetOpLedger(); ledger != nil {
+		return ledger
+	}
+	return &componentpb.PlayerAssetOpLedgerComp{}
 }

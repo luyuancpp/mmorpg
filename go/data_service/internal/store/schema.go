@@ -1766,6 +1766,9 @@ func migrateSchemaOn(ctx context.Context, db *sql.DB, dbName string, opts Migrat
 	if err := ensureRouteTables(ctx, db, dbName); err != nil {
 		return err
 	}
+	if err := ensureInitialPlayerCommitSchema(ctx, db, dbName); err != nil {
+		return err
+	}
 	if err := ensureAccountRoleTradeSchema(ctx, db, dbName); err != nil {
 		return err
 	}

@@ -587,13 +587,40 @@ Go 全球启动在 matcher 和 RPC 准入之前同步核对结果 topic，独立
 - **r2-battle#1（上一段修复的缺陷）**：落库重试轮原来对全部成员无条件 SET。第 1 轮已写进去、随后被 scene 应用并销账的成员，pending 复活，下次登录重复领奖。
   - `ResultCommit` 按成员记结论。`UnstagedMembers` 只剩没拿到确定结论的成员，`FinishStaging` 只移出本轮落定的成员，后续轮次只写其余成员。
   - 结论未知（空应答、ERROR、命令没发出）的成员下一轮照写。命令其实执行过的情形，由新脚本 `kStagePendingSettlementOnceScript` 判出：同一条 Lua 先查本局落库标记 `battle:settlement:staged:{battle_id}`（SET，成员为 player_id），标记在就返回 2、不重写。标记与 pending 两键在同一条脚本里写下，销账不碰它。全部落定后 battle 立即删除标记；停机、崩溃、轮次用尽留下的 24 小时后过期。
-  - 没有采用「`battle:lock == battle_id` 才写、锁不在按已收尾」。全球模式下锁在落库前就可能合法缺席：续期没落地时战斗中途自然过期；整场期限到时 scene reaper 先条件删锁；重试轮拖过期限 + 60s。按已收尾处理会静默丢掉合法结算。所以锁不在时照写，与改造前一致。只有锁属于别的局时不写（返回 3）：scene 每条路径本来都会丢弃这一局的结算，再写只会让旧局覆盖新局的单槽 pending。
-- **r2-battle#4**：落库轮次上限 `kMaxStagingRounds = 24`，只数 Redis 连得上时开出的轮，配合 1→30s 退避约 9.5 分钟。
+  - 没有采用「`battle:lock == battle_id` 才写、锁不在按已收尾」。全球模式下锁在落库前就可能合法缺席：续期没落地时战斗中途自然过期；整场期限到时 scene reaper 先条件删锁；重试轮拖过期限 + 60s。按已收尾处理会静默丢掉合法结算。所以锁不在时照写，与改造前一致。只有锁属于别的局时不写（返回 3）：scene 的派发路径（在线时 InBattleComp 不符、或无组件时锁值不符 → 销账；离线暂存锁不符 → 销账）本来都会丢弃这一局的结算；不看锁的登录钩子（`CheckPendingSettlementOnEnter` → `ApplyPendingSettlement`）与冻结到期补读，改造前在旧局写下、新局覆盖之前原本可能应用它，现在为了不让旧局覆盖新局的单槽 pending 而有意放弃（2026-10-22 措辞更正：原句「scene 每条路径本来都会丢弃」不准确）。
+- **r2-battle#4**：落库轮次上限 `kMaxStagingRounds = 24`，只数 Redis 连得上时开出的轮，配合 1→30s 退避约 9.5 分钟。（2026-10-22 起改为快慢两段重试 + 6 小时总跨度，见下段「2026-10-22 修复」；本条以下三点里「到上限」均读作「到总跨度上限」。）
   - 到上限后不放弃落库直接发结果（那会退回上一段的原缺陷），终局保持未知。打一次 `metric=battle_personal_settlement_staging_exhausted`，并逐个列出没落定的成员。
   - 房间移出提交 pump，但留在房间表里：结果不发、DestroyBattle 不作废、新行动照旧拒绝。
-  - 节点因此不会自然排空。值班排除 zone Redis 故障后删除该 Pod，由 `AbortAllRooms` 清房：已落定成员照常应用，没落定的按作废处理，与 r2-battle#2 是同一个残余。值班查询登记在 `deploy/k8s/asset-channel-alerts.yaml` 文件头。
-- **残余**：battle 节点单边连不上 Redis 超过 24 小时，标记会过期；按命令粒度的 ACL 误配置（放行 SET、拒绝 SADD）；Redis 主从异步复制丢掉已确认的写，与销账丢失同属既有一类。
+  - 节点因此不会自然排空。值班排除 zone Redis 故障后按下段「2026-10-22 修复」的三步收尾（先排空、等其余房间打完、再删 GameServer；原写的「直接删除该 Pod」会误伤同节点正在打的房间），最终由 `AbortAllRooms` 清房：已落定成员照常应用，没落定的按作废处理，与 r2-battle#2 是同一个残余。值班查询登记在 `deploy/k8s/asset-channel-alerts.yaml` 文件头。
+- **残余**：battle 节点单边连不上 Redis 超过 24 小时，标记会过期（2026-10-22 已由 6 小时总跨度堵上，见下段）；按命令粒度的 ACL 误配置（放行 SET、拒绝 SADD）；Redis 主从异步复制丢掉已确认的写，与销账丢失同属既有一类。
 - **Java 版**：确认模式落库尚未实现（见上一段「待做」），实现时要同时满足这两条。
+
+**2026-10-22 修复：落库重试先快后慢、6 小时总跨度兜底，滞留房间周期提醒**（上段 r2-battle#1/#4 修复的评审改进项；C++，未编译、未测试，待 Codex 验证）
+
+- **墙钟跨度上限（堵住真实缺口）**：上段的上限只数 Redis 连得上时开出的轮，没有墙钟上限，标记 TTL 能否兜住取决于连通性。时序：某成员上一轮已执行但应答丢了，标记里有他；随后 battle 单边断连或 Redis 反复闪断，凑满 24 轮的跨度超过 24 小时；期间 scene 应用并销账；重连后标记已过期、锁也已随销账删掉，下一轮照写，pending 复活，登录时重复发奖。
+  - `ResultCommit` 在第一次问起落库时（`ExhaustStagingIfOverdue` / `BeginStaging` 的第一次调用，用调用方传入的 steady_clock 时间点，不读墙钟）记下跨度起点；满 `kMaxStagingSpan = 6h` 即不再开轮。
+  - `StagePersonalSettlements` 先判跨度、再查 Redis 连通性：Redis 一直断着也会到点判用尽、出告警。有轮次在途时不判，等它的回复到齐（可能恰好落定）。
+  - 推导：标记 TTL（`kStagedSettlementMembersTtlSec` = 24h）从最后一次写入算起，写入不早于跨度起点，所以跨度只要小于 TTL，任何一轮开出时标记必然还在。取 6h，留 4 倍余量（Redis 主机墙钟跳变、命令在输入缓冲里滞留）。`battle_room_manager.cpp` 的 `static_assert(kMaxStagingSpan * 4 <= TTL)` 与单测 `StagingSpanLeavesStagedMarkerTtlMargin` 守住这个关系。
+- **有界自动恢复**：上段 24 轮快速重试用尽即永久停住，Redis 恢复后也只能人工删 Pod 收尾（没落定的成员作废、结果不发）。有了本局落库标记，重写不会复活 pending，停住保证的只是有界，不是正确性。
+  - 现在前 `kFastStagingRounds = 24` 轮按 1→30s 退避（第 24 轮在第 1 轮之后约 571s 开出），之后每 `kSlowStagingRetryInterval = 5min` 一轮，到 6h 总跨度才最终判用尽。6 小时里共 94 轮（快速 24 + 低频 70），每轮只写没落定的成员，对 Redis 的压力可以忽略；次数、退避、总时长都有界，仍满足 AGENTS §11.3。
+  - zone Redis 故障排除后结果自动发出，不需要人工处置。
+- **周期提醒**：上段的 `staging_exhausted` 每房间只打一行，值班查询窗口一过就再无信号。积压报数定时器（60s，只绑 `weak_ptr<自己>`）每轮先调 `ReportExhaustedStagingRooms`：从房间表现数总跨度用尽的房间，不为 0 就打 `metric=battle_personal_settlement_staging_exhausted_rooms count=N node_rooms=M`，battle_id 列表只放正文、不作 label。它不依赖 Redis；判用尽时会补装定时器，Redis 从没连上、没开过轮的节点也照报。值班查询改为按这一条判，房间清掉之前一直会响。
+- **处置改为三步**（原写的「排除 Redis 故障后删除该 Pod」会把同节点上正在打的房间一起作废）：先排除 zone Redis 故障，然后
+  1. `kubectl -n mmorpg-infra label gs <name> mmorpg.io/drain=true`（`cpp/nodes/battle/main.cpp` 的 `kAgonesDrainLabelKey`；进程 5s 内读到后拒绝新房间）；
+  2. 等提醒行的 `node_rooms` 降到与 `count` 相等，即其余房间都已打完（单局上限 = match `BattleMaxDurationSeconds`，默认 300s）；
+  3. `kubectl -n mmorpg-infra delete gs <name>`，优雅停机由 `AbortAllRooms` 清房。
+  - 非 Agones 的 Deployment 形态（只用于验证 / 回退）没有排空标签，新房间会继续进来，第 2 步等不到，只能择低峰删 Pod。
+  - 同一说明写在 `deploy/k8s/asset-channel-alerts.yaml` 文件头与 `battle_room_manager.h` 的 `AbortAllRooms` 注释。
+- **措辞更正**：上段与 `settlement_outbox.h` 里「锁属于别的局时 scene 每条路径都会丢弃这一局的结算」已改准。派发路径会丢弃（在线时 InBattleComp 不符、或无组件时锁值不符 → 销账；离线暂存锁不符 → 销账）；登录钩子（`CheckPendingSettlementOnEnter` → `ApplyPendingSettlement`）与冻结到期补读不看锁，改造前旧局写下、新局覆盖之前原本可能应用，现在为了不覆盖新局的单槽 pending 而有意放弃。battle 的 `battle_personal_settlement_superseded` 日志同步改写。
+- **测试**（注入时间点，不依赖墙钟）：
+  - `turn_battle_engine_test`：`BattleResultCommit.StagingContinuesWithSlowRetriesAfterFastRounds`、`StagingStopsAtTotalSpanWithoutReleasingResult`、`StagingSpanExpiresWithoutOpeningRedisRounds`、`StagingRoundsStayBoundedAcrossTheWholeSpan`、`StagingSpanLeavesStagedMarkerTtlMargin`；编排接缝 `StagingRoundTally`（每轮成员在开轮时定下、每名成员只记第一次回复、恰好收口一次）由 `BattleStagingRoundTally.*` 覆盖，其中一条把它与 `ResultCommit` 按生产编排组合：只对没落定的成员开下一轮、全部落定才放行。
+  - `bag_test` 真 Redis：`PendingSettlementContract.ConfirmedStagingPartialWriteOnBrokenIndexSettlesNextRound`。积压索引被写成字符串时 ZADD 报 WRONGTYPE，脚本回 ERROR，但 pending 两键与标记已写；下一轮返回 2，pending 不变。这是脚本「ZADD 放最后」的运行证据。
+- **残余**：
+  - 全球局落库晚于冻结到期时，在线成员的结算会在派发时被删除：在线且无 InBattleComp、锁不在 → `AckSettlementPending` 规则 2 → `ClearPendingSettlementIfMatch`（`player_battle.cpp` 约 :2094-2100）。上段「锁不在照写以免丢合法结算」只对离线玩家成立。与 [data-consistency-guarantee-map-20261020.md](data-consistency-guarantee-map-20261020.md) 的 cross-service-assets#1 同一分支、同一根因；另有会话在修，截至本段写入时 `player_battle.cpp` 这段未改。后续可评估该分支在 `pending:id` 等于本局时改走补应用、不再直接销账。
+  - 在途轮次一直不回复（连接挂死而没断开）时既不开新轮也不判用尽、不出提醒，靠 hiredis 连接的存活探测摘连接、回调拿到空应答后收口。
+  - 落库编排本身（按成员 EVAL 与 KEYS/ARGV 顺序、落定后 DEL 标记、用尽时移出 pump、周期提醒）仍在两个单例里，没有端到端单测；替代验证是上面的状态机与接缝单测、真 Redis 脚本契约，以及 PROGRESS 同日条目里的可选冒烟。
+  - 序列化失败 / 成员对不上的「终局未知」占位房间同样会滞留在节点上，只有一次性日志，不在周期提醒里（程序缺陷类，非本条范围）。
+- **Java 版**：确认模式落库仍待做（Java `PARITY.md` 已把 §2.4 登记为待做，不另起一行），实现时一并满足跨度上限、低频重试与周期提醒。
 
 ### 2026-10-21：活动开战原请求取消（源码候选）
 

@@ -780,7 +780,8 @@ function Get-ClusterSceneFleets {
 <#
 .SYNOPSIS
     执行一次 Get-ZoneEntryKubectlArgs 给出的只读 kubectl,返回 zone 入口现状:
-    [pscustomobject]@{ RouterMode; RouterDetail; EntryMode; EntryDetail; IngressKnown; Ingress; IngressDetail; NamespaceEmpty }。
+    [pscustomobject]@{ RouterMode; RouterDetail; EntryMode; EntryDetail; IngressKnown; Ingress; IngressDetail;
+    OpenFileLimitMode; OpenFileLimitDetail; NamespaceEmpty }。
     NamespaceEmpty:kubectl 读成功且一个 gate、一个 Ingress gateway 都没有(namespace 多半已被 Step 1 删掉);同一 rid 重跑据此改用 entry-state.json。
 
 .DESCRIPTION
@@ -791,14 +792,19 @@ function Get-ClusterSceneFleets {
     - IngressKnown / Ingress:Ingress 为 $null(不存在)或 { Host; ClassName; TlsSecret }。kubectl 读成功且 namespace 里至少有一个 gate,
       或读到了 Ingress gateway,才 IngressKnown = $true;一个 gate 都没有也没有 Ingress 时判为读不到(namespace 多半已被删,
       "现在没有"证明不了"回滚前没有")。
-    kubectl 不可用或失败(不可达、Forbidden)、输出不是 JSON 时三项都判不出。只读一次、不重试。
+    - OpenFileLimitMode:"warn" | "enforce" | $null(判不出),gate 与 scene Deployment(同一次读)加 -SceneFleets 的 Fleet 汇总,
+      口径见 Resolve-ZoneOpenFileLimitMode。没给 -SceneFleets($null,本次显式给了 -NodeOpenFileLimitMode、没读 Fleet)时
+      记为判不出("未核对"):这份现状照样存进 entry-state.json,同一 rid 重跑留空时不能拿没读全的现状放行。
+    kubectl 不可用或失败(不可达、Forbidden)、输出不是 JSON 时各项都判不出。只读一次、不重试。
     --request-timeout 只约束 HTTP 请求,约束不了凭证插件等请求之外的等待;此时尚未产生任何副作用,
     卡住时操作者 CTRL+C 即可,不为此引入进程级截止。
 #>
 function Get-ClusterZoneEntryState {
     param(
         [Parameter(Mandatory = $true)][string[]]$KubectlArgs,
-        [Parameter(Mandatory = $true)][string]$Namespace
+        [Parameter(Mandatory = $true)][string]$Namespace,
+        # Get-ClusterSceneFleets 的返回值;$null = 没读 Fleet(nofile 模式不核对)。
+        [AllowNull()]$SceneFleets = $null
     )
 
     try {
@@ -873,6 +879,14 @@ function Get-ClusterZoneEntryState {
         $ingressDetail = "namespace $Namespace 里有 Ingress gateway(host='$($ingress.Host)' class='$($ingress.ClassName)' tls='$($ingress.TlsSecret)')"
     }
 
+    $openFileLimit = [pscustomobject]@{ Mode = $null; Detail = '未核对(本次显式给了 -NodeOpenFileLimitMode,没读 scene Fleet)' }
+    if ($null -ne $SceneFleets) {
+        $sceneNames = Get-ZoneSceneWorkloadNames
+        $sceneDeployments = @($items | Where-Object { $null -ne $_ -and $_.kind -eq 'Deployment' -and $_.metadata.name -in $sceneNames })
+        $sceneFleetItems = @($SceneFleets.Items | Where-Object { $null -ne $_ -and $_.metadata.name -in $sceneNames })
+        $openFileLimit = Resolve-ZoneOpenFileLimitMode -Workloads (@($gates) + $sceneDeployments + $sceneFleetItems) -FleetReadError ([string]$SceneFleets.Error)
+    }
+
     return [pscustomobject]@{
         RouterMode     = $routerMode
         RouterDetail   = $routerDetail
@@ -881,6 +895,8 @@ function Get-ClusterZoneEntryState {
         IngressKnown   = $ingressKnown
         Ingress        = $ingress
         IngressDetail  = $ingressDetail
+        OpenFileLimitMode   = $openFileLimit.Mode
+        OpenFileLimitDetail = $openFileLimit.Detail
         NamespaceEmpty = ($gates.Count -eq 0 -and $ingresses.Count -eq 0)
     }
 }
@@ -899,6 +915,9 @@ function Get-ClusterZoneEntryState {
       - 入口形态:留空 = 落回默认值,external 的 zone 被重建成 podip,集群外玩家全部连不上;
       - Ingress:留空 = Step 6 不生成 Ingress,而 Step 1 已连同 namespace 删掉它,集群外玩家拿不到 gate 分配。
         读得到且确实没有才放行;namespace 里一个 gate 都没有时判不出(见 Get-ClusterZoneEntryState)。
+      - nofile 模式(B0-4,2026-10-22):留空 = Step 6 按 k8s_deploy.ps1 -NodeOpenFileLimitMode 默认值重建 gate / scene
+        (空串 = 不写 env,进程按 enforce)。以 warn 运行的 zone 落回 enforce 后,节点池 nofile 硬限仍不够时 gate / scene 在 Step 6 拒启,
+        那时已停服、已回档、Step 5 已丢弃积压。与默认值折算出的模式一致才放行,判不出同样拒绝。
     拒绝发生在 Step 1 之前,此时没有任何改动;操作者确认后显式传参重跑即可(Ingress 的显式决定是 -GatewayIngressHost 或
     -ConfirmNoGatewayIngress)。显式给了的项不传对应开关,不在这里核对。
 #>
@@ -906,13 +925,14 @@ function Assert-ZoneEntryKeptOnRollback {
     param(
         # Get-ClusterZoneEntryState 的返回值。
         [Parameter(Mandatory = $true)]$State,
-        # Get-DeployParamDefaults 的返回值,须含 GateRouterMode / ClientEntryMode。
+        # Get-DeployParamDefaults 的返回值,须含 GateRouterMode / ClientEntryMode / NodeOpenFileLimitMode。
         [Parameter(Mandatory = $true)][hashtable]$DeployDefaults,
         [Parameter(Mandatory = $true)][string]$Namespace,
         [Parameter(Mandatory = $true)][string]$DeployScriptPath,
         [switch]$CheckRouterMode,
         [switch]$CheckEntryMode,
-        [switch]$CheckIngress
+        [switch]$CheckIngress,
+        [switch]$CheckOpenFileLimit
     )
 
     $problems = @()
@@ -960,6 +980,28 @@ function Assert-ZoneEntryKeptOnRollback {
         }
         else {
             Write-Host "  $($State.IngressDetail); leaving it unset will preserve Ingress" -ForegroundColor Green
+        }
+    }
+    if ($CheckOpenFileLimit) {
+        $deployDefault = $DeployDefaults['NodeOpenFileLimitMode']
+        # 留空 = Step 6 不传,k8s_deploy.ps1 按它的默认值写 env(空串即不写);折算口径同 Get-OpenFileLimitModeFromPodSpec:只有逐字 warn 是豁免。
+        $step6Mode = if ($null -eq $deployDefault) { $null } elseif ($deployDefault -ceq 'warn') { 'warn' } else { 'enforce' }
+        # 旧存档(Schema 3 之前)的集群现状没有这个字段,读出来是 $null,同样判不出。
+        $clusterMode = $State.OpenFileLimitMode
+        if ($null -ne $step6Mode -and $clusterMode -ceq $step6Mode) {
+            Write-Host "  Current gate / scene nofile mode `"$clusterMode`" ($($State.OpenFileLimitDetail)) matches the k8s_deploy.ps1 default; leaving -NodeOpenFileLimitMode unset will preserve the mode" -ForegroundColor Green
+        }
+        else {
+            $defaultText = if ($null -ne $deployDefault) { "`"$deployDefault`"(gate / scene 按 $step6Mode 运行)" } else { "(读不到:$DeployScriptPath 的 -NodeOpenFileLimitMode 默认值不是字面常量或文件无法解析)" }
+            $clusterText = if ($null -ne $clusterMode) { "`"$clusterMode`"" } else { '(读不到)' }
+            $keep = if ($clusterMode -ceq 'warn') {
+                '请照传 -NodeOpenFileLimitMode warn;确认节点池 nofile 硬限已修好、要回到 enforce,显式传 -NodeOpenFileLimitMode enforce。'
+            }
+            else { '请确认该 zone 应以哪种模式拉起,显式传 -NodeOpenFileLimitMode warn 或 -NodeOpenFileLimitMode enforce。' }
+            $problems += ("nofile 豁免:未传 -NodeOpenFileLimitMode 时 Step 6 按 k8s_deploy.ps1 默认值 $defaultText 重建 gate / scene," +
+                "而它们当前为 $clusterText($($State.OpenFileLimitDetail))。两者不一致或判不出时留空可能把 nofile 模式静默翻转" +
+                "(以 warn 运行的 zone 落回 enforce,节点池 nofile 硬限仍不够时 gate / scene 在 Step 6 拒启,那时已停服、已回档、积压已丢弃," +
+                "只能补上参数单独重跑 Step 6)。" + $keep)
         }
     }
     if ($problems.Count -eq 0) { return }
@@ -2227,8 +2269,8 @@ Write-Host "  kafka       : $KafkaBootstrap topic=$KafkaTopic group=$KafkaGroup 
 Write-Host "  pitr        : $(if ($PitrRestoredTo) { "-PitrRestoredTo $PitrRestoredTo (operator declaration)" } elseif ($SkipMySqlPause) { '(-SkipMySqlPause without -PitrRestoredTo; -Apply refuses)' } else { '(Step 3 pauses until the operator confirms PITR)' })"
 # 回退态不粘滞,留空时在摘要里就提醒:操作者在 dry-run 阶段就能看出 Step 6 会以哪种路由模式拉起 gate。
 Write-Host "  gate router : $(if ($GateRouterMode) { "-GateRouterMode $GateRouterMode" } else { '(unset; using the k8s_deploy.ps1 default. A zone running in fallback mode "0" must pass -GateRouterMode 0; -Apply checks before shutdown and rejects mismatches or unavailable state)' })"
-# B0-4 豁免开关同样不粘滞,而第 0 步不核对它(见参数注释),只能靠摘要提醒操作者自查。
-Write-Host "  nofile mode : $(if ($NodeOpenFileLimitMode) { "-NodeOpenFileLimitMode $NodeOpenFileLimitMode" } else { '(unset; Step 6 writes no NODE_OPEN_FILE_LIMIT_MODE, so gate / scene enforce the nofile check. A zone running with warn must pass -NodeOpenFileLimitMode warn; preflight does not check this)' })"
+# B0-4 豁免开关同样不粘滞,留空时在摘要里就提醒;-Apply 由第 0 步 a 核对(见参数注释)。
+Write-Host "  nofile mode : $(if ($NodeOpenFileLimitMode) { "-NodeOpenFileLimitMode $NodeOpenFileLimitMode" } else { '(unset; Step 6 uses the k8s_deploy.ps1 default and writes no NODE_OPEN_FILE_LIMIT_MODE, so gate / scene enforce the nofile check. A zone running with warn must pass -NodeOpenFileLimitMode warn; -Apply checks gate / scene before shutdown and rejects warn or unavailable state)' })"
 # 集群外入口参数同样不粘滞,同样在摘要里提醒;地址参数的实际透传值见 Step 6 那一行。
 Write-Host "  client entry: $(if ($ClientEntryMode) { "-ClientEntryMode $ClientEntryMode" } else { '(unset; using the k8s_deploy.ps1 default. Zones running in external mode must pass -ClientEntryMode external and address arguments; -Apply checks first)' })"
 Write-Host "  ingress     : $(if ($GatewayIngressHost) { "-GatewayIngressHost $GatewayIngressHost" } elseif ($ConfirmNoGatewayIngress) { '-ConfirmNoGatewayIngress (Step 6 does not create Ingress; existing Ingress gateway in the namespace is removed in Step 1 without checking)' } else { '(unset; Step 6 does not create Ingress; existing Ingress gateway in the namespace is removed in Step 1; -Apply checks first)' })"
@@ -2293,20 +2335,23 @@ if (-not [string]::IsNullOrWhiteSpace($GatewayTrustedProxies)) { $upArgs.Gateway
 if (-not [string]::IsNullOrWhiteSpace($KubeContext)) { $upArgs.KubeContext = $KubeContext }
 if (-not [string]::IsNullOrWhiteSpace($KubeConfig)) { $upArgs.KubeConfig = $KubeConfig }
 
-# ── 预检: gate 路由模式 / 客户端入口形态 / gateway Ingress + Step 6 静态预检(只读,先于 Step 1 停服) ──
+# ── 预检: gate 路由模式 / 客户端入口形态 / gateway Ingress / nofile 模式 + Step 6 静态预检(只读,先于 Step 1 停服) ──
 # 放在停服之前:拖到 Step 6 才发现,zone 已停服、数据已回档,回滚卡在半路;而 Step 1 删掉 namespace 之后,
-# k8s_deploy.ps1 自己的集群现状预检在 Step 6 已无从判断。集群现状只核对留空的项,一次 kubectl 读完(Assert-ZoneEntryKeptOnRollback);
+# k8s_deploy.ps1 自己的集群现状预检在 Step 6 已无从判断。集群现状只核对留空的项,gate / scene / Ingress 一次 kubectl 读完
+# (Assert-ZoneEntryKeptOnRollback);nofile 模式要核对时另探测 Agones、装了再读 scene Fleet(Get-ClusterSceneFleets,CRD 不能并进那一次);
 # login 第三方登录另读 login ConfigMap 与 Secret login-oauth 是否存在(两次只读 kubectl,见下面「防误关」一段);
 # 静态预检让 k8s_deploy.ps1 对 Step 6 的同一份参数 -DryRun 一遍(Invoke-ZoneUpStaticPreflight)。
 # dry-run 两者都不执行(整个 dry-run 只打印命令、不调任何外部工具),只预告 -Apply 时会做什么。
-Write-Host "-- Preflight: gate routing mode / client entry mode / gateway Ingress / login WeChat-QQ login / Step 6 static preflight (read-only, before Step 1 shutdown) --" -ForegroundColor Cyan
+Write-Host "-- Preflight: gate routing mode / client entry mode / gateway Ingress / nofile mode / login WeChat-QQ login / Step 6 static preflight (read-only, before Step 1 shutdown) --" -ForegroundColor Cyan
 $checkRouterMode = [string]::IsNullOrWhiteSpace($GateRouterMode)
 $checkEntryMode = [string]::IsNullOrWhiteSpace($ClientEntryMode)
 $checkIngress = [string]::IsNullOrWhiteSpace($GatewayIngressHost) -and -not $ConfirmNoGatewayIngress
+$checkOpenFileLimit = [string]::IsNullOrWhiteSpace($NodeOpenFileLimitMode)
 if (-not $checkRouterMode) { Write-Host "  Explicit -GateRouterMode ${GateRouterMode}: Step 6 starts gate with this value without checking the current cluster value" }
 if (-not $checkEntryMode) { Write-Host "  Explicit -ClientEntryMode ${ClientEntryMode}: Step 6 rebuilds gate with this mode without checking the current cluster mode; uses the supplied address arguments" }
 if ($ConfirmNoGatewayIngress) { Write-Host "  Explicit -ConfirmNoGatewayIngress: Step 6 does not create Ingress or check for Ingress gateway in the cluster" }
 elseif (-not $checkIngress) { Write-Host "  Explicit -GatewayIngressHost ${GatewayIngressHost}: Step 6 rebuilds Ingress gateway with gateway" }
+if (-not $checkOpenFileLimit) { Write-Host "  Explicit -NodeOpenFileLimitMode ${NodeOpenFileLimitMode}: Step 6 writes NODE_OPEN_FILE_LIMIT_MODE=$NodeOpenFileLimitMode into gate / scene without checking the current cluster value" }
 # 入口决定存档(回档复核 [10]):同一 rid 重跑时读回 —— namespace 已删就沿用存档的集群现状做核对,本次入口决定与存档不同即拒绝。
 # 首次运行在第 0 步全部通过、Step 1 之前才写(见第 0 步 f 之后):第 0 步后面任一项拒绝时不留存档,修正参数后同一 rid 重跑不受它约束。
 $savedEntryState = $null
@@ -2322,39 +2367,58 @@ if ($Apply -and (Test-Path -LiteralPath $entryStatePath)) {
 }
 $savedEntryHint = if ($null -ne $savedEntryState) { "同一 rollback-id 的存档 $entryStatePath 记录的入口参数:$(Format-ZoneEntryDecisionArgs -Decision $savedEntryState.Decision)" } else { '' }
 if ($savedEntryHint) { Write-Host "  $savedEntryHint" }
-if ($checkRouterMode -or $checkEntryMode -or $checkIngress) {
+if ($checkRouterMode -or $checkEntryMode -or $checkIngress -or $checkOpenFileLimit) {
     $checkNames = @()
     if ($checkRouterMode) { $checkNames += 'GATE_CLIENT_RPC_ROUTER 须与 k8s_deploy.ps1 -GateRouterMode 默认值一致' }
     if ($checkEntryMode) { $checkNames += 'gate 形态须与 k8s_deploy.ps1 -ClientEntryMode 默认值一致' }
     if ($checkIngress) { $checkNames += '不能有 Ingress gateway' }
+    if ($checkOpenFileLimit) { $checkNames += 'gate / scene 的 NODE_OPEN_FILE_LIMIT_MODE 须与 k8s_deploy.ps1 -NodeOpenFileLimitMode 默认值一致' }
     $preflightKubectlArgs = Get-ZoneEntryKubectlArgs -Namespace $zoneNamespace -KubeContext $KubeContext -KubeConfig $KubeConfig
     Write-Host "  kubectl $($preflightKubectlArgs -join ' ') → $($checkNames -join ';')"
+    if ($checkOpenFileLimit) {
+        # 只用于显示(参数与 Get-ClusterSceneFleets 经 lib Invoke-ClientEntryKubectl 实际执行的一致)。
+        # 两个参数函数整体返回数组(return ,),先接收再拼接。
+        $agonesBaseArgs = Get-ClientEntryKubectlBaseArgs -KubeContext $KubeContext -KubeConfig $KubeConfig
+        $sceneFleetArgs = Get-SceneFleetKubectlArgs -Namespace $zoneNamespace
+        $agonesContract = Get-ClientEntryContract
+        $agonesProbeShown = Format-CommandLine -Program 'kubectl' -Arguments (@($agonesBaseArgs) + @('get', '--raw', "/apis/$($agonesContract.AgonesApiGroup)/$($agonesContract.AgonesApiVersion)"))
+        $sceneFleetShown = Format-CommandLine -Program 'kubectl' -Arguments (@($agonesBaseArgs) + @($sceneFleetArgs))
+        Write-Host "  $agonesProbeShown; only when Agones is installed: $sceneFleetShown → scene Fleet NODE_OPEN_FILE_LIMIT_MODE (same check)"
+    }
     if ($Apply) {
         $deployScriptPath = Join-Path $ScriptDir "k8s_deploy.ps1"
-        $zoneEntryState = Get-ClusterZoneEntryState -KubectlArgs $preflightKubectlArgs -Namespace $zoneNamespace
+        $sceneFleets = if ($checkOpenFileLimit) { Get-ClusterSceneFleets -Namespace $zoneNamespace -KubeContext $KubeContext -KubeConfig $KubeConfig } else { $null }
+        $zoneEntryState = Get-ClusterZoneEntryState -KubectlArgs $preflightKubectlArgs -Namespace $zoneNamespace -SceneFleets $sceneFleets
         # namespace 里一个 gate、一个 Ingress 都没有(多半已被同一 rid 上一次的 Step 1 删掉):改用存档里首次运行读到的集群现状。
         # kubectl 读失败不算(NamespaceEmpty 为 $false),照旧判为读不到。
         if ($zoneEntryState.NamespaceEmpty -and $null -ne $savedEntryState -and $null -ne $savedEntryState.ClusterState) {
             Write-Host "  namespace $zoneNamespace has no gate (deleted by an earlier run); checking against the cluster state saved by the same -RollbackId ($entryStatePath)" -ForegroundColor Yellow
             $zoneEntryState = $savedEntryState.ClusterState
+            # Schema 3 之前的存档没记 nofile 模式:补成判不出,核对时要求显式传 -NodeOpenFileLimitMode(fail-closed)。
+            # 只改内存里这一份,同一 rid 已有存档时不重写文件。
+            if ($null -eq $zoneEntryState.PSObject.Properties['OpenFileLimitMode']) {
+                $zoneEntryState | Add-Member -NotePropertyName OpenFileLimitMode -NotePropertyValue $null
+                $zoneEntryState | Add-Member -NotePropertyName OpenFileLimitDetail -NotePropertyValue ("同一 rid 的存档 $entryStatePath 早于 nofile 模式核对(Schema 3 之前)," +
+                    "没记下回滚前 gate / scene 的 NODE_OPEN_FILE_LIMIT_MODE")
+            }
         }
         # 显式给了 -ClientEntryMode 时不核对,但把集群现状打出来,供操作者核对照传的地址参数。
         if (-not $checkEntryMode) { Write-Host "  Current cluster state (for comparison only): $($zoneEntryState.EntryDetail)" }
         try {
             Assert-ZoneEntryKeptOnRollback -State $zoneEntryState `
-                -DeployDefaults (Get-DeployParamDefaults -DeployScriptPath $deployScriptPath -Names @('GateRouterMode', 'ClientEntryMode')) `
+                -DeployDefaults (Get-DeployParamDefaults -DeployScriptPath $deployScriptPath -Names @('GateRouterMode', 'ClientEntryMode', 'NodeOpenFileLimitMode')) `
                 -Namespace $zoneNamespace -DeployScriptPath $deployScriptPath `
-                -CheckRouterMode:$checkRouterMode -CheckEntryMode:$checkEntryMode -CheckIngress:$checkIngress
+                -CheckRouterMode:$checkRouterMode -CheckEntryMode:$checkEntryMode -CheckIngress:$checkIngress -CheckOpenFileLimit:$checkOpenFileLimit
         }
         catch {
             if (-not $savedEntryHint) { throw }
-            throw ($_.Exception.Message + "`n" + $savedEntryHint + "(namespace 已删、存档里又没有集群现状时,照传这组参数即可)。")
+            throw ($_.Exception.Message + "`n" + $savedEntryHint + "(namespace 已删、存档里又没有集群现状时,照传这组参数即可;nofile 模式不在其中,按上面的提示显式传 -NodeOpenFileLimitMode)。")
         }
     } else {
         Write-Host "  (dry-run does not read the cluster; -Apply rejects mismatches or unavailable state before shutdown; explicitly pass the corresponding arguments)" -ForegroundColor Yellow
     }
 } else {
-    Write-Host "  All three values were supplied explicitly; skipping cluster reads for gate / Ingress (the login WeChat / QQ check below still reads unless -ConfirmLoginAuthProviderChange)"
+    Write-Host "  All three entry values and -NodeOpenFileLimitMode were supplied explicitly; skipping cluster reads for gate / scene / Ingress (the login WeChat / QQ check below still reads unless -ConfirmLoginAuthProviderChange)"
 }
 if ($Apply) {
     $entryExplicit = [ordered]@{
@@ -2603,12 +2667,14 @@ $abortUpArgs = $upArgs.Clone()
 $abortUpArgs.Remove('DbConsumerGroup')
 $abortUpText = "pwsh -File tools/scripts/dev_tools.ps1 " + (($abortUpArgs.GetEnumerator() | Sort-Object Name | ForEach-Object { if ($_.Value -is [bool]) { "-$($_.Key)" } else { "-$($_.Key) $($_.Value)" } }) -join ' ')
 $entryArgsText = if ($null -ne $entryDecision) { Format-ZoneEntryDecisionArgs -Decision $entryDecision } else { '' }
+# nofile 模式不进入口决定:显式给了就提示照传;留空时第 0 步 a 按存档里核对过的集群现状核对。
+$nofileRerunText = if ($NodeOpenFileLimitMode) { ";-NodeOpenFileLimitMode 照传 $NodeOpenFileLimitMode(本次显式给值没有核对集群,namespace 已删时重跑留空会被判为读不到)" } else { '' }
 $rerunWholeHint = if ($entryArgsText) {
     ("排除原因后用同一个 rid 整脚本重跑:加 -RollbackId $rollbackId,入口参数照传 $entryArgsText(namespace 已删时第 0 步 a 以报告目录里的 " +
-        "entry-state.json 为准,显式值必须与它相同);第 0 步 f 复用报告目录里的 deploy-facts.json。")
+        "entry-state.json 为准,显式值必须与它相同)$nofileRerunText;第 0 步 f 复用报告目录里的 deploy-facts.json。")
 }
 else {
-    ("排除原因后用同一个 rid 整脚本重跑:加 -RollbackId $rollbackId;namespace 已删,须显式传 -GateRouterMode、-ClientEntryMode," +
+    ("排除原因后用同一个 rid 整脚本重跑:加 -RollbackId $rollbackId;namespace 已删,须显式传 -GateRouterMode、-ClientEntryMode、-NodeOpenFileLimitMode," +
         "并对 Ingress 表态(-GatewayIngressHost … 或 -ConfirmNoGatewayIngress)、对第三方登录表态(照传 -Login* 并加 -ConfirmLoginAuthProviderChange)," +
         "第 0 步 f 复用报告目录里的 deploy-facts.json。")
 }
@@ -2659,8 +2725,10 @@ if ($Apply) {
     if ($null -eq $savedEntryState) {
         # Schema 2(2026-10-18):加 LoginAuthState 与 Decision 的七个第三方登录键。Schema 1 的存档照常读,只是第三方登录不按存档比较
         # (见第 0 步 a 的入口决定比较)。
+        # Schema 3(2026-10-22,B0-4):ClusterState 加 OpenFileLimitMode / OpenFileLimitDetail(本次显式给了 -NodeOpenFileLimitMode 时记为判不出)。
+        # 它不进 Decision、不按存档比较(显式值重跑可以改);更早的存档没有这两个字段,namespace 已删时 nofile 判为读不到。
         $entryRecord = [ordered]@{
-            Schema        = 2
+            Schema        = 3
             RollbackId    = $rollbackId
             Namespace     = $zoneNamespace
             CapturedAtUtc = [datetime]::UtcNow.ToString('o')

@@ -192,6 +192,7 @@
 - **存盘日志**:`player_lifecycle.cpp` 的两条成功 INFO 降为 DEBUG;失败分支只留汇总 ERROR,原 INFO 里的 home_zone / owner_epoch / save_seq 并进 ERROR。演练手册 §3.1 新增第 7 条(调级方法与不调级时的替代证据),§2.4 与场景 B3a 加了指向注;`cross-zone-scene-travel.md`、`db-task-kafka-partition-contract.md`、`db-task-delivery-and-retention.md` 追加了带日期的更正。
 - **验证**:命令见 PROGRESS「2026-10-22 match 旧格式队列兼容删除与存盘日志降级」。
 - **新发现,未处理**:`LogLevel` 按 muduo 枚举解释(0=TRACE、1=DEBUG、2=INFO),`node.cpp` 的 `InitLogSystem` 直接强转。`k8s_deploy.ps1` 生成的 node ConfigMap 写的是 `LogLevel: 1`,所以 K8s 上所有 C++ 节点实际跑在 DEBUG:这次降级在 K8s 上不减日志,热路径的 DEBUG 日志也一直开着。`release_preflight.ps1` 的 `debug.cpp.loglevel` 按「0=DEBUG、下限 1」检查,把它放过了;`bin/etc/base_deploy_config.yaml` 的注释对照也是错的。另开任务。
+  - **(2026-10-22 已处理,未执行,待 Codex 验证)**:node ConfigMap 改为从 `bin/etc` 镜像 `LogLevel`(默认 2 = INFO,生成期校验 0..5),预检下界改为 2,注释改为 muduo 枚举,契约测试补了三条。K8s 上已在跑的 C++ Pod 要重启才生效(node-config 无配置指纹)。见 PROGRESS「2026-10-22 C++ 节点 LogLevel 口径统一」。
 
 ## 4. 硬约束
 

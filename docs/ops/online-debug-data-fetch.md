@@ -54,7 +54,7 @@ go run ./cmd/debug_fetch -mode player-bundle -player <player_id> -reason "<工�
 - 落点库按 go/db 同一规则解析:`player:placement:<id>` → `player:zone:<id>` → `-zone`(缺省 db.yaml 的 ZoneId)。结果和依据写在 `routing`;`-database` 可显式指定,会留警告。映射或落点值畸形(空串、二进制、home ≥ 1000000 等)时,线上 go/db 对这名玩家读写全部 fail-closed——这本身就是根因:包里 `routing.malformed` 写明原因,Redis 照常导出,落点库不读,需要时用 `-database` 指定要看的库。db.yaml 开了 `Placement.Required` / `RequireRouteReady` 时也会给出对应警告。
 - `-limit` 控制快照 / 流水 / 回档审计的条数(默认 20);`-timeout-seconds` 默认 60。`rollback_audit_log` 没有 player_id 索引,按玩家查是全表扫描;全局库压力敏感时用 `-skip-global`。
 - `-skip-account` 不读账号角色目录。
-- 包里记录每台源实例的身份(Redis `run_id`、MySQL `@@server_uuid`),导入端据此拒绝写回导出来源。
+- 包里记录每台源实例的身份(Redis `run_id`、MySQL `@@server_uuid`),导入端据此拒绝写回导出来源。**TiDB 不记身份**(2026-10-22 起一律留空,理由见 §7):从 TiDB 导出的包,导入端无从比对,要靠本地库的标记表证明写目标是本地(§4 第 4 条)。
 - 导出时还会比对线上表的列与本地 proto:线上多出的列写在 `mysql.tables[].live_extra_columns`,说明本地检出比线上旧、这些列没导出,换到线上镜像的 commit 重导。
 
 读包的顺序:`analysis`(online / barrier.conclusion / parent_vs_sql / warnings)→ `routing` → `redis`(每把键带用途说明、类型、TTL、解码结果)→ `mysql.tables` → `global`。
@@ -78,7 +78,7 @@ go run ./cmd/debug_import -file D:\secure\player-<player_id>.json -local-account
 导入做的事:
 
 1. 选数据来源 `-source`:`auto`(默认,父快照可用就用父快照——它包含线上还没落库的最后状态;不可用时改用 SQL 并在预览里说明原因)/ `redis-parent` / `sql`(只复现 SQL 里最后一次两表都确认的版本)。父快照缺子表或身份不符时不补骨架,`redis-parent` 直接报错——线上 login 也会拒绝这样的父快照。
-2. 在本地**重铸一个存盘版本** V=(E, S):E 取线上与本地观察到的最大归属代次 + 1,S 取观察到的最大存盘序号。两张 SQL 行的围栏、`save_barrier` 的 pending 与两个 ACK、`owner_epoch` 都写成 V——这是 login 冷加载接受有历史数据玩家的条件。不照搬线上的屏障与代次;本地残留的旧 DBTask 代次更低,会被挡掉。
+2. 在本地**重铸一个存盘版本** V=(E, S):E 取线上与本地观察到的最大归属代次 + 1,S 取观察到的最大存盘序号。两张 SQL 行的围栏、`save_barrier` 的 pending 与两个 ACK、`owner_epoch` 都写成 V——这是 login 冷加载接受有历史数据玩家的条件。不照搬线上的屏障与代次;本地残留的旧 DBTask 代次更低,会被挡掉。「本地观察到的」包括本地 `owner_epoch`、两张行的围栏与本地屏障令牌;本地行围栏或屏障令牌**高于**本地 `owner_epoch` 时拒绝导入(2026-10-22,见 §7)。
 3. 分三段写,任一段之后中断 login 都会拒绝该玩家(屏障 pending≠ACK),带 `-replace` 重跑即可:
    ① 一个 Lua 原子复核「同号玩家此刻不在线、owner_epoch 与预检一致」,然后删本地父快照 / 子表缓存 / 资产提交证据 / 交接标记 / 旧屏障,屏障只写 pending、`owner_epoch` 前进到 E、移出本地待落库索引;
    ② 一个事务替换两张 SQL 行;
@@ -86,6 +86,11 @@ go run ./cmd/debug_import -file D:\secure\player-<player_id>.json -local-account
 4. 写前闸门:
    - MySQL、核心 Redis、data_service 映射 Redis(db_first 时还有全局库)必须是 `localhost` / 回环地址;本地 docker 服务名用 `-allow-target-host=<名>` 显式放行。
    - 目标实例的身份(Redis `run_id`、MySQL `@@server_uuid`)与导出包记录的来源相同则拒绝——防止把线上 port-forward 当成本地。预览会列出全部写目标,执行前核对。
+   - 2026-10-22 起,**任一侧身份取不到也拒绝**(目标或来源是 TiDB、旧版导出包、导出时连接失败),除非该目标库带本地标记,或加 `-allow-unverified-target-identity`(逐个目标打 `WARNING`)。身份相同时标记与放行都不管用。本地 TiDB / MySQL 在**每个要写的库**(落点库 `zone_<N>_db` 与 data_service 全局库)执行一次建标记,只在确认是本地隔离环境的库上执行:
+     ```sql
+     CREATE TABLE IF NOT EXISTS debug_import_local_target (marker VARCHAR(64) NOT NULL PRIMARY KEY);
+     INSERT IGNORE INTO debug_import_local_target (marker) VALUES ('local-debug-import-target');
+     ```
    - 写入库固定为 `zone_<本地 zone>_db`(go/db 的派生规则);db.yaml 写了别的 `DBName` 时拒绝。
    - 本地同号玩家在线一律拒绝;已有同号存档要 `-replace`;本地映射指向别的 zone、本地落点记录把该号钉到别的库或处于冻结态时拒绝。
 
@@ -115,3 +120,14 @@ go run ./cmd/debug_fetch -db-config D:\secure\db.yaml -mode player-db -zone <hom
 ## 6. 要「问题发生那一刻」的状态
 
 Redis 只有 AOF,没有历史归档;MySQL 有每日全量 + binlog。先用包里 `global.snapshots` 的登录 / 登出快照与 `global.transaction_log` 对比;不够再按 [mysql-backup-pitr-runbook.md](mysql-backup-pitr-runbook.md) §4.1 恢复到影子库,§4.2 抽单玩家。
+
+## 7. 2026-10-22 修复(第二轮审计 r2-ds#1 / r2-ds#2 与账号目录疑点)
+
+未编译、未测试,待 Codex 验证。
+
+- **r2-ds#1 身份闸对 TiDB 失效**:旧实现取不到身份就跳过比较,而 TiDB 取不到 `@@server_uuid`,线上 TiDB 经 port-forward 到 127.0.0.1 并混用配置时,`--dry-run=false` 会把线上两张玩家行替换成导出时的旧状态并抬高行内围栏,之后线上存盘全被判 stale_owner。现在每个写目标都要证明自己不是导出来源,三种证明按顺序:两侧身份都取得到且不同 → 目标库有本地标记表 → `-allow-unverified-target-identity`(打 `WARNING`)。都没有就拒绝。代码:`go/data_service/cmd/debug_import/target_identity.go`;身份与标记查询:`go/data_service/cmd/debugutil/connect.go`。
+  - **TiDB 为什么不取身份而用标记**:TiDB 是多个 tidb-server 挂在负载均衡后面,能取到的值(若有)只标识单个 tidb-server 进程,同一集群换个 Pod 就变,会把同一集群误判成两个实例而放行;能唯一标识整个集群的变量 / 系统表本仓库没有核实,不猜。判断是否 TiDB 用 `tidb_version()`(与 `shared/authoritysql` 同一判据,不受 `server-version` 改写 `VERSION()` 影响),导出与导入两侧都按「取不到」处理。Java 版用 `CLUSTER_INFO` 的 PD 地址作集群身份,两版取舍不同。
+  - **标记为什么不进 `deploy/mysql-init`**:K8s 的 `mysql-init-sql` ConfigMap 原样带入那份脚本,集群 MySQL 也会有标记,就证明不了「这是本地」。建标记必须是对本地库的一次有意操作(§4 第 4 条的两句 SQL)。
+- **r2-ds#2 重铸代次没看本地痕迹**:重铸代次 E 取 max(线上, 本地 `owner_epoch`, 本地两行围栏, 本地屏障令牌 `pending` / 两表 ACK / `outbox_version`) + 1(行围栏一项 2026-10-21 已有,本次补屏障令牌)。并且本地行围栏或屏障令牌高于本地 `owner_epoch` 时拒绝导入:那说明本地 Redis 丢过状态(FLUSHALL、单删键)而 MySQL / Kafka 没清,Kafka 里可能压着代次更高、在本地 Redis 与 MySQL 都不留痕迹的残留 DBTask,go/db 只按行内围栏裁决,导入的行会被冲掉。处置:清本地环境(Redis、该玩家的两张行一起清,并 `pwsh -File tools/scripts/dev_tools.ps1 -Command kafka-offset-reset`)再导入。用旧 playerdb 带 `-allow-fenced-tables` 写过这两张行的本地库同样会被拒,删掉这两张行即可。
+  - 残余:本地从没有过这名玩家的行、而 Kafka 里压着他首次存盘的 DBTask、又 FLUSHALL 过 Redis 时,本地没有任何痕迹可看,仍可能被冲掉;按 AGENTS §6.2 压测 / 复现前把 Redis、MySQL、Kafka 位点一起清。
+- **账号目录疑点(`debugutil/bundle.go` 的 `AccountRedisKeySpec`)不成立**:`account:{account}` 只由 `debug_fetch` 只读导出(password 脱敏、无原字节),`debug_import` 的 bundle / player / playerdb 三种模式都不读它、不写它,也不写 `player_to_account`。角色归属写的是全局 SQL 目录 `AccountDirectoryStore.ImportRole`,与 login 建角(`Create`)走同一个 `createRole`:同一事务里先 `SELECT … FROM account_directory … FOR UPDATE` 锁住账号行,再按 `player_id` 插入 / 更新**本角色这一行**、在锁内复核角色上限,不整块覆盖账号目录,并发新建的角色不会被盖掉。上面 §4 第 3 条 ③「写 `player_to_account`」与「登录」一段里 `player_to_account` 自愈的说法早于 2026-10-21 的 SQL 账号目录改动,以本条为准。

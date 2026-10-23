@@ -283,6 +283,10 @@ Placement:
 NewPlayerSeed:
   Enabled: false
 
+# Redis 身份变化后先核两张 SQL 行；关闭仅用于冷读风暴止血，不能豁免历史缺口或 ACK 超前。
+ParentLoad:
+  VerifyOnRedisIdentityChange: true
+
 # 持久 schema 世代倒退判定(C4,docs/design/mixed-version-persist-field-protection.md §5.1)。
 # EnterGame 命中 PlayerAllData 父快照(快路径)时,父快照两张表的覆盖世代取最小值(0 按 1),
 # 低于 player:{id}:save_barrier 里 scene 记录的 schema_gen、或 schema_gen 损坏,即判定数据可能被截断。

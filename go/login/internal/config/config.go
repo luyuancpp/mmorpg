@@ -114,6 +114,8 @@ type Config struct {
 	// NewPlayerSeed 控制建角时是否写「新号父键种子」,让新号首次 EnterGame 不再冷读数据库
 	// (docs/design/new-player-first-enter-no-cold-read.md)。整块可缺省,缺省 = 关 = 与本功能之前逐字节相同。
 	NewPlayerSeed NewPlayerSeedConf `json:"NewPlayerSeed,optional"`
+	// ParentLoad 控制 Redis 实例身份变化后的 SQL 核验；块缺省也必须启用内部默认值。
+	ParentLoad ParentLoadConf `json:"ParentLoad"`
 
 	// PersistSchemaRegressionMode 是 EnterGame 父快照快路径上持久 schema 世代倒退判定(C4)的模式
 	// (docs/design/mixed-version-persist-field-protection.md §5.1)。取值 warn / enforce;
@@ -142,6 +144,12 @@ type Config struct {
 	// 零值 Interval = 监控关闭,drained 永远等不到。不标 optional 且内层字段全带 default 时,go-zero
 	// 判定该结构体「非必填」,整块缺失 = 全部取默认值(gate_drain_conf_test.go 钉住这一点)。
 	GateDrain GateDrainConf `json:"GateDrain"`
+}
+
+// 整块不标 optional，保证省略块的部署模板也取得 true；false 仅用于冷读风暴止血。
+// ACK 超前与历史缺口属于独立的回退证据，不受此开关影响。
+type ParentLoadConf struct {
+	VerifyOnRedisIdentityChange bool `json:"VerifyOnRedisIdentityChange,default=true"`
 }
 
 // GateDrainConf 是 gate 排空判定的参数,判定逻辑与标记语义见 loginqueue/gatedrain_monitor.go。

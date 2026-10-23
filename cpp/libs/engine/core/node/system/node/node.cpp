@@ -36,6 +36,7 @@
 #include "node/system/node/muduo_grpc_channel_slot.h"
 #include "node/system/node/client_endpoint.h"
 #include "node/system/node/open_file_limit.h"
+#include "engine/config/node_log_level.h"
 #include "thread_context/node_context_manager.h"
 #include "muduo_grpc/address.h"
 #include "muduo_grpc/method_table.h"
@@ -1444,9 +1445,18 @@ void Node::FinalizeTeardownInLoop()
 void Node::InitLogSystem()
 {
 	// Log system already started in constructor; just apply config-driven log level.
-	auto logLevel = static_cast<muduo::Logger::LogLevel>(
-		tlsNodeConfigManager.GetBaseDeployConfig().log_level());
-	muduo::Logger::setLogLevel(logLevel);
+	// 数值即 muduo 枚举(node_log_level.h,没有映射表);readBaseDeployConfig 已对缺键 / 越界拒启。
+	// 转换前再核一次:越界值转成枚举是未定义行为,不依赖「只有读配置会写这个字段」。
+	static_assert(static_cast<uint32_t>(muduo::Logger::TRACE) == 0 &&
+					  static_cast<uint32_t>(muduo::Logger::FATAL) == node_log_level::kMaxValue,
+				  "LogLevel 配置值直接按 muduo 枚举解释;枚举顺序变了要同步 node_log_level.h 与 bin/etc 注释");
+	const uint32_t configured = tlsNodeConfigManager.GetBaseDeployConfig().log_level();
+	if (!node_log_level::IsValidValue(configured))
+	{
+		FatalStartupConfig("LogLevel", "log_level=" + std::to_string(configured) +
+										   " is not a muduo Logger::LogLevel (0=TRACE .. 5=FATAL)");
+	}
+	muduo::Logger::setLogLevel(static_cast<muduo::Logger::LogLevel>(configured));
 }
 
 void Node::LoadConfigs()

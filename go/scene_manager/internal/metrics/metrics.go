@@ -261,7 +261,7 @@ var (
 	enterSceneStageSeconds = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Subsystem: subsystem,
 		Name:      "enter_scene_stage_seconds",
-		Help:      "EnterScene RPC sub-stage latency (zone_id, stage). Stage values: dedup|scene_resolve|reserve|update_loc|route_gate|release_dispatch|cross_zone.",
+		Help:      "EnterScene RPC sub-stage latency (zone_id, stage). Stage values: dedup|scene_resolve|reserve|update_loc|route_gate|release_dispatch|cross_zone|home_zone|role_lookup.",
 		Buckets:   []float64{0.0005, 0.001, 0.002, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2, 5},
 	}, []string{"zone_id", "stage"})
 
@@ -344,6 +344,36 @@ var (
 		Name:      "enter_scene_mint_replay_recognized_total",
 		Help:      "owner_epoch mint EVALs replayed by the redis client after the first execution already applied, recognised as the request's own write (handoff-marker mints only).",
 	})
+
+	// ownerEpochMintClockBehindTotal 统计墙钟地板没起作用的铸造(docs/design/zone-redis-regression-guard-20261022.md §4.3.1 G3a):
+	// 铸造目标值 = max(观察值 + 1, 当前毫秒),当前毫秒 ≤ 观察值时只能取观察值 + 1。稳态下观察值是上一次铸造取的墙钟,
+	// 所以它非 0 多半说明铸造的 scene_manager 副本之间、或与上一次铸造的副本之间有时钟偏差(或同一玩家在同一毫秒内连续换手)。
+	// 持续增长时按 §14 第 13 条的主机时钟偏差监控排查。不带任何 label(不带 player_id)。
+	ownerEpochMintClockBehindTotal = prometheus.NewCounter(prometheus.CounterOpts{
+		Subsystem: subsystem,
+		Name:      "owner_epoch_mint_clock_behind_total",
+		Help:      "owner_epoch mints whose wall-clock floor did not apply (current ms <= stored epoch), so the mint fell back to stored+1; a host clock skew signal.",
+	})
+
+	// ownerEpochMintDurableTotal / Seconds 是铸造之后 WAITAOF 落盘确认的结果与耗时(§4.3.2 G3b)。只对真的写进 Redis 的
+	// 铸造计(首发生效或重放识别命中);CAS 落败、标记已撤回的铸造什么都没写,不计。两项份数都配 0(不发 WAITAOF)时也不计。
+	//   confirmed    份数满足,随后才推路由 / 重定向
+	//   not_durable  WAITAOF 正常返回但份数不足(含服务端等满超时):本次落点按「推送失败」单调回滚,客户端回可重试错误
+	//   error        WAITAOF 被拒 / 回复形状不对 / 传输失败:同 not_durable 处置
+	// 耗时是整条 pipeline(铸造 EVAL + WAITAOF)的往返,everysec 下预期均值约 0.5s、上界约 1s(未实测,以 §8.3 R-b 为准)。
+	// 起服预置全部 result 为 0(告警的 increase() 看不到序列从「不存在」到 1 的第一次跳变)。
+	ownerEpochMintDurableTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Subsystem: subsystem,
+		Name:      "owner_epoch_mint_durable_total",
+		Help:      "WAITAOF confirmations after an owner_epoch mint, by result (confirmed|not_durable|error). not_durable/error placements are rolled back as a failed route push.",
+	}, []string{"result"})
+
+	ownerEpochMintDurableSeconds = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Subsystem: subsystem,
+		Name:      "owner_epoch_mint_durable_seconds",
+		Help:      "Round trip of the owner_epoch mint pipeline (EVAL + WAITAOF on one connection), by result (confirmed|not_durable|error).",
+		Buckets:   []float64{0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 0.75, 1, 1.5, 2},
+	}, []string{"result"})
 
 	// reentryBarrierBlockedTotal 统计因「老属主节点刚判死、再入屏障未到」而被
 	// 拒绝的改派/销毁/清理次数。site 是**代码里写死的常量点位名**
@@ -480,6 +510,13 @@ const (
 	EnterSceneStageRouteGate       = "route_gate"
 	EnterSceneStageReleaseDispatch = "release_dispatch"
 	EnterSceneStageCrossZone       = "cross_zone"
+	// EnterSceneStageHomeZone 只包住 resolveHomeZone 里实际发出的 data_service GetPlayerHomeZone(没配 DataServiceRpc 的
+	// 旁路不计),zone_id 取 gate zone(同 home_zone_lookup_total)。
+	EnterSceneStageHomeZone = "home_zone"
+	// EnterSceneStageRoleLookup 只包住 lookupCurrentRole 里的 data_service LookupAccountRole(全局 TiDB 点查)。
+	// lookupCurrentRole 在 zone 解析之前跑、签名里没有 zone,zone_id 恒为 "0";LeaveScene 走同一函数,样本数 = EnterScene + LeaveScene
+	// 的调用次数 —— 压测要的是这条依赖的单次耗时与总调用量,两者都正好。
+	EnterSceneStageRoleLookup = "role_lookup"
 )
 
 func register() {
@@ -496,6 +533,7 @@ func register() {
 			agonesCounterRollbackTotal, agonesMappingFailureTotal,
 			agonesCounterDrift, worldAutoscaleTotal,
 			kafkaDeliveryTotal, enterSceneRollbackTotal, enterSceneMintReplayRecognizedTotal,
+			ownerEpochMintClockBehindTotal, ownerEpochMintDurableTotal, ownerEpochMintDurableSeconds,
 			reentryBarrierBlockedTotal, deadNodeReconcilePending,
 			enterSceneOwnerDeadTakeoverTotal,
 			homeZoneLookupTotal,
@@ -510,7 +548,38 @@ func register() {
 		for _, outcome := range loadRefreshOutcomes {
 			loadRefreshTotal.WithLabelValues(outcome).Add(0)
 		}
+		for _, result := range ownerEpochMintDurableResults {
+			ownerEpochMintDurableTotal.WithLabelValues(result).Add(0)
+			ownerEpochMintDurableSeconds.WithLabelValues(result)
+		}
 	})
+}
+
+// owner_epoch_mint_durable_total / _seconds 的 result 标签取值。**必须是常量**:它们直接变成 Prometheus label。
+const (
+	OwnerEpochMintDurableConfirmed  = "confirmed"
+	OwnerEpochMintDurableNotDurable = "not_durable"
+	OwnerEpochMintDurableError      = "error"
+)
+
+// ownerEpochMintDurableResults 是注册时预置为 0 的全部 result,新增取值时同步加在这里。
+var ownerEpochMintDurableResults = [...]string{
+	OwnerEpochMintDurableConfirmed,
+	OwnerEpochMintDurableNotDurable,
+	OwnerEpochMintDurableError,
+}
+
+// ObserveOwnerEpochMintClockBehind 记一次墙钟地板没起作用的铸造,见 ownerEpochMintClockBehindTotal。
+func ObserveOwnerEpochMintClockBehind() {
+	register()
+	ownerEpochMintClockBehindTotal.Inc()
+}
+
+// ObserveOwnerEpochMintDurable 记一次铸造之后的落盘确认结果(result 取 OwnerEpochMintDurable*)与 pipeline 往返耗时。
+func ObserveOwnerEpochMintDurable(result string, d time.Duration) {
+	register()
+	ownerEpochMintDurableTotal.WithLabelValues(result).Inc()
+	ownerEpochMintDurableSeconds.WithLabelValues(result).Observe(d.Seconds())
 }
 
 // load_refresh_total 的 outcome 标签取值。**必须是常量**:它们直接变成 Prometheus label。

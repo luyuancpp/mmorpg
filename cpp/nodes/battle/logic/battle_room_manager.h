@@ -193,9 +193,16 @@ public:
     // 停机收尾:全部房间作废(不结算;观众收 ABORTED,关闭房间直连),供 SetBeforeShutdown 调用。
     // 例外是等结果回执的确认模式房间:它的个人结算在结果发出之前已写进 pending,清房不删 pending,
     // 结果无论是否最终到达 broker,都由 scene 登录钩子 / 冻结到期补读应用(审计 social-match-battle#2)。
-    // 还在落库或落库轮次已用尽的房间同样清掉:已落定成员的 pending 留着照常应用,没落定的成员这一局按作废处理
+    // 还在落库或落库已到总跨度上限的房间同样清掉:已落定成员的 pending 留着照常应用,没落定的成员这一局按作废处理
     // (scene reaper 按 deadline 解冻),结果不发 —— 同局成员不对称,是审计 r2-battle#2 的既有残余。
-    // 轮次用尽的房间不会自然消失,节点因此排不空;值班按 staging_exhausted 告警排除 Redis 故障后,删除该 Pod 走这里收尾。
+    // 落库到总跨度上限(turnbattle::kMaxStagingSpan)的房间不会自然消失,节点因此排不空。值班按
+    // staging_exhausted_rooms 周期提醒排除 zone Redis 故障后分三步收尾,不要直接删 Pod(会把同节点上正在打的房间一起作废):
+    //   1. 给该 GameServer 打排空标签:kubectl -n mmorpg-infra label gs <name> mmorpg.io/drain=true(main.cpp kAgonesDrainLabelKey),
+    //      进程 5s 内读到后拒绝新房间;
+    //   2. 等其余房间自然打完:提醒行的 node_rooms 降到与 count 相等(单局上限 = match 的 BattleMaxDurationSeconds,默认 300s);
+    //   3. kubectl -n mmorpg-infra delete gs <name>,优雅停机走这里收尾。
+    // 非 Agones 的 Deployment 形态(只用于验证 / 回退)没有排空标签,新房间会继续进来,第 2 步等不到;
+    // 只能择低峰删 Pod,并接受同节点在打的房间被作废。
     // 调用方必须在同一个 loop 任务里先关建房准入闸(BattleNodeImpl::CloseAdmission):gRPC 排空
     // 期间已收完的 CreateBattle 仍会派发(等许可的回调也可能排在关闸之后),不关闸它们会在作废之后照常建房。关闸之后房间表
     // 保持为空,AddObserver / IssueBattleTicket 因房间不存在自然被拒(kEntityIsNull / kInvalidParameter)。
@@ -226,6 +233,8 @@ public:
     // 再打一行 metric=battle_settlement_pending_backlog count= oldest_age_s= orphans_removed=。
     // battle / scene 进程没有 Prometheus 端点,这一行就是积压的唯一信号(值班 LogQL 登记在
     // deploy/k8s/asset-channel-alerts.yaml 文件头,设计 §6.5)。
+    // 同一定时器每轮先报落库到总跨度上限、滞留在本节点的房间(ReportExhaustedStagingRooms,2026-10-22),
+    // 不为 0 时打 metric=battle_personal_settlement_staging_exhausted_rooms count= node_rooms=。
     static constexpr double kSettlementBacklogReportIntervalSec = 60.0;
     static constexpr uint32_t kSettlementBacklogSweepBatch = 10;
 
@@ -324,16 +333,17 @@ private:
     // 由 PumpResultCommits 驱动,每轮只对还没落定的成员(ResultCommit::UnstagedMembers)各 EVAL 一次
     // kStagePendingSettlementOnceScript,回复到齐后经 OnPersonalSettlementsStaged 交给 ResultCommit::FinishStaging;
     // 没落完不发结果。已落定的成员不再重写:scene 可能已应用并销账,重写会让 pending 复活(审计 r2-battle#1)。
-    // Redis 未连上时不开新一轮(不消耗退避与轮次),等下一次 pump。与本地模式不同,这里不降级为「不落库直接发」:
-    // 不落库就发,恰好重现停机 / 崩溃丢个人结算的缺陷。
+    // Redis 未连上时不开新一轮(不消耗退避与轮次),等下一次 pump;总跨度照常计时(ExhaustStagingIfOverdue 先于连通性检查)。
+    // 与本地模式不同,这里不降级为「不落库直接发」:不落库就发,恰好重现停机 / 崩溃丢个人结算的缺陷。
+    // 总跨度用尽(turnbattle::kMaxStagingSpan,审计 r2-battle#4)在这里判出,交给 RetireExhaustedStaging。
     void StagePersonalSettlements(BattleRoom &room, turnbattle::ResultCommit::Clock::time_point now);
     // 一轮落库的回复全部到齐。settledMembers = 本轮拿到确定结论的成员(StageVerdict 前三种)。
     // 房间已不在(停机清房)或轮次过期时丢弃;已写下的 pending 留给 scene 裁决。
-    // 全部落定:删本局落库标记(fire-and-forget)。总跨度用尽(turnbattle::kMaxStagingSpan,审计 r2-battle#4):
-    // 打一条 metric=battle_personal_settlement_staging_exhausted,房间移出 resultRooms_ 不再 pump,
-    // 但**保留在房间表里**(终局未知:结果不发、DestroyBattle 不作废、新行动照旧拒绝),直到停机 AbortAllRooms。
+    // 全部落定:删本局落库标记(fire-and-forget)。没全落定:什么都不做,下一次 pump 再判跨度、按退避开轮。
     void OnPersonalSettlementsStaged(uint64_t battleId, uint64_t attempt, std::set<uint64_t> settledMembers);
-    // 总跨度用尽时只摘除驱动并告警一次，房间与未知终局保留至关机。
+    // 总跨度用尽:打一条 metric=battle_personal_settlement_staging_exhausted,房间移出 resultRooms_ 不再 pump,
+    // 但**保留在房间表里**(终局未知:结果不发、DestroyBattle 不作废、新行动照旧拒绝),直到停机 AbortAllRooms。
+    // 之后的周期提醒见 ReportExhaustedStagingRooms。
     void RetireExhaustedStaging(BattleRoom &room);
 
     void BroadcastTurnResult(const BattleRoom &room, const ::TurnResultS2C &result);
@@ -461,10 +471,16 @@ private:
     // 保证积压报数定时器已装填(幂等)。由 DispatchSettlementDurably 在本节点第一次结算时装填,
     // 之后常驻:积压是全局的(记录不过期),不随本节点的 outbox 清空而停。
     // 本节点从没结算过就不报 —— 多个 battle 节点报的是同一个全局数,有一个在打的节点报就够了。
+    // 确认模式开出落库轮(StagePersonalSettlements)与落库判用尽(RetireExhaustedStaging)时同样装填:
+    // 后者可能发生在 Redis 一直没连上、从没开过轮的节点上,滞留房间的周期提醒(ReportExhaustedStagingRooms)要靠它。
     void EnsureSettlementBacklogReporter();
     // 定时器回调:按 settlementBacklogCursor_ 选一批索引成员清孤儿,再打一行积压 metric。
     // 回调链只以 weak_ptr<自己> 回到本对象推进游标,其余只捕获值(AGENTS.md §11.7)。
     void ReportPendingSettlementBacklog();
+    // 定时器回调(与上面同一个定时器,先于它调用):从房间表现数落库到总跨度上限的房间,不为 0 就打一行
+    // metric=battle_personal_settlement_staging_exhausted_rooms count= node_rooms=,battle_id 列表只放正文。
+    // 只读房间表、不碰 Redis,Redis 断着也照报;房间被清掉后自然停报。
+    void ReportExhaustedStagingRooms();
 
     // ---- 活动结果发件箱(帮会同道历练,docs/design/guild-phase2/06-activities.md §6.19–§6.21)----
     //

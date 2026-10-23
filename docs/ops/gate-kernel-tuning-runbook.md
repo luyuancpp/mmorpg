@@ -175,6 +175,9 @@ securityContext:
         - `k8s-zone-rollback`。
       - 包装层留空 = 不透传,同样只收小写。
       - 回档时以 `warn` 运行的 zone 必须照传。`k8s_zone_rollback.ps1` 第 0 步不核对这个 env;漏传时 gate / scene 在 Step 6 拒启,那时已停服、已回档,只能补上参数单独重跑 Step 6。
+        - (**2026-10-22 三更正**,已落码、未验证)第 0 步 a 现在核对。`-NodeOpenFileLimitMode` 留空时,`-Apply` 在停服之前读 gate(Deployment / external StatefulSet)与 scene Deployment 的模板;装了 Agones 时再读 scene Fleet。上面 `kubectl set env` 手设在单个工作负载上的值也算。
+        - 任一带着 `warn`,或读不到(kubectl / Agones 探测失败、没有 gate),都在 Step 1 之前拒绝,报错给出照传的 `-NodeOpenFileLimitMode warn`。
+        - 显式给值不核对:照传 `warn`,或确认硬限已修好后显式传 `enforce`。
     - 上面的 `kubectl set env` 仍可作应急。手设的值不在 last-applied 里,撤销仍按上面显式删。
 - 裸机 / staging 主机:启动节点前 `export NODE_OPEN_FILE_LIMIT_MODE=warn`(见 [linux-staging-stress-runbook.md](./linux-staging-stress-runbook.md) A.1)。
 
@@ -242,7 +245,7 @@ ss -tan state time-wait | awk '{print $4}' | sort | uniq -c | sort -rn | head
 
 | TIME_WAIT 集中在 | 含义 | 修法 |
 |---|---|---|
-| `<login_ip>:<grpc_port>` | gate→login 是短连接 | 任务 #13 核查 channel 单例 |
+| `<login_ip>:<grpc_port>`（路由模式看 router 对端） | gRPC 对端连接频繁周转 | 按 [gRPC 传输设计](../design/grpc-muduo-transport.md) 核查断链、GOAWAY 与重连；业务通道默认关闭周期 keepalive |
 | 自己监听端口 | 客户端/压测短连进来 | 客户端开 keep-alive |
 | 压测机几万 TIME_WAIT | 是压测机的极限,**不是 gate 的** | 压测机也调 sysctl |
 

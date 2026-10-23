@@ -613,8 +613,9 @@ func TestEquipFeatureBodiesRejectZeroResponsesAndSurfaceBodyTips(t *testing.T) {
 }
 
 // handler.HandleFeatureMessage(features-smoke 的收包路径)也登记了这三个消息号:信封错误先于解包、
-// 空 body 不算成功、完整响应按来源消息号留存。equip-smoke 自己不走这条路(它用 prepareBehaviorClient 的
-// 通用分发),这里只是不让那三条 case 成为没有任何用例碰到的代码。
+// 空 body 不算成功、完整响应按来源消息号留存。equip-smoke 自己不走这条路(它经 smokeCaller.callDispatch 把成功回包交
+// handler.MessageBodyHandler → 生成 handler → RecordFeatureBody,信封拒绝不交 dispatch,由 equipFeatureOutcome 报错),
+// 这里只是不让那三条 case 成为没有任何用例碰到的代码。
 func TestEquipFeatureMessagesHonorEnvelopeErrorsAndKeepTheirSource(t *testing.T) {
 	inventory := equipTestBag(equipSmokeBagInventory, 28, nil)
 	equipment := equipTestBag(equipSmokeBagEquipment, 10, nil)
@@ -666,6 +667,77 @@ func TestEquipFeatureMessagesHonorEnvelopeErrorsAndKeepTheirSource(t *testing.T)
 				t.Fatal("complete response was not retained under its own message id")
 			}
 		})
+	}
+}
+
+// call 的结局判定(equipFeatureOutcome),快照用真实的 RecordFeatureBody 落,与 call 走同一条记录路径:
+// 信封拒绝一律是 error 且点名信封码(迁移前它被通用分发解成全零响应,只能报「残缺」、看不到码);
+// 生成 handler 没落快照、残缺响应也是 error;响应体业务拒绝原样作为 tip 交给调用方;完整响应原样返回。
+func TestEquipFeatureOutcomeSeparatesEnvelopeBodyTipAndIncompleteReplies(t *testing.T) {
+	id := game.SceneBagClientPlayerEquipItemMessageId
+	complete := &scene.EquipItemResponse{
+		Bag:       equipTestBag(equipSmokeBagInventory, 28, nil),
+		Equipment: equipTestBag(equipSmokeBagEquipment, 10, nil),
+	}
+	record := func(response proto.Message) (gameobject.FeatureSnapshot, bool) {
+		player := gameobject.NewPlayer(1)
+		cursor := player.FeatureSequence()
+		handler.RecordFeatureBody(player, id, response)
+		return player.FeatureResponse(id, cursor)
+	}
+
+	// 信封拒绝优先:哪怕手边有一份完整快照,也不能当成本次结果
+	snapshot, recorded := record(complete)
+	body, tip, err := equipFeatureOutcome(id, smokeTipServiceUnavailable, snapshot, recorded)
+	if err == nil || body != nil || tip != 0 || !strings.Contains(err.Error(), "kServiceUnavailable") {
+		t.Fatalf("envelope rejection = (%v, %d, %v), want an error naming kServiceUnavailable", body, tip, err)
+	}
+
+	if body, tip, err := equipFeatureOutcome(id, 0, gameobject.FeatureSnapshot{}, false); err == nil || body != nil || tip != 0 {
+		t.Fatalf("missing snapshot = (%v, %d, %v), want an error", body, tip, err)
+	}
+
+	snapshot, recorded = record(&scene.EquipItemResponse{ErrorMessage: &base.TipInfoMessage{Id: tipEquipLevelNotEnough}})
+	if body, tip, err := equipFeatureOutcome(id, 0, snapshot, recorded); err != nil || body != nil || tip != tipEquipLevelNotEnough {
+		t.Fatalf("body rejection = (%v, %d, %v), want tip %d without error", body, tip, err, tipEquipLevelNotEnough)
+	}
+
+	snapshot, recorded = record(&scene.EquipItemResponse{Bag: complete.Bag})
+	if body, tip, err := equipFeatureOutcome(id, 0, snapshot, recorded); err == nil || body != nil || tip != 0 {
+		t.Fatalf("incomplete response = (%v, %d, %v), want an error", body, tip, err)
+	}
+
+	snapshot, recorded = record(complete)
+	if body, tip, err := equipFeatureOutcome(id, 0, snapshot, recorded); err != nil || tip != 0 || !proto.Equal(body, complete) {
+		t.Fatalf("complete response = (%v, %d, %v), want it back unchanged", body, tip, err)
+	}
+}
+
+// attributePanel 的结局判定(equipPanelOutcome):信封拒绝与响应体拒绝分开报、各自点名码;受理了却没带面板也是 error。
+func TestEquipPanelOutcomeSeparatesEnvelopeAndBodyRejections(t *testing.T) {
+	id := game.SceneAttributeClientPlayerGetAttributePanelMessageId
+
+	panel, err := equipPanelOutcome(id, smokeTipServiceUnavailable, &scene.GetAttributePanelResponse{})
+	if err == nil || panel != nil || !strings.Contains(err.Error(), "envelope") ||
+		!strings.Contains(err.Error(), "kServiceUnavailable") {
+		t.Fatalf("envelope rejection = (%v, %v), want an envelope error naming kServiceUnavailable", panel, err)
+	}
+
+	panel, err = equipPanelOutcome(game.SceneAttributeClientPlayerGmSetPlayerLevelMessageId, 0, &scene.GmSetPlayerLevelResponse{
+		ErrorMessage: &base.TipInfoMessage{Id: tipInvalidParameter},
+	})
+	if err == nil || panel != nil || strings.Contains(err.Error(), "envelope") ||
+		!strings.Contains(err.Error(), "kInvalidParameter") {
+		t.Fatalf("body rejection = (%v, %v), want a non-envelope error naming kInvalidParameter", panel, err)
+	}
+
+	if panel, err := equipPanelOutcome(id, 0, &scene.GetAttributePanelResponse{}); err == nil || panel != nil {
+		t.Fatalf("accepted without panel = (%v, %v), want an error", panel, err)
+	}
+
+	want := equipTestPanel()
+	if panel, err := equipPanelOutcome(id, 0, &scene.GetAttributePanelResponse{Panel: want}); err != nil || panel != want {
+		t.Fatalf("accepted panel = (%v, %v), want the response's panel", panel, err)
 	}
 }
 

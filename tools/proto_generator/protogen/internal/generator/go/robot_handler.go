@@ -4,6 +4,9 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"go/ast"
+	"go/parser"
+	"go/token"
 	"os"
 	"path/filepath"
 	"strings"
@@ -40,11 +43,12 @@ type robotPushHandlerData struct {
 // 规则:
 //   - 客户端协议服务只按 OptionIsClientProtocolService 判定(internal.ClassifyClientRpcServices),不看服务名;
 //   - 只为 CLIENT_RPC_PUSH 建桩,文件已存在(手写或旧桩)即跳过,从不覆盖。推送 id = 0,只能按 message_id 派发;
+//   - 推送 handler 写在标准文件名以外的文件里也可以:建桩前扫描目录里的包级函数(robotHandlerFuncFiles),
+//     <Service><Method>Handler 已定义就不建桩,否则再建一个同名函数,robot 包重复定义编不过;
 //   - REQUEST / ONE_WAY / SERVER_ONLY 不再建桩:robot 场景改用 robot/generated/rpc 的调用桩(请求自带回调)。
 //     已有的手写 handler 与旧桩不删,注册表照常登记(GoRobotTotalHandlerGenerator),随场景迁移逐个退役。
 //
 // 与 GoRobotTotalHandlerGenerator 同组并行:注册表对 PUSH 按「本轮一定存在」登记,所以这里任何一个桩写失败都 Fatal。
-// 推送 handler 必须放在 <snake_service_method>.go 这个标准文件名里;写在别的文件里会被这里再建一个同名函数。
 func GoRobotHandlerGenerator(wg *sync.WaitGroup) {
 	wg.Add(1)
 	go func() {
@@ -73,13 +77,22 @@ func GoRobotHandlerGenerator(wg *sync.WaitGroup) {
 	}()
 }
 
-// ensureRobotPushHandlers 为缺少桩文件的 PUSH 方法在 dir 下建桩,返回新建文件的路径。已存在的文件一律不动。
-// 错误(收集全部后返回):载荷类型无法映射、桩文件名会被 Go 工具链特殊对待、模板或写盘失败。
+// ensureRobotPushHandlers 为缺少 handler 的 PUSH 方法在 dir 下建桩,返回新建文件的路径。已存在的文件一律不动;
+// handler 已写在别的文件里(robotHandlerFuncFiles 找得到同名包级函数)时不建桩,注册表引用的就是那个函数。
+// 错误:两个方法映射到同一个 handler 文件名(先于一切检查,一个桩都不建);以下收集全部后返回:载荷类型无法映射、
+// 桩文件名会被 Go 工具链特殊对待、列目录 / 读文件 / stat 失败、模板或写盘失败。
 func ensureRobotPushHandlers(services []internal.ClientRpcService, files []*descriptorpb.FileDescriptorProto,
 	dir, templatePath string) ([]string, error) {
 	tmpl, err := template.ParseFiles(templatePath)
 	if err != nil {
 		return nil, fmt.Errorf("parse template %s: %w", templatePath, err)
+	}
+	if err := checkRobotHandlerFileCollisions(services); err != nil {
+		return nil, err
+	}
+	defined, err := robotHandlerFuncFiles(dir)
+	if err != nil {
+		return nil, err
 	}
 	types := newRobotGoTypeIndex(files)
 
@@ -101,7 +114,20 @@ func ensureRobotPushHandlers(services []internal.ClientRpcService, files []*desc
 				continue
 			}
 			path := filepath.Join(dir, fileName)
-			if fileExists(path) {
+			exists, err := fileExists(path)
+			if err != nil {
+				errs = append(errs, fmt.Errorf("%s: %w", where, err))
+				continue
+			}
+			if exists {
+				continue
+			}
+			handlerName := key + "Handler"
+			if definedIn, ok := defined[handlerName]; ok {
+				logger.Global.Info("Robot push handler is defined in another file; stub not generated",
+					zap.String("handler_name", handlerName),
+					zap.String("file_path", filepath.Join(dir, definedIn)),
+				)
 				continue
 			}
 
@@ -112,7 +138,7 @@ func ensureRobotPushHandlers(services []internal.ClientRpcService, files []*desc
 			}
 			alias := robotImportAliases([]string{payload.ImportPath}, robotHandlerReservedNames)[payload.ImportPath]
 			data := robotPushHandlerData{
-				HandlerName: key + "Handler",
+				HandlerName: handlerName,
 				Alias:       alias,
 				ImportPath:  payload.ImportPath,
 				PayloadType: alias + "." + payload.Name,

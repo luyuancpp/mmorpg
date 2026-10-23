@@ -1107,9 +1107,15 @@ func prepareBehaviorClient(host string, port int, account, password string, stat
 		// MessageContent.error_message,body 为空。属性冒烟的等待方靠"响应体 tip"或"新面板"推进,信封错误若只是被
 		// 静默分发成一条全零响应,现象就是 10s 超时而看不到真实原因;这里先把它落成 tip + Error 日志再决定是否分发。
 		//
-		// ListSkills 只经 startListOwnedSkills 带请求号发出,它的 id = 0 回包说明服务端没回显请求号,丢弃。
+		// 下面三个请求消息号在本函数建的连接上只经 Call / smokeCaller 带请求号发出(全包 grep 过):ListSkills 由
+		// startListOwnedSkills 发,JoinQueue / WatchBattle 由 battle 冒烟(跨区版也经 battleSmokeLogin 复用本函数)的
+		// smokeCaller 发。它们的 id = 0 回包说明服务端没回显请求号,丢弃,等它的那次调用随后以超时收场;若交给 handler,
+		// 空 body 会被解成全零响应,match 的 handler 还会打出 "join queue ok" 这类与超时相矛盾的成功日志。
 		// ReleaseSkill / EnterScene 不在此列:testMultiRobotBehavior 的 AI 循环仍以 SendRequest 发它们,回包要交 handler。
-		if msg.GetMessageId() == game.SceneSkillClientPlayerListSkillsMessageId {
+		switch msg.GetMessageId() {
+		case game.SceneSkillClientPlayerListSkillsMessageId,
+			game.MatchServiceJoinQueueMessageId,
+			game.MatchServiceWatchBattleMessageId:
 			smokeDropUncorrelatedReply(client.Account, msg)
 			return
 		}
@@ -1144,16 +1150,19 @@ func prepareBehaviorClient(host string, port int, account, password string, stat
 	// 这段停顿保留:它迁移前就不只在等 ListSkills 回包,也在等登录后的 AOI(NotifyActorCreate / NotifyActorListCreate)
 	// 等初始推送落地,而这些没有别的等待点替代——testMultiRobotBehavior 起 AI 前不等可见实体、也不等技能,
 	// 其余复用者的首个请求也一直发在这段停顿之后。
+	//
+	// 结局交给一个只记日志的 goroutine:失败(信封 / 业务拒绝 / 超时)比停顿到得晚也要留下原因,否则 testSkillCast
+	// 只能报「技能列表为空」。Call 保证 listSkillsReplyTimeout 内恰好一个结局,这个 goroutine 不会泄漏。
+	// 连接已断(pkg.ErrRPCDisconnected)不记:复用者用完即 Close,回包没到就关是正常收尾。
 	skillsResult := startListOwnedSkills(gc, stats, listSkillsReplyTimeout)
-	time.Sleep(behaviorClientSettle)
-	select {
-	case err := <-skillsResult:
-		if err != nil {
-			zap.L().Warn("behavior client skill list unavailable", zap.String("account", account), zap.Error(err))
+	go func() {
+		err := <-skillsResult
+		if err == nil || errors.Is(err, pkg.ErrRPCDisconnected) {
+			return
 		}
-	default:
-		// 回包还没到:不再等,到了照旧由 handler 写进 Player。
-	}
+		zap.L().Warn("behavior client skill list unavailable", zap.String("account", account), zap.Error(err))
+	}()
+	time.Sleep(behaviorClientSettle)
 	return gc, player, nil
 }
 

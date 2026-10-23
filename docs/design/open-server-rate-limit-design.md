@@ -482,7 +482,7 @@ Bucket4j 只在桶不存在时按新配置建桶;持续有流量时桶的 TTL �
 ## 关联
 - [docs/design/ARCH.md](./ARCH.md) §8 削峰
 - [docs/design/architecture-current-state-vs-gaps-2026-05.md](./architecture-current-state-vs-gaps-2026-05.md) 缺口 #10
-- [docs/design/login-simplification-2026-04.md](./login-simplification-2026-04.md) RedisLocker(后端兜底)
+- [ARCH.md §3.3](./ARCH.md#33-并发安全) 登录锁、异步续租与提交栅栏
 - [docs/design/gate-load-balancing-design.md](./gate-load-balancing-design.md) AssignGate 上下文
 - 代码: `java/gateway_node/src/main/java/com/game/gateway/controller/AssignGateController.java`
 - 代码: `java/gateway_node/src/main/java/com/game/gateway/service/AssignGateService.java`

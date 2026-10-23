@@ -410,6 +410,10 @@ pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-all-down -ZonesConfigPath de
   - `dev_tools.ps1` / `k8s_image.ps1` / `k8s_zone_rollback.ps1` **尚未透传**,要直接调 `k8s_deploy.ps1`。
     - (2026-10-22 更正,已落码、未验证)三个包装入口已透传同名参数 `-NodeOpenFileLimitMode`:`dev_tools.ps1` 的 `k8s-infra-up` / `k8s-zone-up` / `k8s-all-up`、`k8s-release-*`(经 `k8s_image.ps1`)与 `k8s-zone-rollback`(经 `k8s_zone_rollback.ps1` 的 Step 6),以及直接调 `k8s_image.ps1` / `k8s_zone_rollback.ps1`。写法同 `-GateRouterMode`:包装层默认留空 = 不透传,默认值只在 `k8s_deploy.ps1` 一处;包装层同样只收小写,大写或拼错在包装入口就拒。
     - 回档时尤其要照传:`k8s_zone_rollback.ps1` 第 0 步不读集群里的这个 env,以 `warn` 运行的 zone 漏传会在 Step 6(已停服、已回档)拒启,只能补上参数重跑 Step 6。详见该脚本 `-NodeOpenFileLimitMode` 参数注释。
+      - (2026-10-22 再更正,已落码、未验证)回滚脚本第 0 步 a 现在核对这个 env。`-NodeOpenFileLimitMode` 留空时,`-Apply` 在 Step 1 停服之前读该 zone 的 gate(Deployment / external StatefulSet)与 scene Deployment(与入口核对同一次 kubectl);集群装了 Agones 时再读同名 scene Fleet。
+        - 任一工作负载带着 `NODE_OPEN_FILE_LIMIT_MODE=warn` 就拒绝,报错给出照传的 `-NodeOpenFileLimitMode warn`;硬限已修好时显式传 `enforce` 回到 enforce。
+        - 读不到同样拒绝(kubectl / Agones 探测失败、没有 gate、`valueFrom`、变量重复)。放行条件跟着 `k8s_deploy.ps1` 的默认值走,口径同 `-GateRouterMode`。
+        - 显式给值即操作者的决定,不核对。核对过的现状存进 `entry-state.json`(Schema 3)的集群现状;同一 rid 重跑、namespace 已删时据此核对。它不进入口决定,显式值重跑可以改。
 - `-GateServiceType`: `ClusterIP`, `NodePort`, or `LoadBalancer`.
 - `-GateServicePort`: external gate service port.
 - `-OpsProfile`: `managed-cloud`, `bare-metal`, or `custom`.
@@ -1892,7 +1896,7 @@ kubectl logs -n mmorpg-zone-<name> deploy/data-service | grep NodeRegistry
 #  → [NodeRegistry] DataService registered: ... endpoint=<POD_IP>:9000 lease_ttl=60s
 ```
 
-## C++ gRPC 客户端 deadline:GrpcClient 块搬运 + 预算门禁(2026-09-28,grpc-client-deadline-failure-callback.md §4.4)
+## C++ gRPC 客户端 deadline:GrpcClient 块搬运 + 预算门禁(2026-09-28,grpc-muduo-transport.md §16.4)
 
 C++ 节点(gate / scene / battle)发出的每次 unary gRPC 调用现在都带 deadline,按**目标**节点类型配在
 `bin/etc/base_deploy_config.yaml` 的顶层 `GrpcClient.CallDeadlineMs`(键 = `ENodeType` 枚举名,单位毫秒)。
@@ -1910,25 +1914,25 @@ C++ 节点(gate / scene / battle)发出的每次 unary gRPC 调用现在都带 d
   | `SceneManagerNodeService` | `go/scene_manager/etc/scene_manager_service.yaml` | 10000 / 8000 |
   | `DataServiceNodeService` | `go/data_service/etc/data_service.yaml`(不写 = go-zero 默认 2000) | 4000 / 2000 |
   | `ClientRpcRouterNodeService` | `go/client_rpc_router/etc/client_rpc_router.yaml` | 8000 / 6000 |
-  | `MatchNodeService` | `go/match/etc/match_service.yaml`(gate 直连模式) | 7000 / 5000 |
-  | `LoginNodeService` | `go/login/etc/login.yaml`(gate 直连模式) | 12000 / 10000 |
-  | `PlayerInboxNodeService` | `go/player_inbox/etc/player_inbox.yaml`(scene 调 FetchItems / AckItems;2026-10-15 起,见「玩家收件箱 player-inbox」) | 6000 / ≤ 4000(服务 yaml 显式写) |
+  | `MatchNodeService` | `go/match/etc/match_service.yaml`(gate 直连模式) | 7000 / 4000 |
+  | `LoginNodeService` | `go/login/etc/login.yaml`(gate 直连模式) | 12000 / 4000 |
+  | `PlayerInboxNodeService` | `go/player_inbox/etc/player_inbox.yaml`(scene 调 FetchItems / AckItems;2026-10-15 起,见「玩家收件箱 player-inbox」) | 6000 / 3000 |
 
   判定口径:这六项必须在 `CallDeadlineMs` 里显式写成正整数(缺席 / 0 = 落到隐式默认,不算数);服务 yaml 不写 `Timeout` 按
   go-zero `RpcServerConf.Timeout` 的 `default=2000` 算(go.mod 钉的 v1.9.2 / v1.10.0 相同),写了就必须是正整数(0 = go-zero 不装超时拦截器,
   服务端没有上界);服务 yaml 的 `MethodTimeouts` 逐条核对:每一条都要满足「deadline ≥ 该方法超时 + 2000」,除非该方法登记在 `k8s_deploy.ps1` 的
   `Get-GrpcClientMethodsNotCalledFromCpp`(C++ 节点从不调用;今天是 data_service 回档的三个 RPC,通过时那一行会列出来)。
   这张表只认「顶格不带引号的键 + 缩进的块式列表」,超时只认带单位的写法(`300s`),读不懂一律拒(2026-10-09 起,
-  此前是出现即拒;`docs/design/grpc-client-deadline-failure-callback.md` §4.4)。`Battle` / `Etcd` 没有 Go 服务端超时,不在表里;
+  此前是出现即拒;`docs/design/grpc-muduo-transport.md` §16.4)。`Battle` / `Etcd` 没有 Go 服务端超时,不在表里;
   chat / friend / guild / team / trade 不在 C++ 节点白名单里,只经路由服。
 - **改服务端超时 = 两处同拍**:调大上表任一服务的 `Timeout` 必须同时调 `CallDeadlineMs` 对应项,否则下一次 `*-up` 被门禁拒绝。
   改完重跑 `zone-up`(以及 `infra-up`,battle 用的是 `battle-node-config`)重新生成 ConfigMap,并滚更 C++ 节点让它们重新读配置。
 - **DataService 2500 → 4000(2026-09-28)**:第一批落码时写的是 2500,与该块自己注释的「+2000 余量」不符(data_service 服务端默认 2000);
   改为 4000 后号段 `fetchTimeoutSec` 从 3.5s 变成 5s。login 的 `Timeout` 原为 100000(行尾注释写 10s),
-  2026-09-29 确认是笔误,改为 10000,`LoginNodeService` 同步由 102000 改为 12000(`docs/design/grpc-client-deadline-failure-callback.md` §4.3)。
+  2026-09-29 确认是笔误,改为 10000,`LoginNodeService` 同步由 102000 改为 12000(`docs/design/grpc-muduo-transport.md` §16.3)。
 - **login ConfigMap 的 `Timeout` 改为镜像 `go/login/etc/login.yaml`(2026-09-29)**:以前 `New-GoSvcConfigMapYaml` 在模板里写死 `100000`,
   而预算门禁核对的是 login.yaml,两边一分家,门禁放行的就不是集群里生效的值。现在与 scene-manager / match / 路由服同法镜像,
-  读不到或不是正整数时生成期直接 throw。镜像落地时两边都是 100000,行为不变;随后值已改正为 10000(见上一条),ConfigMap 自动跟随。
+  读不到或不是正整数时生成期直接 throw。镜像落地时两边都是 100000,行为不变;随后在 2026-09-29 改正为 10000，2026-10-14 再调为 4000，ConfigMap 自动跟随。
   以后再改只需动 login.yaml 与 `LoginNodeService` 两处,生成器不用动。
 - 契约测试:`tools/scripts/tests/k8s_deploy_contract.tests.ps1` 的「C++ gRPC 客户端 deadline 预算」一节 —— 两份 node ConfigMap 的块与权威文件逐项相等、
   门禁先于任何 `kubectl` 写操作、K8s 生成物(login 镜像 login.yaml 的 Timeout、data-service 不写 Timeout)同样满足不等式、判定口径自检(含 `MethodTimeouts` 逐条核对、解析器与时长换算)、

@@ -90,7 +90,7 @@
     - GO-3:需要用户拍板,理由见 §4 第 2 条。
     - `handoff_pending_no_marker` 的比值告警:没有压测基线,推迟到有基线之后。
   - **跨会话变化,接手必读**:
-    - 「让 C++ gRPC 客户端失败也回调并设超时」会话已落两批:模板 regen 在 `db2d2b870`,scene 侧在 `d5bbda03a`。它**推翻了**旧文档里"C++ 生成客户端对非 OK 状态只打日志、不回调"的前提,设计见 `docs/design/grpc-client-deadline-failure-callback.md`。交接路径上的传输失败 = 结果未知,只记日志,仍不作为证据。
+    - 「让 C++ gRPC 客户端失败也回调并设超时」会话已落两批:模板 regen 在 `db2d2b870`,scene 侧在 `d5bbda03a`。它**推翻了**旧文档里"C++ 生成客户端对非 OK 状态只打日志、不回调"的前提,现行契约见 [grpc-muduo-transport.md §16](../design/grpc-muduo-transport.md#grpc-client-contract)。交接路径上的传输失败 = 结果未知,只记日志,仍不作为证据。
     - 在途换图的 TTL 曾是 5s,小于服务端 `Timeout` 8s。那时慢但活着的 scene_manager 下,同一玩家可能有两条 EnterScene 并行,安全靠落点 CAS 和关联号丢弃迟到应答。`d5bbda03a` 把 TTL 改为 SceneManager deadline + 1s(`SceneChangeInFlightTtlMs()`),这个窗口**已消除**。
     - Battle 结算依赖不变量 I3:`IsCrossZoneFrozen` 为 false 的任何时刻,本节点一定仍是属主。冻结硬上限的两个出口保证了这一点。
   - **提交状态**(09-29 按本机跟踪引用查):以上服务端提交都已在 `origin/main`;`d5bbda03a` 早先只在本地 main,09-29 稍后复查时本机跟踪引用显示它也已在 `origin/main`。以 `git ls-remote` 为准。GO-2 的六个提交不在这句"以上"之内,它们的状态单列在上面 GO-2 那一条里。
@@ -156,7 +156,7 @@
   - 服务 yaml 是唯一真相,`Timeout` 为 8000(= 归属查询 1500 + Kafka 写 5000 + 余量 1500)。
   - `k8s_deploy.ps1` 从它镜像 `Timeout` / `KafkaWriteTimeoutSeconds` / `HomeZoneLookupTimeoutMs` 三项。
   - 契约测试 `k8s_deploy_contract.tests.ps1` 的 `Get-SceneManagerTimeoutBudgetViolations` 守住不等式,并要求三项为正、禁用 `MethodTimeouts`。上文"或用 `MethodTimeouts` 只放宽 `EnterScene`"作废,因为生成器不镜像它。
-- **前提已变**:"冻满 30s"的依据是"C++ 生成客户端对非 OK 状态只打日志、不回调"。2026-09-28 起生成客户端有失败回调并设 deadline,见 `docs/design/grpc-client-deadline-failure-callback.md`。但在交接路径上,传输失败仍按"结果未知"只记日志,不作为证据、不提前核实,所以对交接来说"冻满 30s 应答看门狗"这个后果不变。
+- **前提已变**:"冻满 30s"的依据是"C++ 生成客户端对非 OK 状态只打日志、不回调"。2026-09-28 起生成客户端有失败回调并设 deadline,现行失败语义见 [grpc-muduo-transport.md §16.2](../design/grpc-muduo-transport.md#grpc-client-outcome)。但在交接路径上,传输失败仍按"结果未知"只记日志,不作为证据、不提前核实,所以对交接来说"冻满 30s 应答看门狗"这个后果不变。
 
 ## 4. 服务端:剩余工作(按优先级)
 
@@ -185,7 +185,7 @@
    - **跨会话**:gRPC 失败回调的 scene 侧 `DispatchEnterSceneTransportFailure` 已落地(`d5bbda03a`),分发规则如下:
      - 按请求的 `correlation_id` 分发。
      - 命中交接:只记日志,不当证据,不提前核实。
-     - 普通换图:释放在途槽,回 `kServiceUnavailable`。*2026-10-01:`d970a050f5` 起改回专用码 `kEnterSceneServerBusy`(3028,"服务器繁忙,请稍后再试"),未编译;见 `grpc-client-deadline-failure-callback.md`。*
+     - 普通换图:释放在途槽,回 `kServiceUnavailable`。*2026-10-01:`d970a050f5` 起改回专用码 `kEnterSceneServerBusy`(3028,"服务器繁忙,请稍后再试"),未编译;见 [历史设计 grpc-client-deadline-failure-callback.md](https://github.com/luyuan-cpp/xuanming-server-mmo/blob/2c07f2c28c627f2559f76b6699d82c4aa8aa05dd/docs/design/grpc-client-deadline-failure-callback.md)。*
      - 组队跟随:只记日志。
      - SceneManager 的 C++ deadline = 服务端 `Timeout` 8000 + 2000(`bin/etc/base_deploy_config.yaml` 的 `GrpcClient.CallDeadlineMs.SceneManagerNodeService: 10000`)。在途 TTL = deadline + 1000。
 1. **编译 + 单测 + 冒烟**(阻塞其余一切)。命令、通过标准、失败时保留什么:设计文档 §12.4,在 §9 / §11.4 基础上追加。main 上还叠着组队、战斗 G1–G9、帮会二期、聚宝斋、friend 等多批未编译代码,总顺序见 `turn-battle-gap-closure.md` §7;C++ 必须串行 `msbuild … /m:1 /nr:false`。
@@ -316,7 +316,7 @@
    - **`robot/connected()`:删除已随 `736686360` 提交**。那是 09-28 的每小时自动保存,本机跟踪引用显示已在 `origin/main`。原先写的"已暂存在 index、待带路径 commit"已过时,不需要再执行任何 git 操作。
    - **`handoff_pending_no_marker` 比值告警:本轮不落。** 口径 A / B 的阈值和 `for` 都没有压测基线。等首轮双 zone 压测(`AllowUnsafeCrossNodeHandoff=false`)拿到 p99 后,再以 `severity: info` 起步落码。口径与校准步骤写在「P3 收尾」一节。
 
-**验证顺序(2026-09-29;2026-10-01 按"GO-2 已全部进 main"改了第 2、4、5 步;2026-10-09 按"CPP-3 已进 main"改了第 2 步、补了第 4、5 步)**:由 Codex 执行,Claude 不跑。设计文档 §13 目前**没有**合并后的统一验证顺序,只有各小节自己的验证清单。细节来源是设计文档 §13 各小节的验证清单(13.1–13.6,GO-2 的在 13.7,CPP-3 的在 13.8)与 `grpc-client-deadline-failure-callback.md` §9.2;先后顺序以本节列出的硬约束为准。等 §13 真有了统一顺序小节,再改回指向它。
+**验证顺序(2026-09-29;2026-10-01 按"GO-2 已全部进 main"改了第 2、4、5 步;2026-10-09 按"CPP-3 已进 main"改了第 2 步、补了第 4、5 步)**:由 Codex 执行,Claude 不跑。设计文档 §13 目前**没有**合并后的统一验证顺序,只有各小节自己的验证清单。细节来源是设计文档 §13 各小节的验证清单(13.1–13.6,GO-2 的在 13.7,CPP-3 的在 13.8)与 [grpc-muduo-transport.md §16.6](../design/grpc-muduo-transport.md#grpc-client-validation);先后顺序以本节列出的硬约束为准。等 §13 真有了统一顺序小节,再改回指向它。
 
 1. **先取红态,再做任何全量构建。**
    - *(2026-10-22:muduo 早已被多次全量构建重建,下面这条在当前树上已取不到红态,只能在修复前的 `487e62618` 临时 worktree 里拷入 `hiredis_command_lifecycle_test.cpp` 单编 `rpc_controller_test` 来取;做不到就如实记为"红态不可得"。)*
@@ -334,7 +334,7 @@
         - 仓库里有两个同名的 `scene.vcxproj`,别编错:`cpp/libs/services/scene/` 下的是静态库,含 `player_lifecycle.cpp`,这里要编的是它;`cpp/nodes/scene/` 下的是 scene 节点 exe,不含 `player_lifecycle.cpp`。
         - `e43074ae4` 还改了节点工程下的 `scene_handler.cpp` / `scene_node_service.cpp`(守护段内只改注释),它们由 `cpp/nodes/scene/scene.vcxproj` 覆盖,整体编译(`game.sln`)时一并编到。
      4. runbook 场景 B1 / B2 / B3(v2.6 起 B3 拆为 B3a / B3b / B3c / B3d)与 §5 不变量(见第 5 步)。
-3. **C++ MSBuild 一律串行 `/m:1 /nr:false`**,并和其他会话的构建错开,否则会报假的 C1041 / LNK1104。gRPC 失败回调批次的编译和单测(`grpc-client-deadline-failure-callback.md` §9.2)与本线合并在同一次全量编译里做。
+3. **C++ MSBuild 一律串行 `/m:1 /nr:false`**,并和其他会话的构建错开,否则会报假的 C1041 / LNK1104。gRPC 失败回调批次的编译和单测([grpc-muduo-transport.md §16.6](../design/grpc-muduo-transport.md#grpc-client-validation))与本线合并在同一次全量编译里做。
 4. **单测**:
    - `cross_zone_test`:`EnterSceneReplyRoute.*`、`EnterSceneReplyEcs.*`、`EnterSceneTransportFailureEcs.*`、`TravelFreezeCap*`,以及 09-21 那批的 `ExitPersist*` / `ExitRelease*` / `HandoffMarkWithdrawQueue.*` / `TravelOutcomeReset.*`。GO-2 新增 `TravelOwnership.*`(7 个);`HandleTravelMarkWriteRejected` 的代际用例是 `TravelFreezeCapEcs.LateMarkSetErrorOfOlderGenerationLeavesNewHandoffFrozen`。CPP-3 新增 `RelocateConfirm*`(47 个,其中 `RelocateConfirmEcs.*` 15 个);它改过 `DispatchEnterSceneReply` / `DispatchEnterSceneTransportFailure` 的"实体已不在"分支与 A1′ 的判据抽取,所以上面几组要连它一起回归,再整体跑一遍 `--gtest_shuffle`(待确认表是 thread_local)。
    - `routing_identity_test`:`SceneRoute*`、`SceneEntry*`、`SceneLinkReady.*`。
@@ -354,7 +354,7 @@
 你在接手「跨 zone 场景传送」的收尾。先按 AGENTS.md 的会话启动门禁读完必读文件,再读
 docs/handoff/handoff-crosszone-20260920.md(先看文件头"验证现状"和 §0 最后一条)、
 docs/design/cross-zone-scene-travel.md 的 §12 与 §13(各小节的验证清单),
-以及 docs/design/grpc-client-deadline-failure-callback.md。
+以及 docs/design/grpc-muduo-transport.md §16(生成客户端调用契约与验证)。
 注意:
 1. 编译与测试现状:
    - 09-21 那批 C++ 有编译证据,但跨 zone 单测从未运行。

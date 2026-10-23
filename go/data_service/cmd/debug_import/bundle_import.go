@@ -44,6 +44,9 @@ import (
 // 所以导入不搬线上的屏障与代次,而是**在本地重铸一个版本** V=(E,S) 同时写进两张行、屏障与 owner_epoch,
 // 再删掉本地父快照与子表缓存,让 login 从 SQL 组装父快照。E 取线上与本地观察到的最大代次 + 1:
 // 本地残留的旧 DBTask(代次 ≤ 本地旧值)会被行内围栏拒掉,不会覆盖导入的行。
+// 「本地观察到的」= 本地 owner_epoch、两张行的围栏、屏障令牌;并且本地行围栏 / 屏障令牌高于本地 owner 时拒绝导入
+// (本地 Redis 丢过状态,Kafka 残留的代次无从知道)。两条合起来,残留 DBTask 的代次 ≤ 本地 owner < E 才成立
+// (2026-10-22,r2-ds#2;见 admit 与 reforgedEpoch)。
 //
 // 写入分三段:① Redis 原子复核「不在线、owner 未变」后删父快照与缓存、屏障只写 pending、owner 前进到 E;
 // ② 先以稳定维护请求在全局目录拒 OPEN/换修订，再一个事务写两张 SQL 行；③ 补齐两表 ACK；最后登记映射。
@@ -59,6 +62,8 @@ type bundleImportOptions struct {
 	replace      bool
 	dryRun       bool
 	allowHosts   string
+	// allowUnverifiedTarget:写目标证明不了不是导出来源(身份取不到且无本地标记)时仍放行,逐个打 WARNING(r2-ds#1)。
+	allowUnverifiedTarget bool
 }
 
 const (
@@ -380,7 +385,7 @@ func runBundleImport(ctx context.Context, raw []byte, opts bundleImportOptions) 
 	}
 
 	// 写前闸门二:目标实例不能就是导出来源。port-forward 之后线上实例也在 127.0.0.1,只看地址拦不住。
-	if err := checkNotExportSource(ctx, b.Sources, db, rdb, mappingClient, dsCfg); err != nil {
+	if err := checkNotExportSource(ctx, b.Sources, db, rdb, mappingClient, dsCfg, opts.allowUnverifiedTarget); err != nil {
 		return err
 	}
 
@@ -397,7 +402,11 @@ func runBundleImport(ctx context.Context, raw []byte, opts bundleImportOptions) 
 	if err := local.admit(opts.replace, localZone); err != nil {
 		return err
 	}
-	directory, err := store.NewAccountDirectoryStore(svc.MySQLConfigOf(dsCfg), true, dsCfg.AccountDirectory.MaxRoles())
+	directoryMaxOpen, err := dsCfg.AccountDirectory.PoolMaxOpenConn()
+	if err != nil {
+		return err
+	}
+	directory, err := store.NewAccountDirectoryStore(svc.MySQLConfigOf(dsCfg), true, dsCfg.AccountDirectory.MaxRoles(), directoryMaxOpen)
 	if err != nil {
 		return fmt.Errorf("目标全局账号目录未就绪: %w", err)
 	}
@@ -425,11 +434,10 @@ func runBundleImport(ctx context.Context, raw []byte, opts bundleImportOptions) 
 		return err
 	}
 
-	priorEpoch := max(plan.baseEpoch, local.ownerEpoch, local.sqlEpoch)
-	if priorEpoch == math.MaxUint64 {
-		return errors.New("本地存盘代次耗尽，拒绝导入")
+	epoch, err := local.reforgedEpoch(plan.baseEpoch)
+	if err != nil {
+		return err
 	}
-	epoch := priorEpoch + 1
 	version := savebarrier.Version(epoch, plan.seq)
 	fmt.Fprintf(os.Stderr, "\n本地重铸版本: owner_epoch=%d save_seq=%d (%s)\n", epoch, plan.seq, version)
 
@@ -518,37 +526,34 @@ func printBundlePlan(b *debugutil.Bundle, plan *importPlan, localZone uint32, op
 	}
 }
 
-// checkNotExportSource 比对实例身份(Redis run_id、MySQL server_uuid):任一写目标与导出包记录的来源是同一实例就拒绝。
-// 身份取不到(空串)的一侧不参与比较。
-func checkNotExportSource(ctx context.Context, src debugutil.BundleSources, db *sql.DB, core, mapping *redis.Client, dsCfg config.Config) error {
-	exported := map[string]bool{}
-	for _, id := range []string{src.CoreRedisID, src.MappingRedisID, src.ZoneMySQLID, src.GlobalMySQLID} {
-		if id != "" {
-			exported[id] = true
-		}
-	}
-	targets := []struct{ what, id string }{
-		{"MySQL", debugutil.MySQLServerIdentity(ctx, db)},
-		{"核心 Redis", debugutil.RedisServerIdentity(ctx, core)},
-		{"映射 Redis", debugutil.RedisServerIdentity(ctx, mapping)},
+// checkNotExportSource 是写前闸门二:每个写目标都要证明自己不是导出来源,证明不了就拒绝(fail-closed)。
+// 这里只取各目标的实例身份(Redis run_id、MySQL server_uuid;TiDB 按取不到处理)与本地调试环境标记,
+// 判定规则见 target_identity.go 的 judgeImportTargets(2026-10-22,r2-ds#1)。
+func checkNotExportSource(ctx context.Context, src debugutil.BundleSources, db *sql.DB, core, mapping *redis.Client, dsCfg config.Config, allowUnverified bool) error {
+	targets := []importTarget{
+		mysqlImportTarget(ctx, "MySQL 落点库", db),
+		{kind: instanceRedis, what: "核心 Redis", id: debugutil.RedisServerIdentity(ctx, core)},
+		{kind: instanceRedis, what: "映射 Redis", id: debugutil.RedisServerIdentity(ctx, mapping)},
 	}
 	if host := strings.TrimSpace(dsCfg.MappingRedis.Host); host != "" {
 		client := redis.NewClient(&redis.Options{Addr: host, Password: dsCfg.MappingRedis.Pass})
-		targets = append(targets, struct{ what, id string }{"data_service MappingRedis", debugutil.RedisServerIdentity(ctx, client)})
+		targets = append(targets, importTarget{kind: instanceRedis, what: "data_service MappingRedis", id: debugutil.RedisServerIdentity(ctx, client)})
 		_ = client.Close()
 	}
 	global, err := debugutil.OpenMySQL(ctx, debugutil.GlobalMySQL(dsCfg), 1)
 	if err != nil {
 		return fmt.Errorf("核对目标全局SQL实例失败: %w", err)
 	}
-	targets = append(targets, struct{ what, id string }{"全局账号目录SQL", debugutil.MySQLServerIdentity(ctx, global)})
+	targets = append(targets, mysqlImportTarget(ctx, "全局账号目录SQL", global))
 	if err = global.Close(); err != nil {
 		return err
 	}
-	for _, target := range targets {
-		if target.id != "" && exported[target.id] {
-			return fmt.Errorf("%s 与导出来源是同一个实例(身份 %s):导入只写隔离环境,检查是不是把线上 port-forward 当成了本地", target.what, target.id)
-		}
+	warnings, err := judgeImportTargets(bundleExportInstances(src), targets, allowUnverified)
+	if err != nil {
+		return err
+	}
+	for _, warning := range warnings {
+		fmt.Fprintf(os.Stderr, "WARNING: %s\n", warning)
 	}
 	return nil
 }
@@ -561,8 +566,10 @@ type localPlayerState struct {
 	ownerRaw   string
 	ownerEpoch uint64
 	sqlEpoch   uint64
-	mapped     bool
-	mappedZone uint32
+	// barrierEpoch:本地存盘屏障各版本令牌(pending、两表 ACK、补投意图)里最大的归属代次(r2-ds#2)。
+	barrierEpoch uint64
+	mapped       bool
+	mappedZone   uint32
 	// placementRaw / placementPresent:go/db 选库用的映射实例上的 player:placement:<id>。
 	placementRaw     string
 	placementPresent bool
@@ -618,6 +625,9 @@ func inspectLocalPlayer(ctx context.Context, db *sql.DB, rdb, mappingClient *red
 			return nil, fmt.Errorf("本地 owner_epoch 畸形: %w", err)
 		}
 	}
+	if state.barrierEpoch, err = localBarrierEpoch(&entries[2]); err != nil {
+		return nil, err
+	}
 
 	placementEntries, err := debugutil.ReadRedisKeys(ctx, mappingClient, []debugutil.RedisKeySpec{
 		{Key: placement.Key(id), Kind: debugutil.RedisKindString},
@@ -644,7 +654,8 @@ func inspectLocalPlayer(ctx context.Context, db *sql.DB, rdb, mappingClient *red
 // admit 决定能否写入:
 //   - 本地同号玩家在线一律拒绝(scene 里的内存态会把导入的数据存回去覆盖);
 //   - 本地映射指向别的 zone,或本地落点记录把这个号钉到别的库 / 处于冻结态时拒绝:go/db 会去别处读写,导入的行读不到;
-//   - 本地已有同号存档时要 -replace。
+//   - 本地已有同号存档时要 -replace;
+//   - 本地存盘痕迹(两张行的围栏、屏障令牌)的代次高于本地 owner_epoch 时拒绝,理由见函数末尾(r2-ds#2)。
 func (s *localPlayerState) admit(replace bool, localZone uint32) error {
 	if len(s.onlineKeys) > 0 {
 		return fmt.Errorf("本地同号玩家在线或会话未释放(%s),先让他下线、等会话过期后再导入", strings.Join(s.onlineKeys, ", "))
@@ -669,7 +680,57 @@ func (s *localPlayerState) admit(replace bool, localZone uint32) error {
 	if len(existing) > 0 && !replace {
 		return fmt.Errorf("本地已有该 player_id 的存档(%s),会被覆盖;确认可以覆盖后加 -replace", strings.Join(existing, ", "))
 	}
+	// owner_epoch 只经 scene_manager INCR 前进,本地每一次存盘(进 Kafka 的 DBTask、写进行内围栏与屏障的版本)
+	// 的代次都不超过当时的 owner_epoch。本地存盘痕迹高过本地 owner,说明本地 Redis 丢过状态(FLUSHALL、单删键)
+	// 而 MySQL / Kafka 没清:Kafka 里可能还压着代次更高、在本地 Redis 与 MySQL 都不留痕迹的残留 DBTask,
+	// go/db 只按行内围栏裁决,它们会冲掉导入的行,之后本地新登录的存盘再被判 stale_owner。
+	// 重铸代次找不到可靠的上界去盖过它们,只能拒绝,让操作者先把本地环境清干净。
+	if trace := max(s.sqlEpoch, s.barrierEpoch); trace > s.ownerEpoch {
+		return fmt.Errorf("本地存盘痕迹的代次 %d(行内围栏 %d、存盘屏障 %d)高于本地 owner_epoch %d:本地 Redis 丢过状态而 MySQL / Kafka 没清,"+
+			"Kafka 里可能有代次更高的残留存盘,导入后会被冲掉。先清本地环境(redis FLUSHALL 的同时清该玩家两张行,"+
+			"并执行 dev_tools.ps1 -Command kafka-offset-reset 跳过残留 DBTask)再导入",
+			trace, s.sqlEpoch, s.barrierEpoch, s.ownerEpoch)
+	}
 	return nil
+}
+
+// reforgedEpoch 返回本地重铸版本的归属代次:线上与本地见过的全部代次(线上 owner / 屏障 / 行围栏,本地 owner、
+// 两张行的围栏、屏障令牌)之上 + 1。admit 已保证本地痕迹不超过本地 owner,所以本地残留的 DBTask 代次都低于结果,
+// 会被行内围栏判 stale_owner,覆盖不了导入的行(r2-ds#2)。
+func (s *localPlayerState) reforgedEpoch(onlineEpoch uint64) (uint64, error) {
+	prior := max(onlineEpoch, s.ownerEpoch, s.sqlEpoch, s.barrierEpoch)
+	if prior == math.MaxUint64 {
+		return 0, errors.New("本地存盘代次耗尽，拒绝导入")
+	}
+	return prior + 1, nil
+}
+
+// localBarrierVersionFields 是存盘屏障 hash 里装版本令牌的字段:pending、两表 ACK、go/db 补投意图的版本
+// (go/db saveoutbox contract.go 的 outbox_version;补投计次 / 终态字段只抄它的值,不会更大)。
+var localBarrierVersionFields = []string{"pending", "player_database", "player_database_1", "outbox_version"}
+
+// localBarrierEpoch 取本地屏障全部版本令牌里最大的归属代次;键不存在时返回 0。类型或令牌畸形时报错而不是当成 0:
+// 读不懂的屏障可能装着高于 owner 的代次,当成没有会把重铸代次算低。
+func localBarrierEpoch(entry *debugutil.RedisEntry) (uint64, error) {
+	if entry.Type == "none" {
+		return 0, nil
+	}
+	if entry.Type != "hash" || entry.Hash == nil {
+		return 0, fmt.Errorf("本地 %s 类型异常(%s)", entry.Key, entry.Type)
+	}
+	var epoch uint64
+	for _, field := range localBarrierVersionFields {
+		token := debugutil.HashText(entry, field)
+		if token == "" {
+			continue
+		}
+		fieldEpoch, _, err := savebarrier.Parse(token)
+		if err != nil {
+			return 0, fmt.Errorf("本地存盘屏障 %s 畸形: %w", field, err)
+		}
+		epoch = max(epoch, fieldEpoch)
+	}
+	return epoch, nil
 }
 
 // writeLocalRows 在一个 RC 事务里按表名升序替换两张行,行内围栏写成本地版本。

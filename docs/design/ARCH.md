@@ -120,7 +120,7 @@
      - **部署默认路由模式**:本地 `start_game.ps1 -GateRouterMode` 默认 `'1'`(`start_game.ps1:22`);K8s `k8s_deploy.ps1 -GateRouterMode` 默认 `"1"`(`k8s_deploy.ps1:163-164`,turn-based §22 D75,2026-09-29 起;此前为 `"0"`)。`dev_tools.ps1` / `k8s_image.ps1` / `k8s_zone_rollback.ps1` 的同名参数留空即不覆盖。
      - chat / guild / trade 等新服务只承诺路由模式可达;以 `"0"` 回退运行的 zone 每次重新部署都要显式再传 `-GateRouterMode 0`(回退态不粘滞)。
      - 战斗与本开关无关:两种模式下 gate 都不中继战斗(turn-based §22 D66)。K8s 路由模式 battle-smoke 至今未跑(D65 豁免、事后补验),**未编译、未测试,待 Codex 验证**。
-5. **失败语义统一** — 所有锁走 `RedisLocker`(UUID + Lua CAS,见 [login-simplification-2026-04.md](./login-simplification-2026-04.md))
+5. **登录锁按属主令牌保护** — login 的账号／玩家锁使用 `RedisLocker`，UUID 令牌配合 Lua 校验后释放／续租，见本文 §3.3。
 
 ---
 
@@ -162,11 +162,12 @@
 
 ### 3.3 并发安全
 
-两层保证同玩家串行:
-1. `player_locker:{playerId}` 分布式锁(`RedisLocker`,UUID+Lua CAS)
-2. Kafka db_task 分区契约:key = playerId 十进制,partition = CRC-32(key) mod N(login 的读与 C++ scene 的写用同一个函数,见 [db-task-kafka-partition-contract.md](./db-task-kafka-partition-contract.md)「分区函数契约」),同一 topic 内同一玩家的读写落同一分区、按 offset 串行;访客和合服后跨 zone 的读写分属两个 topic,不在此保证之内。(2026-10-16 订正:原文「playerId 一致性哈希到同一分区」从来没生效;已落码,未编译、未测试,待 Codex 验证)
+登录互斥、会话栅栏与 DB 分区分别约束不同阶段，不能合并成“同玩家整条链始终串行”的保证。
 
-详见: [login-simplification-2026-04.md](./login-simplification-2026-04.md)
+- **锁的属主**：`go/login/internal/logic/pkg/locker/player_locker.go` 的 `RedisLocker` 用 SETNX 写入 UUID；释放和续租都由 Lua 原子比较令牌，防止旧属主删掉或延长继任者的锁。Login / CreatePlayer 分别使用账号锁，EnterGame 使用 `player_locker:{playerId}`。
+- **异步生命周期**：EnterGame 单次 `TryLock`，争用立即回 `kLoginInProgress`，不在 RPC 内重试睡眠；拿锁后以心跳覆盖异步预加载与会话提交，丢锁时取消后台链。RPC 无错只表示受理，不等于进场成功。
+- **提交栅栏**：锁的续租不能代替提交校验；后台续跑仍按连接身份、会话代际及玩家属主条件校验，见[客户端请求顺序 §6.2](./client-request-ordering.md)与[登录事件流](./player_login_flow.md)。旧 `loginstep` 已退役，现用 `loginsession` / `sessionfence`；`session_incarnation=0` 或缺少 `gate_instance_id` 的兼容请求跳过 sessionfence，不能视为具有同等会话栅栏保证。
+- **DB 顺序**：db_task 的 key 为 playerId 十进制，分区为 CRC-32(key) mod N；login 的读与 C++ scene 的写在同一 topic 时共享分区契约。跨 topic 不因此获得顺序保证，读后写屏障、applied cursor 与换代规则统一见 [DBTask 分区契约](./db-task-kafka-partition-contract.md)。
 
 ---
 
@@ -415,9 +416,8 @@ net.ipv4.tcp_max_syn_backlog     = 65535
 - [player_login_flow.md](./player_login_flow.md) — 登录/重连/顶号/超时清理事件流(权威)
 - [auth-provider-framework.md](./auth-provider-framework.md) — 第三方登录扩展框架
 - [dual-token-authentication.md](./dual-token-authentication.md) — Access + Refresh 双 token
-- [login-simplification-2026-04.md](./login-simplification-2026-04.md) — FSM→loginstep / RedisLocker
-- [login-gate-assignment-migration.md](./login-gate-assignment-migration.md) — Gateway 演进
-- [login-test-anti-stuck-system.md](./login-test-anti-stuck-system.md) — 测试卡死防护
+- [java-gateway-portal-decision.md](./java-gateway-portal-decision.md) — HTTP Gateway 职责；当前登录与待验收边界见[第三方登录设计](./third-party-login-end-to-end-design.md)
+- [login-test-anti-stuck-system.md](./login-test-anti-stuck-system.md) — 登录回归、单次超时与结果判定边界
 - [async-load-disconnect-reconnect-race.md](./async-load-disconnect-reconnect-race.md) — 加载/断线竞态
 - [login-node-stateless-no-affinity.md](./login-node-stateless-no-affinity.md) — login 无状态化
 - [login-queue-2026-05.md](./login-queue-2026-05.md) — AssignGate 真排队(Redis ZSET + 每 zone 一个 dispatcher leader)
@@ -426,7 +426,6 @@ net.ipv4.tcp_max_syn_backlog     = 65535
 - [gate-load-balancing-design.md](./gate-load-balancing-design.md) — gate 负载均衡设计 + L4 LB 排除
 - [gate-scene-relay-architecture.md](./gate-scene-relay-architecture.md) — Gate↔Scene 中继
 - [gate_client_high_water_mark.md](./gate_client_high_water_mark.md) — 高水位反压
-- [gate-entity-id-truncation-fix.md](./gate-entity-id-truncation-fix.md) — entity id 截断修复
 - [k8s_gate_exposure_guidance.md](./k8s_gate_exposure_guidance.md) — K8s 暴露
 - [java-gateway-portal-decision.md](./java-gateway-portal-decision.md) — Java Gateway 选型决策
 - [client-rpc-router.md](./client-rpc-router.md) — 客户端 RPC 路由服:gate 唯一的 gRPC 目标(2026-09-05)
@@ -489,12 +488,12 @@ net.ipv4.tcp_max_syn_backlog     = 65535
 | 3 | Gate 不能挂 L4 LB,改"Login 分配 + HMAC token" | 2026-03 | [gate-load-balancing-design.md](./gate-load-balancing-design.md) |
 | 4 | 双 token (Access 2h + Refresh 30d) 对齐微信/QQ 标准 | 2026-04-20 | [dual-token-authentication.md](./dual-token-authentication.md) |
 | 5 | 第三方登录 Provider 化,新增渠道仅改配置 | 2026-04 | [auth-provider-framework.md](./auth-provider-framework.md) |
-| 6 | login 服务从 FSM 简化为 `loginstep` + `RedisLocker` | 2026-04 | [login-simplification-2026-04.md](./login-simplification-2026-04.md) |
+| 6 | 登录流程取消 FSM；后续 `loginstep` 亦已退役，现用连接登录态与会话栅栏，账号／玩家锁按令牌保护 | 2026-04 起，2026-10-23 按现状订正 | 本文 §3.3、[客户端请求顺序 §6.2](./client-request-ordering.md) |
 | 7 | Kafka `gate-{gateId}` topic 解耦控制流 | 2026-04 | [player_login_flow.md](./player_login_flow.md) |
 | 8 | muduo 框架代码不动,优化只在业务层 + 内核 | 持续 | 本文 §2 |
 | 9 | **首次 Login 上移到 Java Gateway `/api/login`**,OAuth 校验、限流、排队都在 HTTP 层;cpp gate 的 `ClientPlayerLogin.Login` 保留兼容(带 deprecation 日志) | **2026-05-08** | [open-server-rate-limit-design.md](./open-server-rate-limit-design.md), [third-party-login-end-to-end-design.md](./third-party-login-end-to-end-design.md) |
 | 10 | **`/api/refresh-token` 独立 HTTP 通道**,token 续签不再占用 gate TCP | **2026-05-08** | [dual-token-authentication.md](./dual-token-authentication.md) |
-| 11 | **cpp gate→login gRPC 加 HTTP/2 keepalive**(30s/10s/permit-without-calls=1),防 NAT/LB 空闲踢连接 | **2026-05-08** | [gate-grpc-long-connection-audit-2026-05.md](./gate-grpc-long-connection-audit-2026-05.md) |
+| 11 | **C++ gRPC 连接复用与保活**：旧 30s/10s 空闲 PING 方案已由 muduo 传输替代；业务通道默认关闭周期 keepalive，使用截止触发探测 | **2026-05-08**（后由传输迁移替代） | [grpc-muduo-transport.md](./grpc-muduo-transport.md) §4.4、§14 |
 | 12 | **gate 的 `HandleGrpcNodeMessage` 保留为"协议路由器"**,登录只是它转发的 RPC 之一(EnterGame/LeaveGame/CreatePlayer/Disconnect 必须经它)| **2026-05-08** | [gate-login-rpc-boundary.md](./gate-login-rpc-boundary.md) |
 | 13 | **Gateway 限流**:Bucket4j + Redis,三层叠加(zone/ip/account cooldown)+ 开服波次 | **2026-05-08** | [open-server-rate-limit-design.md](./open-server-rate-limit-design.md) |
 | 14 | **AssignGate 真排队**:权威源放 go-zero login(不是 Java Gateway),Redis ZSET 做有序 FIFO + 单 leader dispatcher(2026-10-12 G1b 起改为每 zone 一个 leader,见 login-queue-2026-05.md §7.1);Java AssignGateService 删本地签 HMAC,改成 gRPC 转发;Bucket4j 保留作为前置闸,两层互补 | **2026-05-14** | [login-queue-2026-05.md](./login-queue-2026-05.md) |

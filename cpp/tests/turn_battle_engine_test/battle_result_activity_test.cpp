@@ -1,21 +1,25 @@
 #include <gtest/gtest.h>
 #include <google/protobuf/unknown_field_set.h>
 
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <iterator>
 #include <limits>
 #include <map>
+#include <optional>
 #include <set>
 #include <string>
 #include <vector>
 
+#include "services/battle/settlement/settlement_outbox.h"
 #include "services/battle/system/battle_result_activity.h"
 #include "services/battle/system/result_commit.h"
 
 // 活动局结果纯函数(battle_result_activity.h)的单元测试,docs/design/guild-phase2/06-activities.md §6.42。
 // 覆盖:上下文回显 / 不回显、逃跑与阵亡名单升序去重、重发判定顺序、跨语言持久记录键契约。
-// Redis / Kafka 编排在 battle_room_manager.cpp,不在本工程里测(与 settlement_outbox.h 同一拆法)。
+// Redis / Kafka 编排在 battle_room_manager.cpp,不在本工程里测(与 settlement_outbox.h 同一拆法);
+// 其中落库轮次的回复汇总抽成了纯接缝 turnbattle::StagingRoundTally(result_commit.h),在这里测。
 
 using turnbattle::ActivityResultKey;
 using turnbattle::ActivityResultRetryAction;
@@ -479,6 +483,141 @@ TEST(BattleResultCommit, StagingSpanExpiresWithoutOpeningRedisRounds)
     EXPECT_FALSE(commit.PersonalSettlementsDurable());
     EXPECT_FALSE(commit.CanSend(start + turnbattle::kMaxStagingSpan));
     EXPECT_FALSE(commit.Begin(1, start + turnbattle::kMaxStagingSpan));
+}
+
+// 审计 r2-battle#4 的有界性(2026-10-22)。按生产的驱动顺序(StagePersonalSettlements:每拍先判跨度、再开轮)
+// 一直失败下去:6 小时里恰好开出快速 24 轮 + 低频 70 轮,第 6 小时整那一拍判用尽且只判一次,之后再不开轮。
+// 推导:快速阶段 23 次等待 = 1+2+4+8+16 + 18×30 = 571s;低频第 k 轮在 571s + 300s×k 开出,
+// 要早于 21600s 得 k ≤ 70。退避都是整秒,驱动按 1s 一拍走,不读墙钟。
+TEST(BattleResultCommit, StagingRoundsStayBoundedAcrossTheWholeSpan)
+{
+    turnbattle::ResultCommit commit("result", StagingMembers());
+    const auto start = turnbattle::ResultCommit::Clock::time_point{};
+    const std::chrono::seconds span(turnbattle::kMaxStagingSpan);
+    uint32_t rounds = 0;
+    std::optional<std::chrono::seconds> exhaustedAt;
+    for (std::chrono::seconds elapsed{0}; elapsed <= span + std::chrono::hours(1); elapsed += std::chrono::seconds(1))
+    {
+        const auto now = start + elapsed;
+        if (commit.ExhaustStagingIfOverdue(now))
+        {
+            ASSERT_FALSE(exhaustedAt.has_value()) << "exhaustion reported twice";
+            exhaustedAt = elapsed;
+            continue;
+        }
+        const auto attempt = commit.BeginStaging(now);
+        if (attempt == 0) continue;
+        ASSERT_FALSE(exhaustedAt.has_value()) << "round opened after exhaustion at " << elapsed.count() << "s";
+        ++rounds;
+        if (rounds == turnbattle::kFastStagingRounds) EXPECT_EQ(elapsed.count(), 571);
+        EXPECT_FALSE(commit.FinishStaging(attempt, {}, now));
+    }
+    ASSERT_TRUE(exhaustedAt.has_value());
+    EXPECT_EQ(exhaustedAt->count(), span.count());
+    EXPECT_EQ(rounds, turnbattle::kFastStagingRounds + 70u);
+    EXPECT_EQ(commit.StagingFailures(), rounds);
+    EXPECT_TRUE(commit.StagingExhausted());
+    EXPECT_EQ(commit.UnstagedMembers(), StagingMembers());
+    EXPECT_FALSE(commit.CanSend(start + span + std::chrono::hours(1)));
+}
+
+// 有轮次在途时不判用尽:它的回复到齐后可能恰好落定。到点时落定 → 放行、不再判用尽;没落定 → 下一次调用判用尽。
+TEST(BattleResultCommit, StagingSpanWaitsForTheInFlightRound)
+{
+    const auto start = turnbattle::ResultCommit::Clock::time_point{};
+    const auto deadline = start + turnbattle::kMaxStagingSpan;
+    {
+        turnbattle::ResultCommit commit("result", StagingMembers());
+        EXPECT_FALSE(commit.ExhaustStagingIfOverdue(start));
+        const auto attempt = commit.BeginStaging(deadline - std::chrono::milliseconds(1));
+        ASSERT_NE(attempt, 0u);
+        EXPECT_FALSE(commit.ExhaustStagingIfOverdue(deadline));  // 在途
+        EXPECT_TRUE(commit.FinishStaging(attempt, StagingMembers(), deadline));
+        EXPECT_FALSE(commit.ExhaustStagingIfOverdue(deadline + std::chrono::seconds(1)));
+        EXPECT_FALSE(commit.StagingExhausted());
+        EXPECT_TRUE(commit.CanSend(deadline));
+    }
+    {
+        turnbattle::ResultCommit commit("result", StagingMembers());
+        EXPECT_FALSE(commit.ExhaustStagingIfOverdue(start));
+        const auto attempt = commit.BeginStaging(deadline - std::chrono::milliseconds(1));
+        ASSERT_NE(attempt, 0u);
+        EXPECT_FALSE(commit.ExhaustStagingIfOverdue(deadline));
+        EXPECT_FALSE(commit.FinishStaging(attempt, {92}, deadline));
+        EXPECT_TRUE(commit.ExhaustStagingIfOverdue(deadline));
+        EXPECT_EQ(commit.UnstagedMembers(), (std::set<uint64_t>{93}));
+        EXPECT_FALSE(commit.CanSend(deadline + std::chrono::hours(1)));
+    }
+}
+
+// 落库标记(settlement_outbox.h 的 kStagedSettlementMembersKeyFmt)要活过整个落库阶段,一轮开出时它才一定还在;
+// 留 4 倍余量(推导见 result_commit.h 的 kMaxStagingSpan)。与 battle_room_manager.cpp 的 static_assert 同一关系,
+// 放进测试工程是为了改任一常量时这里也先红。
+TEST(BattleResultCommit, StagingSpanLeavesStagedMarkerTtlMargin)
+{
+    const long long markerTtlSec = battle_settlement::kStagedSettlementMembersTtlSec;
+    const long long spanSec = std::chrono::seconds(turnbattle::kMaxStagingSpan).count();
+    EXPECT_LE(spanSec * 4, markerTtlSec);
+    // 快速阶段整段(第 24 轮约在 571s 开出)与至少一轮低频重试都落在跨度之内。
+    EXPECT_LT(571 + std::chrono::seconds(turnbattle::kSlowStagingRetryInterval).count(), spanSec);
+}
+
+// 一轮落库的回复汇总(battle_room_manager.cpp StagePersonalSettlements 的编排接缝)。
+// 每名成员只记第一次回复;不在本轮成员里的 id 忽略;全部成员回复过的那一次恰好返回 true。
+TEST(BattleStagingRoundTally, RecordsFirstReplyPerMemberAndCompletesOnce)
+{
+    turnbattle::StagingRoundTally tally({92, 93, 94});
+    EXPECT_FALSE(tally.Record(92, true));
+    EXPECT_FALSE(tally.Record(92, false));  // 重复回复不改第一次的结论
+    EXPECT_FALSE(tally.Record(777, true));  // 陌生 id
+    EXPECT_FALSE(tally.Record(93, false));
+    EXPECT_TRUE(tally.Record(94, true));    // 最后一名到齐,收口
+    EXPECT_FALSE(tally.Record(94, true));   // 到齐之后的迟到回复不再触发收口
+    EXPECT_FALSE(tally.Record(93, true));
+    EXPECT_EQ(tally.Settled(), (std::set<uint64_t>{92, 94}));
+    EXPECT_EQ(tally.Members(), (std::set<uint64_t>{92, 93, 94}));
+}
+
+// 按生产编排把 StagingRoundTally 与 ResultCommit 串起来(StagePersonalSettlements → onReply → OnPersonalSettlementsStaged)。
+// 审计 r2-battle#1:每轮只对开轮时的 UnstagedMembers 发命令,修复前第 2 轮会把已落定的 92 一起重写。
+// 本轮最后一名成员同步失败(命令没发出)时当场收口:遍历的是 tally 自己那份成员,不受 FinishStaging 改写待写集合影响。
+// 全部落定的那一轮才放行(调用方随即 DEL 本局落库标记),此后不再开轮。
+TEST(BattleStagingRoundTally, DrivesRetryRoundsOverOnlyUnsettledMembers)
+{
+    turnbattle::ResultCommit commit("result", {92, 93, 94});
+    auto now = turnbattle::ResultCommit::Clock::time_point{};
+    // 第 1 轮:92 写入,93 回 ERROR,94 命令没发出(同步失败,就地记未落定)。
+    // 第 2 轮:93 回 2(上一轮其实执行过),94 写入。
+    const std::vector<std::map<uint64_t, bool>> replies{{{92, true}, {93, false}, {94, false}},
+                                                        {{93, true}, {94, true}}};
+    std::vector<std::set<uint64_t>> commandedPerRound;
+    std::vector<bool> releasedPerRound;
+    for (const auto& roundReplies : replies)
+    {
+        const auto attempt = commit.BeginStaging(now);
+        ASSERT_NE(attempt, 0u);
+        turnbattle::StagingRoundTally tally(commit.UnstagedMembers());
+        std::set<uint64_t> commanded;
+        uint32_t finishCalls = 0;
+        bool released = false;
+        for (const auto member : tally.Members())
+        {
+            commanded.insert(member);
+            if (!tally.Record(member, roundReplies.at(member))) continue;
+            ++finishCalls;
+            released = commit.FinishStaging(attempt, tally.Settled(), now);
+        }
+        EXPECT_EQ(finishCalls, 1u);
+        commandedPerRound.push_back(std::move(commanded));
+        releasedPerRound.push_back(released);
+        now += std::chrono::seconds(1);  // 第 1 次失败后退避 1s
+    }
+    EXPECT_EQ(commandedPerRound[0], (std::set<uint64_t>{92, 93, 94}));
+    EXPECT_EQ(commandedPerRound[1], (std::set<uint64_t>{93, 94}));
+    EXPECT_FALSE(releasedPerRound[0]);
+    EXPECT_TRUE(releasedPerRound[1]);
+    EXPECT_TRUE(commit.PersonalSettlementsDurable());
+    EXPECT_EQ(commit.BeginStaging(now), 0u);  // DEL 标记之后不会再有本局的落库命令
 }
 
 // 过期轮次与重复回调不改状态:不移出成员、不计失败、不放行。

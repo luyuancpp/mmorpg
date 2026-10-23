@@ -212,6 +212,9 @@ type deadNodeReconcile struct {
 var (
 	pendingDeadNodesMu sync.Mutex
 	pendingDeadNodes   = make(map[string]deadNodeReconcile)
+	// deadNodeReconcilePublishedZones:上一次发布时队列深度非 0 的 zone(受 pendingDeadNodesMu 保护)。
+	// 见 publishDeadNodeReconcilePending。
+	deadNodeReconcilePublishedZones = make(map[uint32]struct{})
 )
 
 func pendingDeadNodeKey(zoneID uint32, nodeID string) string {
@@ -289,17 +292,32 @@ func drainPendingDeadNodeReconciles(ctx context.Context, svcCtx *svc.ServiceCont
 }
 
 // publishDeadNodeReconcilePending 把队列深度按 zone 发到 Prometheus。
-// 已经归零的 zone 也要显式写 0,否则仪表盘会一直停在最后一个非零值上。
+// 已经归零的 zone 也要显式写 0,否则仪表盘会一直停在最后一个非零值上。"归零的 zone"包括已经不在 GetActiveZones 里的:
+// 一个 zone 的最后一个节点死掉(或换到别的 zone)之后,它的收尾任务 drain 完时这个 zone 已不再活跃,所以记住上一次发布过
+// 非 0 的 zone,这次没有任务的一并写 0。
 func publishDeadNodeReconcilePending() {
 	pendingDeadNodesMu.Lock()
 	counts := make(map[uint32]int, len(pendingDeadNodes))
 	for _, task := range pendingDeadNodes {
 		counts[task.entry.reg.ZoneId]++
 	}
+	drained := make([]uint32, 0, len(deadNodeReconcilePublishedZones))
+	for zoneID := range deadNodeReconcilePublishedZones {
+		if counts[zoneID] == 0 {
+			drained = append(drained, zoneID)
+		}
+	}
+	deadNodeReconcilePublishedZones = make(map[uint32]struct{}, len(counts))
+	for zoneID := range counts {
+		deadNodeReconcilePublishedZones[zoneID] = struct{}{}
+	}
 	pendingDeadNodesMu.Unlock()
 
 	for _, zoneID := range GetActiveZones() {
 		metrics.SetDeadNodeReconcilePending(zoneID, counts[zoneID])
+	}
+	for _, zoneID := range drained {
+		metrics.SetDeadNodeReconcilePending(zoneID, 0)
 	}
 	for zoneID, n := range counts {
 		metrics.SetDeadNodeReconcilePending(zoneID, n)

@@ -222,7 +222,8 @@ func main() {
 
 	// 父快照Lua中保存的原始任务意图跨scene崩溃恢复；Kafka确认后仍等两表SQL双ACK才清理。
 	// 装配使用可写主父缓存Redis，与只读OwnerEpochRedis区分；跨实例拓扑未支持时拒启。
-	saveReplay, err := saveoutbox.Start(context.Background(), config.AppConfig, ctx.RedisClient, ctx.PlacementRedis, stores)
+	// 补投与消费同看本实例的读方就绪闸(kafkaConsumer.RouteGateOpen)：闸关着时整拍跳过、不计次(r2-rr#5)。
+	saveReplay, err := saveoutbox.Start(context.Background(), config.AppConfig, ctx.RedisClient, ctx.PlacementRedis, stores, kafkaConsumer)
 	if err != nil {
 		panic(fmt.Sprintf("save outbox recovery rejected: %v", err))
 	}

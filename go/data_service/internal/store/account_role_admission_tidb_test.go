@@ -34,7 +34,7 @@ func TestTiDBRoleAdmissionFixedHolderCancelAndLateGenerations(t *testing.T) {
 	d, db := accountDirectoryTiDB(t)
 	ctx, cancel := context.WithTimeout(context.Background(), 40*time.Second)
 	defer cancel()
-	_, err := d.Create(ctx, "seller", &base.AccountSimplePlayer{PlayerId: 11})
+	_, err := createInitialRoleForTest(d, ctx, "seller", &base.AccountSimplePlayer{ZoneId: 1, PlayerId: 11})
 	require.NoError(t, err)
 	a := NewAccountRoleAdmissionStore(d)
 	in := admissionTestRequest(11, 1, 1)
@@ -148,7 +148,7 @@ func roleProofStorage(t *testing.T, global *sql.DB, player uint64) (uint32, stri
 		require.NoError(t, model.CreateOrUpdateTable(row))
 		require.NoError(t, model.Insert(row))
 	}
-	_, err = global.Exec("INSERT INTO player_route(route_shard,player_id,home_zone,storage_id,placement_version,rev,updated_by,created_at_ms,updated_at_ms) VALUES (?,?,1,?,1,1,'role-proof-test',1,1)", placement.RouteRowShard(player), player, id)
+	_, err = global.Exec("INSERT INTO player_route(route_shard,player_id,home_zone,storage_id,placement_version,rev,updated_by,created_at_ms,updated_at_ms) VALUES (?,?,1,?,1,1,'role-proof-test',1,1) ON DUPLICATE KEY UPDATE home_zone=VALUES(home_zone),storage_id=VALUES(storage_id),placement_version=VALUES(placement_version),rev=rev+1", placement.RouteRowShard(player), player, id)
 	require.NoError(t, err)
 	return id, name, handle
 }
@@ -168,7 +168,7 @@ func TestTiDBRoleAdmissionStrongSQLProofRejectsUnsyncedRowsAndKeepsReceipt(t *te
 	id, _, rows := roleProofStorage(t, global, 11)
 	ctx, cancel := context.WithTimeout(context.Background(), 40*time.Second)
 	defer cancel()
-	_, err := d.Create(ctx, "seller", &base.AccountSimplePlayer{PlayerId: 11})
+	_, err := createInitialRoleForTest(d, ctx, "seller", &base.AccountSimplePlayer{ZoneId: 1, PlayerId: 11})
 	require.NoError(t, err)
 	v, err := NewSQLRoleFreezeVerifier([]uint32{id})
 	require.NoError(t, err)
@@ -215,7 +215,7 @@ func TestTiDBRoleAdmissionSQLProofNoAdmissionAndHistoricalFloor(t *testing.T) {
 	id, _, rows := roleProofStorage(t, global, 11)
 	ctx, cancel := context.WithTimeout(context.Background(), 40*time.Second)
 	defer cancel()
-	_, err := d.Create(ctx, "seller", &base.AccountSimplePlayer{PlayerId: 11})
+	_, err := createInitialRoleForTest(d, ctx, "seller", &base.AccountSimplePlayer{ZoneId: 1, PlayerId: 11})
 	require.NoError(t, err)
 	v, err := NewSQLRoleFreezeVerifier([]uint32{id})
 	require.NoError(t, err)
@@ -254,7 +254,7 @@ func TestTiDBRoleAdmissionRegisterAndBeginShareCommitLock(t *testing.T) {
 	d, global := accountDirectoryTiDB(t)
 	ctx, cancel := context.WithTimeout(context.Background(), 40*time.Second)
 	defer cancel()
-	_, err := d.Create(ctx, "seller", &base.AccountSimplePlayer{PlayerId: 11})
+	_, err := createInitialRoleForTest(d, ctx, "seller", &base.AccountSimplePlayer{ZoneId: 1, PlayerId: 11})
 	require.NoError(t, err)
 	a, trades := NewAccountRoleAdmissionStore(d), newTestAccountRoleTradeStore(d, nil)
 	start := make(chan struct{})
@@ -283,7 +283,7 @@ func TestTiDBRoleAdmissionSQLProofRejectsRouteAndSchemaFailures(t *testing.T) {
 	id, _, rows := roleProofStorage(t, global, 11)
 	ctx, cancel := context.WithTimeout(context.Background(), 40*time.Second)
 	defer cancel()
-	_, err := d.Create(ctx, "seller", &base.AccountSimplePlayer{PlayerId: 11})
+	_, err := createInitialRoleForTest(d, ctx, "seller", &base.AccountSimplePlayer{ZoneId: 1, PlayerId: 11})
 	require.NoError(t, err)
 	v, err := NewSQLRoleFreezeVerifier([]uint32{id})
 	require.NoError(t, err)
@@ -323,8 +323,8 @@ func TestTiDBRoleAdmissionOpenRejectsRemovalAndToolRestoreKeepsFloor(t *testing.
 	d, global := accountDirectoryTiDB(t)
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	role := &base.AccountSimplePlayer{PlayerId: 11, AppearanceId: "original"}
-	_, err := d.Create(ctx, "seller", role)
+	role := &base.AccountSimplePlayer{ZoneId: 1, PlayerId: 11, AppearanceId: "original"}
+	_, err := createInitialRoleForTest(d, ctx, "seller", role)
 	require.NoError(t, err)
 	a := NewAccountRoleAdmissionStore(d)
 	_, err = a.Register(ctx, admissionTestRequest(11, 1, 1))
@@ -334,7 +334,7 @@ func TestTiDBRoleAdmissionOpenRejectsRemovalAndToolRestoreKeepsFloor(t *testing.
 		_, err = d.ImportRole(ctx, "seller", role, restore, roleImportTestID(1))
 		require.ErrorIs(t, err, accountdirectory.ErrConflict)
 	}
-	_, err = d.Create(ctx, "seller", role)
+	_, err = createInitialRoleForTest(d, ctx, "seller", role)
 	require.NoError(t, err, "普通建角原请求幂等不扩大成全部在线角色禁用")
 	_, err = a.CloseAdmissions(ctx, &dspb.CloseRoleAdmissionsRequest{PlayerId: 11, SceneInstanceId: admissionTestInstance, OwnerRevision: 1, ThroughGeneration: 1, RequiredOwnerEpoch: 17, RequiredSaveSeq: 3})
 	require.NoError(t, err)
@@ -353,8 +353,8 @@ func TestTiDBRoleImportReceiptRevokesOldRoutesAndDoesNotBumpOnResume(t *testing.
 	d, global := accountDirectoryTiDB(t)
 	ctx, cancel := context.WithTimeout(context.Background(), 40*time.Second)
 	defer cancel()
-	role := &base.AccountSimplePlayer{PlayerId: 11, AppearanceId: "original"}
-	_, err := d.Create(ctx, "seller", role)
+	role := &base.AccountSimplePlayer{ZoneId: 1, PlayerId: 11, AppearanceId: "original"}
+	_, err := createInitialRoleForTest(d, ctx, "seller", role)
 	require.NoError(t, err)
 	type result struct{ err error }
 	results := make(chan result, 8)

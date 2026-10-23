@@ -123,7 +123,7 @@ func isKnownNodeIdentityAmbiguous(zoneID uint32, nodeID string) bool {
 }
 
 // nodeGoneObservedAt 记录**本副本**亲眼看到某个 (zone,node) 从 etcd 注册表消失的时刻
-// (watch DELETE,或重同步时新旧快照的差集)。
+// (watch DELETE、watch PUT 里同一个键换了身份,或重同步时新旧快照按身份算的差集)。
 //
 // 为什么 Redis 里已经有 death_at 还要再记一份进程本地的:death_at 只有 leader 写。
 // leader 缺位的窗口里节点丢了租约,没有人写 death_at,而「没有 death_at」在
@@ -702,13 +702,16 @@ func fullSync(ctx context.Context, svcCtx *svc.ServiceContext) (int64, error) {
 	// 本地清理,但整段 DELETE 事件也可能被错过(watch 重建窗口)。用新旧
 	// 快照的差集兜底,清掉已消失节点的 gRPC 连接缓存与 Prometheus 序列 ——
 	// 这两样是进程私有的,领导者替代不了。
-	for key, prev := range prevKnown {
-		if _, still := next[key]; !still {
-			RemoveNodeConn(prev.reg.ZoneId, prev.nodeID)
-			metrics.ForgetNode(prev.nodeID, prev.reg.ZoneId, prev.reg.SceneNodeType)
-			// watch 重建窗口里漏掉的 DELETE:本副本是在**此刻**才知道它没了。
-			noteNodeGoneFromRegistry(prev.reg.ZoneId, prev.nodeID)
+	// 差集按 (zone,node) 身份比,不按 etcd 键比:同一个键换了 zone 或 node_id 时,旧身份同样是此刻才被本副本看到消失
+	// (与 watch PUT 的换身份分支同一口径);身份还挂在别的键上的,不算消失。
+	for _, prev := range prevKnown {
+		if _, still := seenByZone[prev.reg.ZoneId][prev.nodeID]; still {
+			continue
 		}
+		RemoveNodeConn(prev.reg.ZoneId, prev.nodeID)
+		metrics.ForgetNode(prev.nodeID, prev.reg.ZoneId, prev.reg.SceneNodeType)
+		// watch 重建窗口里漏掉的 DELETE / 换身份:本副本是在**此刻**才知道它没了。
+		noteNodeGoneFromRegistry(prev.reg.ZoneId, prev.nodeID)
 	}
 
 	// Update activeZones.
@@ -828,7 +831,12 @@ func sweepStaleLoadSetMembers(svcCtx *svc.ServiceContext, seenByZone map[uint32]
 // after the last join/leave event) and acts as a self-healing safety net
 // when etcd watch misses an update during a network blip.
 func watchAndRefresh(ctx context.Context, svcCtx *svc.ServiceContext, rev int64) {
-	watchCh := svcCtx.Etcd.Watch(ctx, sceneNodePrefix,
+	// clientv3 要求 watch 不再使用时取消它的 ctx。本函数会因 resync / watch 出错 / 通道关闭返回,若直接拿长寿命的服务 ctx
+	// 建 watch,每返回一次就留下一条 watch 子流(客户端一条 goroutine 加无界缓冲,服务端一个 watcher)。用随本函数返回而
+	// 取消的子 ctx 建;handleWatchEvent 里的补频道 / rebalance 仍用服务 ctx,不受影响。
+	watchCtx, cancelWatch := context.WithCancel(ctx)
+	defer cancelWatch()
+	watchCh := svcCtx.Etcd.Watch(watchCtx, sceneNodePrefix,
 		clientv3.WithPrefix(),
 		clientv3.WithRev(rev+1),
 		clientv3.WithPrevKV(),
@@ -951,18 +959,14 @@ func handleWatchEvent(ctx context.Context, svcCtx *svc.ServiceContext, ev *clien
 
 		// Clear stale gRPC connection: endpoint may have changed after restart.
 		RemoveNodeConn(entry.reg.ZoneId, entry.nodeID)
-		if existed && prev.reg.ZoneId != entry.reg.ZoneId {
-			// 同一个 etcd 键换了 zone:旧 zone 的 (zone,node) 身份已经从注册表消失,按 watch DELETE 同样收尾。
-			// 以前这里在每个副本上直接 Zrem 旧 zone 负载集、删类型镜像:不写 death_at、不记本地消失时刻、
-			// 不走领导者闸门,也不收孤儿实例。它若是旧 zone 唯一的节点,isZoneGoneFromRegistry(旧 zone) 随即为真,
-			// playerLocationOwnerGone / playerLocationOwnerDead 就会不经再入屏障放行指向它的陈旧位置,而老进程
-			// 可能还在存盘(cross-zone-scene-travel.md §13.9「handleWatchEvent 换 zone」一条,2026-10-22 落码)。
-			if knownNodeIdentityMatchCount(prev.reg.ZoneId, prev.nodeID) == 0 {
-				retireNodeIdentity(ctx, svcCtx, prev)
-			} else {
-				// 旧身份还挂在别的键上(身份歧义,选点与判死都会拒绝它):它没有消失,不判死,只丢掉可能已过期的连接缓存。
-				RemoveNodeConn(prev.reg.ZoneId, prev.nodeID)
-			}
+		// 同一个 etcd 键换了身份(zone 或 node_id 变了):旧的 (zone,node) 身份从注册表消失,按 watch DELETE 同样收尾。
+		// 以前换 zone 时在每个副本上直接 Zrem 旧 zone 负载集、删类型镜像:不写 death_at、不记本地消失时刻、
+		// 不走领导者闸门,也不收孤儿实例。它若是旧 zone 唯一的节点,isZoneGoneFromRegistry(旧 zone) 随即为真,
+		// playerLocationOwnerGone / playerLocationOwnerDead 就会不经再入屏障放行指向它的陈旧位置,而老进程
+		// 可能还在存盘(cross-zone-scene-travel.md §13.9「handleWatchEvent 换 zone」一条,2026-10-22 落码)。
+		identityChanged := existed && (prev.reg.ZoneId != entry.reg.ZoneId || prev.nodeID != entry.nodeID)
+		if identityChanged {
+			retireNodeIdentityIfGone(ctx, svcCtx, prev)
 		}
 
 		updateNodeLoad(svcCtx, entry)
@@ -971,7 +975,8 @@ func handleWatchEvent(ctx context.Context, svcCtx *svc.ServiceContext, ev *clien
 		// 补频道 / rebalance 是变更动作,只有领导者做;跟随者只维护上面的
 		// 内存镜像(updateNodeLoad 在跟随者上直接返回)。跟随者当选时会经 resync -> fullSync 补齐。
 		if wids := worldConfIds(); len(wids) > 0 && isLeader() {
-			if !existed {
+			// 换了身份时,对新身份所在的 zone 来说它同样是"新出现的节点"。
+			if !existed || identityChanged {
 				logx.Infof("[LoadReporter] Zone %d: node %s appeared (watch PUT, role=%d)",
 					entry.reg.ZoneId, entry.nodeID, entry.reg.SceneNodeType)
 				// waitForLock=false:本函数跑在 etcd watch goroutine 上,
@@ -984,7 +989,7 @@ func handleWatchEvent(ctx context.Context, svcCtx *svc.ServiceContext, ev *clien
 			// channels toward the new shape. Skipping on non-world-hosting
 			// nodes avoids a pointless scan of the world channel set.
 			roleChanged := existed && prev.reg.SceneNodeType != entry.reg.SceneNodeType
-			if constants.IsWorldHostingType(entry.reg.SceneNodeType) && (!existed || roleChanged) {
+			if constants.IsWorldHostingType(entry.reg.SceneNodeType) && (!existed || roleChanged || identityChanged) {
 				RebalanceWorldChannelsForZone(ctx, svcCtx, entry.reg.ZoneId, wids)
 			}
 		}
@@ -1001,12 +1006,25 @@ func handleWatchEvent(ctx context.Context, svcCtx *svc.ServiceContext, ev *clien
 			return
 		}
 		rebuildActiveZones()
-		retireNodeIdentity(ctx, svcCtx, entry)
+		retireNodeIdentityIfGone(ctx, svcCtx, entry)
 	}
 }
 
-// retireNodeIdentity 把一个已从 etcd 注册表消失的 (zone,node) 身份按「死亡」收尾。调用方有两处:
-// watch DELETE,以及 PUT 里「同一个 etcd 键换了 zone」时的旧 zone 一侧。
+// retireNodeIdentityIfGone:某个 etcd 键不再代表 gone 这个 (zone,node) 身份时调用(watch DELETE,或 PUT 换了身份)。
+// 身份已经没有任何键在册,才按死亡收尾(retireNodeIdentity)。同一身份还挂在别的键上(双代进程并存、node_id 被复用,
+// 选点与判死都会因身份歧义拒绝它)时,它没有从注册表消失:不判死、不写 death_at,只丢掉可能已过期的连接缓存;
+// 等最后一个键也消失时再收尾。方向是 fail-closed:宁可晚判死,不对还在册的身份写死亡标记、摘负载集。
+// 调用前 knownNodes 必须已经反映这次变更(DELETE 已删键、PUT 已写入新值)。
+func retireNodeIdentityIfGone(ctx context.Context, svcCtx *svc.ServiceContext, gone nodeEntry) {
+	if knownNodeIdentityMatchCount(gone.reg.ZoneId, gone.nodeID) > 0 {
+		RemoveNodeConn(gone.reg.ZoneId, gone.nodeID)
+		return
+	}
+	retireNodeIdentity(ctx, svcCtx, gone)
+}
+
+// retireNodeIdentity 把一个已从 etcd 注册表消失的 (zone,node) 身份按「死亡」收尾。只经 retireNodeIdentityIfGone 调用,
+// 前提是该身份已没有任何键在册。
 //
 // 每个副本都做(在领导者闸门之前):
 //   - 记下本副本看到它消失的时刻,屏障从这一刻起算,不依赖领导者写的 death_at(见 nodeGoneObservedAt);
