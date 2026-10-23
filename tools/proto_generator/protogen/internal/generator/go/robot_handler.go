@@ -114,7 +114,7 @@ func ensureRobotPushHandlers(services []internal.ClientRpcService, files []*desc
 				continue
 			}
 			path := filepath.Join(dir, fileName)
-			exists, err := fileExists(path)
+			exists, err := robotHandlerFileExists(path)
 			if err != nil {
 				errs = append(errs, fmt.Errorf("%s: %w", where, err))
 				continue
@@ -166,6 +166,86 @@ func ensureRobotPushHandlers(services []internal.ClientRpcService, files []*desc
 // robotHandlerFileName 是 <Service><Method> 的 handler 文件名;注册表判断 handler 是否存在、推送建桩都用它。
 func robotHandlerFileName(key string) string {
 	return camelToSnake(key) + ".go"
+}
+
+// checkRobotHandlerFileCollisions 先核整批文件名，避免写出部分桩后才发现不同方法共用一个文件。
+func checkRobotHandlerFileCollisions(services []internal.ClientRpcService) error {
+	owners := make(map[string]string)
+	for _, service := range services {
+		for _, classified := range service.Methods {
+			method := classified.Method
+			name := robotHandlerFileName(method.KeyName())
+			identity := method.Service() + "." + method.Method()
+			if previous, exists := owners[name]; exists {
+				return fmt.Errorf("robot handler file %s collides between %s and %s", name, previous, identity)
+			}
+			owners[name] = identity
+		}
+	}
+	return nil
+}
+
+// robotHandlerFuncFiles 只认正式包级函数；接收者方法与测试函数不能满足注册表的函数引用。
+// 解析失败必须在建桩前报错，不能把读不到的手写函数当成不存在。
+func robotHandlerFuncFiles(dir string) (map[string]string, error) {
+	defined := make(map[string]string)
+	entries, err := os.ReadDir(dir)
+	if os.IsNotExist(err) {
+		return defined, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("read robot handler directory %s: %w", dir, err)
+	}
+	for _, entry := range entries {
+		name := entry.Name()
+		if entry.IsDir() || !strings.HasSuffix(name, ".go") || strings.HasSuffix(name, "_test.go") {
+			continue
+		}
+		path := filepath.Join(dir, name)
+		file, err := parser.ParseFile(token.NewFileSet(), path, nil, parser.ParseComments)
+		if err != nil {
+			return nil, fmt.Errorf("parse robot handler %s: %w", path, err)
+		}
+		for _, decl := range file.Decls {
+			function, ok := decl.(*ast.FuncDecl)
+			if !ok || function.Recv != nil || !strings.HasSuffix(function.Name.Name, "Handler") {
+				continue
+			}
+			if err := checkRobotGoFileName(name); err != nil {
+				return nil, fmt.Errorf("robot handler %s is not available in every build: %w", function.Name.Name, err)
+			}
+			for _, group := range file.Comments {
+				if group.Pos() > file.Package {
+					break
+				}
+				for _, comment := range group.List {
+					if strings.HasPrefix(comment.Text, "//go:build ") || strings.HasPrefix(comment.Text, "// +build ") {
+						return nil, fmt.Errorf("robot handler %s in %s has a build constraint", function.Name.Name, path)
+					}
+				}
+			}
+			if previous, exists := defined[function.Name.Name]; exists {
+				return nil, fmt.Errorf("robot handler %s is defined in both %s and %s", function.Name.Name, previous, name)
+			}
+			defined[function.Name.Name] = name
+		}
+	}
+	return defined, nil
+}
+
+// robotHandlerFileExists 保留 stat 错误，推送桩不能因无权读取而假称已存在。
+func robotHandlerFileExists(path string) (bool, error) {
+	info, err := os.Stat(path)
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	if err != nil {
+		return false, fmt.Errorf("stat robot handler %s: %w", path, err)
+	}
+	if !info.Mode().IsRegular() {
+		return false, fmt.Errorf("robot handler %s is not a regular file", path)
+	}
+	return true, nil
 }
 
 // fileExists checks if a file already exists.

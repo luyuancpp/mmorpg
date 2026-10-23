@@ -335,6 +335,85 @@ func TestRobotPushHandlersRejectGoBuildSuffixFileNames(t *testing.T) {
 	}
 }
 
+func TestRobotPushHandlersKeepNonstandardPackageFunctions(t *testing.T) {
+	robotFixtureLogger(t)
+	files, guild := robotFixture()
+	for _, test := range []struct {
+		name, source string
+		wantCreated  int
+	}{
+		{"包级函数", "package handler\nfunc GuildServiceNotifyChangedHandler() {}\n", 0},
+		{"接收者方法不是包级函数", "package handler\ntype receiver struct{}\nfunc (*receiver) GuildServiceNotifyChangedHandler() {}\n", 1},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			dir := t.TempDir()
+			path := filepath.Join(dir, "custom_notifications.go")
+			robotWriteFile(t, path, test.source)
+			created, err := robotPushEnsure(t, files, dir, guild)
+			if err != nil || len(created) != test.wantCreated {
+				t.Fatalf("正式包级函数决定是否建桩: created=%v err=%v", created, err)
+			}
+			if got := robotReadFile(t, path); got != test.source {
+				t.Fatal("非标准文件中的手写源码被改动")
+			}
+			if test.wantCreated == 1 {
+				if got := robotReadFile(t, filepath.Join(dir, "guild_service_notify_changed.go")); got != robotPushStubGuildNotifyChanged {
+					t.Fatalf("接收者方法不能取代注册表引用的包级桩: %s", got)
+				}
+			}
+		})
+	}
+}
+
+func TestRobotPushHandlersRejectCollisionsBeforeAnyWrite(t *testing.T) {
+	robotFixtureLogger(t)
+	files, guild := robotFixture()
+	other := robotFixtureService(files[0], "OtherService", 100,
+		robotFixtureMethod{"NotifyHTTPServer", ".fixturepb.Changed", ".Empty", internal.ClientRpcPush},
+		robotFixtureMethod{"NotifyHttpServer", ".fixturepb.Changed", ".Empty", internal.ClientRpcPush},
+	)
+	dir := t.TempDir()
+	created, err := robotPushEnsure(t, files, dir, guild, other)
+	if err == nil {
+		t.Fatal("不同方法映射同一文件必须在首个桩写入前拒绝")
+	}
+	for _, identity := range []string{"OtherService.NotifyHTTPServer", "OtherService.NotifyHttpServer", "other_service_notify_http_server.go"} {
+		if !strings.Contains(err.Error(), identity) {
+			t.Errorf("碰撞错误必须含 %q: %v", identity, err)
+		}
+	}
+	if len(created) != 0 || len(robotPushStubDir(t, dir)) != 0 {
+		t.Fatalf("批内后置碰撞不得留下前面服务的桩: %v", created)
+	}
+}
+
+func TestRobotPushHandlersRejectUnreadableHandlerDirectory(t *testing.T) {
+	robotFixtureLogger(t)
+	files, guild := robotFixture()
+	t.Run("目录实际是文件", func(t *testing.T) {
+		path := filepath.Join(t.TempDir(), "handlers")
+		robotWriteFile(t, path, "保留原文件")
+		created, err := robotPushEnsure(t, files, path, guild)
+		if err == nil || len(created) != 0 || robotReadFile(t, path) != "保留原文件" {
+			t.Fatalf("目录读取失败必须拒绝且保留原件: created=%v err=%v", created, err)
+		}
+	})
+	for _, test := range []struct{ name, source string }{
+		{"损坏源码", "package handler\nfunc GuildServiceNotifyChangedHandler(\n"},
+		{"仅条件编译函数", "//go:build windows\n\npackage handler\nfunc GuildServiceNotifyChangedHandler() {}\n"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			dir := t.TempDir()
+			path := filepath.Join(dir, "custom_notifications.go")
+			robotWriteFile(t, path, test.source)
+			created, err := robotPushEnsure(t, files, dir, guild)
+			if err == nil || len(created) != 0 || len(robotPushStubDir(t, dir)) != 1 || robotReadFile(t, path) != test.source {
+				t.Fatalf("不能把未能确认的函数当作缺失或正式函数: created=%v err=%v", created, err)
+			}
+		})
+	}
+}
+
 // robotTotalAssertParses 断言注册表是合法 Go 源码(注册表模板的 import 顺序与 map 对齐不是 gofmt 规范格式,这里不比 gofmt)。
 func robotTotalAssertParses(t *testing.T, name, content string) {
 	t.Helper()
