@@ -162,6 +162,31 @@ func TestProbeSignaturesRejectTamperingAndDomains(t *testing.T) {
 }
 
 func TestAuthorityTiDBImmutableIntentAndFailedQueueKeepsWait(t *testing.T) {
+	t.Run("开房前失败保留原票和等待时间", func(t *testing.T) {
+		s := testStore(t)
+		a, b := testJoin(t, s, 1), testJoin(t, s, 2)
+		ctx := context.Background()
+		f := &pb.MatchFormationRecord{BattleId: 300, OperationId: uuid.NewString(), PhysicalRegion: 1, TargetNodeId: 3, TargetInstanceId: "original-instance", TargetEndpoint: "original-endpoint", Mode: 3, ConfigId: 1, RequeueOnFailure: true, ActivityContext: []byte("activity-owner")}
+		require.NoError(t, s.Claim(ctx, f, []*pb.MatchAuthorityTicketRecord{a, b}))
+		work, e := s.AcquireWork(ctx, 300)
+		require.NoError(t, e)
+		require.NoError(t, s.Unknown(ctx, work))
+		require.NoError(t, s.Finish(ctx, work, false))
+		for _, original := range []*pb.MatchAuthorityTicketRecord{a, b} {
+			after, err := s.Ticket(ctx, original.PlayerId)
+			require.NoError(t, err)
+			require.Equal(t, uint32(1), after.State)
+			require.Equal(t, original.Ticket, after.Ticket)
+			require.Equal(t, original.EnqueuedMs, after.EnqueuedMs)
+			require.Zero(t, after.FormationId)
+		}
+		// 迟到成功不能把已安全中止的旧成局重新变为ready。
+		require.ErrorIs(t, s.Finish(ctx, work, true), ErrWorkLease)
+		after, err := s.Ticket(ctx, 1)
+		require.NoError(t, err)
+		require.Equal(t, uint32(1), after.State)
+	})
+
 	s := testStore(t)
 	a, b := testJoin(t, s, 1), testJoin(t, s, 2)
 	ctx := context.Background()
@@ -172,27 +197,32 @@ func TestAuthorityTiDBImmutableIntentAndFailedQueueKeepsWait(t *testing.T) {
 	first, e := s.SaveIntent(ctx, work, []byte("canonical-create"))
 	require.NoError(t, e)
 	require.Equal(t, []byte("canonical-create"), first)
-	replayed, e := s.SaveIntent(ctx, work, []byte("different-late-create"))
+	replayed, e := s.SaveIntent(ctx, work, first)
 	require.NoError(t, e)
-	require.Equal(t, first, replayed, "迟到worker不得替换已经持久化的seed/快照/目标")
+	require.Equal(t, first, replayed)
 	require.NoError(t, s.Unknown(ctx, work))
 	recovered, e := s.Formation(ctx, 300)
 	require.NoError(t, e)
 	require.Equal(t, uint32(3), recovered.State)
 	require.Equal(t, "original-instance", recovered.TargetInstanceId)
 	require.Equal(t, []byte("activity-owner"), recovered.ActivityContext)
-	require.NoError(t, s.Finish(ctx, work, false))
-	a2, e := s.Ticket(ctx, 1)
+	beforeTickets := make([]*pb.MatchAuthorityTicketRecord, 0, 2)
+	for _, original := range []*pb.MatchAuthorityTicketRecord{a, b} {
+		before, err := s.Ticket(ctx, original.PlayerId)
+		require.NoError(t, err)
+		beforeTickets = append(beforeTickets, before)
+	}
+	_, e = s.SaveIntent(ctx, work, []byte("different-late-create"))
+	require.Error(t, e, "迟到worker不得替换已经持久化的seed/快照/目标")
+	require.Error(t, s.Finish(ctx, work, false), "已有Create原件不能仅凭运行时失败释放原票，必须取得唯一SQL终局")
+	afterFormation, e := s.Formation(ctx, 300)
 	require.NoError(t, e)
-	require.Equal(t, uint32(1), a2.State)
-	require.Equal(t, a.Ticket, a2.Ticket)
-	require.Equal(t, a.EnqueuedMs, a2.EnqueuedMs)
-	require.Zero(t, a2.FormationId)
-	// 迟到成功不能把已安全中止的旧成局重新变为ready。
-	require.ErrorIs(t, s.Finish(ctx, work, true), ErrWorkLease)
-	a3, e := s.Ticket(ctx, 1)
-	require.NoError(t, e)
-	require.Equal(t, uint32(1), a3.State)
+	require.True(t, proto.Equal(recovered, afterFormation), "原件冲突和无SQL终局失败均不得改变成局")
+	for _, before := range beforeTickets {
+		after, err := s.Ticket(ctx, before.PlayerId)
+		require.NoError(t, err)
+		require.True(t, proto.Equal(before, after), "不得释放或替换任一成员原票")
+	}
 }
 
 func TestAuthorityTiDBWholePartyReservationRollsBackOnBusyMember(t *testing.T) {

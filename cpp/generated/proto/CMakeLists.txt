@@ -204,6 +204,7 @@ set(SOURCE_FILES
     common/base/role_admission.pb.cc
     team/team_authority.grpc.pb.cc
     team/team_authority.pb.cc
+    common/base/currency_type.pb.cc
 )
 
 add_library(proto STATIC ${SOURCE_FILES})

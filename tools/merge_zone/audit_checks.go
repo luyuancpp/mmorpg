@@ -186,12 +186,25 @@ func auditKafkaQueues(ctx context.Context, cfg auditConfig) ResourceAudit {
 	return r
 }
 
-// auditSourceZoneNodes 查源区场景节点负载集。与 merge 的 preflight P2 同一判据,
-// 放进审计是为了让 T-1 彩排就能发现「zone-down 其实没做干净」。
+// auditSourceZoneNodes 查源区场景节点:etcd 注册表(正面证据)与负载集。与 merge 的 preflight P2 同一判据
+// (assertZoneDown),放进审计是为了让 T-1 彩排就能发现「zone-down 其实没做干净」。
 func auditSourceZoneNodes(ctx context.Context, cfg auditConfig) ResourceAudit {
 	r := ResourceAudit{Name: "source_scene_nodes", UniqueScope: "per_zone"}
 	if cfg.sceneRDB == nil {
 		return infraAudit(r.Name, "no scene_manager Redis handle (-scene-redis-addr/-scene-redis-db)")
+	}
+	if cfg.sceneNodes == nil {
+		return infraAudit(r.Name, "no etcd scene-node registry (-etcd-endpoints): an empty load set alone does not prove the zone is down")
+	}
+	registered, err := cfg.sceneNodes.SceneNodesInZone(ctx, cfg.src)
+	if err != nil {
+		return infraAudit(r.Name, "read etcd scene-node registry: %v", err)
+	}
+	if registered > 0 {
+		r.SourceCount = int64(registered)
+		r.Severity = "block"
+		r.Notes = fmt.Sprintf("etcd still registers %d scene node(s) of zone %d — zone-down is not complete", registered, cfg.src)
+		return r
 	}
 	key := fmt.Sprintf(sceneNodeLoadKeyFmt, cfg.src)
 	n, err := cfg.sceneRDB.ZCard(ctx, key).Result()
@@ -205,7 +218,7 @@ func auditSourceZoneNodes(ctx context.Context, cfg auditConfig) ResourceAudit {
 		return r
 	}
 	r.Severity = "info"
-	r.Notes = key + " is empty"
+	r.Notes = fmt.Sprintf("no scene node of zone %d registered in etcd; %s is empty", cfg.src, key)
 	return r
 }
 

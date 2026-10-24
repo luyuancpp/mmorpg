@@ -1,31 +1,40 @@
 package logic
 
 // 回归:死节点收尾 reconcileDeadNodeScenes 先 GET scene:{id}:node,确认等于死节点后才强制销毁,而修复前的
-// 销毁脚本(AtomicDestroyForce)不带期望属主。GET 之后,resolveScene 的死节点自愈
-// (reassignSceneOffDeadNode → reassignSceneNode CAS)可能已经把实例改派到活节点并 CreateScene,收尾仍会
-// 把它抹掉:DestroyScene 发到新节点,扣掉新节点的 scene_count 与 player_count,玩家刚进的场景被拆。
+// 销毁脚本(AtomicDestroyForce)不带期望属主。GET 之后若有写者经 reassignSceneNode 把实例改派到活节点并
+// CreateScene,收尾仍会把它抹掉:DestroyScene 发到新节点,扣掉新节点的 scene_count 与 player_count,玩家刚进的
+// 场景被拆。修复时(2026-10-22)这样的写者是 resolveScene 的死节点自愈;10-23 起它只重建世界频道,用例里用
+// reassignSceneNode 模拟一个在收尾读属主之后改派实例的写者,守的是纵深防御。
 //
-// 交错用确定的顺序复现,手法与 reassign_cas_test.go / resolve_scene_reassign_cas_test.go 相同。收尾在 GET
-// 与销毁之间没有可注入的缝,所以分三步:先摆出「收尾已读到属主是 dead」的现场;再用 reassignSceneNode 提交
-// 改派,相当于 resolveScene 插进这个窗口;最后拿那次陈旧的观察,调用收尾用的销毁入口 destroyOrphanOfDeadNode。
-// 不需要交错的收尾行为由 logic_test.go 的 TestReconcileDeadNode_* 从 reconcileDeadNodeScenes 入口覆盖。
+// 本文件守收尾用的销毁入口 destroyOrphanOfDeadNode 与脚本层的契约,手法与 reassign_cas_test.go /
+// resolve_scene_reassign_cas_test.go 相同:先摆出「收尾已读到属主是 dead」的现场,再用 reassignSceneNode 提交
+// 改派,最后拿那次陈旧的观察调销毁入口。经 reconcileDeadNodeScenes 入口、在它自己的 GET 之后注入改派的用例
+// 在 owner_read_interleave_test.go(那边能在修复前代码上直接取红)。
 //
 // 修复前红的取法(修复前没有 destroyOrphanOfDeadNode,本文件编不过,所以按变异取红):
 //   - 变异 A:把 destroyOrphanOfDeadNode 末行传给 destroyInstanceInternal 的 deadNode 换成 ""。期望属主为空时
-//     脚本跳过比较,整条链路与修复前 reconcile 调的 destroyInstanceForce(..., "node_death") 逐行等价。
-//     ReassignedAfterOwnerRead 红,失败信息含「收尾不得销毁」;其余三条绿。
+//     脚本跳过比较,整条链路与修复前 reconcile 调的 destroyInstanceForce(..., "node_death") 等价。
+//     本文件 ReassignedAfterOwnerRead 红(失败信息含「收尾不得销毁」),其余四条绿;
+//     owner_read_interleave_test.go 的 ReconcileSkipsSceneReassignedAfterOwnerRead 也红。
 //   - 变异 B:恢复 A,删掉 luaAtomicDestroyInstanceForce 开头比较期望属主的 if ... end 三行。
-//     ReassignedAfterOwnerRead 与 ExpectedOwnerMismatch 两条红;NoExpectedOwner 与 StillOwnedByDeadNode 绿,
-//     后两条守的是「不比对的 force 路径语义不变」与「属主仍是死节点时照常销毁」。
+//     本文件 ReassignedAfterOwnerRead 与 ExpectedOwnerMismatch 两条红,其余三条绿;其中 NoExpectedOwner 与
+//     StillOwnedByDeadNode 守的是「不比对的 force 路径语义不变」与「属主仍是死节点时照常销毁」。
+//   - 变异 C:恢复 B,把 reconcileDeadNodeScenes 里的 destroyOrphanOfDeadNode(ctx, svcCtx, zoneId, sceneId,
+//     entry.nodeID) 换成修复前的 destroyInstanceForce(ctx, svcCtx, zoneId, sceneId, "node_death")(两者签名相同,
+//     直接替换)。本文件五条全绿,只有 owner_read_interleave_test.go 的 ReconcileSkipsSceneReassignedAfterOwnerRead
+//     红 —— 调用点由那条守。
+//   - DestroyScriptErrorKeepsMemberIndexed 守「收尾出错的成员留在反向索引里」,取红方法见该用例注释。
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"strconv"
+	"sync/atomic"
 	"testing"
 
 	"github.com/alicebob/miniredis/v2"
 	"github.com/stretchr/testify/require"
+	"github.com/zeromicro/go-zero/core/stores/redis"
 
 	"scene_manager/internal/svc"
 )
@@ -71,7 +80,7 @@ func newReconcileDeadOwnerCase(t *testing.T, sceneID uint64) *reconcileDeadOwner
 	seedSceneOwnedBy(t, mr, reconcileCASZone, sceneID, reconcileNodeDead)
 	_, err := mr.ZAdd(activeInstancesKey(reconcileCASZone), float64(nowUnix()), member)
 	require.NoError(t, err)
-	require.NoError(t, mr.Set(sceneInstancePlayerCountKey(sceneID), reconcileScenePlayers))
+	require.NoError(t, mr.Set(fmtInstancePlayerCountKey(sceneID), reconcileScenePlayers))
 
 	// 前提:dead 已判死、屏障放行,live 存活。
 	require.False(t, IsNodeAlive(sc, reconcileCASZone, reconcileNodeDead))
@@ -82,12 +91,7 @@ func newReconcileDeadOwnerCase(t *testing.T, sceneID uint64) *reconcileDeadOwner
 	return &reconcileDeadOwnerCase{sc: sc, mr: mr, live: live, sceneID: sceneID}
 }
 
-// sceneInstancePlayerCountKey 是 instance:{id}:player_count,与生产代码同一格式串。
-func sceneInstancePlayerCountKey(sceneID uint64) string {
-	return fmt.Sprintf(InstancePlayerCountKey, sceneID)
-}
-
-// 收尾读到属主是 dead 之后,resolveScene 把实例改派到 live 并在 live 上 CreateScene;收尾拿着陈旧的观察销毁。
+// 收尾读到属主是 dead 之后,有写者把实例改派到 live 并在 live 上 CreateScene;收尾拿着陈旧的观察销毁。
 // 脚本比对属主落空:实例原样留给 live,live 的计数一个都不扣,不向 live 发 DestroyScene。
 // 修复前:脚本不比对,抹掉全部场景键,DestroyScene 发到 live,live 的 scene_count 与 player_count 被扣。
 func TestReconcileDeadNode_ReassignedAfterOwnerRead_LeavesNewOwnerIntact(t *testing.T) {
@@ -102,7 +106,7 @@ func TestReconcileDeadNode_ReassignedAfterOwnerRead_LeavesNewOwnerIntact(t *test
 	require.NoError(t, err)
 	require.Equal(t, reconcileNodeDead, owner)
 
-	// 窗口里 resolveScene 提交改派:属主、两侧反向索引与 scene_count 同批改到 live。
+	// 窗口里另一写者提交改派:属主、两侧反向索引与 scene_count 同批改到 live。
 	require.True(t, reassignSceneNode(c.sc, reconcileCASZone, c.sceneID, reconcileNodeDead, reconcileNodeLive))
 	require.EqualValues(t, 1, readInt64(c.sc, nodeSceneCountKey(reconcileCASZone, reconcileNodeLive)))
 
@@ -120,11 +124,10 @@ func TestReconcileDeadNode_ReassignedAfterOwnerRead_LeavesNewOwnerIntact(t *test
 	require.EqualValues(t, 0, c.live.fake.destroyCalls.Load(), "不得向新节点发 DestroyScene")
 
 	// 其余场景键一个都没动。
-	require.Equal(t, reconcileScenePlayers, mustGet(t, c.mr, sceneInstancePlayerCountKey(c.sceneID)))
+	require.Equal(t, reconcileScenePlayers, mustGet(t, c.mr, fmtInstancePlayerCountKey(c.sceneID)))
 	require.Equal(t, "gs-live", mustGet(t, c.mr, sceneAgonesGsKey(c.sceneID)))
 	require.Equal(t, strconv.FormatUint(uint64(reconcileCASZone), 10), mustGet(t, c.mr, sceneZoneKey(c.sceneID)))
-	_, err = c.mr.ZScore(activeInstancesKey(reconcileCASZone), strconv.FormatUint(c.sceneID, 10))
-	require.NoError(t, err, "实例必须仍在 active 集合里,空闲回收照常管它")
+	requireActiveInstance(t, c.sc, reconcileCASZone, c.sceneID, true)
 }
 
 // 没有插队的改派时,收尾照常销毁:场景键全部抹掉,记账只扣在死节点上,死节点不发 RPC,活节点一点不碰。
@@ -140,10 +143,9 @@ func TestReconcileDeadNode_StillOwnedByDeadNode_Destroys(t *testing.T) {
 
 	member := strconv.FormatUint(c.sceneID, 10)
 	require.False(t, c.mr.Exists(sceneNodeKey(c.sceneID)))
-	require.False(t, c.mr.Exists(sceneInstancePlayerCountKey(c.sceneID)))
+	require.False(t, c.mr.Exists(fmtInstancePlayerCountKey(c.sceneID)))
 	require.False(t, c.mr.Exists(sceneZoneKey(c.sceneID)))
-	_, err = c.mr.ZScore(activeInstancesKey(reconcileCASZone), member)
-	require.Error(t, err, "必须移出 active 集合")
+	requireActiveInstance(t, c.sc, reconcileCASZone, c.sceneID, false)
 	in, err := c.sc.Redis.Sismember(nodeScenesKey(reconcileCASZone, reconcileNodeDead), member)
 	require.NoError(t, err)
 	require.False(t, in)
@@ -155,13 +157,15 @@ func TestReconcileDeadNode_StillOwnedByDeadNode_Destroys(t *testing.T) {
 	require.EqualValues(t, 0, c.live.fake.destroyCalls.Load())
 }
 
-// 脚本层:带期望属主而属主不符时,七个场景键与 active 集合一个都不动,返回全空;映射已不存在时同样不动。
+// 脚本层:带期望属主而属主不符时,六个场景键(属主、人数、镜像标志、源、zone、agones_gs)与 active 集合成员
+// 一个都不动,返回全空;映射已不存在时同样不动(删映射的那条路径负责其余清理,见 destroyOrphanOfDeadNode 注释)。
+// 两个场景放在同一个 active 集合里,成员资格逐个按成员查。
 func TestAtomicDestroyForce_ExpectedOwnerMismatchTouchesNothing(t *testing.T) {
 	sc, mr := newIntegrationSvcCtx(t)
 	const reassigned, unmapped uint64 = 89503, 89504
 	for _, id := range []uint64{reassigned, unmapped} {
 		require.NoError(t, mr.Set(sceneZoneKey(id), "1"))
-		require.NoError(t, mr.Set(sceneInstancePlayerCountKey(id), "3"))
+		require.NoError(t, mr.Set(fmtInstancePlayerCountKey(id), "3"))
 		require.NoError(t, mr.Set(sceneMirrorFlagKey(id), "1"))
 		require.NoError(t, mr.Set(sceneSourceKey(id), "77"))
 		require.NoError(t, mr.Set(sceneAgonesGsKey(id), "gs-x"))
@@ -176,29 +180,31 @@ func TestAtomicDestroyForce_ExpectedOwnerMismatchTouchesNothing(t *testing.T) {
 		require.Empty(t, node)
 		require.Empty(t, gs)
 		require.Zero(t, pc)
-
+	}
+	for _, id := range []uint64{reassigned, unmapped} {
 		require.Equal(t, "1", mustGet(t, mr, sceneZoneKey(id)))
-		require.Equal(t, "3", mustGet(t, mr, sceneInstancePlayerCountKey(id)))
+		require.Equal(t, "3", mustGet(t, mr, fmtInstancePlayerCountKey(id)))
 		require.Equal(t, "1", mustGet(t, mr, sceneMirrorFlagKey(id)))
 		require.Equal(t, "77", mustGet(t, mr, sceneSourceKey(id)))
 		require.Equal(t, "gs-x", mustGet(t, mr, sceneAgonesGsKey(id)))
-		_, err = mr.ZScore(activeInstancesKey(reconcileCASZone), strconv.FormatUint(id, 10))
-		require.NoError(t, err, "scene %d 不得移出 active 集合", id)
+		requireActiveInstance(t, sc, reconcileCASZone, id, true)
 	}
 	require.Equal(t, reconcileNodeLive, mustGet(t, mr, sceneNodeKey(reassigned)))
 	require.False(t, mr.Exists(sceneNodeKey(unmapped)), "不得替不存在的映射建键")
 }
 
-// 脚本层:期望属主为空串时不比对,与修复前同一语义 —— 空闲 / 级联 / source_migrated 等 force 路径依赖它,
-// 属主是谁都照抹,返回抹除前的 (属主, 名额, 人数)。
+// 脚本层:期望属主为空串时不比对,与修复前同一语义 —— explicit / cascade / source_migrated / source_scaled_in
+// (都经 destroyInstanceForce)依赖它,属主是谁都照抹,返回抹除前的 (属主, 名额, 人数)。
 func TestAtomicDestroyForce_NoExpectedOwnerWipesWhoeverOwnsIt(t *testing.T) {
 	sc, mr := newIntegrationSvcCtx(t)
-	const sceneID uint64 = 89505
+	const sceneID, bystander uint64 = 89505, 89506
 	require.NoError(t, mr.Set(sceneNodeKey(sceneID), reconcileNodeLive))
-	require.NoError(t, mr.Set(sceneInstancePlayerCountKey(sceneID), "4"))
+	require.NoError(t, mr.Set(fmtInstancePlayerCountKey(sceneID), "4"))
 	require.NoError(t, mr.Set(sceneAgonesGsKey(sceneID), "gs-live"))
-	_, err := mr.ZAdd(activeInstancesKey(reconcileCASZone), 1, strconv.FormatUint(sceneID, 10))
-	require.NoError(t, err)
+	for _, id := range []uint64{sceneID, bystander} {
+		_, err := mr.ZAdd(activeInstancesKey(reconcileCASZone), 1, strconv.FormatUint(id, 10))
+		require.NoError(t, err)
+	}
 
 	node, gs, pc, err := AtomicDestroyForce(sc, reconcileCASZone, sceneID, "")
 	require.NoError(t, err)
@@ -207,10 +213,65 @@ func TestAtomicDestroyForce_NoExpectedOwnerWipesWhoeverOwnsIt(t *testing.T) {
 	require.EqualValues(t, 4, pc)
 
 	require.False(t, mr.Exists(sceneNodeKey(sceneID)))
-	require.False(t, mr.Exists(sceneInstancePlayerCountKey(sceneID)))
+	require.False(t, mr.Exists(fmtInstancePlayerCountKey(sceneID)))
 	require.False(t, mr.Exists(sceneAgonesGsKey(sceneID)))
-	_, err = mr.ZScore(activeInstancesKey(reconcileCASZone), strconv.FormatUint(sceneID, 10))
-	require.Error(t, err)
+	requireActiveInstance(t, sc, reconcileCASZone, sceneID, false)
+	requireActiveInstance(t, sc, reconcileCASZone, bystander, true)
+}
+
+// errInjectedEval 是 failFirstEvalHook 注入的错误。
+var errInjectedEval = errors.New("injected: EVAL not sent")
+
+// failFirstEvalHook 让 script 的第一次 EVAL 不发给 Redis、直接回错误(脚本没执行),之后一律放行。
+type failFirstEvalHook struct {
+	script string
+	fired  atomic.Bool
+}
+
+func (h *failFirstEvalHook) DialHook(next redis.DialHook) redis.DialHook { return next }
+
+func (h *failFirstEvalHook) ProcessPipelineHook(next redis.ProcessPipelineHook) redis.ProcessPipelineHook {
+	return next
+}
+
+func (h *failFirstEvalHook) ProcessHook(next redis.ProcessHook) redis.ProcessHook {
+	return func(ctx context.Context, cmd redis.Cmder) error {
+		args := cmd.Args()
+		if cmd.Name() == "eval" && len(args) >= 2 && args[1] == h.script && h.fired.CompareAndSwap(false, true) {
+			cmd.SetErr(errInjectedEval)
+			return errInjectedEval
+		}
+		return next(ctx, cmd)
+	}
+}
+
+// 销毁脚本报错(结论未知)时,收尾把它计入 failed,并且不从死节点的反向索引里摘掉:属主映射仍指向死节点,
+// 摘掉会让索引与映射不一致,同一 node_id 下次判死时也抄不进快照。
+// 修复前(940ef9746 报错被吞、照样计 destroyed;7a23b4fed 已计 failed)快照成员一律 SREM,反向索引被摘掉。
+// 红的取法:把 reconcileDeadNodeScenes 末尾的 membersExcept(members, failedMembers) 换成 membersExcept(members, nil)。
+func TestReconcileDeadNode_DestroyScriptErrorKeepsMemberIndexed(t *testing.T) {
+	clearKnownNodesForTest()
+	ResetNodeConnCacheForTest()
+	t.Cleanup(clearKnownNodesForTest)
+
+	hook := &failFirstEvalHook{script: luaAtomicDestroyInstanceForce}
+	sc, mr := newIntegrationSvcCtxWithRedisOptions(t, redis.WithHook(hook))
+	const sceneID uint64 = 89507
+	member := strconv.FormatUint(sceneID, 10)
+	require.NoError(t, mr.Set(sceneZoneKey(sceneID), strconv.FormatUint(uint64(reconcileCASZone), 10)))
+	seedSceneOwnedBy(t, mr, reconcileCASZone, sceneID, reconcileNodeDead)
+	_, err := mr.ZAdd(activeInstancesKey(reconcileCASZone), float64(nowUnix()), member)
+	require.NoError(t, err)
+
+	entry := nodeEntry{nodeID: reconcileNodeDead}
+	entry.reg.ZoneId = reconcileCASZone
+	reconcileDeadNodeScenes(context.Background(), sc, entry, []string{member})
+
+	require.True(t, hook.fired.Load(), "注入的脚本错误必须真的发生")
+	require.Equal(t, reconcileNodeDead, mustGet(t, mr, sceneNodeKey(sceneID)), "脚本没执行,属主映射原样")
+	requireSceneIndexedOnlyOn(t, sc, reconcileCASZone, sceneID, reconcileNodeDead)
+	require.EqualValues(t, 1, readInt64(sc, nodeSceneCountKey(reconcileCASZone, reconcileNodeDead)))
+	requireActiveInstance(t, sc, reconcileCASZone, sceneID, true)
 }
 
 // mustGet 读一个必须存在的字符串键。

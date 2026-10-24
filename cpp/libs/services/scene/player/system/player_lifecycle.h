@@ -7,6 +7,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include "engine/core/type_define/type_define.h"
 #include "engine/core/utils/registry/scene_entity.h"
@@ -175,6 +176,23 @@ namespace owner_epoch_stats
 			StaleOwnerRejectedExiting().load(std::memory_order_relaxed),
 			OwnerCounterBehind().load(std::memory_order_relaxed)};
 	}
+
+	// [OwnerEpoch] 汇总行与 Prometheus 导出(scene_owner_epoch_events_total{event=key})共用的字段表,顺序即汇总行的顺序。
+	struct Field
+	{
+		std::string_view key;
+		uint64_t Snapshot::* value;
+	};
+
+	inline constexpr Field kFields[] = {
+		{"stale_owner_write_rejected", &Snapshot::staleOwnerWriteRejected},
+		{"home_zone_unknown", &Snapshot::homeZoneUnknown},
+		{"owner_epoch_unknown", &Snapshot::ownerEpochUnknown},
+		{"stale_owner_rejected_exiting", &Snapshot::staleOwnerRejectedExiting},
+		{"owner_counter_behind", &Snapshot::ownerCounterBehind},
+	};
+	static_assert(sizeof(Snapshot) == std::size(kFields) * sizeof(uint64_t),
+				  "owner_epoch_stats::kFields must list every Snapshot counter");
 } // namespace owner_epoch_stats
 
 // 混版本持久字段保护:严格提交屏障覆盖世代校验 C3 的结局计数(docs/design/mixed-version-persist-field-protection.md §5.2)。
@@ -291,7 +309,7 @@ namespace persist_schema_stats
 //   sql_barrier_expired    等过 SQL ACK 之后,交接在标记写成前收口(30s 存盘看门狗 / 35s 晚发闸 / 冻结上限,由
 //                          AbortTravelHandoff 的共同出口归因,同时计入 aborted),或标记写成太晚、被 enter_scene 阶段的晚发闸拦下
 //                          (同时计入 mark_sent_destroyed)。日志 WARN [ZoneTravel][SqlBarrier] … ended_by=…。基线 0
-//   sql_owner_rejected     标记脚本回 -1:同一冻结代次已被 Redis 归属明确废黜,实体不存盘销毁(DestroyDeposedPlayer,
+//   sql_owner_rejected     标记脚本回 -1 / -2:同一冻结代次已被 Redis 归属明确废黜,实体不存盘销毁(DestroyDeposedPlayer,
 //                          handoff_sql_owner_rejected)。这是独立终态,不计入 granted / aborted / exit_wins / mark_sent_destroyed。应恒 0
 //
 // started 减去 (granted + resolved_in_place + aborted + exit_wins + mark_sent_destroyed + sql_owner_rejected) = 仍在途的 +
@@ -428,6 +446,61 @@ namespace travel_handoff_stats
 		snapshot.sqlOwnerRejected = counters.sqlOwnerRejected.load(std::memory_order_relaxed);
 		return snapshot;
 	}
+
+	// [TravelHandoff] 汇总行与 Prometheus 导出(player_ownership_metrics.cpp)共用的字段表:key 即汇总行里的 key、
+	// 也是指标的 event 标签值;顺序即汇总行的顺序(新 key 只追加在末尾,按位置解析的脚本不受影响)。
+	// kind 区分事件次数与两项冻结时长:事件次数导出为 scene_travel_handoff_events_total{event=key},冻结时长单独导出。
+	enum class FieldKind : uint8_t
+	{
+		kEvent,
+		kFrozenMsTotal,
+		kFrozenMsMax,
+		kCount,
+	};
+
+	struct Field
+	{
+		std::string_view key;
+		uint64_t Snapshot::* value;
+		FieldKind kind;
+	};
+
+	inline constexpr Field kFields[] = {
+		{"started", &Snapshot::started, FieldKind::kEvent},
+		{"started_cross_zone", &Snapshot::startedCrossZone, FieldKind::kEvent},
+		{"granted", &Snapshot::granted, FieldKind::kEvent},
+		{"granted_without_reply", &Snapshot::grantedWithoutReply, FieldKind::kEvent},
+		{"resolved_in_place", &Snapshot::resolvedInPlace, FieldKind::kEvent},
+		{"aborted", &Snapshot::aborted, FieldKind::kEvent},
+		{"exit_wins", &Snapshot::exitWins, FieldKind::kEvent},
+		{"save_watchdog_fired", &Snapshot::saveWatchdogFired, FieldKind::kEvent},
+		{"reply_watchdog_fired", &Snapshot::replyWatchdogFired, FieldKind::kEvent},
+		{"verify_rearmed", &Snapshot::verifyRearmed, FieldKind::kEvent},
+		{"frozen_ms_total", &Snapshot::frozenMsTotal, FieldKind::kFrozenMsTotal},
+		{"frozen_ms_max", &Snapshot::frozenMsMax, FieldKind::kFrozenMsMax},
+		{"withdraw_deferred", &Snapshot::withdrawDeferred, FieldKind::kEvent},
+		{"withdraw_expired", &Snapshot::withdrawExpired, FieldKind::kEvent},
+		{"granted_client_reset", &Snapshot::grantedClientReset, FieldKind::kEvent},
+		{"reply_uncorrelated", &Snapshot::replyUncorrelated, FieldKind::kEvent},
+		{"reply_unmatched", &Snapshot::replyUnmatched, FieldKind::kEvent},
+		{"freeze_cap_reached", &Snapshot::freezeCapReached, FieldKind::kEvent},
+		{"dispatch_window_closed", &Snapshot::dispatchWindowClosed, FieldKind::kEvent},
+		{"mark_sent_destroyed", &Snapshot::markSentDestroyed, FieldKind::kEvent},
+		{"mark_sent_client_reset", &Snapshot::markSentClientReset, FieldKind::kEvent},
+		{"destroy_deferred_unsettled_save", &Snapshot::destroyDeferredUnsettledSave, FieldKind::kEvent},
+		{"freeze_unstamped", &Snapshot::freezeUnstamped, FieldKind::kEvent},
+		{"watchdog_early_fire", &Snapshot::watchdogEarlyFire, FieldKind::kEvent},
+		{"handoff_fastpath_forced", &Snapshot::handoffFastpathForced, FieldKind::kEvent},
+		{"rolled_back_adopted", &Snapshot::rolledBackAdopted, FieldKind::kEvent},
+		{"returned_after_grant", &Snapshot::returnedAfterGrant, FieldKind::kEvent},
+		{"rollback_receipt_anomaly", &Snapshot::rollbackReceiptAnomaly, FieldKind::kEvent},
+		{"sql_barrier_waited", &Snapshot::sqlBarrierWaited, FieldKind::kEvent},
+		{"sql_barrier_expired", &Snapshot::sqlBarrierExpired, FieldKind::kEvent},
+		{"sql_owner_rejected", &Snapshot::sqlOwnerRejected, FieldKind::kEvent},
+	};
+	// Snapshot 只有 uint64 计数成员:加了成员却没进字段表,汇总行与指标都会漏掉它,这里在编译期拦住。
+	static_assert(sizeof(Snapshot) == std::size(kFields) * sizeof(uint64_t),
+				  "travel_handoff_stats::kFields must list every Snapshot counter");
 } // namespace travel_handoff_stats
 
 // 退出存盘收尾(Z1 修复,cross-zone-scene-travel.md §12.6.3 第一步)的计数。与 travel_handoff_stats
@@ -521,7 +594,9 @@ namespace exit_persist_stats
 //   inherit_rewrite_dropped_node_holds  已放弃那一轮的晚到应答要补写,但本节点已建出该玩家实体(本节点就是
 //                         持有者),丢弃补写(exit_release_mark::DecideAbandonedRewrite)
 //   inherit_rewrite_handed_over         同上,但更新的一轮还在载入:补写责任移交给它(它建出实体即作废,
-//                         它也放弃时由它补写,计入 inherit_rewritten / skipped / failed)
+//                         它也放弃时由它补写,计入 inherit_rewritten / skipped / superseded / failed)
+//   superseded / inherit_rewrite_superseded  A1′ / A2′ 放弃补写的条件写返回 -2:本次消费的原 H 已被更新的登记 / 撤销 /
+//                         发布轮换(save_barrier.handoff_fence),不写是对的。追加在行尾(2026-10-23),原有 key 的位置不变
 namespace exit_release_stats
 {
 	struct Counters
@@ -538,6 +613,8 @@ namespace exit_release_stats
 		std::atomic<uint64_t> inheritRewriteFailed{0};
 		std::atomic<uint64_t> inheritRewriteDroppedNodeHolds{0};
 		std::atomic<uint64_t> inheritRewriteHandedOver{0};
+		std::atomic<uint64_t> superseded{0};
+		std::atomic<uint64_t> inheritRewriteSuperseded{0};
 	};
 
 	inline Counters& Get()
@@ -562,6 +639,8 @@ namespace exit_release_stats
 		uint64_t inheritRewriteFailed{0};
 		uint64_t inheritRewriteDroppedNodeHolds{0};
 		uint64_t inheritRewriteHandedOver{0};
+		uint64_t superseded{0};
+		uint64_t inheritRewriteSuperseded{0};
 
 		bool operator==(const Snapshot&) const = default;
 	};
@@ -588,6 +667,8 @@ namespace exit_release_stats
 		snapshot.inheritRewriteFailed = counters.inheritRewriteFailed.load(std::memory_order_relaxed);
 		snapshot.inheritRewriteDroppedNodeHolds = counters.inheritRewriteDroppedNodeHolds.load(std::memory_order_relaxed);
 		snapshot.inheritRewriteHandedOver = counters.inheritRewriteHandedOver.load(std::memory_order_relaxed);
+		snapshot.superseded = counters.superseded.load(std::memory_order_relaxed);
+		snapshot.inheritRewriteSuperseded = counters.inheritRewriteSuperseded.load(std::memory_order_relaxed);
 		return snapshot;
 	}
 } // namespace exit_release_stats
@@ -625,7 +706,8 @@ namespace exit_release_stats
 //                          各项之和 == kick_verified + kick_unverified(踢线前本地复核改判成 landed_here / superseded 的不计)
 //   credential_written / credential_epoch_moved / credential_failed
 //                          补写(owner_epoch 条件写)的结果:写成 / owner_epoch 已变没写 / 失败(不重试)。
-//                          credential_attempted == 这三项之和 + 在途
+//                          credential_attempted == 这三项之和 + credential_superseded + 在途
+//   credential_superseded  补写返回 -2:条目缓存的原 H 已被轮换(典型:改派自己已把它写成 F),不写。追加在行尾(2026-10-23)
 namespace relocate_confirm_stats
 {
 	struct Counters
@@ -648,6 +730,7 @@ namespace relocate_confirm_stats
 		std::atomic<uint64_t> credentialWritten{0};
 		std::atomic<uint64_t> credentialEpochMoved{0};
 		std::atomic<uint64_t> credentialFailed{0};
+		std::atomic<uint64_t> credentialSuperseded{0};
 	};
 
 	inline Counters& Get()
@@ -678,6 +761,7 @@ namespace relocate_confirm_stats
 		uint64_t credentialWritten{0};
 		uint64_t credentialEpochMoved{0};
 		uint64_t credentialFailed{0};
+		uint64_t credentialSuperseded{0};
 
 		bool operator==(const Snapshot&) const = default;
 	};
@@ -716,6 +800,7 @@ namespace relocate_confirm_stats
 		snapshot.credentialWritten = counters.credentialWritten.load(std::memory_order_relaxed);
 		snapshot.credentialEpochMoved = counters.credentialEpochMoved.load(std::memory_order_relaxed);
 		snapshot.credentialFailed = counters.credentialFailed.load(std::memory_order_relaxed);
+		snapshot.credentialSuperseded = counters.credentialSuperseded.load(std::memory_order_relaxed);
 		return snapshot;
 	}
 } // namespace relocate_confirm_stats
@@ -1188,6 +1273,10 @@ public:
 	// "退出优先"只作用于带 UnregisterPlayer 的实体,战斗侧把它视同离线。新增任何解冻路径都必须重过这条论证。
 	static bool IsCrossZoneFrozen(entt::entity player);
 
+	// 场景循环只读可写性入口；实体不存在或缺归属资格均拒绝，不创建组件。
+	// 复用 player_mutability 唯一判据，使低层模块无需包含场景内部组件头。
+	static bool IsPlayerMutable(entt::entity player);
+
 	static entt::entity InitPlayerFromAllData(const PlayerAllData& playerAllData, const PlayerEnterContext& ctx);
 
 	// 返回 true 表示"确实向 Redis / DB 队列压了一次写,稍后会有 HandlePlayerAsyncSaved 回调";
@@ -1396,12 +1485,14 @@ public:
 	//      release_fence::DecideSessionEndedBinding 比实体的 PlayerLoginIdentityComp 与覆盖身份(§13;实体已绑上更新的登录 /
 	//      同代异会话 → 忽略并 WARN);都放行 → HandleExitGameNode(kClientDisconnect),存盘落地后由 A1′ 按既有判定写断线
 	//      释放标记;已在退出中只合并原因;
-	//   2. 本节点完全不持有(playerList 没有、没有待入场条目、没有改派待确认条目):release_fence::DecideSessionEndedCredential
-	//      判定后按 owner_epoch == expectedOwnerEpoch 条件补写凭证标记(与 A1′ 同一段 Lua);覆盖身份不参与;
+	//   2. 本节点完全不持有(playerList 没有、没有待入场条目、没有改派待确认条目、没有在途的入场登记、没有未落地的存盘):
+	//      release_fence::DecideSessionEndedCredential 判 write 之后,HGET save_barrier.handoff_fence 读现任资格原件;回调里
+	//      重采判定并按 release_fence::DecideCredentialQualification 核对(仍完全不持有、原件是本进程实例在期望 E 下的资格),
+	//      合格才以读到的原件做 CAS 写凭证标记(handoff_sql_barrier::kCredentialMarkLua,2026-10-23 起);覆盖身份不参与;
 	//   3. playerList 里留着无效句柄:不写凭证(表不一致,fail-closed)。
 	// coveredSessionId / coveredLoginGeneration = ReleasePlayerRequest.covered_session_id / covered_login_generation
 	// (代次 0 = 旧版 scene_manager,只比 owner_epoch)。
-	// 只读本地缓存,不读 Redis、不采纳 epoch(CZ-3)。scene 逻辑线程调用。
+	// 判定只读本地缓存、不采纳 epoch(CZ-3);第 2 项读的 Redis 原件只用作 CAS 的期望值,不改任何本地状态。scene 逻辑线程调用。
 	static void HandleSessionEndedRelease(Guid playerId, uint64_t expectedOwnerEpoch, SessionId coveredSessionId,
 										  uint64_t coveredLoginGeneration);
 

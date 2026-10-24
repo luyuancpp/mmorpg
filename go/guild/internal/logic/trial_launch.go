@@ -90,11 +90,17 @@ func (r *trialLaunchRecovery) recoverOne(ctx context.Context, store trialLaunchS
 	if err != nil {
 		return err
 	}
-	if receipt.RequestCancelled && receipt.BattleId == 0 || receipt.FormationState == 5 {
+	// 释放只认权威终态(data.TrialCancelReceiptIsTerminal)。开局成功(formation=4)后战斗不出结果(battle 停机作废、崩溃、
+	// 活动结果没发出)的局，match 在权威截止后原子提交 SQL ABORT 并回 formation=5；截止前或 RPC 失败一律保留占用，
+	// 下一轮重放同一取消(2026-10-23 修复，审计 r2-guild#1)。
+	if data.TrialCancelReceiptIsTerminal(receipt) {
 		return store.FinishCancelledTrialLaunch(ctx, original, receipt, uint64(r.d.Now().UnixMilli()))
 	}
 	if receipt.BattleId == 0 {
 		return errors.New("原match开战请求尚无终局证明，保留原件")
+	}
+	if receipt.FormationState == 5 {
+		return errors.New("取消回执自相矛盾(formation=5 却是 COMPLETE)，保留原件等结果事件")
 	}
 	battle.BattleID = receipt.BattleId
 	if err := r.d.trials.RegisterTrialBattle(ctx, battle, original.CreatedMs); err != nil {

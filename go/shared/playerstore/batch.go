@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -62,18 +63,33 @@ func MGetBySlot(ctx context.Context, c redis.UniversalClient, keys []string) ([]
 	return out, nil
 }
 
-// ErrTopologyChanged:扫描期间集群拓扑(slot 归属)发生变化。迁移窗口内 SCAN 可能漏键或重复,
+// ErrTopologyChanged:扫描期间集群拓扑或节点身份变化,或有进行中的 slot 迁移,结果不完整。
 // 调用方必须把这次扫描当作不完整,不得据此断言「某键不存在」。
-var ErrTopologyChanged = errors.New("playerstore: 扫描期间集群拓扑变化,结果不完整")
+var ErrTopologyChanged = errors.New("playerstore: 扫描期间拓扑或节点身份变化,结果不完整")
 
 // ErrUnsupportedClient:不是单实例 Client,也不是 ClusterClient。
 var ErrUnsupportedClient = errors.New("playerstore: 不支持的客户端类型")
 
+// runIDReader 读节点的 run_id(INFO server)。run_id 每次进程启动都换:节点原地重启后旧 SCAN 游标指向另一批桶,
+// 续扫会漏键而不报错(go/player_locator session_reconciler 的同一理由)。测试可替换。
+var runIDReader = func(ctx context.Context, node *redis.Client) (string, error) {
+	info, err := node.Info(ctx, "server").Result()
+	if err != nil {
+		return "", err
+	}
+	for _, line := range strings.Split(info, "\n") {
+		if v, ok := strings.CutPrefix(strings.TrimSpace(line), "run_id:"); ok && v != "" {
+			return v, nil
+		}
+	}
+	return "", errors.New("playerstore: INFO server 缺少 run_id")
+}
+
 // ScanEachMaster 逐主节点 SCAN 完整个玩家域,对每批键调用 fn。fn 串行调用(内部加锁),但各主节点的扫描并行进行,
-// 所以 fn 看到的批次顺序不确定。
+// 所以 fn 看到的批次顺序不确定。只用于离线全量任务;按请求分页的读取不得用它(全量遍历,延迟随规模线性增长)。
 //
-// fail-closed:任何一个节点出错、fn 返回错误、或扫描前后拓扑不一致(ErrTopologyChanged),整体返回错误,
-// 调用方不得把它当作「已扫完」。单实例客户端就是一次普通 SCAN。
+// fail-closed:任何一个节点出错、fn 返回错误、或扫描前后指纹不一致(含节点重启、slot 归属变化、有进行中的迁移),
+// 整体返回错误,调用方不得把它当作「已扫完」。单实例客户端核对扫描前后的 run_id。
 func ScanEachMaster(ctx context.Context, c redis.UniversalClient, match string, count int64, fn func(keys []string) error) error {
 	var mu sync.Mutex
 	serial := func(keys []string) error {
@@ -83,9 +99,23 @@ func ScanEachMaster(ctx context.Context, c redis.UniversalClient, match string, 
 	}
 	switch cc := c.(type) {
 	case *redis.Client:
-		return scanNode(ctx, cc, match, count, serial)
+		before, err := runIDReader(ctx, cc)
+		if err != nil {
+			return err
+		}
+		if err := scanNode(ctx, cc, match, count, serial); err != nil {
+			return err
+		}
+		after, err := runIDReader(ctx, cc)
+		if err != nil {
+			return err
+		}
+		if before != after {
+			return ErrTopologyChanged
+		}
+		return nil
 	case *redis.ClusterClient:
-		before, err := topologyFingerprint(ctx, cc)
+		before, err := clusterFingerprint(ctx, cc)
 		if err != nil {
 			return err
 		}
@@ -94,7 +124,7 @@ func ScanEachMaster(ctx context.Context, c redis.UniversalClient, match string, 
 		}); err != nil {
 			return err
 		}
-		after, err := topologyFingerprint(ctx, cc)
+		after, err := clusterFingerprint(ctx, cc)
 		if err != nil {
 			return err
 		}
@@ -126,23 +156,98 @@ func scanNode(ctx context.Context, node *redis.Client, match string, count int64
 	}
 }
 
-// topologyFingerprint 把 CLUSTER SLOTS 规约成「slot 段 → 主节点 ID」的有序串,用于比较扫描前后的拓扑。
-func topologyFingerprint(ctx context.Context, cc *redis.ClusterClient) (string, error) {
-	slots, err := cc.ClusterSlots(ctx).Result()
+// clusterFingerprint 逐个主节点读取「节点 ID | run_id | 自己持有的 slot 段」,排序后拼成指纹。
+// 主节点集合与扫描用的是同一个 ForEachMaster 状态;再要求全部主节点自报的 slot 合计正好 16384、且没有任何
+// 迁移标记——这样即使 ForEachMaster 回落到过期的缓存状态(漏掉新主),合计也对不上,不会静默通过。
+func clusterFingerprint(ctx context.Context, cc *redis.ClusterClient) (string, error) {
+	var mu sync.Mutex
+	parts := make([]string, 0)
+	total := 0
+	err := cc.ForEachMaster(ctx, func(ctx context.Context, node *redis.Client) error {
+		nodes, err := node.ClusterNodes(ctx).Result()
+		if err != nil {
+			return err
+		}
+		self, err := parseMyselfLine(nodes)
+		if err != nil {
+			return err
+		}
+		runID, err := runIDReader(ctx, node)
+		if err != nil {
+			return err
+		}
+		mu.Lock()
+		defer mu.Unlock()
+		parts = append(parts, self.id+"|"+runID+"|"+strings.Join(self.ranges, ","))
+		total += self.slots
+		return nil
+	})
 	if err != nil {
 		return "", err
 	}
-	parts := make([]string, 0, len(slots))
-	for _, s := range slots {
-		master := ""
-		if len(s.Nodes) > 0 {
-			master = s.Nodes[0].ID
-			if master == "" {
-				master = s.Nodes[0].Addr
-			}
-		}
-		parts = append(parts, fmt.Sprintf("%05d-%05d=%s", s.Start, s.End, master))
+	if total != redisslot.SlotCount {
+		return "", fmt.Errorf("%w: 主节点自报 slot 合计 %d", ErrTopologyChanged, total)
 	}
 	sort.Strings(parts)
-	return strings.Join(parts, ","), nil
+	return strings.Join(parts, ";"), nil
+}
+
+// myselfLine 是 CLUSTER NODES 里 myself 那一行的解析结果。
+type myselfLine struct {
+	id     string
+	ranges []string
+	slots  int
+}
+
+// parseMyselfLine 解析 CLUSTER NODES 输出中带 myself 标志的那一行:
+// <id> <ip:port@cport[,hostname]> <flags> <master> <ping> <pong> <epoch> <link> <slot>...
+// slot 字段是 "a-b" 或 "a";"[s->-id]" / "[s-<-id]" 是逐键迁移的迁出 / 迁入标记,出现即视为拓扑不稳定。
+func parseMyselfLine(nodes string) (myselfLine, error) {
+	for _, line := range strings.Split(nodes, "\n") {
+		fields := strings.Fields(line)
+		if len(fields) < 8 || !hasFlag(fields[2], "myself") {
+			continue
+		}
+		out := myselfLine{id: fields[0]}
+		for _, tok := range fields[8:] {
+			if strings.HasPrefix(tok, "[") {
+				return myselfLine{}, fmt.Errorf("%w: 节点 %s 有进行中的迁移 %s", ErrTopologyChanged, fields[0], tok)
+			}
+			lo, hi, err := parseSlotRange(tok)
+			if err != nil {
+				return myselfLine{}, err
+			}
+			out.ranges = append(out.ranges, tok)
+			out.slots += hi - lo + 1
+		}
+		return out, nil
+	}
+	return myselfLine{}, errors.New("playerstore: CLUSTER NODES 中没有 myself 行")
+}
+
+func hasFlag(flags, want string) bool {
+	for _, f := range strings.Split(flags, ",") {
+		if f == want {
+			return true
+		}
+	}
+	return false
+}
+
+func parseSlotRange(tok string) (int, int, error) {
+	loText, hiText, isRange := strings.Cut(tok, "-")
+	lo, err := strconv.Atoi(loText)
+	if err != nil {
+		return 0, 0, fmt.Errorf("playerstore: 无法解析 slot 段 %q", tok)
+	}
+	hi := lo
+	if isRange {
+		if hi, err = strconv.Atoi(hiText); err != nil {
+			return 0, 0, fmt.Errorf("playerstore: 无法解析 slot 段 %q", tok)
+		}
+	}
+	if lo < 0 || hi < lo || hi >= redisslot.SlotCount {
+		return 0, 0, fmt.Errorf("playerstore: slot 段越界 %q", tok)
+	}
+	return lo, hi, nil
 }

@@ -7,6 +7,7 @@ import (
 
 	databasepb "proto/common/database"
 	"shared/generated/persistschema"
+	"shared/redisslot"
 
 	"google.golang.org/protobuf/proto"
 )
@@ -31,6 +32,19 @@ func InitialPlayerData(playerID uint64) *databasepb.PlayerAllData {
 func IsInitialPlayerData(parent *databasepb.PlayerAllData) bool {
 	return parent != nil && parent.GetPlayerDatabaseData().GetPlayerId() != 0 &&
 		proto.Equal(parent, InitialPlayerData(parent.GetPlayerDatabaseData().GetPlayerId()))
+}
+
+// ParentKey 返回父快照键 PlayerAllData:{<pid>}：PlayerAllData 的 proto 全名（proto 无 package 声明，全名即消息名）
+// 加玩家 hash tag（docs/design/redis-player-store-cluster.md §5.2）。与 C++ MessageAsyncClient::RedisKeyFor 逐字一致，
+// C++ 严格存盘 Lua 要求父键以 ":{<pid>}" 结尾；父快照与 owner_epoch、本屏障、补投索引同槽，一次存盘在同一段 Lua 里原子提交。
+// 读写父快照的服务一律经它构造，不再手拼 "<全名>:<pid>"。tools/merge_zone 是独立 module，在 player_rows.go 镜像一份。
+func ParentKey(playerID uint64) string {
+	return ParentKeyFor(&databasepb.PlayerAllData{}, playerID)
+}
+
+// ParentKeyFor 是按父消息类型泛化的 ParentKey，供按消息列表预热的路径使用（login dataloader.buildParentKey）。
+func ParentKeyFor(msg proto.Message, playerID uint64) string {
+	return string(msg.ProtoReflect().Descriptor().FullName()) + ":" + redisslot.PlayerTag(playerID)
 }
 
 // Key 不设 TTL；恢复或合服时必须与父快照、SQL 提交证据一起处理。

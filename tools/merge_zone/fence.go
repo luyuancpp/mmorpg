@@ -30,7 +30,7 @@ package main
 //     否则 guild_rank ZSET 合并与玩家行拷贝的计数都对不上。读者按**自己要写的
 //     那个 zone** 查 merge:in_progress:{那个 zone},src/dst 都覆盖到。
 //
-//  2. guild_rank:maintenance_lock —— **互斥锁**,写在 guild 服自己的 Redis(DB 2)。
+//  2. guild_rank:maintenance_lock —— **互斥锁**,写在 guild 服自己的 Redis(RedisClient,2026-10-23 起是 DB 0)。
 //     语义直接抄 go/guild/internal/data/guild_repo.go 的 acquireRankLock:
 //     SETNX + TTL 5min,值是随机 token,释放走 releaseRankLockScript(比对 token
 //     再 DEL)。guild 服的榜单重建 / 分数回填在同一把锁下跑,合服的 ZSET 合并

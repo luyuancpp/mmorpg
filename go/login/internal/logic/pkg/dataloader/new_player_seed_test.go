@@ -135,8 +135,9 @@ func newSeedTestRedis(t *testing.T) (*miniredis.Miniredis, *redis.Client) {
 
 // seedParentKey / seedSubKey 按消息全名拼键,与 scene、backfill、go/db 的拼法相同;不手写字面量,
 // 也不复用被测的 buildParentKey,免得键名拼错时测试跟着一起错。
+// seedParentKey 是父快照键 <全名>:{<pid>}(玩家域 hash tag);子表缓存键仍是 <全名>:<pid>(第 4 批改名)。
 func seedParentKey(playerID uint64) string {
-	return seedSubKey(&login_proto_database.PlayerAllData{}, playerID)
+	return fmt.Sprintf("%s:{%d}", (&login_proto_database.PlayerAllData{}).ProtoReflect().Descriptor().FullName(), playerID)
 }
 
 func seedSubKey(msg proto.Message, playerID uint64) string {

@@ -17,6 +17,8 @@
 #include <utility>
 #include <vector>
 
+#include <google/protobuf/descriptor.h>
+
 #include "muduo/net/EventLoop.h"
 #include "muduo/net/InetAddress.h"
 
@@ -29,6 +31,7 @@
 #include "player/comp/player_persist_writer_comp.h" // 严格屏障写方令牌(混版本持久字段保护 §5.2)
 #include "engine/config/persist_schema_regression_mode.h"
 #include "player/system/handoff_sql_barrier.h"
+#include "proto/common/base/currency_type.pb.h"
 #include "proto/common/component/currency_comp.pb.h"
 #include "table/proto/tip/asset_error_tip.pb.h" // kAssetFrozen / kAssetBlocked / kAssetCurrencyInsufficient
 #include "table/proto/tip/common_error_tip.pb.h"
@@ -47,7 +50,7 @@ struct MessageAsyncClientTestPeer
     {
         auto element = std::make_shared<Element>();
         element->message_key = key;
-        element->redis_key = client.full_name() + ":" + std::to_string(key);
+        element->redis_key = client.RedisKeyFor(key);
         client.loading_queue_[element->redis_key] = element;
         return element;
     }
@@ -60,7 +63,7 @@ struct MessageAsyncClientTestPeer
     // 该 key 当前在载入重试队列里的那份;没有则返回 nullptr。
     static ElementPtr PendingLoad(Client& client, const MessageKey& key)
     {
-        const auto it = client.pending_retry_queue_.find(client.full_name() + ":" + std::to_string(key));
+        const auto it = client.pending_retry_queue_.find(client.RedisKeyFor(key));
         return it == client.pending_retry_queue_.end() ? nullptr : it->second;
     }
 
@@ -70,7 +73,7 @@ struct MessageAsyncClientTestPeer
     {
         auto element = std::make_shared<Element>();
         element->message_key = key;
-        element->redis_key = client.full_name() + ":" + std::to_string(key);
+        element->redis_key = client.RedisKeyFor(key);
         element->message_value = std::make_shared<MessageValue>();
         element->guard_key = guardKey;
         element->guard_expected = guardExpected;
@@ -88,7 +91,7 @@ struct MessageAsyncClientTestPeer
     {
         auto element = std::make_shared<Element>();
         element->message_key = key;
-        element->redis_key = client.full_name() + ":" + std::to_string(key);
+        element->redis_key = client.RedisKeyFor(key);
         element->message_value = value;
         client.saving_queue_[element->redis_key] = element;
         return element;
@@ -97,7 +100,7 @@ struct MessageAsyncClientTestPeer
     // 该 key 当前排队中的那份;没有则返回 nullptr。
     static ElementPtr PendingSave(Client& client, const MessageKey& key)
     {
-        const auto it = client.pending_save_queue_.find(client.full_name() + ":" + std::to_string(key));
+        const auto it = client.pending_save_queue_.find(client.RedisKeyFor(key));
         return it == client.pending_save_queue_.end() ? nullptr : it->second;
     }
 
@@ -105,7 +108,7 @@ struct MessageAsyncClientTestPeer
     // 调用方要保证此刻没有在途 —— 与 IssueSave 的前提相同。
     static ElementPtr IssuePendingForTest(Client& client, const MessageKey& key)
     {
-        const std::string redisKey = client.full_name() + ":" + std::to_string(key);
+        const std::string redisKey = client.RedisKeyFor(key);
         const auto it = client.pending_save_queue_.find(redisKey);
         if (it == client.pending_save_queue_.end() || client.saving_queue_.count(redisKey) != 0)
         {
@@ -143,6 +146,35 @@ entt::entity CreateTestPlayer()
 void DestroyTestPlayer(entt::entity player)
 {
     tlsEcs.actorRegistry.destroy(player);
+}
+
+// ---------------------------------------------------------------------------
+// 币种取值表:currency.h 由 proto/common/base/currency_type.proto 派生
+// ---------------------------------------------------------------------------
+
+// CurrencyComp.values 以币种为下标、kCurrencyMax 当上限,前提是 proto 取值从 0 连续。
+// 删值、跳号或复用都会让已入箱的旧条目在所有版本上永远判成版本错位,这里对照描述符守住
+// (Go 侧 shared/currencytype 的 TestValuesAreContiguousFromZero 守同一条)。
+TEST(CurrencyTest, CurrencyTypeEnumIsDerivedFromTheProtoTable)
+{
+    const auto *descriptor = common::base::CurrencyType_descriptor();
+    ASSERT_NE(nullptr, descriptor);
+    EXPECT_EQ(static_cast<uint32_t>(common::base::CurrencyType_ARRAYSIZE), static_cast<uint32_t>(kCurrencyMax));
+    EXPECT_EQ(common::base::CurrencyType_ARRAYSIZE, descriptor->value_count()) << "取值必须从 0 连续,不得跳号";
+    for (int i = 0; i < descriptor->value_count(); ++i)
+    {
+        EXPECT_NE(nullptr, descriptor->FindValueByNumber(i)) << "缺少取值 " << i;
+        EXPECT_TRUE(IsKnownCurrencyType(static_cast<uint32_t>(i)));
+    }
+    EXPECT_FALSE(IsKnownCurrencyType(static_cast<uint32_t>(kCurrencyMax)));
+    EXPECT_FALSE(IsKnownCurrencyType(std::numeric_limits<uint32_t>::max()));
+
+    EXPECT_EQ(0u, static_cast<uint32_t>(kCurrencyGold));
+    EXPECT_EQ(1u, static_cast<uint32_t>(kCurrencyDiamond));
+    EXPECT_EQ(2u, static_cast<uint32_t>(kCurrencyBindDiamond));
+    EXPECT_EQ("CURRENCY_TYPE_GOLD", common::base::CurrencyType_Name(common::base::CURRENCY_TYPE_GOLD));
+    EXPECT_EQ("CURRENCY_TYPE_DIAMOND", common::base::CurrencyType_Name(common::base::CURRENCY_TYPE_DIAMOND));
+    EXPECT_EQ("CURRENCY_TYPE_BIND_DIAMOND", common::base::CurrencyType_Name(common::base::CURRENCY_TYPE_BIND_DIAMOND));
 }
 
 // ---------------------------------------------------------------------------
@@ -708,7 +740,7 @@ TEST(CurrencyTest, RedisGuardedSaveRejectedIsTerminalAndDropsPending)
     });
 
     constexpr Guid kPlayerId = 10003;
-    const std::string guardKey = "player:10003:owner_epoch";
+    const std::string guardKey = "player:{10003}:owner_epoch";
     const auto inFlight = Peer::TrackGuardedSave(client, kPlayerId, guardKey, "7");
     // 同 key 的后续存盘在前一条回包前到达,按既有规则排进 pending(不碰 hiredis)。
     client.Save(std::make_shared<CurrencyComp>(), kPlayerId, guardKey, "7");
@@ -751,7 +783,7 @@ TEST(CurrencyTest, RedisGuardedSaveRejectedKeepsPendingValueWithNewerGuard)
     client.SetSaveRejectedCallback([&](Guid, const std::string&, const std::string&, const RedisSaveOwnerRejection&) { ++rejectedCount; });
 
     constexpr Guid kPlayerId = 10005;
-    const std::string guardKey = "player:10005:owner_epoch";
+    const std::string guardKey = "player:{10005}:owner_epoch";
     const auto inFlight = Peer::TrackGuardedSave(client, kPlayerId, guardKey, "7");
     client.Save(std::make_shared<CurrencyComp>(), kPlayerId, guardKey, "8");
     ASSERT_EQ(1u, client.in_flight_save_count());
@@ -787,7 +819,7 @@ TEST(CurrencyTest, RedisGuardedSaveAcceptedCompletesNormally)
     client.SetSaveRejectedCallback([&](Guid, const std::string&, const std::string&, const RedisSaveOwnerRejection&) { ++rejectedCount; });
 
     constexpr Guid kPlayerId = 10004;
-    const auto inFlight = Peer::TrackGuardedSave(client, kPlayerId, "player:10004:owner_epoch", "7");
+    const auto inFlight = Peer::TrackGuardedSave(client, kPlayerId, "player:{10004}:owner_epoch", "7");
     ASSERT_EQ(1u, client.in_flight_save_count());
 
     redisReply reply{};
@@ -987,14 +1019,14 @@ TEST(CurrencyTest, RedisCommittedHooksFollowActualWritesBeforeNewestSaveCallback
     std::vector<int> events;
     client.SetSaveCallback([&](Guid, CurrencyComp&) { events.push_back(3); });
     constexpr Guid kPlayerId = 10021;
-    const auto old = Peer::TrackGuardedSave(client, kPlayerId, "player:10021:owner_epoch", "7");
+    const auto old = Peer::TrackGuardedSave(client, kPlayerId, "player:{10021}:owner_epoch", "7");
     old->barrier_key = "player:{10021}:save_barrier";
     old->barrier_version = "00000000000000000007:00000000000000000001";
     old->commit_intent = CommitIntentForTest(kPlayerId);
     old->committed_callback = [&] { events.push_back(1); };
-    client.SaveWithCommitBarrier(MarkedCurrency(2), kPlayerId, "player:10021:owner_epoch", "7",
+    client.SaveWithCommitBarrier(MarkedCurrency(2), kPlayerId, "player:{10021}:owner_epoch", "7",
         "player:{10021}:save_barrier", "00000000000000000007:00000000000000000002", CommitIntentForTest(kPlayerId), SchemaGenForTest(), [&] { events.push_back(4); });
-    client.SaveWithCommitBarrier(MarkedCurrency(3), kPlayerId, "player:10021:owner_epoch", "7",
+    client.SaveWithCommitBarrier(MarkedCurrency(3), kPlayerId, "player:{10021}:owner_epoch", "7",
         "player:{10021}:save_barrier", "00000000000000000007:00000000000000000003", CommitIntentForTest(kPlayerId), SchemaGenForTest(), [&] { events.push_back(2); });
     auto ok = IntegerReply(1);
     Peer::DeliverSaved(client, &ok, old);
@@ -1023,7 +1055,7 @@ TEST(CurrencyTest, RedisCommitBarrierErrorsNeverAdmitSql)
     int saved = 0;
     client.SetSaveCallback([&](Guid, CurrencyComp&) { ++saved; });
     constexpr Guid kPlayerId = 10022;
-    client.SaveWithCommitBarrier(MarkedCurrency(1), kPlayerId, "player:10022:owner_epoch", "7",
+    client.SaveWithCommitBarrier(MarkedCurrency(1), kPlayerId, "player:{10022}:owner_epoch", "7",
         "player:{10022}:save_barrier", "00000000000000000007:00000000000000000001", CommitIntentForTest(kPlayerId), SchemaGenForTest(), [&] { ++committed; });
     auto issued = Peer::IssuePendingForTest(client, kPlayerId);
     ASSERT_NE(nullptr, issued);
@@ -1091,9 +1123,9 @@ TEST(CurrencyTest, RedisCommitBarrierRejectionDiscardsSameOwnerHooks)
     int rejected = 0;
     client.SetSaveRejectedCallback([&](Guid, const std::string&, const std::string&, const RedisSaveOwnerRejection&) { ++rejected; });
     constexpr Guid kPlayerId = 10023;
-    const auto old = Peer::TrackGuardedSave(client, kPlayerId, "player:10023:owner_epoch", "7");
+    const auto old = Peer::TrackGuardedSave(client, kPlayerId, "player:{10023}:owner_epoch", "7");
     old->committed_callback = [&] { ++committed; };
-    client.SaveWithCommitBarrier(MarkedCurrency(2), kPlayerId, "player:10023:owner_epoch", "7",
+    client.SaveWithCommitBarrier(MarkedCurrency(2), kPlayerId, "player:{10023}:owner_epoch", "7",
         "player:{10023}:save_barrier", "00000000000000000007:00000000000000000002", CommitIntentForTest(kPlayerId), SchemaGenForTest(), [&] { ++committed; });
     auto no = IntegerReply(0);
     Peer::DeliverSaved(client, &no, old);
@@ -1156,12 +1188,12 @@ TEST(CurrencyTest, RedisCommitBarrierOwnerCounterBehindIsTerminalAndCarriesStore
         EXPECT_EQ(0u, client.pending_save_count());
     });
     constexpr Guid kPlayerId = 10050;
-    ASSERT_TRUE(client.SaveWithCommitBarrier(MarkedCurrency(1), kPlayerId, "player:10050:owner_epoch", "7",
+    ASSERT_TRUE(client.SaveWithCommitBarrier(MarkedCurrency(1), kPlayerId, "player:{10050}:owner_epoch", "7",
         "player:{10050}:save_barrier", "00000000000000000007:00000000000000000001", CommitIntentForTest(kPlayerId),
         SchemaGenForTest(), [&] { ++committed; }));
     const auto first = Peer::IssuePendingForTest(client, kPlayerId);
     ASSERT_NE(nullptr, first);
-    ASSERT_TRUE(client.SaveWithCommitBarrier(MarkedCurrency(2), kPlayerId, "player:10050:owner_epoch", "7",
+    ASSERT_TRUE(client.SaveWithCommitBarrier(MarkedCurrency(2), kPlayerId, "player:{10050}:owner_epoch", "7",
         "player:{10050}:save_barrier", "00000000000000000007:00000000000000000002", CommitIntentForTest(kPlayerId),
         SchemaGenForTest(), [&] { ++committed; }));
     ASSERT_EQ(1u, client.pending_save_count());
@@ -1192,12 +1224,12 @@ TEST(CurrencyTest, RedisCommitBarrierOwnerCounterBehindIssuesPendingWithNewerGua
     int rejected = 0;
     client.SetSaveRejectedCallback([&](Guid, const std::string&, const std::string&, const RedisSaveOwnerRejection&) { ++rejected; });
     constexpr Guid kPlayerId = 10051;
-    ASSERT_TRUE(client.SaveWithCommitBarrier(MarkedCurrency(1), kPlayerId, "player:10051:owner_epoch", "7",
+    ASSERT_TRUE(client.SaveWithCommitBarrier(MarkedCurrency(1), kPlayerId, "player:{10051}:owner_epoch", "7",
         "player:{10051}:save_barrier", "00000000000000000007:00000000000000000001", CommitIntentForTest(kPlayerId),
         SchemaGenForTest()));
     const auto first = Peer::IssuePendingForTest(client, kPlayerId);
     ASSERT_NE(nullptr, first);
-    ASSERT_TRUE(client.SaveWithCommitBarrier(MarkedCurrency(2), kPlayerId, "player:10051:owner_epoch", "8",
+    ASSERT_TRUE(client.SaveWithCommitBarrier(MarkedCurrency(2), kPlayerId, "player:{10051}:owner_epoch", "8",
         "player:{10051}:save_barrier", "00000000000000000008:00000000000000000002", CommitIntentForTest(kPlayerId),
         SchemaGenForTest()));
 
@@ -1226,7 +1258,7 @@ TEST(CurrencyTest, RedisOwnerCounterBehindReplyShapeIsStrict)
     client.SetSaveCallback([&](Guid, CurrencyComp&) { ++saved; });
     client.SetSaveRejectedCallback([&](Guid, const std::string&, const std::string&, const RedisSaveOwnerRejection&) { ++rejected; });
     constexpr Guid kPlayerId = 10052;
-    ASSERT_TRUE(client.SaveWithCommitBarrier(MarkedCurrency(1), kPlayerId, "player:10052:owner_epoch", "7",
+    ASSERT_TRUE(client.SaveWithCommitBarrier(MarkedCurrency(1), kPlayerId, "player:{10052}:owner_epoch", "7",
         "player:{10052}:save_barrier", "00000000000000000007:00000000000000000001", CommitIntentForTest(kPlayerId),
         SchemaGenForTest(), [&] { ++committed; }));
 
@@ -1260,7 +1292,7 @@ TEST(CurrencyTest, RedisOwnerCounterBehindReplyShapeIsStrict)
 
     // 旧 guard 路径收到 {4, 存储值}:坏回包,重新排队,不回调。
     constexpr Guid kGuardedPlayerId = 10053;
-    const auto guarded = Peer::TrackGuardedSave(client, kGuardedPlayerId, "player:10053:owner_epoch", "7");
+    const auto guarded = Peer::TrackGuardedSave(client, kGuardedPlayerId, "player:{10053}:owner_epoch", "7");
     OwnerCounterBehindReplyForTest wellFormed("6");
     Peer::DeliverSaved(client, &wellFormed.array, guarded);
     EXPECT_EQ(0, rejected);
@@ -1283,7 +1315,7 @@ TEST(CurrencyTest, RedisCommitBarrierRequiresCompleteOutboxBeforeQueueing)
     int committed = 0;
     constexpr Guid kPlayerId = 10025;
     const auto enqueue = [&](std::shared_ptr<const RedisSaveCommitIntent> intent) {
-        return client.SaveWithCommitBarrier(MarkedCurrency(1), kPlayerId, "player:10025:owner_epoch", "7",
+        return client.SaveWithCommitBarrier(MarkedCurrency(1), kPlayerId, "player:{10025}:owner_epoch", "7",
             "player:{10025}:save_barrier", "00000000000000000007:00000000000000000001", std::move(intent), SchemaGenForTest(), [&] { ++committed; });
     };
     EXPECT_FALSE(enqueue({}));
@@ -1321,7 +1353,7 @@ TEST(CurrencyTest, RedisCommitBarrierSchemaWarnedIsCommitEvidence)
     int rejected = 0;
     client.SetSaveSchemaRejectedCallback([&](Guid, const std::string&, const std::string&) { ++rejected; });
     constexpr Guid kPlayerId = 10026;
-    ASSERT_TRUE(client.SaveWithCommitBarrier(MarkedCurrency(1), kPlayerId, "player:10026:owner_epoch", "7",
+    ASSERT_TRUE(client.SaveWithCommitBarrier(MarkedCurrency(1), kPlayerId, "player:{10026}:owner_epoch", "7",
         "player:{10026}:save_barrier", "00000000000000000007:00000000000000000001", CommitIntentForTest(kPlayerId),
         SchemaGenForTest(), [&] { events.push_back(2); }));
     const auto issued = Peer::IssuePendingForTest(client, kPlayerId);
@@ -1353,7 +1385,7 @@ TEST(CurrencyTest, RedisSchemaRepliesOnNonBarrierSavesAreNotEvidence)
         client.SetSaveSchemaWarnedCallback([&](Guid, const std::string&, const std::string&) { ++warned; });
         client.SetSaveSchemaRejectedCallback([&](Guid, const std::string&, const std::string&) { ++schemaRejected; });
         client.SetSaveRejectedCallback([&](Guid, const std::string&, const std::string&, const RedisSaveOwnerRejection&) { ++ownerRejected; });
-        const auto guarded = Peer::TrackGuardedSave(client, kPlayerId, "player:10027:owner_epoch", "7");
+        const auto guarded = Peer::TrackGuardedSave(client, kPlayerId, "player:{10027}:owner_epoch", "7");
         guarded->committed_callback = [&] { ++committed; };
         auto reply = IntegerReply(value);
         Peer::DeliverSaved(client, &reply, guarded);
@@ -1390,12 +1422,12 @@ TEST(CurrencyTest, RedisCommitBarrierSchemaRejectedDiscardsSameOwnerHooks)
     client.SetSaveRejectedCallback([&](Guid, const std::string&, const std::string&, const RedisSaveOwnerRejection&) { ++ownerRejected; });
     client.SetSaveSchemaRejectedCallback([&](Guid, const std::string&, const std::string& guard) { schemaRejected.push_back(guard); });
     constexpr Guid kPlayerId = 10028;
-    ASSERT_TRUE(client.SaveWithCommitBarrier(MarkedCurrency(1), kPlayerId, "player:10028:owner_epoch", "7",
+    ASSERT_TRUE(client.SaveWithCommitBarrier(MarkedCurrency(1), kPlayerId, "player:{10028}:owner_epoch", "7",
         "player:{10028}:save_barrier", "00000000000000000007:00000000000000000001", CommitIntentForTest(kPlayerId),
         SchemaGenForTest(), [&] { ++committed; }));
     const auto first = Peer::IssuePendingForTest(client, kPlayerId);
     ASSERT_NE(nullptr, first);
-    ASSERT_TRUE(client.SaveWithCommitBarrier(MarkedCurrency(2), kPlayerId, "player:10028:owner_epoch", "7",
+    ASSERT_TRUE(client.SaveWithCommitBarrier(MarkedCurrency(2), kPlayerId, "player:{10028}:owner_epoch", "7",
         "player:{10028}:save_barrier", "00000000000000000007:00000000000000000002", CommitIntentForTest(kPlayerId),
         SchemaGenForTest(), [&] { ++committed; }));
     ASSERT_EQ(1u, client.pending_save_count());
@@ -1421,12 +1453,12 @@ TEST(CurrencyTest, RedisCommitBarrierSchemaRejectedIssuesPendingWithNewerGuard)
     int schemaRejected = 0;
     client.SetSaveSchemaRejectedCallback([&](Guid, const std::string&, const std::string&) { ++schemaRejected; });
     constexpr Guid kPlayerId = 10029;
-    ASSERT_TRUE(client.SaveWithCommitBarrier(MarkedCurrency(1), kPlayerId, "player:10029:owner_epoch", "7",
+    ASSERT_TRUE(client.SaveWithCommitBarrier(MarkedCurrency(1), kPlayerId, "player:{10029}:owner_epoch", "7",
         "player:{10029}:save_barrier", "00000000000000000007:00000000000000000001", CommitIntentForTest(kPlayerId),
         SchemaGenForTest()));
     const auto first = Peer::IssuePendingForTest(client, kPlayerId);
     ASSERT_NE(nullptr, first);
-    ASSERT_TRUE(client.SaveWithCommitBarrier(MarkedCurrency(2), kPlayerId, "player:10029:owner_epoch", "8",
+    ASSERT_TRUE(client.SaveWithCommitBarrier(MarkedCurrency(2), kPlayerId, "player:{10029}:owner_epoch", "8",
         "player:{10029}:save_barrier", "00000000000000000008:00000000000000000002", CommitIntentForTest(kPlayerId),
         SchemaGenForTest()));
     auto refused = IntegerReply(3);
@@ -1450,14 +1482,14 @@ TEST(CurrencyTest, RedisCommitBarrierSchemaRejectedIssuesPendingFromAnotherWrite
     int schemaRejected = 0;
     client.SetSaveSchemaRejectedCallback([&](Guid, const std::string&, const std::string&) { ++schemaRejected; });
     constexpr Guid kPlayerId = 10031;
-    ASSERT_TRUE(client.SaveWithCommitBarrier(MarkedCurrency(1), kPlayerId, "player:10031:owner_epoch", "7",
+    ASSERT_TRUE(client.SaveWithCommitBarrier(MarkedCurrency(1), kPlayerId, "player:{10031}:owner_epoch", "7",
         "player:{10031}:save_barrier", "00000000000000000007:00000000000000000001", CommitIntentForTest(kPlayerId),
         SchemaGenForTest()));
     const auto first = Peer::IssuePendingForTest(client, kPlayerId);
     ASSERT_NE(nullptr, first);
     auto otherWriter = SchemaGenForTest();
     otherWriter.writer = "writer-another-entity";
-    ASSERT_TRUE(client.SaveWithCommitBarrier(MarkedCurrency(2), kPlayerId, "player:10031:owner_epoch", "7",
+    ASSERT_TRUE(client.SaveWithCommitBarrier(MarkedCurrency(2), kPlayerId, "player:{10031}:owner_epoch", "7",
         "player:{10031}:save_barrier", "00000000000000000007:00000000000000000002", CommitIntentForTest(kPlayerId),
         otherWriter));
     auto refused = IntegerReply(3);
@@ -1479,7 +1511,7 @@ TEST(CurrencyTest, RedisCommitBarrierCarriesAndValidatesSchemaArguments)
     Client client(hiredis);
     constexpr Guid kPlayerId = 10030;
     const auto enqueue = [&](const RedisSaveSchemaGen& schemaGen) {
-        return client.SaveWithCommitBarrier(MarkedCurrency(1), kPlayerId, "player:10030:owner_epoch", "7",
+        return client.SaveWithCommitBarrier(MarkedCurrency(1), kPlayerId, "player:{10030}:owner_epoch", "7",
             "player:{10030}:save_barrier", "00000000000000000007:00000000000000000001", CommitIntentForTest(kPlayerId), schemaGen);
     };
     const auto with = [](uint32_t output, uint32_t load, std::string mode, std::string writer) {
@@ -1577,7 +1609,7 @@ TEST(CurrencyTest, ReadBaseDeployConfigNormalizesPersistSchemaRegressionMode)
     std::random_device entropy;
     const std::string unique = std::to_string((static_cast<uint64_t>(entropy()) << 32) | entropy());
     const std::vector<std::pair<std::string, std::string>> cases{
-        {"LogLevel: 1\n", "warn"},
+        {"", "warn"},
         {"PersistSchemaRegressionMode:\n", "warn"},
         {"PersistSchemaRegressionMode: ~\n", "warn"},
         {"PersistSchemaRegressionMode: ''\n", "warn"},
@@ -1590,7 +1622,7 @@ TEST(CurrencyTest, ReadBaseDeployConfigNormalizesPersistSchemaRegressionMode)
         {
             std::ofstream out(path, std::ios::binary);
             ASSERT_TRUE(out.good()) << path.string();
-            out << cases[i].first;
+            out << "LogLevel: 1\n" << cases[i].first;
         }
         BaseDeployConfig config;
         EXPECT_TRUE(readBaseDeployConfig(path.string(), config)) << cases[i].first;
@@ -1973,7 +2005,7 @@ TEST(CurrencyTest, RedisSaveScriptsTouchOnlyDeclaredKeys)
                 "'SAVE_BARRIER invalid stored version'", "'SAVE_BARRIER version regression'", "'SAVE_BARRIER keys must differ'",
                 "'SAVE_BARRIER invalid argument count'", "'SAVE_BARRIER empty key'", "'SAVE_BARRIER invalid outbox'",
                 "'SAVE_BARRIER invalid bucket'", "'SAVE_BARRIER invalid stored outbox'", "'SAVE_BARRIER same version conflict'",
-                "'player:'", "':owner_epoch'", "'player:{'", "'}:save_barrier'", "'SAVE_BARRIER player key mismatch'",
+                "'player:{'", "'}:owner_epoch'", "'}:save_barrier'", "':{'", "'}'", "'SAVE_BARRIER player key mismatch'",
                 // 覆盖世代校验 C3(混版本持久字段保护 §5.2):hash 字段名、模式字面量、令牌字符集与参数错误文案。
                 "'schema_gen'", "'schema_writer'", "'schema_regressed'", "'warn'", "'enforce'", "'^[%w:%-]+$'",
                 "'SAVE_BARRIER invalid schema argument'",
@@ -2125,8 +2157,8 @@ TEST(CurrencyTest, RedisCommitBarrierSemanticsAgainstRealRedis)
     ASSERT_TRUE(sync.Connect(host, port));
     const Guid testPlayerId = IsolatedRedisPlayerIdForTest();
     const std::string member = std::to_string(testPlayerId);
-    const std::string parentKey = "CurrencyComp:" + member;
-    const std::string ownerKey = "player:" + member + ":owner_epoch";
+    const std::string parentKey = "CurrencyComp:{" + member + "}";
+    const std::string ownerKey = "player:{" + member + "}:owner_epoch";
     const std::string barrierKey = "player:{" + member + "}:save_barrier";
     const auto intent = CommitIntentForTest(testPlayerId);
     const std::string& indexKey = intent->index_key;
@@ -2354,8 +2386,8 @@ TEST(CurrencyTest, RedisCommitBarrierOwnerCounterBehindAgainstRealRedis)
     ASSERT_TRUE(sync.Connect(host, port));
     const Guid testPlayerId = IsolatedRedisPlayerIdForTest();
     const std::string member = std::to_string(testPlayerId);
-    const std::string parentKey = "CurrencyComp:" + member;
-    const std::string ownerKey = "player:" + member + ":owner_epoch";
+    const std::string parentKey = "CurrencyComp:{" + member + "}";
+    const std::string ownerKey = "player:{" + member + "}:owner_epoch";
     const std::string barrierKey = "player:{" + member + "}:save_barrier";
     const auto intent = CommitIntentForTest(testPlayerId);
     const std::string& indexKey = intent->index_key;
@@ -2479,8 +2511,8 @@ TEST(CurrencyTest, RedisCommitBarrierSchemaGenAgainstRealRedis)
     ASSERT_TRUE(sync.Connect(host, port));
     const Guid testPlayerId = IsolatedRedisPlayerIdForTest();
     const std::string member = std::to_string(testPlayerId);
-    const std::string parentKey = "CurrencyComp:" + member;
-    const std::string ownerKey = "player:" + member + ":owner_epoch";
+    const std::string parentKey = "CurrencyComp:{" + member + "}";
+    const std::string ownerKey = "player:{" + member + "}:owner_epoch";
     const std::string barrierKey = "player:{" + member + "}:save_barrier";
     const auto intent = CommitIntentForTest(testPlayerId);
     const std::string& indexKey = intent->index_key;
@@ -2652,8 +2684,8 @@ TEST(CurrencyTest, RedisCommitBarrierSchemaWarnEvidenceSurvivesLostReplyAgainstR
     ASSERT_TRUE(sync.Connect(host, port));
     const Guid testPlayerId = IsolatedRedisPlayerIdForTest();
     const std::string member = std::to_string(testPlayerId);
-    const std::string parentKey = "CurrencyComp:" + member;
-    const std::string ownerKey = "player:" + member + ":owner_epoch";
+    const std::string parentKey = "CurrencyComp:{" + member + "}";
+    const std::string ownerKey = "player:{" + member + "}:owner_epoch";
     const std::string barrierKey = "player:{" + member + "}:save_barrier";
     const auto intent = CommitIntentForTest(testPlayerId);
     const std::string& indexKey = intent->index_key;
@@ -2743,8 +2775,8 @@ TEST(CurrencyTest, RedisCommitBarrierForeignWriteBetweenSameEntityWritesIsCompar
     ASSERT_TRUE(sync.Connect(host, port));
     const Guid testPlayerId = IsolatedRedisPlayerIdForTest();
     const std::string member = std::to_string(testPlayerId);
-    const std::string parentKey = "CurrencyComp:" + member;
-    const std::string ownerKey = "player:" + member + ":owner_epoch";
+    const std::string parentKey = "CurrencyComp:{" + member + "}";
+    const std::string ownerKey = "player:{" + member + "}:owner_epoch";
     const std::string barrierKey = "player:{" + member + "}:save_barrier";
     const auto intent = CommitIntentForTest(testPlayerId);
     const std::string& indexKey = intent->index_key;
@@ -2812,7 +2844,7 @@ TEST(CurrencyTest, RedisCommitBarrierWireFormatThroughClientAgainstRealRedis)
     ASSERT_TRUE(sync.Connect(host, port));
     const Guid playerId = IsolatedRedisPlayerIdForTest();
     const std::string member = std::to_string(playerId);
-    const std::string ownerKey = "player:" + member + ":owner_epoch";
+    const std::string ownerKey = "player:{" + member + "}:owner_epoch";
     const std::string barrierKey = "player:{" + member + "}:save_barrier";
     const auto intent = CommitIntentForTest(playerId);
 
@@ -2822,7 +2854,7 @@ TEST(CurrencyTest, RedisCommitBarrierWireFormatThroughClientAgainstRealRedis)
     {
         Client client(connection);
         const CloseConnectionBeforeClient close{connection};
-        const std::string parentKey = client.full_name() + ":" + member;
+        const std::string parentKey = client.full_name() + ":{" + member + "}";
         ASSERT_EQ(0LL, sync.Exists(parentKey));
         ASSERT_EQ(0LL, sync.Exists(ownerKey));
         ASSERT_EQ(0LL, sync.Exists(barrierKey));
@@ -2919,7 +2951,7 @@ TEST(CurrencyTest, TravelSqlBarrierWaitsForBothSqlAcksAgainstRealRedis)
     SyncRedisForTest sync;
     ASSERT_TRUE(sync.Connect(host, port));
     const auto member = std::to_string(IsolatedRedisPlayerIdForTest());
-    const std::string ownerKey = "player:" + member + ":owner_epoch";
+    const std::string ownerKey = "player:{" + member + "}:owner_epoch";
     const std::string barrierKey = "player:{" + member + "}:save_barrier";
     const std::string markKey = "player:" + member + ":handoff";
     ASSERT_EQ(0LL, sync.Exists(ownerKey));
@@ -3092,7 +3124,7 @@ TEST(CurrencyTest, RedisGuardedSaveSemanticsAgainstRealRedis)
 
         constexpr Guid kPlayerId = 950299002;
         const std::string guardKey = "b4c_test:950299002:owner_epoch";
-        const std::string blobKey = client.full_name() + ":" + std::to_string(kPlayerId);
+        const std::string blobKey = client.RedisKeyFor(kPlayerId);
         const auto cleanup = [&] {
             sync.Del(blobKey);
             sync.Del(guardKey);
@@ -3167,7 +3199,7 @@ TEST(CurrencyTest, RedisSaveLeavesNoGlobalDirtySetAgainstRealRedis)
 
         constexpr Guid kPlayerId = 950299003;
         const std::string guardKey = "b4c_test:950299003:owner_epoch";
-        const std::string blobKey = client.full_name() + ":" + std::to_string(kPlayerId);
+        const std::string blobKey = client.RedisKeyFor(kPlayerId);
         const std::string legacyDirtySet = "dirty_keys_set";
         const auto cleanup = [&] {
             sync.Del(blobKey);
@@ -3497,7 +3529,7 @@ TEST(CurrencyTest, HandoffQualificationCASRevokesLateWritersAndReplaysLostReplie
     if (!TestRedisAddr(host,port)) GTEST_SKIP() << "需要专用MMORPG_TEST_REDIS_ADDR";
     SyncRedisForTest sync; ASSERT_TRUE(sync.Connect(host,port));
     const auto id=std::to_string(IsolatedRedisPlayerIdForTest());
-    const std::string owner="player:"+id+":owner_epoch", barrier="player:{"+id+"}:save_barrier", mark="player:"+id+":handoff";
+    const std::string owner="player:{"+id+"}:owner_epoch", barrier="player:{"+id+"}:save_barrier", mark="player:"+id+":handoff";
     ASSERT_EQ(0LL,sync.Exists(owner));ASSERT_EQ(0LL,sync.Exists(barrier));ASSERT_EQ(0LL,sync.Exists(mark));
     struct Cleanup { SyncRedisForTest& sync;std::vector<std::string> keys;~Cleanup(){ for(const auto& key:keys) sync.Del(key); } } cleanup{sync,{owner,barrier,mark}};
     using Reply=std::unique_ptr<redisReply,decltype(&freeReplyObject)>;
@@ -3520,14 +3552,15 @@ TEST(CurrencyTest, HandoffQualificationCASRevokesLateWritersAndReplaysLostReplie
     expectInteger(eval(handoff_sql_barrier::kRegisterFenceLua,{"7",held,""}),1);
     // 原写帧在另一连接/队列中尚未抵达：mark缺席仍必须撤销，迟到SET不得复活。
     expectInteger(eval(handoff_sql_barrier::kRevokeFenceLua,{held,frozen,revoked,"1000"}),1);
-    expectInteger(eval(handoff_sql_barrier::kReleaseMarkLua,{"7","7:1000","300",held,frozen}),0);
+    // -2 = 原 H 已被轮换(2026-10-23 起与 owner 已推进的 0 分开)。
+    expectInteger(eval(handoff_sql_barrier::kReleaseMarkLua,{"7","7:1000","300",held,frozen}),-2);
     EXPECT_EQ(0LL,sync.Exists(mark));
     auto location=owner+":location-fixture";ASSERT_EQ(0LL,sync.Exists(location));cleanup.keys.push_back(location);
     const auto resume=[&]{return command({"EVAL",handoff_sql_barrier::kResumeFenceLua,"4",owner,barrier,mark,location,revoked,resumed,"7",""});};
     // 忽略第一次已提交应答，第二次只能重放完全相同H，不能临时重造资格。
     auto lost=resume();ASSERT_NE(nullptr,lost);ASSERT_EQ(REDIS_REPLY_INTEGER,lost->type);ASSERT_EQ(1,lost->integer);lost.reset();
     expectInteger(resume(),1);
-    expectInteger(eval(handoff_sql_barrier::kReleaseMarkLua,{"7","7:1000","300",held,frozen}),0);
+    expectInteger(eval(handoff_sql_barrier::kReleaseMarkLua,{"7","7:1000","300",held,frozen}),-2);
     const auto newer=makeFence("2",'f','H','1');
     expectInteger(eval(handoff_sql_barrier::kRegisterFenceLua,{"7",newer,resumed}),1);
     expectInteger(eval(handoff_sql_barrier::kRegisterFenceLua,{"7",held,newer}),-2); // 旧N读到新prior仍不可接任
@@ -3538,4 +3571,208 @@ TEST(CurrencyTest, HandoffQualificationCASRevokesLateWritersAndReplaysLostReplie
     auto after=command({"HGET",barrier,"handoff_fence"});ASSERT_NE(nullptr,after);ASSERT_EQ(REDIS_REPLY_STRING,after->type);
     EXPECT_EQ(std::string(before->str,before->len),std::string(after->str,after->len));
     EXPECT_EQ("malformed",sync.Get(mark)) << "损坏mark不准先写R再报错";
+}
+
+// r2-lc#1 / r2-lc#2(data-overwrite-rollback-audit-r2-20261019.md §3.6;cross-zone-scene-travel.md 文末「迟到标记写」专节):
+// zone Redis 存活探测(RedisManager::DropUnresponsive)摘掉无应答的旧连接后,内核仍可能把旧连接上未确认的 EVAL 重传到 Redis,
+// 晚于新连接上的取证 / 同节点重载登记才执行。这里用两条真实连接复现这个到达顺序:旧连接只 redisAppendCommandArgv(帧留在
+// 本地输出缓冲、尚未发出),新连接先跑完取证 / 重载,再 redisGetReply 把旧帧真正发出去。断言迟到的标记写被
+// save_barrier.handoff_fence 的原件 CAS 拒绝:新持有期间 handoff 键没有当前代际的标记,资格仍是新持有者的。
+// 不依赖墙钟、时钟同步或连接顺序;Lua 层的同序重放与 scene_manager 消费方断言见
+// Go TestLateMarkWritesFromReplacedConnectionNeverOpenHandoffGate。
+TEST(CurrencyTest, HandoffMarkFramesDelayedOnReplacedConnectionCannotReviveCredentialAgainstRealRedis)
+{
+    std::string host;
+    uint16_t port = 0;
+    if (!TestRedisAddr(host, port)) GTEST_SKIP() << "需要专用 MMORPG_TEST_REDIS_ADDR";
+    SyncRedisForTest live;  // 存活探测重连之后的新连接
+    SyncRedisForTest stale; // 被摘下的旧连接:帧还在内核里重传,稍后才到 Redis
+    ASSERT_TRUE(live.Connect(host, port));
+    ASSERT_TRUE(stale.Connect(host, port));
+    using Reply = std::unique_ptr<redisReply, decltype(&freeReplyObject)>;
+    struct Argv
+    {
+        std::vector<const char*> values;
+        std::vector<size_t> sizes;
+        explicit Argv(const std::vector<std::string>& args)
+        {
+            for (const auto& arg : args) { values.push_back(arg.data()); sizes.push_back(arg.size()); }
+        }
+    };
+    const auto send = [](SyncRedisForTest& connection, const std::vector<std::string>& args) {
+        Argv argv(args);
+        return Reply(static_cast<redisReply*>(redisCommandArgv(connection.context.get(), static_cast<int>(args.size()),
+            argv.values.data(), argv.sizes.data())), &freeReplyObject);
+    };
+    // 只进本地输出缓冲、不发出:模拟"已交给内核、尚未到达 Redis"的旧帧。
+    const auto hold = [](SyncRedisForTest& connection, const std::vector<std::string>& args) {
+        Argv argv(args);
+        return redisAppendCommandArgv(connection.context.get(), static_cast<int>(args.size()),
+            argv.values.data(), argv.sizes.data());
+    };
+    // 把旧帧真正发出去并读它的应答。
+    const auto deliver = [](SyncRedisForTest& connection) {
+        void* raw = nullptr;
+        if (redisGetReply(connection.context.get(), &raw) != REDIS_OK) raw = nullptr;
+        return Reply(static_cast<redisReply*>(raw), &freeReplyObject);
+    };
+    const auto expectInteger = [](const Reply& reply, long long value) {
+        ASSERT_NE(nullptr, reply);
+        ASSERT_EQ(REDIS_REPLY_INTEGER, reply->type) << (reply->type == REDIS_REPLY_ERROR ? reply->str : "");
+        EXPECT_EQ(value, reply->integer);
+    };
+    const auto fenceOf = [&](const std::string& barrier) {
+        auto reply = send(live, {"HGET", barrier, "handoff_fence"});
+        return reply != nullptr && reply->type == REDIS_REPLY_STRING ? std::string(reply->str, reply->len) : std::string("(nil)");
+    };
+    // E=5、同一场景实例 S;generation / admission / state / token 由各步给出。
+    const auto makeFence = [](const std::string& generation, char admission, char state, char token) {
+        return "5|scene-x|" + generation + "|" + std::string(32, admission) + "|" + state + "|" + std::string(32, token);
+    };
+    struct Keys
+    {
+        std::string owner, barrier, mark, location;
+    };
+    const auto isolatedKeys = [] {
+        const auto id = std::to_string(IsolatedRedisPlayerIdForTest());
+        return Keys{"player:{" + id + "}:owner_epoch", "player:{" + id + "}:save_barrier", "player:" + id + ":handoff",
+                    "player:" + id + ":location-fixture"};
+    };
+    struct Cleanup
+    {
+        SyncRedisForTest& sync;
+        Keys keys;
+        ~Cleanup() { sync.Del(keys.owner); sync.Del(keys.barrier); sync.Del(keys.mark); sync.Del(keys.location); }
+    };
+
+    // r2-lc#1:BeginTravelHandoff 的发布帧晚于新连接上判 kUnchanged 的取证与解冻。
+    {
+        const Keys k = isolatedKeys();
+        ASSERT_EQ(0LL, live.Exists(k.owner)); ASSERT_EQ(0LL, live.Exists(k.barrier));
+        ASSERT_EQ(0LL, live.Exists(k.mark)); ASSERT_EQ(0LL, live.Exists(k.location));
+        Cleanup cleanup{live, k};
+        const std::string version = "00000000000000000005:00000000000000000001";
+        const std::string locationBytes = "location-bytes-on-this-node";
+        const auto held = makeFence("1", 'a', 'H', 'b');
+        const auto published = makeFence("1", 'a', 'F', 'c');
+        const auto revoked = makeFence("1", 'a', 'R', 'd');
+        const auto resumed = makeFence("1", 'a', 'H', 'e');
+        live.Set(k.owner, "5");
+        live.Set(k.location, locationBytes);
+        expectInteger(send(live, {"HSET", k.barrier, "pending", version, "player_database", version,
+                                  "player_database_1", version, "handoff_fence", held}), 4);
+        // ① 冻结快照双 SQL ACK 已齐,在旧连接上发 kPublishMarkLua("5:1000"),帧还没到 Redis。
+        ASSERT_EQ(REDIS_OK, hold(stale, {"EVAL", handoff_sql_barrier::kPublishMarkLua, "3", k.owner, k.barrier, k.mark,
+                                         "5", "5:1000", "300", held, published}));
+        // ② 存活探测摘连接,回调收到空应答 → kMarkWriteUnknown;重连后看门狗在新连接上取证:标记尚未到达、owner 未变。
+        auto judged = send(live, {"EVAL", handoff_sql_barrier::kJudgeOutcomeLua, "4", k.owner, k.barrier, k.mark, k.location,
+                                  held, published, revoked, "1000"});
+        ASSERT_NE(nullptr, judged);
+        ASSERT_EQ(REDIS_REPLY_ARRAY, judged->type) << (judged->type == REDIS_REPLY_ERROR ? judged->str : "");
+        ASSERT_EQ(2u, judged->elements);
+        ASSERT_EQ(REDIS_REPLY_STRING, judged->element[0]->type);
+        EXPECT_EQ("5", std::string(judged->element[0]->str, judged->element[0]->len)) << "kUnchanged:owner 仍是 E";
+        // ③ ResumeTravelAfterRevocation:R → 新 H,确认后才解冻。
+        expectInteger(send(live, {"EVAL", handoff_sql_barrier::kResumeFenceLua, "4", k.owner, k.barrier, k.mark, k.location,
+                                  revoked, resumed, "5", locationBytes}), 1);
+        // ④ 旧帧此刻才到:原 H 已不是现任资格,必须被拒。
+        expectInteger(deliver(stale), -2);
+        EXPECT_EQ(0LL, live.Exists(k.mark)) << "解冻后的新持有期间不得出现当前代际的有效标记";
+        EXPECT_EQ(resumed, fenceOf(k.barrier));
+        // 新持有者自己的下一次交接照常:围栏只拒旧资格,不伤活性。
+        expectInteger(send(live, {"EVAL", handoff_sql_barrier::kPublishMarkLua, "3", k.owner, k.barrier, k.mark,
+                                  "5", "5:2000", "300", resumed, makeFence("1", 'a', 'F', 'f')}), 1);
+        EXPECT_EQ("5:2000", live.Get(k.mark));
+    }
+
+    // r2-lc#2:A1′ 的条件写帧晚于同节点短重连的登记与确认(同节点不铸新 epoch)。A2′ 放弃补写、改派与改派踢线前补写
+    // 走同一段 kReleaseMarkLua、只消费各自缓存的原 H,迟到时同样被拒。
+    {
+        const Keys k = isolatedKeys();
+        ASSERT_EQ(0LL, live.Exists(k.owner)); ASSERT_EQ(0LL, live.Exists(k.barrier)); ASSERT_EQ(0LL, live.Exists(k.mark));
+        Cleanup cleanup{live, k};
+        const auto held = makeFence("1", 'a', 'H', 'b');
+        const auto released = makeFence("1", 'a', 'F', 'c');
+        const auto reloaded = makeFence("2", '7', 'H', '8'); // SQL 确认的新 admission generation,同 E、同 S
+        live.Set(k.owner, "5");
+        expectInteger(send(live, {"EVAL", handoff_sql_barrier::kRegisterFenceLua, "3", k.owner, k.barrier, k.mark,
+                                  "5", held, ""}), 1);
+        // ① 退出存盘落地,在旧连接上发 A1′("5:1000"),帧还没到 Redis;实体随即销毁。
+        ASSERT_EQ(REDIS_OK, hold(stale, {"EVAL", handoff_sql_barrier::kReleaseMarkLua, "3", k.owner, k.barrier, k.mark,
+                                         "5", "5:1000", "300", held, released}));
+        // ② 玩家短重连回同一节点:新连接上登记 N=2(原子清继承标记)并确认。
+        expectInteger(send(live, {"EVAL", handoff_sql_barrier::kRegisterFenceLua, "3", k.owner, k.barrier, k.mark,
+                                  "5", reloaded, held}), 1);
+        expectInteger(send(live, {"EVAL", handoff_sql_barrier::kConfirmFenceLua, "3", k.owner, k.barrier, k.mark,
+                                  "5", reloaded}), 0);
+        // ③ 旧 A1′ 此刻才到:-2 = 原 H 已被新登记轮换,未写。
+        expectInteger(deliver(stale), -2);
+        EXPECT_EQ(0LL, live.Exists(k.mark)) << "新持有期间不得出现当前代际的有效标记";
+        EXPECT_EQ(reloaded, fenceOf(k.barrier));
+    }
+
+    // 会话结束凭证(location-release-binding.md §3.3,2026-10-23):本节点完全不持有时没有缓存的原 H,先 HGET 读现任原件、
+    // 在 scene 线程核对(本进程实例、期望 E、仍完全不持有)之后以它 CAS(kCredentialMarkLua)。这里按 Redis 实际执行顺序验:
+    // (a) 原件是 F(A1′ 写过、标记已过期)也能写出凭证 —— §15 起等待超时不再授权删 location,不写就永远删不掉;
+    // (b) 读到原件之后 CAS 帧滞留在旧连接,期间同节点短重连登记新 N:迟到的凭证帧回 -2、不写;
+    // (c) 原件是 R(登记已落地又被撤销,继承标记已被登记删掉)也能写出凭证;(d) owner 已推进时回 0。
+    {
+        const Keys k = isolatedKeys();
+        ASSERT_EQ(0LL, live.Exists(k.owner)); ASSERT_EQ(0LL, live.Exists(k.barrier)); ASSERT_EQ(0LL, live.Exists(k.mark));
+        Cleanup cleanup{live, k};
+        const auto held = makeFence("1", 'a', 'H', 'b');
+        const auto released = makeFence("1", 'a', 'F', 'c');
+        live.Set(k.owner, "5");
+        expectInteger(send(live, {"EVAL", handoff_sql_barrier::kRegisterFenceLua, "3", k.owner, k.barrier, k.mark,
+                                  "5", held, ""}), 1);
+        expectInteger(send(live, {"EVAL", handoff_sql_barrier::kReleaseMarkLua, "3", k.owner, k.barrier, k.mark,
+                                  "5", "5:1000", "300", held, released}), 1);
+        live.Del(k.mark); // A1′ 的标记 TTL 到期
+
+        // (a)
+        const std::string observedFrozen = fenceOf(k.barrier);
+        ASSERT_EQ(released, observedFrozen);
+        const auto credential = makeFence("1", 'a', 'F', 'd');
+        const std::vector<std::string> credentialWrite{"EVAL", handoff_sql_barrier::kCredentialMarkLua, "3", k.owner,
+                                                       k.barrier, k.mark, "5", "5:2000", "300", observedFrozen, credential};
+        expectInteger(send(live, credentialWrite), 1);
+        EXPECT_EQ("5:2000", live.Get(k.mark)) << "持有节点活着而不持有:凭证让 LeaveScene / 换手门拿到 E 代释放证据";
+        EXPECT_EQ(credential, fenceOf(k.barrier));
+        expectInteger(send(live, credentialWrite), 1); // 同一 F 已在:幂等
+        EXPECT_EQ("5:2000", live.Get(k.mark));
+
+        // (b)
+        live.Del(k.mark);
+        const std::string observed = fenceOf(k.barrier);
+        ASSERT_EQ(credential, observed);
+        ASSERT_EQ(REDIS_OK, hold(stale, {"EVAL", handoff_sql_barrier::kCredentialMarkLua, "3", k.owner, k.barrier, k.mark,
+                                         "5", "5:3000", "300", observed, makeFence("1", 'a', 'F', 'e')}));
+        const auto reloaded = makeFence("2", '7', 'H', '8');
+        expectInteger(send(live, {"EVAL", handoff_sql_barrier::kRegisterFenceLua, "3", k.owner, k.barrier, k.mark,
+                                  "5", reloaded, observed}), 1);
+        expectInteger(send(live, {"EVAL", handoff_sql_barrier::kConfirmFenceLua, "3", k.owner, k.barrier, k.mark,
+                                  "5", reloaded}), 0);
+        expectInteger(deliver(stale), -2);
+        EXPECT_EQ(0LL, live.Exists(k.mark)) << "新持有期间迟到的凭证帧不得留下当前代际的有效标记";
+        EXPECT_EQ(reloaded, fenceOf(k.barrier));
+
+        // (c)
+        const auto revokedReload = makeFence("2", '7', 'R', 'a');
+        expectInteger(send(live, {"EVAL", handoff_sql_barrier::kCancelRegistrationLua, "3", k.owner, k.barrier, k.mark,
+                                  "5", reloaded, observed, revokedReload}), 1);
+        const std::string observedRevoked = fenceOf(k.barrier);
+        ASSERT_EQ(revokedReload, observedRevoked);
+        const auto credentialAfterRevoke = makeFence("2", '7', 'F', 'b');
+        expectInteger(send(live, {"EVAL", handoff_sql_barrier::kCredentialMarkLua, "3", k.owner, k.barrier, k.mark,
+                                  "5", "5:3500", "300", observedRevoked, credentialAfterRevoke}), 1);
+        EXPECT_EQ("5:3500", live.Get(k.mark));
+
+        // (d)
+        live.Del(k.mark);
+        live.Set(k.owner, "6"); // 跨节点接手铸了 E+1
+        expectInteger(send(live, {"EVAL", handoff_sql_barrier::kCredentialMarkLua, "3", k.owner, k.barrier, k.mark,
+                                  "5", "5:4000", "300", credentialAfterRevoke, makeFence("2", '7', 'F', 'c')}), 0);
+        EXPECT_EQ(0LL, live.Exists(k.mark));
+        EXPECT_EQ(credentialAfterRevoke, fenceOf(k.barrier));
+    }
 }

@@ -3,6 +3,8 @@ package playerstore
 import (
 	"context"
 	"errors"
+	"io"
+	"net"
 	"sort"
 	"testing"
 
@@ -153,9 +155,26 @@ func TestMGetBySlotKeepsInputOrder(t *testing.T) {
 	}
 }
 
+// stubRunIDs 让 runIDReader 依次返回给定值(miniredis 不支持 INFO server),测试结束恢复。
+func stubRunIDs(t *testing.T, ids ...string) {
+	t.Helper()
+	orig := runIDReader
+	i := 0
+	runIDReader = func(context.Context, *redis.Client) (string, error) {
+		id := ids[len(ids)-1]
+		if i < len(ids) {
+			id = ids[i]
+		}
+		i++
+		return id, nil
+	}
+	t.Cleanup(func() { runIDReader = orig })
+}
+
 func TestScanEachMasterStandalone(t *testing.T) {
 	ctx := context.Background()
 	_, c := newStandalone(t)
+	stubRunIDs(t, "run-a")
 	want := []string{"player:session:{1}", "player:session:{2}", "player:session:{3}"}
 	for _, k := range want {
 		if err := c.Set(ctx, k, "x", 0).Err(); err != nil {
@@ -184,5 +203,82 @@ func TestScanEachMasterStandalone(t *testing.T) {
 	stop := errors.New("stop")
 	if err := ScanEachMaster(ctx, c, "player:session:*", 1, func([]string) error { return stop }); !errors.Is(err, stop) {
 		t.Fatalf("fn 的错误应原样返回,得到 %v", err)
+	}
+}
+
+// 扫描期间节点重启(run_id 变化)必须报不完整:旧游标在新进程上续扫会漏键而不报错。
+func TestScanEachMasterDetectsRestart(t *testing.T) {
+	ctx := context.Background()
+	_, c := newStandalone(t)
+	if err := c.Set(ctx, "player:session:{1}", "x", 0).Err(); err != nil {
+		t.Fatal(err)
+	}
+	stubRunIDs(t, "run-before", "run-after")
+	err := ScanEachMaster(ctx, c, "player:session:*", 10, func([]string) error { return nil })
+	if !errors.Is(err, ErrTopologyChanged) {
+		t.Fatalf("run_id 变化应返回 ErrTopologyChanged,得到 %v", err)
+	}
+}
+
+func TestParseMyselfLine(t *testing.T) {
+	nodes := "07c37dfeb235213a872192d90877d0cd55635b91 127.0.0.1:30004@31004 slave e7d1eecce10fd6bb5eb35b9f99a514335d9ba9ca 0 1426238317239 4 connected\n" +
+		"67ed2db8d677e59ec4a4cefb06858cf2a1a89fa1 127.0.0.1:30002@31002 myself,master - 0 1426238316232 2 connected 5461-10922 12000\n"
+	self, err := parseMyselfLine(nodes)
+	if err != nil {
+		t.Fatalf("parseMyselfLine: %v", err)
+	}
+	if self.id != "67ed2db8d677e59ec4a4cefb06858cf2a1a89fa1" || self.slots != 10922-5461+1+1 || len(self.ranges) != 2 {
+		t.Fatalf("解析结果不对: %+v", self)
+	}
+	migrating := "67ed 127.0.0.1:30002@31002 myself,master - 0 1 2 connected 0-100 [101->-e7d1eecce10fd6bb5eb35b9f99a514335d9ba9ca]\n"
+	if _, err := parseMyselfLine(migrating); !errors.Is(err, ErrTopologyChanged) {
+		t.Fatalf("迁移标记应报 ErrTopologyChanged,得到 %v", err)
+	}
+	if _, err := parseMyselfLine("abc 127.0.0.1:1@2 master - 0 1 2 connected 0-10\n"); err == nil {
+		t.Fatal("没有 myself 行应报错")
+	}
+	if _, err := parseMyselfLine("abc 127.0.0.1:1@2 myself,master - 0 1 2 connected 0-16384\n"); err == nil {
+		t.Fatal("越界 slot 段应报错")
+	}
+}
+
+func TestWrapResultUnknown(t *testing.T) {
+	if err := wrapResultUnknown(io.EOF); !errors.As(err, new(*ResultUnknownError)) || !errors.Is(err, io.EOF) {
+		t.Fatalf("io.EOF 应包成 ResultUnknownError 且保留原因,得到 %v", err)
+	}
+	if err := wrapResultUnknown(io.EOF); err == io.EOF {
+		t.Fatal("包装后不得再等于 io.EOF(否则 go-redis 集群层会重发)")
+	}
+	opErr := &net.OpError{Op: "read", Net: "tcp", Err: errors.New("connection reset")}
+	if err := wrapResultUnknown(opErr); !errors.As(err, new(*ResultUnknownError)) {
+		t.Fatalf("网络错误应包装,得到 %v", err)
+	}
+	if err := wrapResultUnknown(redis.Nil); err != redis.Nil {
+		t.Fatalf("服务端应答的错误不应包装,得到 %v", err)
+	}
+	once := wrapResultUnknown(io.EOF)
+	if wrapResultUnknown(once) != once {
+		t.Fatal("已包装的错误不应重复包装")
+	}
+	if wrapResultUnknown(nil) != nil {
+		t.Fatal("nil 应原样返回")
+	}
+}
+
+func TestGuardRejectsNonIdempotentInPipeline(t *testing.T) {
+	ctx := context.Background()
+	mr, c := newStandalone(t)
+	_, err := c.Pipelined(ctx, func(p redis.Pipeliner) error {
+		p.Incr(ctx, "cnt:{42}")
+		return nil
+	})
+	if !errors.Is(err, ErrNonIdempotentInPipeline) {
+		t.Fatalf("管道里的 INCR 应被拒绝,得到 %v", err)
+	}
+	if mr.Exists("cnt:{42}") {
+		t.Fatal("被拒绝的管道不应执行")
+	}
+	if err := c.Incr(ctx, "cnt:{42}").Err(); err != nil {
+		t.Fatalf("单条 INCR 应允许: %v", err)
 	}
 }

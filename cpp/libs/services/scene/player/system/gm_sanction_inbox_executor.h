@@ -8,7 +8,10 @@
 //   GM_ATTACH_CURRENCY_DEBT   → CurrencySystem::AttachDebt       (**不幂等**,只靠收件箱账本去重)
 //
 // 结局口径:
-//   * 载荷解码失败、币种越界、欠款额不在 (0, INT64_MAX] → kRejected(kPlayerInboxPayloadInvalid);
+//   * 载荷解码失败、欠款额不在 (0, INT64_MAX] → kRejected(kPlayerInboxPayloadInvalid);
+//   * 载荷币种不在本二进制取值表内(IsKnownCurrencyType)→ kVersionSkew:Go 入箱已按同源取值表
+//     (proto/common/base/currency_type.proto)拒绝写错的值,这里只可能是更新版本加的币种;本二进制在会话内
+//     永远不会认识它,所以不用 kDefer。与版本无关的确定性校验(解码、欠款额)排在它之前。
 //   * 原语返回 kSuccess → kApplied;原语返回其他 tip 码 → kRejected(该码),例如 AttachDebt 的 owed 溢出;
 //   * CurrencyComp / PlayerCurrencyComp 缺失(加载不变量被破坏)→ kDefer:不改任何状态,不把一条 GM 处置
 //     因本地缺陷钉成终态 REJECTED;此时存盘本身也会被 Marshal 整份拒绝,结局落不了盘。

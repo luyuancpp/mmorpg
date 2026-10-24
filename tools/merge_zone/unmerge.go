@@ -134,6 +134,11 @@ func runUnmerge(o options) {
 	defer sharedRdb.Close()
 	sceneRdb := mustDial(ctx, "scene_manager", o.sceneAddr, o.scenePwd, o.sceneDB)
 	defer sceneRdb.Close()
+	// preflight P2(目标区口径)要 etcd 注册表的正面证据,见 scene_registry.go。写入之前校验参数。
+	sceneNodes, rerr := newEtcdGatewayRegistry(o.etcdEndpoints)
+	if rerr != nil {
+		log.Fatalf("-etcd-endpoints is required: preflight P2 needs positive evidence that zone %d has no registered scene node: %v", dst, rerr)
+	}
 
 	// 聚宝斋前置:清单里有商品 id = 当初真的搬过,库 / 表必须在。放在任何写之前 ——
 	// -trade-schema 指错时,不能等 5' mapping / 4' ZSET 已经改回之后才在 3b' 失败(先证明,再写)。
@@ -226,6 +231,7 @@ func runUnmerge(o options) {
 	if err := runPreflight(ctx, preflightDeps{
 		teamAuthority: teamAuthority,
 		sceneRdb:      sceneRdb,
+		sceneNodes:    sceneNodes,
 		mappingRdb:    mapRdb,
 		sharedRdb:     sharedRdb,
 		lag:           lagSrc,

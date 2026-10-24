@@ -29,6 +29,8 @@
 #include "node/system/node/thread_observability.h"
 #include "network/traffic_statistics.h"
 #include "network/rpc_channel_stats.h"
+#include "metrics/metrics_http_exporter.h"
+#include "metrics/metrics_registry.h"
 #include <boost/algorithm/string.hpp>
 #include "node/system/etcd/etcd_service.h"
 #include "node/system/grpc_call_deadline.h"
@@ -399,6 +401,28 @@ namespace
 		std::abort(); // LOG_FATAL 已 abort;这一行只为让 [[noreturn]] 对编译器成立
 	}
 
+	// 每个 C++ 节点都有的两条身份序列,排在各模块的采集结果之前。Pod 标签只能说明「哪个 Pod」,
+	// zone / node_id 要靠这条关联;node_id 在 etcd 分配前为 0。
+	std::string RenderNodeIdentityMetrics(const NodeInfo &info)
+	{
+		prometheus_text::Writer writer;
+		writer.BeginFamily("cpp_node_info",
+						   "Identity of this C++ node process (value is always 1); node_id is 0 before etcd allocation.",
+						   prometheus_text::MetricType::kGauge);
+		const auto nodeType = std::to_string(info.node_type());
+		const auto zoneId = std::to_string(info.zone_id());
+		const auto nodeId = std::to_string(info.node_id());
+		const auto sceneNodeType = std::to_string(info.scene_node_type());
+		writer.Sample({{"node_type", nodeType}, {"zone_id", zoneId}, {"node_id", nodeId},
+					   {"scene_node_type", sceneNodeType}},
+					  1);
+		writer.BeginFamily("cpp_node_start_time_seconds",
+						   "Unix time this C++ node process started (NodeInfo.launch_time).",
+						   prometheus_text::MetricType::kGauge);
+		writer.Sample({}, info.launch_time() / 1000000);
+		return writer.Text();
+	}
+
 #ifdef __linux__
 	// fd 限值行同时写 stdout 与日志:Linux 上 muduo 日志只进异步文件,stdout 是 kubectl logs 唯一看得到它的地方
 	// (写法同 gate_version::PrintStartupLine,不受 LogLevel 过滤);日志文件那份由 sidecar 送 Loki。
@@ -638,12 +662,37 @@ void Node::Initialize()
 	// 生成的 gRPC 客户端的 deadline 必须在发出第一个请求(InitEtcdService 里的 etcd Range / LeaseGrant)之前就位;
 	// 放在 InitLogSystem 之后,被忽略的配置项与生效值才进日志文件。
 	grpc_call_deadline::Apply(tlsNodeConfigManager.GetBaseDeployConfig().grpc_client());
+	// /metrics 出口排在任何业务网络之前:启动卡在 etcd / Redis 时也能抓到 cpp_node_info。
+	StartMetricsExporter();
 	InitRpcServer();
 	LoadAllConfigData();
 	InitKafka();
 	InitEtcdService();
 
 	LOG_DEBUG << "Node initialization complete.";
+}
+
+void Node::StartMetricsExporter()
+{
+	eventLoop.assertInLoopThread();
+	const auto port = ParseMetricsPortEnv(std::getenv(kMetricsPortEnv));
+	if (!port)
+	{
+		FatalStartupConfig("metrics exporter",
+						   std::string(kMetricsPortEnv) + " must be a port number 1..65535 (leave it unset to disable)");
+	}
+	if (*port == 0)
+	{
+		LOG_INFO << "[Metrics] " << kMetricsPortEnv << " is not set; Prometheus exporter disabled";
+		return;
+	}
+	// 回调捕获 this:出口是本 Node 的成员,在 FinalizeTeardownInLoop 里先于 Node 释放,
+	// 属于 AGENTS.md §11.7「与被绑对象同寿命的成员」的例外。只在 loop 线程上读 NodeInfo。
+	metricsExporter_ = std::make_unique<MetricsHttpExporter>(&eventLoop, *port, [this]
+	{
+		return RenderNodeIdentityMetrics(GetNodeInfo()) + GlobalMetricsRegistry().Render();
+	});
+	metricsExporter_->Start();
 }
 
 void Node::InitRpcServer()
@@ -1395,6 +1444,9 @@ void Node::FinalizeTeardownInLoop()
 	// gRPC 与 RPC0 的在途调用都已失败完成；现在才允许清除整个节点池。
 	// 同时释放 protobuf，避免拖到 EventLoop/protobuf 关闭后的 TLS 析构。
 	tlsNodeContextManager.Clear();
+	// /metrics 出口同理趁 EventLoop 还活着释放(~TcpServer 要在 loop 线程上关掉已有连接);它的采集回调读 tlsEcs,
+	// 必须排在 tlsEcs.Clear() 之前。关闭排进队列的连接收尾由下面的两跳 queueInLoop 排空。
+	metricsExporter_.reset();
 	// Cleared by tlsEcs.Clear() below.
 	tlsEcs.Clear();
 #ifdef WIN32

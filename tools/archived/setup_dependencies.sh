@@ -234,6 +234,7 @@ MUDUO_ARTIFACTS=(
     "$LIB_DIR/libmuduo_net.a"
     "$LIB_DIR/libmuduo_protobuf_codec.a"
     "$LIB_DIR/libmuduo_hiredis.a"
+    "$LIB_DIR/libmuduo_http.a"
 )
 OVERLAY_DIR="$SCRIPT_DIR/muduo_linux_overlay"
 
@@ -350,11 +351,13 @@ MUDUO_COMPAT_EOF
         echo "ERROR: muduo resolved unexpected Boost headers: $BOOST_CONFIGURED_INCLUDE" >&2
         exit 1
     fi
-    # Build only the four libraries the game links.  This deliberately skips
+    # Build only the five libraries the game links.  This deliberately skips
     # muduo_protorpc / muduo_protorpc_wire: nothing here uses them and they
     # carry more removed-protobuf-API surface than the codec does.
+    # muduo_http backs the C++ nodes' Prometheus /metrics exporter
+    # (cpp/libs/engine/core/metrics/metrics_http_exporter.cpp).
     cmake --build "$MUDUO_BUILD" -j "$CPU" \
-        --target muduo_base muduo_net muduo_protobuf_codec muduo_hiredis
+        --target muduo_base muduo_net muduo_protobuf_codec muduo_hiredis muduo_http
     # Copy libs to repo lib/
     find "$MUDUO_BUILD" -name "libmuduo_*.a" -exec cp {} "$LIB_DIR/" \;
     if ! have_all_files "${MUDUO_ARTIFACTS[@]}"; then

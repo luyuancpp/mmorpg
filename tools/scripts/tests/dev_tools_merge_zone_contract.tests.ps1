@@ -130,6 +130,17 @@ try {
         $script:MergeKafkaGroup = ''
     }
 
+    Test-Case '公共参数:-MergeEtcdEndpoints 原样转发为 -etcd-endpoints,没给就不转发(缺参数由 merge_zone 在任何写入之前拒绝)' {
+        Reset-MergeParams
+        $script:MergeSourceZone = 1; $script:MergeTargetZone = 2; $script:MergeDbCapabilityZones = 'none'
+        Assert-True (-not ((Get-CmdArgs 'merge-zone') -contains '-etcd-endpoints')) '没给 -MergeEtcdEndpoints 时不得转发空值'
+        $script:MergeEtcdEndpoints = 'http://127.0.0.1:2379'
+        foreach ($cmd in @('merge-zone', 'merge-zone-audit')) {
+            Assert-Equal 'http://127.0.0.1:2379' (Get-ArgValue (Get-CmdArgs $cmd) '-etcd-endpoints') "${cmd}:-MergeEtcdEndpoints 必须原样转发(preflight P2 与审计要 etcd 注册表的正证,tools/merge_zone/scene_registry.go)"
+        }
+        $script:MergeEtcdEndpoints = ''
+    }
+
     # 源码断言:dev_tools.ps1 与回滚脚本 / kafka_offset_reset.ps1 的透传口径(2026-10-15)。
     # 分支文本按 switch 分支的起止锚点切出,只断本分支,不受参数块注释影响。
     function Get-DevToolsBranchText([string]$Branch, [string]$NextBranch) {

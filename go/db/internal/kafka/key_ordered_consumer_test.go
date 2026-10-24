@@ -1343,7 +1343,7 @@ func TestOwnerEpochGuard_PreviousOwnersLastWriteLandsBeforeNewOwnerWrites(t *tes
 	const msgType = "taskpb.TaskResult"
 	setAppliedEpoch(t, w, key, msgType, 4)
 	// scene_manager 早已把当前 epoch 推到 5;db 守卫不看这把键。
-	require.NoError(t, w.redisClient.Set(w.ctx, fmt.Sprintf("player:%d:owner_epoch", key), "5", 0).Err())
+	require.NoError(t, w.redisClient.Set(w.ctx, fmt.Sprintf("player:{%d}:owner_epoch", key), "5", 0).Err())
 
 	w.handleTask(makeEpochWriteTask(t, key, msgType, 10, 4), true) // 源节点的最后一笔
 	w.handleTask(makeEpochWriteTask(t, key, msgType, 11, 5), true) // 新主的第一笔

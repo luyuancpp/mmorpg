@@ -25,6 +25,7 @@ namespace match {
 static const char* MatchInternal_method_names[] = {
   "/match.MatchInternal/StartActivityBattle",
   "/match.MatchInternal/CancelActivityBattle",
+  "/match.MatchInternal/CommitBattleOutcome",
 };
 
 std::unique_ptr< MatchInternal::Stub> MatchInternal::NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options) {
@@ -36,6 +37,7 @@ std::unique_ptr< MatchInternal::Stub> MatchInternal::NewStub(const std::shared_p
 MatchInternal::Stub::Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options)
   : channel_(channel), rpcmethod_StartActivityBattle_(MatchInternal_method_names[0], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   , rpcmethod_CancelActivityBattle_(MatchInternal_method_names[1], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_CommitBattleOutcome_(MatchInternal_method_names[2], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   {}
 
 ::grpc::Status MatchInternal::Stub::StartActivityBattle(::grpc::ClientContext* context, const ::match::StartActivityBattleRequest& request, ::match::StartActivityBattleResponse* response) {
@@ -84,6 +86,29 @@ void MatchInternal::Stub::async::CancelActivityBattle(::grpc::ClientContext* con
   return result;
 }
 
+::grpc::Status MatchInternal::Stub::CommitBattleOutcome(::grpc::ClientContext* context, const ::match::CommitBattleOutcomeRequest& request, ::match::CommitBattleOutcomeResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::match::CommitBattleOutcomeRequest, ::match::CommitBattleOutcomeResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_CommitBattleOutcome_, context, request, response);
+}
+
+void MatchInternal::Stub::async::CommitBattleOutcome(::grpc::ClientContext* context, const ::match::CommitBattleOutcomeRequest* request, ::match::CommitBattleOutcomeResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::match::CommitBattleOutcomeRequest, ::match::CommitBattleOutcomeResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_CommitBattleOutcome_, context, request, response, std::move(f));
+}
+
+void MatchInternal::Stub::async::CommitBattleOutcome(::grpc::ClientContext* context, const ::match::CommitBattleOutcomeRequest* request, ::match::CommitBattleOutcomeResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_CommitBattleOutcome_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::match::CommitBattleOutcomeResponse>* MatchInternal::Stub::PrepareAsyncCommitBattleOutcomeRaw(::grpc::ClientContext* context, const ::match::CommitBattleOutcomeRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::match::CommitBattleOutcomeResponse, ::match::CommitBattleOutcomeRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_CommitBattleOutcome_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::match::CommitBattleOutcomeResponse>* MatchInternal::Stub::AsyncCommitBattleOutcomeRaw(::grpc::ClientContext* context, const ::match::CommitBattleOutcomeRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncCommitBattleOutcomeRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
 MatchInternal::Service::Service() {
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       MatchInternal_method_names[0],
@@ -105,6 +130,16 @@ MatchInternal::Service::Service() {
              ::match::CancelActivityBattleResponse* resp) {
                return service->CancelActivityBattle(ctx, req, resp);
              }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      MatchInternal_method_names[2],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< MatchInternal::Service, ::match::CommitBattleOutcomeRequest, ::match::CommitBattleOutcomeResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](MatchInternal::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::match::CommitBattleOutcomeRequest* req,
+             ::match::CommitBattleOutcomeResponse* resp) {
+               return service->CommitBattleOutcome(ctx, req, resp);
+             }, this)));
 }
 
 MatchInternal::Service::~Service() {
@@ -118,6 +153,13 @@ MatchInternal::Service::~Service() {
 }
 
 ::grpc::Status MatchInternal::Service::CancelActivityBattle(::grpc::ServerContext* context, const ::match::CancelActivityBattleRequest* request, ::match::CancelActivityBattleResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status MatchInternal::Service::CommitBattleOutcome(::grpc::ServerContext* context, const ::match::CommitBattleOutcomeRequest* request, ::match::CommitBattleOutcomeResponse* response) {
   (void) context;
   (void) request;
   (void) response;

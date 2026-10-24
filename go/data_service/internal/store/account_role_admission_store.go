@@ -3,9 +3,11 @@ package store
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"database/sql"
 	"errors"
 	"slices"
+	"strings"
 
 	base "proto/common/base"
 	dbpb "proto/common/database"
@@ -17,6 +19,12 @@ import (
 
 const AccountRoleAdmissionTableName = "account_role_admission"
 const AccountRoleTradeHolderTableName = "account_role_trade_holder"
+const AccountRoleAdmissionRecoveryTableName = "account_role_admission_recovery"
+const SaveBarrierMaintenanceTableName = "save_barrier_maintenance_receipt"
+
+// 两类收据都永久保留原计划；摘要列固定宽度，正文不经过旧模型重写。
+const saveBarrierMaintenanceDDL = "CREATE TABLE IF NOT EXISTS save_barrier_maintenance_receipt (receipt_id BINARY(32) NOT NULL COMMENT 'pb:1',player_id BIGINT UNSIGNED NOT NULL COMMENT 'pb:2',request_digest BINARY(32) NOT NULL COMMENT 'pb:3',plan_proto MEDIUMBLOB NOT NULL COMMENT 'pb:4',phase INT UNSIGNED NOT NULL COMMENT 'pb:5',updated_ms BIGINT UNSIGNED NOT NULL COMMENT 'pb:6',PRIMARY KEY(receipt_id)) ENGINE=InnoDB"
+const accountRoleAdmissionRecoveryDDL = "CREATE TABLE IF NOT EXISTS account_role_admission_recovery (request_id BINARY(32) NOT NULL COMMENT 'pb:1',listing_id BIGINT UNSIGNED NOT NULL COMMENT 'pb:2',player_id BIGINT UNSIGNED NOT NULL COMMENT 'pb:3',scene_instance_id VARBINARY(36) NOT NULL COMMENT 'pb:4',through_generation BIGINT UNSIGNED NOT NULL COMMENT 'pb:5',owner_revision BIGINT UNSIGNED NOT NULL COMMENT 'pb:6',request_digest BINARY(32) NOT NULL COMMENT 'pb:7',request_proto MEDIUMBLOB NOT NULL COMMENT 'pb:8',maintenance_receipt_id BINARY(32) NOT NULL COMMENT 'pb:9',maintenance_request_digest BINARY(32) NOT NULL COMMENT 'pb:10',required_owner_epoch BIGINT UNSIGNED NOT NULL COMMENT 'pb:11',required_save_seq BIGINT UNSIGNED NOT NULL COMMENT 'pb:12',sql_proof_digest BINARY(32) NOT NULL COMMENT 'pb:13',recovered_ms BIGINT UNSIGNED NOT NULL COMMENT 'pb:14',PRIMARY KEY(request_id),UNIQUE KEY recovery_holder(listing_id,scene_instance_id)) ENGINE=InnoDB"
 
 // 主键字符串需要固定逐字节 UUID 列，不能由 proto2mysql 的 MEDIUMTEXT 代替。
 const accountRoleAdmissionDDL = "CREATE TABLE IF NOT EXISTS account_role_admission (player_id BIGINT UNSIGNED NOT NULL COMMENT 'pb:1',scene_instance_id VARBINARY(36) NOT NULL COMMENT 'pb:2',highest_generation BIGINT UNSIGNED NOT NULL COMMENT 'pb:3',closed_through BIGINT UNSIGNED NOT NULL COMMENT 'pb:4',identity_proto MEDIUMBLOB NOT NULL COMMENT 'pb:5',request_digest BINARY(32) NOT NULL COMMENT 'pb:6',required_owner_epoch BIGINT UNSIGNED NOT NULL COMMENT 'pb:7',required_save_seq BIGINT UNSIGNED NOT NULL COMMENT 'pb:8',close_digest VARBINARY(32) NOT NULL COMMENT 'pb:9',updated_ms BIGINT UNSIGNED NOT NULL COMMENT 'pb:10',PRIMARY KEY(player_id,scene_instance_id)) ENGINE=InnoDB"
@@ -71,6 +79,63 @@ func ensureRoleAdmissionSchema(ctx context.Context, db *sql.DB, name string) err
 			return errors.New("角色入场／排空实例列必须逐字节比较")
 		}
 	}
+	return ensureAdmissionRecoverySchema(ctx, db, name)
+}
+
+func ensureAdmissionRecoverySchema(ctx context.Context, db *sql.DB, name string) error {
+	for table, model := range map[string]proto.Message{SaveBarrierMaintenanceTableName: &dbpb.SaveBarrierMaintenanceReceipt{}, AccountRoleAdmissionRecoveryTableName: &dbpb.AccountRoleAdmissionRecovery{}} {
+		if err := assertColumnsPresent(ctx, db, name, model, table); err != nil {
+			return err
+		}
+		key := "request_id"
+		if table == SaveBarrierMaintenanceTableName {
+			key = "receipt_id"
+		}
+		keys, err := primaryKeyColumns(ctx, db, name, table)
+		if err != nil {
+			return err
+		}
+		if !slices.Equal(keys, []string{key}) {
+			return errors.New("旧holder恢复收据主键不符")
+		}
+		columns := []string{key, "request_digest"}
+		if table == AccountRoleAdmissionRecoveryTableName {
+			columns = append(columns, "maintenance_receipt_id", "maintenance_request_digest", "sql_proof_digest", "scene_instance_id")
+		}
+		for _, column := range columns {
+			var typ string
+			var width sql.NullInt64
+			if err := db.QueryRowContext(ctx, "SELECT DATA_TYPE,CHARACTER_MAXIMUM_LENGTH FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=? AND TABLE_NAME=? AND COLUMN_NAME=?", name, table, column).Scan(&typ, &width); err != nil {
+				return err
+			}
+			want, n := "binary", int64(32)
+			if column == "scene_instance_id" {
+				want, n = "varbinary", 36
+			}
+			if typ != want || !width.Valid || width.Int64 != n {
+				return errors.New("旧holder恢复收据摘要或实例列不符")
+			}
+		}
+	}
+	rows, err := db.QueryContext(ctx, "SELECT COLUMN_NAME FROM information_schema.STATISTICS WHERE TABLE_SCHEMA=? AND TABLE_NAME=? AND INDEX_NAME='recovery_holder' AND NON_UNIQUE=0 ORDER BY SEQ_IN_INDEX", name, AccountRoleAdmissionRecoveryTableName)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	var keys []string
+	for rows.Next() {
+		var key string
+		if err := rows.Scan(&key); err != nil {
+			return err
+		}
+		keys = append(keys, key)
+	}
+	if err := rows.Err(); err != nil {
+		return err
+	}
+	if !slices.Equal(keys, []string{"listing_id", "scene_instance_id"}) {
+		return errors.New("旧holder恢复缺永久业务唯一键")
+	}
 	return nil
 }
 
@@ -84,6 +149,14 @@ var _ accountdirectory.Admissions = (*AccountRoleAdmissionStore)(nil)
 
 func (s *AccountRoleAdmissionStore) ready() bool {
 	return s != nil && s.directory != nil && s.directory.db != nil
+}
+
+// CheckRecoverySchema只读核恢复收据表，不在维护恢复时隐式DDL。
+func (s *AccountRoleAdmissionStore) CheckRecoverySchema(ctx context.Context) error {
+	if !s.ready() {
+		return accountdirectory.ErrUnavailable
+	}
+	return ensureRoleAdmissionSchema(ctx, s.directory.db, s.directory.schema)
 }
 func lockAdmissionRole(ctx context.Context, tx *sql.Tx, player, revision uint64) (*dspb.AccountRoleOwnership, error) {
 	r, err := scanOwnership(tx.QueryRowContext(ctx, "SELECT account,role_proto,owner_revision,trade_listing_id FROM account_role WHERE player_id=? FOR UPDATE", player), player)
@@ -398,4 +471,193 @@ func (s *AccountRoleAdmissionStore) AckDrain(ctx context.Context, in *dspb.AckRo
 		_, err = tx.ExecContext(ctx, "UPDATE account_role_trade_holder SET drained=1,ack_digest=?,updated_ms="+dbNowMsSQL+" WHERE listing_id=? AND scene_instance_id=?", digest, seal.ListingId, []byte(seal.SceneInstanceId))
 		return err
 	})
+}
+
+// PlanCrashedTradeHolder与apply共用完整SQL校验，只读回滚，不创建收据/推进水位。
+// 唯一关闭依据是同SQL源内永久维护收据及完整双行E>U；不是Scene的跨实例关闭RPC。
+func (s *AccountRoleAdmissionStore) PlanCrashedTradeHolder(ctx context.Context, in *dbpb.AccountRoleAdmissionRecovery_Request, verifier *SQLRoleFreezeVerifier, localTarget string) (*dbpb.AccountRoleAdmissionRecovery, error) {
+	if len(localTarget) != 32 || strings.Trim(localTarget, "0123456789abcdef") != "" {
+		return nil, accountdirectory.ErrInvalid
+	}
+	return s.recoverCrashedTradeHolder(ctx, in, verifier, false, localTarget, nil)
+}
+
+// ApplyCrashedTradeHolder仅接受审定plan的原SQL摘要，并在相同事务重核本地实例marker。
+// 提交错误含结局未知，绝不伪成功；同原请求重入读永久原件，不推进新入场/归属。
+func (s *AccountRoleAdmissionStore) ApplyCrashedTradeHolder(ctx context.Context, in *dbpb.AccountRoleAdmissionRecovery_Request, verifier *SQLRoleFreezeVerifier, localTarget string, expectedProof []byte) (*dbpb.AccountRoleAdmissionRecovery, error) {
+	if len(localTarget) != 32 || strings.Trim(localTarget, "0123456789abcdef") != "" || len(expectedProof) != 32 {
+		return nil, accountdirectory.ErrInvalid
+	}
+	return s.recoverCrashedTradeHolder(ctx, in, verifier, true, localTarget, expectedProof)
+}
+
+func (s *AccountRoleAdmissionStore) recoverCrashedTradeHolder(ctx context.Context, in *dbpb.AccountRoleAdmissionRecovery_Request, verifier *SQLRoleFreezeVerifier, apply bool, localTarget string, expectedProof []byte) (*dbpb.AccountRoleAdmissionRecovery, error) {
+	if !s.ready() || verifier == nil {
+		return nil, accountdirectory.ErrUnavailable
+	}
+	if in == nil || len(in.ProtoReflect().GetUnknown()) != 0 || len(in.RequestId) != 32 || !accountdirectory.ValidAccount(in.SellerAccount) ||
+		!accountdirectory.ValidTradeSeal(in.Seal) || !accountdirectory.ValidAdmission(in.Admission) || len(in.AdmissionRequestDigest) != 32 ||
+		len(in.MaintenanceReceiptId) != 32 || len(in.MaintenanceRequestDigest) != 32 ||
+		!accountdirectory.ValidSaveFloor(in.ExpectedRequiredOwnerEpoch, in.ExpectedRequiredSaveSeq) {
+		return nil, accountdirectory.ErrInvalid
+	}
+	seal, identity := in.Seal, in.Admission
+	if len(seal.ProtoReflect().GetUnknown()) != 0 || len(identity.ProtoReflect().GetUnknown()) != 0 || identity.PlayerId != seal.PlayerId || identity.SceneInstanceId != seal.SceneInstanceId ||
+		identity.Generation != seal.ThroughGeneration || identity.OwnerRevision != seal.OwnerRevision || identity.SceneNodeId != seal.SceneNodeId || identity.ZoneId != seal.ZoneId || in.ExpectedClosedThrough >= seal.ThroughGeneration {
+		return nil, accountdirectory.ErrInvalid
+	}
+	raw, err := (proto.MarshalOptions{Deterministic: true}).Marshal(in)
+	if err != nil || len(raw) > 4096 {
+		return nil, accountdirectory.ErrInvalid
+	}
+	hash := sha256.New()
+	writeProofPart(hash, []byte("account-role-admission-recovery-v1"))
+	writeProofPart(hash, raw)
+	digest := hash.Sum(nil)
+	// 原件只读快速重放；损坏或换正文绝不补写原件/修改当前业务行。
+	if prior, err := readAdmissionRecovery(ctx, s.directory.db, in.RequestId); err == nil {
+		if !bytes.Equal(prior.RequestProto, raw) || !bytes.Equal(prior.RequestDigest, digest) || len(expectedProof) > 0 && !bytes.Equal(expectedProof, prior.SqlProofDigest) {
+			return nil, accountdirectory.ErrConflict
+		}
+		if localTarget != "" {
+			tx, err := s.directory.db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
+			if err != nil {
+				return nil, err
+			}
+			defer tx.Rollback()
+			if err := checkRecoveryLocalMarker(ctx, tx, localTarget); err != nil {
+				return nil, err
+			}
+		}
+		return prior, nil
+	} else if !errors.Is(err, sql.ErrNoRows) {
+		return nil, err
+	}
+	var out *dbpb.AccountRoleAdmissionRecovery
+	err = s.directory.transaction(ctx, func(tx *sql.Tx) error {
+		if localTarget != "" {
+			if err := checkRecoveryLocalMarker(ctx, tx, localTarget); err != nil {
+				return err
+			}
+		}
+		if err := lockAccounts(ctx, tx, in.SellerAccount); err != nil {
+			return err
+		}
+		r, err := readRoleTrade(ctx, tx, seal.ListingId)
+		if err != nil {
+			return err
+		}
+		owned, err := lockAdmissionRole(ctx, tx, seal.PlayerId, seal.OwnerRevision)
+		if err != nil {
+			return err
+		}
+		a, err := readAdmission(ctx, tx, seal.PlayerId, seal.SceneInstanceId)
+		if err != nil {
+			return err
+		}
+		var holderRaw, holderDigest []byte
+		var drained uint32
+		if err := tx.QueryRowContext(ctx, "SELECT seal_proto,drained,ack_digest FROM account_role_trade_holder WHERE listing_id=? AND scene_instance_id=? FOR UPDATE", seal.ListingId, []byte(seal.SceneInstanceId)).Scan(&holderRaw, &drained, &holderDigest); err != nil {
+			return err
+		}
+		// 同账号并发重入在原锁序之后核永久原件；不会把另一次常规Ack当本工具成功。
+		if prior, err := readAdmissionRecovery(ctx, tx, in.RequestId); err == nil {
+			if !bytes.Equal(prior.RequestProto, raw) || !bytes.Equal(prior.RequestDigest, digest) || len(expectedProof) > 0 && !bytes.Equal(expectedProof, prior.SqlProofDigest) {
+				return accountdirectory.ErrConflict
+			}
+			out = prior
+			if !apply {
+				return errRecoveryPlanReadOnly
+			}
+			return nil
+		} else if !errors.Is(err, sql.ErrNoRows) {
+			return err
+		}
+		priorSeal := &base.RoleTradeSeal{}
+		actualIdentity, err := admissionIdentity(a)
+		if err != nil || proto.Unmarshal(holderRaw, priorSeal) != nil || !proto.Equal(priorSeal, seal) || drained != 0 || len(holderDigest) != 0 ||
+			r.SellerAccount != in.SellerAccount || r.PlayerId != seal.PlayerId || r.SellerOwnerRevision != seal.OwnerRevision ||
+			(r.State != uint32(dspb.AccountRoleTradeState_ACCOUNT_ROLE_TRADE_STATE_FREEZING) && r.State != uint32(dspb.AccountRoleTradeState_ACCOUNT_ROLE_TRADE_STATE_CANCEL_PENDING)) ||
+			owned.Account != in.SellerAccount || owned.TradeListingId != seal.ListingId || !proto.Equal(actualIdentity, identity) || !bytes.Equal(a.RequestDigest, in.AdmissionRequestDigest) ||
+			a.ClosedThrough != in.ExpectedClosedThrough || a.RequiredOwnerEpoch != in.ExpectedRequiredOwnerEpoch || a.RequiredSaveSeq != in.ExpectedRequiredSaveSeq {
+			return accountdirectory.ErrConflict
+		}
+		floorE, floorQ, sqlDigest, err := verifier.verifyMaintenanceRecovery(ctx, tx, s.directory.schema, in)
+		if err != nil {
+			return err
+		}
+		if len(expectedProof) > 0 && !bytes.Equal(expectedProof, sqlDigest) {
+			return accountdirectory.ErrConflict
+		}
+		if saveFloorAfter(a.RequiredOwnerEpoch, a.RequiredSaveSeq, floorE, floorQ) || saveFloorAfter(r.RequiredOwnerEpoch, r.RequiredSaveSeq, floorE, floorQ) {
+			return accountdirectory.ErrConflict
+		}
+		out = &dbpb.AccountRoleAdmissionRecovery{RequestId: bytes.Clone(in.RequestId), ListingId: seal.ListingId, PlayerId: seal.PlayerId, SceneInstanceId: seal.SceneInstanceId, ThroughGeneration: seal.ThroughGeneration, OwnerRevision: seal.OwnerRevision, RequestDigest: digest, RequestProto: raw, MaintenanceReceiptId: bytes.Clone(in.MaintenanceReceiptId), MaintenanceRequestDigest: bytes.Clone(in.MaintenanceRequestDigest), RequiredOwnerEpoch: floorE, RequiredSaveSeq: floorQ, SqlProofDigest: sqlDigest}
+		if err := tx.QueryRowContext(ctx, "SELECT "+dbNowMsSQL).Scan(&out.RecoveredMs); err != nil {
+			return err
+		}
+		if !apply {
+			return errRecoveryPlanReadOnly
+		}
+		if _, err := tx.ExecContext(ctx, "INSERT INTO account_role_admission_recovery(request_id,listing_id,player_id,scene_instance_id,through_generation,owner_revision,request_digest,request_proto,maintenance_receipt_id,maintenance_request_digest,required_owner_epoch,required_save_seq,sql_proof_digest,recovered_ms) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)", out.RequestId, out.ListingId, out.PlayerId, []byte(out.SceneInstanceId), out.ThroughGeneration, out.OwnerRevision, out.RequestDigest, out.RequestProto, out.MaintenanceReceiptId, out.MaintenanceRequestDigest, floorE, floorQ, sqlDigest, out.RecoveredMs); err != nil {
+			return err
+		}
+		if _, err := tx.ExecContext(ctx, "UPDATE account_role_admission SET closed_through=?,required_owner_epoch=?,required_save_seq=?,close_digest=?,updated_ms=? WHERE player_id=? AND scene_instance_id=?", seal.ThroughGeneration, floorE, floorQ, digest, out.RecoveredMs, seal.PlayerId, []byte(seal.SceneInstanceId)); err != nil {
+			return err
+		}
+		if _, err := tx.ExecContext(ctx, "UPDATE account_role_trade SET required_owner_epoch=?,required_save_seq=?,updated_ms=? WHERE listing_id=?", floorE, floorQ, out.RecoveredMs, seal.ListingId); err != nil {
+			return err
+		}
+		_, err = tx.ExecContext(ctx, "UPDATE account_role_trade_holder SET drained=1,ack_digest=?,updated_ms=? WHERE listing_id=? AND scene_instance_id=?", digest, out.RecoveredMs, seal.ListingId, []byte(seal.SceneInstanceId))
+		return err
+	})
+	if errors.Is(err, errRecoveryPlanReadOnly) {
+		return out, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+var errRecoveryPlanReadOnly = errors.New("旧holder维护plan完成只读回滚")
+
+// 与cmd/debugutil的本地标记同一表/标准值；额外实例nonce必须由操作者在专用本地库预建。
+// 不在工具中DDL/自建标记。marker先于目录锁且持到提交，换实例/删标记无法通过apply。
+func checkRecoveryLocalMarker(ctx context.Context, tx *sql.Tx, id string) error {
+	for _, want := range []string{"local-debug-import-target", "old-scene-recovery:" + id} {
+		var got string
+		if err := tx.QueryRowContext(ctx, "SELECT marker FROM debug_import_local_target WHERE marker=? FOR UPDATE", want).Scan(&got); err != nil {
+			return accountdirectory.ErrUnavailable
+		}
+		if got != want {
+			return accountdirectory.ErrConflict
+		}
+	}
+	return nil
+}
+
+type recoveryRowReader interface {
+	QueryRowContext(context.Context, string, ...any) *sql.Row
+}
+
+func readAdmissionRecovery(ctx context.Context, q recoveryRowReader, id []byte) (*dbpb.AccountRoleAdmissionRecovery, error) {
+	r := &dbpb.AccountRoleAdmissionRecovery{RequestId: bytes.Clone(id)}
+	err := q.QueryRowContext(ctx, "SELECT listing_id,player_id,scene_instance_id,through_generation,owner_revision,request_digest,request_proto,maintenance_receipt_id,maintenance_request_digest,required_owner_epoch,required_save_seq,sql_proof_digest,recovered_ms FROM account_role_admission_recovery WHERE request_id=?", id).Scan(&r.ListingId, &r.PlayerId, &r.SceneInstanceId, &r.ThroughGeneration, &r.OwnerRevision, &r.RequestDigest, &r.RequestProto, &r.MaintenanceReceiptId, &r.MaintenanceRequestDigest, &r.RequiredOwnerEpoch, &r.RequiredSaveSeq, &r.SqlProofDigest, &r.RecoveredMs)
+	if err != nil {
+		return nil, err
+	}
+	stored := &dbpb.AccountRoleAdmissionRecovery_Request{}
+	if len(r.RequestProto) > 4096 || proto.Unmarshal(r.RequestProto, stored) != nil || len(r.RequestDigest) != 32 || len(r.SqlProofDigest) != 32 ||
+		!bytes.Equal(stored.RequestId, id) || stored.GetSeal().GetListingId() != r.ListingId || stored.GetSeal().GetPlayerId() != r.PlayerId || stored.GetSeal().GetSceneInstanceId() != r.SceneInstanceId || stored.GetSeal().GetThroughGeneration() != r.ThroughGeneration || stored.GetSeal().GetOwnerRevision() != r.OwnerRevision ||
+		!bytes.Equal(stored.MaintenanceReceiptId, r.MaintenanceReceiptId) || !bytes.Equal(stored.MaintenanceRequestDigest, r.MaintenanceRequestDigest) || !accountdirectory.ValidSaveFloor(r.RequiredOwnerEpoch, r.RequiredSaveSeq) || r.RequiredOwnerEpoch == 0 {
+		return nil, errors.New("永久旧holder恢复收据损坏")
+	}
+	h := sha256.New()
+	writeProofPart(h, []byte("account-role-admission-recovery-v1"))
+	writeProofPart(h, r.RequestProto)
+	if !bytes.Equal(h.Sum(nil), r.RequestDigest) {
+		return nil, errors.New("永久旧holder恢复摘要不符")
+	}
+	return r, nil
 }

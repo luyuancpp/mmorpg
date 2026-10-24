@@ -4,6 +4,7 @@ option go_package = "login/proto/common/database";
 import "proto/db/proto_option.proto";
 import "proto/common/rollback/transaction_log.proto";
 import "proto/common/rollback/player_snapshot.proto";
+import "proto/common/base/role_admission.proto";
 
 // ============================================================================
 // Transaction Log — append-only audit trail for all bidirectional operations.
@@ -346,6 +347,8 @@ message account_role {
   uint64 owner_revision = 4; // 账号归属修订号，绝不等同 scene owner_epoch。
   uint64 updated_ms = 5;
   uint64 trade_listing_id = 6; // 0 表示无交易锁；非零时入场、身份补齐和删除均拒绝。
+  // 仅首次目录与两张玩家行同事务提交为 1；旧角色及导入保持 0。
+  uint64 initial_player_commit = 7;
 }
 
 // listing 级永久冻结收据；取消后保留，旧冻结请求重放不能再次冻结。
@@ -428,4 +431,103 @@ message account_role_import_receipt {
   bytes role_proto = 6;
   uint32 allow_restore = 7;
   uint64 created_ms = 8;
+}
+
+
+// 停写维护的永久阶段收据；只由本地受控 fence-only promotion 写入。
+// phase：1=计划已固定，2=R/owner撤销已确认，3=双SQL围栏已提交，4=屏障确认。
+// 原计划正文和摘要不可变，未知提交只能按同一计划重读，不得铸造新撤销token。
+message save_barrier_maintenance_receipt {
+  option(OptionTableName) = "save_barrier_maintenance_receipt";
+  option(OptionPrimaryKey) = "receipt_id";
+  bytes receipt_id = 1;
+  uint64 player_id = 2;
+  bytes request_digest = 3;
+  bytes plan_proto = 4;
+  enum Phase {
+    PHASE_UNKNOWN = 0;
+    PLAN_FIXED = 1;
+    WRITERS_REVOKED = 2;
+    SQL_PROMOTED = 3;
+    BARRIER_CONFIRMED = 4;
+  }
+  Phase phase = 5;
+  uint64 updated_ms = 6;
+
+  // 本工具的审定计划，不是跨实例RPC，也不是业务写者自行提交的排空ACK。
+  message PromotionPlan {
+    string format = 1;
+    string maintenance_id = 2;
+    uint64 player_id = 3;
+    string row_schema = 4;
+    string route_schema = 5;
+    uint32 home_zone = 6;
+    uint32 storage_id = 7;
+    uint64 route_revision = 8;
+    string route_generation = 9;
+    uint64 route_watermark = 10;
+    uint64 placement_version = 11;
+    uint64 audited_owner_upper_bound = 12;
+    uint64 original_owner = 13;
+    uint64 target_owner = 14;
+    uint64 original_save_epoch = 15;
+    uint64 original_save_seq = 16;
+    uint64 target_save_seq = 17;
+    uint32 schema_gen = 18;
+    // 全部非fence列含NULL、未知blob和原世代的逐字节摘要；不丢弃未知资产字段。
+    bytes first_business_sha256 = 19;
+    bytes second_business_sha256 = 20;
+    string original_fence = 21;
+    string revoked_fence = 22;
+    bytes receipt_id = 23;
+    string redis_addr = 24;
+    int32 redis_db = 25;
+    bytes audit_evidence_sha256 = 26;
+    bool writers_stopped = 27;
+    bool queues_drained = 28;
+    string mapping_addr = 29;
+    int32 mapping_db = 30;
+    // 空摘要代表键原本缺席；有缓存时，必须先逐字段核对已提交SQL，执行时再CAS原bytes。
+    repeated CacheObservation caches = 31;
+    message CacheObservation {
+      string key = 1;
+      bool present = 2;
+      bytes sha256 = 3;
+      string redis_type = 4;
+    }
+  }
+}
+
+// 指定旧Scene holder的永久退休原件。与closed_through/drained在同一SQL事务提交；
+// 不接通用跨UUID关闭RPC，不根据TTL、新UUID或仅高于初次identity的SQL水位退休。
+message account_role_admission_recovery {
+  option(OptionTableName) = "account_role_admission_recovery";
+  option(OptionPrimaryKey) = "request_id";
+  bytes request_id = 1;
+  uint64 listing_id = 2;
+  uint64 player_id = 3;
+  string scene_instance_id = 4;
+  uint64 through_generation = 5;
+  uint64 owner_revision = 6;
+  bytes request_digest = 7;
+  bytes request_proto = 8;
+  bytes maintenance_receipt_id = 9;
+  bytes maintenance_request_digest = 10;
+  uint64 required_owner_epoch = 11;
+  uint64 required_save_seq = 12;
+  bytes sql_proof_digest = 13;
+  uint64 recovered_ms = 14;
+
+  message Request {
+    bytes request_id = 1;
+    string seller_account = 2;
+    common.base.RoleTradeSeal seal = 3;
+    common.base.RoleAdmissionIdentity admission = 4;
+    bytes admission_request_digest = 5;
+    uint64 expected_closed_through = 6;
+    uint64 expected_required_owner_epoch = 7;
+    uint64 expected_required_save_seq = 8;
+    bytes maintenance_receipt_id = 9;
+    bytes maintenance_request_digest = 10;
+  }
 }

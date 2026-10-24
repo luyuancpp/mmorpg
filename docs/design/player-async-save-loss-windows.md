@@ -5,6 +5,7 @@
 - 证据：按本轮工作区源码静态核对，包含尚未提交的并行修改；本文的“已修复”表示已有实现，**不表示本轮完成了构建、测试或故障验收**。交接资格、登录初始行与恢复工具正在并行修改，实施时按下列函数重新核对。
 - 当前结论：旧的重试丢弃、欠款漏存、损坏载荷误加载与无交接屏障已有修复；**Redis 提交前丢失 scene 内存、Redis 提交后父快照与同实例 outbox 一起回退，仍有真实丢失窗口**。交 Claude Code 的修复任务见 §7，验收见 §8。
 - 上线状态：按[存盘围栏设计](db-write-fencing-mysql.md)文末“上线状态”，项目尚未上线；本文不新增混版迁移要求。
+- **2026-10-24 方向变更（先读）**：用户 10-24 明确「玩家数据不要 redis 存储，其他改用的地方还是要用」，见 [TiDB 决策 §9](global-data-layer-tidb-decision.md)。本文的窗口 B（父快照与同实例 outbox 随 Redis 一起回退）以 Redis 父快照为对象，随新存盘路径重写；§7 的待实现修复开工前先向用户确认是否还做。窗口 A（存储不可写时数据只在 scene 内存）与存储选型无关，新设计仍要回答。只定了方向，未设计、未落码。
 
 关联：[存盘围栏与提交屏障](db-write-fencing-mysql.md)、[跨 zone 传送 §15](cross-zone-scene-travel.md#15-跨-zone-完整节点与数据流程2026-10-20源码核对)、[Redis 回退防护](zone-redis-regression-guard-20261022.md)、[组件访问规则](ecs-component-access-rules.md)、[proto 比较存盘](proto-compare-dirty-save.md)。
 

@@ -141,6 +141,7 @@
     - 第四条(`deploy/k8s/AGENTS.md`)待负责人确认,未改。包装入口(dev_tools / k8s_image / k8s_zone_rollback)尚未透传新参数。
     - (2026-10-22 续)负责人已确认,第四条已写进 `deploy/k8s/AGENTS.md` 的 CONVENTIONS(「C++ 启动壳不加 `ulimit`」)。包装入口透传另开会话在做。
     - (2026-10-22 再续,已落码、未验证)包装入口已透传 `-NodeOpenFileLimitMode`:`dev_tools.ps1`(含 `k8s-zone-rollback`)、`k8s_image.ps1`、`k8s_zone_rollback.ps1` 的 Step 6,留空不透传,与 `-GateRouterMode` 同口径。契约清单已钉住,Codex 命令见 PROGRESS「B0-4 部署侧:包装入口透传 -NodeOpenFileLimitMode」条目。回滚第 0 步不核对集群里的这个 env,以 warn 运行的 zone 回滚时要照传。
+    - (2026-10-23 更正,已落码、未验证)回滚脚本第 0 步 a 现在核对:`-NodeOpenFileLimitMode` 留空时,`-Apply` 在 Step 1 停服之前读 gate / scene(含 Agones Fleet)模板里的 `NODE_OPEN_FILE_LIMIT_MODE`,任一为 warn 或读不到即拒绝;显式给值不核对。见 PROGRESS「2026-10-23:回滚脚本第 0 步核对 B0-4 nofile 豁免」。
 - **B0-5**:A1 还没做:scene_manager 按 zone 选主、watch 与 knownNodes 收窄到本 zone,以及 rebalance 等领导者循环限定到本 zone。`handleWatchEvent` 的 PUT 换 zone 分支没有按领导者门控。
   - **(2026-10-20 核对)** 两条都仍未做,也没人认领。A1 多了一个新前置:10-19 EnterScene 陈旧位置会话新增的 `isZoneGoneFromRegistry`,以及既有的 `isNodeGoneFromRegistry`,都依赖 knownNodes 是全服镜像。watch 收窄之前,这两处要先改成按 zone 查注册表,否则别的 zone 会一律被判成已下线。另外,上 Cluster 后 `pipelineBatchRejected` 的整批判定要复核(G4a §17)。
 - **B0-3**:stress_summarize 补 login 侧的回执送达小表;dispatch 线程池饱和时的回退路径仍不可观测;`TriggerPlayerDataPreload` 是死代码。
@@ -184,6 +185,13 @@
 - **验证**:10-21 整合记录写了「WorldChannelRace 定向组通过」,但没有用例数,修复前红也没跑。完整命令与通过标准见 PROGRESS 2026-10-22 同名条目。
 - **残留**:`enterscenelogic.go` `resolveScene` 的死节点自愈仍是无条件 SET,是同类的第三个写者。修它要先定 CAS 落空时回给客户端的码,未做;另开任务。
   - (2026-10-22 续,已落码、未编译、未测试)已改走 `reassignSceneNode`(新方法 `reassignSceneOffDeadNode`)。CAS 落空时重读一次属主,活着就直接用,没有新开错误码;Agones 名额只在 CAS 成功后转移。回归用例 `resolve_scene_reassign_cas_test.go` 6 条,Codex 命令见 PROGRESS「2026-10-22 resolveScene 死节点自愈改走 reassignSceneNode CAS」。
+  - (2026-10-23 再续,已落码、未编译、未测试,上一条的命令作废)对抗评审后又改了一轮:
+    - 死节点自愈只重建大世界频道,用 `world_channels` 成员资格确认 conf,提交时在 CAS 脚本里再核对一次(新增 `reassignWorldChannelNode`,防缩容排空交错);副本 / 镜像不再在别处重建,留给死节点收尾销毁。
+    - 顺序改为先建实体、再 CAS、最后转名额,与 rebalance 相同。建场景失败时不改归属,下一次请求重来;CAS 落空时回收预建的实体。
+    - `TransferAgonesRoomForScene` 的记录改写改为比较并交换。
+    - zone 守卫区分「没记录」与「读出错」。
+    - 用例 10 条(另有 Agones 转移用例 2 条)。Codex 命令以 PROGRESS「2026-10-23 resolveScene 死节点自愈收窄为只重建频道」为准。
+    - 合并后待办:「Go scene_manager 读 Redis 出错不再当成映射不存在」会话的 worktree 合回后,由后合的一方做两处。一是懒改派 `lazyReassignStaleWorldChannel` 第 3 步改走 `reassignWorldChannelNode`;二是把两边同为 3s 的收尾时限常量合成一个。
 
 **(2026-10-22 注,上表原文不删)match 旧格式队列兼容、每次存盘的 INFO:两项都已落码,未编译、未测试。**
 - **match**:删掉 `migrateLegacyQueues` / `migrateLegacyQueue` / `legacyQueueSweepInterval`、`legacyMatchQueueScanPattern` / `legacyMatchQueueKey`、只给迁移用的 `ticketSetQueueKeyScript`,以及 `dequeueMemberCtx` 对无 hash tag 键的单 key LREM。`ticketQueueKeys` 改成只返回新键的 `ticketQueueKey`,CancelQueue 与 `leaveQueueForOtherBattle` 跟着改。

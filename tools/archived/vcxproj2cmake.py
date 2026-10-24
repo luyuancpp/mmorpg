@@ -72,7 +72,9 @@ EXTERNAL_LIBS = [
     "-Wl,--exclude-libs,libnghttp2.a",
     "nghttp2",
     # muduo (from muduo-linux cmake build, no find_package)
-    "muduo_protobuf_codec", "muduo_hiredis", "muduo_net", "muduo_base",
+    # muduo_http:C++ 节点的 Prometheus 出口(core/metrics/metrics_http_exporter.cpp)用 muduo 自带的 HttpServer;
+    # 它依赖 muduo_net,必须排在 muduo_net 之前。
+    "muduo_protobuf_codec", "muduo_hiredis", "muduo_http", "muduo_net", "muduo_base",
     # other third-party (installed to /usr/local/lib)
     "rdkafka++", "rdkafka",
     "yaml-cpp", "hiredis", "curl",

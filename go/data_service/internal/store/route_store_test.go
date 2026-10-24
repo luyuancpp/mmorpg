@@ -90,8 +90,13 @@ func TestRouteBootstrapDDLContract(t *testing.T) {
 			t.Fatalf("%s 有 %d 个 ascii 列,只有 %d 个显式 COLLATE ascii_bin(MySQL 默认 ascii_general_ci、TiDB 只有 ascii_bin)", name, n, m)
 		}
 	}
-	if got := len(bootstrapTables); got != 14 {
-		t.Fatalf("bootstrapTables 有 %d 项,want 14(id_segment、player_name、七张账号目录/交易/入场/导入表 + 五张路由表)", got)
+	if got := len(bootstrapTables); got != 16 {
+		t.Fatalf("bootstrapTables 有 %d 项,want 16(id_segment、player_name、七张账号目录/交易/入场/导入表、两张永久维护/恢复收据 + 五张路由表)", got)
+	}
+	for name, ddl := range map[string]string{SaveBarrierMaintenanceTableName: saveBarrierMaintenanceDDL, AccountRoleAdmissionRecoveryTableName: accountRoleAdmissionRecoveryDDL} {
+		if bootstrapTables[name] != ddl {
+			t.Fatalf("永久恢复事实表 %s 没有按原DDL装配", name)
+		}
 	}
 
 	// player_route 的聚簇主键 (route_shard, player_id) 与 64 片(G1a;模数 2026-10-13 由 16 改为 64,数值由

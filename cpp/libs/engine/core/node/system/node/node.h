@@ -31,6 +31,9 @@ class Server;
 class Service;
 } // namespace muduo_grpc
 
+// Prometheus /metrics 出口(core/metrics/metrics_http_exporter.h),完整定义只在 node.cpp 里需要。
+class MetricsHttpExporter;
+
 // Tracks a pending node removal that can be cancelled if the node re-registers.
 struct PendingNodeRemoval
 {
@@ -238,6 +241,8 @@ protected:
     void StartKafkaPolling();
     virtual bool RegisterKafkaHandlers() { return kafkaHandlersFn_ ? kafkaHandlersFn_(*this) : true; }
     void InitEtcdService();
+    // 按 MMORPG_METRICS_PORT 开 Prometheus 出口(未设 = 不开;非法值拒启)。只在 Initialize 里调一次。
+    void StartMetricsExporter();
 
     // gRPC server lifecycle (called automatically if services registered).
     void StartGrpcServer();
@@ -271,6 +276,8 @@ protected:
     muduo::net::EventLoop &eventLoop;
     muduo::AsyncLogging logSystem;
     RpcServerPtr rpcServer;
+    // /metrics 出口:在 loop 线程创建,FinalizeTeardownInLoop 里随出站连接一起释放(TcpServer 必须在 loop 活着时析构)。
+    std::unique_ptr<MetricsHttpExporter> metricsExporter_;
     TimerTaskComp serviceHealthMonitorTimer;
     // 注意:node_id / 端口的重试定时器住在 EtcdService(它才是驱动注册流的那个类)。
     // Node 这里曾经有一份同名成员,但从来没被 RunAfter 过,只在 Shutdown 里被 Cancel ——

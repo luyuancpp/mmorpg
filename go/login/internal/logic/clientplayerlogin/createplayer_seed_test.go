@@ -74,9 +74,10 @@ func seedCount(t *testing.T, result string) float64 {
 	return createPlayerCounterValue(t, "login_create_player_seed_total", map[string]string{"result": result})
 }
 
-// seedParentKeyFor 与 backfill / scene / go/db 同一种拼法(PlayerAllData 全名 + player_id)。
+// seedParentKeyFor 与 backfill / scene 同一种拼法(PlayerAllData 全名 + ":{" + player_id + "}",玩家域 hash tag)。
+// 刻意不调生产函数,独立钉住键形。
 func seedParentKeyFor(playerID uint64) string {
-	return fmt.Sprintf("%s:%d", (&pbdb.PlayerAllData{}).ProtoReflect().Descriptor().FullName(), playerID)
+	return fmt.Sprintf("%s:{%d}", (&pbdb.PlayerAllData{}).ProtoReflect().Descriptor().FullName(), playerID)
 }
 
 // seedSubCacheKeys 是两张子表的缓存键:冷读发过读任务时 go/db 会回写它们,快路径下必须不存在。

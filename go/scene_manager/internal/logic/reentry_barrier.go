@@ -52,6 +52,10 @@ const (
 	barrierSiteStaleLocation = "stale_location"
 	// 单节点判死后的玩家接管(enterscenelogic.go playerLocationOwnerDead)。
 	barrierSiteDeadOwnerTakeover = "dead_owner_takeover"
+	// 节点号被同号新进程复用后的玩家接管(owner_replaced.go playerLocationOwnerReplaced,GO-3):EnterScene 一侧。
+	barrierSiteReplacedOwnerTakeover = "replaced_owner_takeover"
+	// 同一判定在 LeaveScene 释放判定里的那一侧(清理任务按自己的节奏重试,分开记才不会把重登次数抬高)。
+	barrierSiteReplacedOwnerLeaveRelease = "replaced_owner_leave_release"
 )
 
 // ErrReentryBarrierPending 表示老属主节点刚判死,但再入屏障还没走完。
@@ -226,9 +230,9 @@ func enqueueDeadNodeReconcile(svcCtx *svc.ServiceContext, entry nodeEntry) {
 	setKey := nodeScenesKey(entry.reg.ZoneId, entry.nodeID)
 	scenes, err := svcCtx.Redis.Smembers(setKey)
 	if err != nil {
-		// 快照读不到就别猜:留着反向索引,等下一次机会(fullSync 的陈旧清理或
-		// 节点再次死亡)重新抄。这里若退化成「收尾时现读」,就把上面说的
-		// 「误杀新场景」风险放了回来。
+		// 快照读不到就别猜:留着反向索引,等同一 node_id 下次判死时重新抄(此时节点已摘出
+		// 负载集,fullSync 的陈旧清理只扫负载集,扫不到它)。这里若退化成「收尾时现读」,就把
+		// 上面说的「误杀新场景」风险放了回来。
 		logx.Errorf("[ReentryBarrier] Failed to capture dead node scene snapshot; skipping cleanup: zone=%d node=%s err=%v",
 			entry.reg.ZoneId, entry.nodeID, err)
 		return
@@ -275,8 +279,8 @@ func drainPendingDeadNodeReconciles(ctx context.Context, svcCtx *svc.ServiceCont
 
 		reconcileDeadNodeScenes(ctx, svcCtx, task.entry, task.scenes)
 		// scene_count / player_count 必须在 reconcile **之后**清:
-		// reconcile 里的 destroyInstanceForce 自己还会对这两个键做减法,
-		// 先删会被它们重新建出来。(理由详见 removeNodeFromRedis)
+		// reconcile 里的 destroyOrphanOfDeadNode 认领成功时还会对死节点的这两个键做减法,
+		// 先删会被它们重新建出来。(理由详见 deleteNodeCounters)
 		deleteNodeCounters(svcCtx, zoneID, task.entry.nodeID)
 
 		pendingDeadNodesMu.Lock()

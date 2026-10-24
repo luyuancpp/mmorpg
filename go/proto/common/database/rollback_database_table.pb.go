@@ -9,6 +9,7 @@ package database
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	base "proto/common/base"
 	_ "proto/common/rollback"
 	_ "proto/db"
 	reflect "reflect"
@@ -22,6 +23,61 @@ const (
 	// Verify that runtime/protoimpl is sufficiently up-to-date.
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
+
+type SaveBarrierMaintenanceReceipt_Phase int32
+
+const (
+	SaveBarrierMaintenanceReceipt_PHASE_UNKNOWN     SaveBarrierMaintenanceReceipt_Phase = 0
+	SaveBarrierMaintenanceReceipt_PLAN_FIXED        SaveBarrierMaintenanceReceipt_Phase = 1
+	SaveBarrierMaintenanceReceipt_WRITERS_REVOKED   SaveBarrierMaintenanceReceipt_Phase = 2
+	SaveBarrierMaintenanceReceipt_SQL_PROMOTED      SaveBarrierMaintenanceReceipt_Phase = 3
+	SaveBarrierMaintenanceReceipt_BARRIER_CONFIRMED SaveBarrierMaintenanceReceipt_Phase = 4
+)
+
+// Enum value maps for SaveBarrierMaintenanceReceipt_Phase.
+var (
+	SaveBarrierMaintenanceReceipt_Phase_name = map[int32]string{
+		0: "PHASE_UNKNOWN",
+		1: "PLAN_FIXED",
+		2: "WRITERS_REVOKED",
+		3: "SQL_PROMOTED",
+		4: "BARRIER_CONFIRMED",
+	}
+	SaveBarrierMaintenanceReceipt_Phase_value = map[string]int32{
+		"PHASE_UNKNOWN":     0,
+		"PLAN_FIXED":        1,
+		"WRITERS_REVOKED":   2,
+		"SQL_PROMOTED":      3,
+		"BARRIER_CONFIRMED": 4,
+	}
+)
+
+func (x SaveBarrierMaintenanceReceipt_Phase) Enum() *SaveBarrierMaintenanceReceipt_Phase {
+	p := new(SaveBarrierMaintenanceReceipt_Phase)
+	*p = x
+	return p
+}
+
+func (x SaveBarrierMaintenanceReceipt_Phase) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (SaveBarrierMaintenanceReceipt_Phase) Descriptor() protoreflect.EnumDescriptor {
+	return file_proto_common_database_rollback_database_table_proto_enumTypes[0].Descriptor()
+}
+
+func (SaveBarrierMaintenanceReceipt_Phase) Type() protoreflect.EnumType {
+	return &file_proto_common_database_rollback_database_table_proto_enumTypes[0]
+}
+
+func (x SaveBarrierMaintenanceReceipt_Phase) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use SaveBarrierMaintenanceReceipt_Phase.Descriptor instead.
+func (SaveBarrierMaintenanceReceipt_Phase) EnumDescriptor() ([]byte, []int) {
+	return file_proto_common_database_rollback_database_table_proto_rawDescGZIP(), []int{19, 0}
+}
 
 // ============================================================================
 // Transaction Log — append-only audit trail for all bidirectional operations.
@@ -1395,8 +1451,10 @@ type AccountRole struct {
 	OwnerRevision  uint64                 `protobuf:"varint,4,opt,name=owner_revision,json=ownerRevision,proto3" json:"owner_revision,omitempty"` // 账号归属修订号，绝不等同 scene owner_epoch。
 	UpdatedMs      uint64                 `protobuf:"varint,5,opt,name=updated_ms,json=updatedMs,proto3" json:"updated_ms,omitempty"`
 	TradeListingId uint64                 `protobuf:"varint,6,opt,name=trade_listing_id,json=tradeListingId,proto3" json:"trade_listing_id,omitempty"` // 0 表示无交易锁；非零时入场、身份补齐和删除均拒绝。
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// 仅首次目录与两张玩家行同事务提交为 1；旧角色及导入保持 0。
+	InitialPlayerCommit uint64 `protobuf:"varint,7,opt,name=initial_player_commit,json=initialPlayerCommit,proto3" json:"initial_player_commit,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *AccountRole) Reset() {
@@ -1467,6 +1525,13 @@ func (x *AccountRole) GetUpdatedMs() uint64 {
 func (x *AccountRole) GetTradeListingId() uint64 {
 	if x != nil {
 		return x.TradeListingId
+	}
+	return 0
+}
+
+func (x *AccountRole) GetInitialPlayerCommit() uint64 {
+	if x != nil {
+		return x.InitialPlayerCommit
 	}
 	return 0
 }
@@ -2017,11 +2082,719 @@ func (x *AccountRoleImportReceipt) GetCreatedMs() uint64 {
 	return 0
 }
 
+// 停写维护的永久阶段收据；只由本地受控 fence-only promotion 写入。
+// phase：1=计划已固定，2=R/owner撤销已确认，3=双SQL围栏已提交，4=屏障确认。
+// 原计划正文和摘要不可变，未知提交只能按同一计划重读，不得铸造新撤销token。
+type SaveBarrierMaintenanceReceipt struct {
+	state         protoimpl.MessageState              `protogen:"open.v1"`
+	ReceiptId     []byte                              `protobuf:"bytes,1,opt,name=receipt_id,json=receiptId,proto3" json:"receipt_id,omitempty"`
+	PlayerId      uint64                              `protobuf:"varint,2,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	RequestDigest []byte                              `protobuf:"bytes,3,opt,name=request_digest,json=requestDigest,proto3" json:"request_digest,omitempty"`
+	PlanProto     []byte                              `protobuf:"bytes,4,opt,name=plan_proto,json=planProto,proto3" json:"plan_proto,omitempty"`
+	Phase         SaveBarrierMaintenanceReceipt_Phase `protobuf:"varint,5,opt,name=phase,proto3,enum=SaveBarrierMaintenanceReceipt_Phase" json:"phase,omitempty"`
+	UpdatedMs     uint64                              `protobuf:"varint,6,opt,name=updated_ms,json=updatedMs,proto3" json:"updated_ms,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SaveBarrierMaintenanceReceipt) Reset() {
+	*x = SaveBarrierMaintenanceReceipt{}
+	mi := &file_proto_common_database_rollback_database_table_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SaveBarrierMaintenanceReceipt) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SaveBarrierMaintenanceReceipt) ProtoMessage() {}
+
+func (x *SaveBarrierMaintenanceReceipt) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_common_database_rollback_database_table_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SaveBarrierMaintenanceReceipt.ProtoReflect.Descriptor instead.
+func (*SaveBarrierMaintenanceReceipt) Descriptor() ([]byte, []int) {
+	return file_proto_common_database_rollback_database_table_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *SaveBarrierMaintenanceReceipt) GetReceiptId() []byte {
+	if x != nil {
+		return x.ReceiptId
+	}
+	return nil
+}
+
+func (x *SaveBarrierMaintenanceReceipt) GetPlayerId() uint64 {
+	if x != nil {
+		return x.PlayerId
+	}
+	return 0
+}
+
+func (x *SaveBarrierMaintenanceReceipt) GetRequestDigest() []byte {
+	if x != nil {
+		return x.RequestDigest
+	}
+	return nil
+}
+
+func (x *SaveBarrierMaintenanceReceipt) GetPlanProto() []byte {
+	if x != nil {
+		return x.PlanProto
+	}
+	return nil
+}
+
+func (x *SaveBarrierMaintenanceReceipt) GetPhase() SaveBarrierMaintenanceReceipt_Phase {
+	if x != nil {
+		return x.Phase
+	}
+	return SaveBarrierMaintenanceReceipt_PHASE_UNKNOWN
+}
+
+func (x *SaveBarrierMaintenanceReceipt) GetUpdatedMs() uint64 {
+	if x != nil {
+		return x.UpdatedMs
+	}
+	return 0
+}
+
+// 指定旧Scene holder的永久退休原件。与closed_through/drained在同一SQL事务提交；
+// 不接通用跨UUID关闭RPC，不根据TTL、新UUID或仅高于初次identity的SQL水位退休。
+type AccountRoleAdmissionRecovery struct {
+	state                    protoimpl.MessageState `protogen:"open.v1"`
+	RequestId                []byte                 `protobuf:"bytes,1,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
+	ListingId                uint64                 `protobuf:"varint,2,opt,name=listing_id,json=listingId,proto3" json:"listing_id,omitempty"`
+	PlayerId                 uint64                 `protobuf:"varint,3,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	SceneInstanceId          string                 `protobuf:"bytes,4,opt,name=scene_instance_id,json=sceneInstanceId,proto3" json:"scene_instance_id,omitempty"`
+	ThroughGeneration        uint64                 `protobuf:"varint,5,opt,name=through_generation,json=throughGeneration,proto3" json:"through_generation,omitempty"`
+	OwnerRevision            uint64                 `protobuf:"varint,6,opt,name=owner_revision,json=ownerRevision,proto3" json:"owner_revision,omitempty"`
+	RequestDigest            []byte                 `protobuf:"bytes,7,opt,name=request_digest,json=requestDigest,proto3" json:"request_digest,omitempty"`
+	RequestProto             []byte                 `protobuf:"bytes,8,opt,name=request_proto,json=requestProto,proto3" json:"request_proto,omitempty"`
+	MaintenanceReceiptId     []byte                 `protobuf:"bytes,9,opt,name=maintenance_receipt_id,json=maintenanceReceiptId,proto3" json:"maintenance_receipt_id,omitempty"`
+	MaintenanceRequestDigest []byte                 `protobuf:"bytes,10,opt,name=maintenance_request_digest,json=maintenanceRequestDigest,proto3" json:"maintenance_request_digest,omitempty"`
+	RequiredOwnerEpoch       uint64                 `protobuf:"varint,11,opt,name=required_owner_epoch,json=requiredOwnerEpoch,proto3" json:"required_owner_epoch,omitempty"`
+	RequiredSaveSeq          uint64                 `protobuf:"varint,12,opt,name=required_save_seq,json=requiredSaveSeq,proto3" json:"required_save_seq,omitempty"`
+	SqlProofDigest           []byte                 `protobuf:"bytes,13,opt,name=sql_proof_digest,json=sqlProofDigest,proto3" json:"sql_proof_digest,omitempty"`
+	RecoveredMs              uint64                 `protobuf:"varint,14,opt,name=recovered_ms,json=recoveredMs,proto3" json:"recovered_ms,omitempty"`
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
+}
+
+func (x *AccountRoleAdmissionRecovery) Reset() {
+	*x = AccountRoleAdmissionRecovery{}
+	mi := &file_proto_common_database_rollback_database_table_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AccountRoleAdmissionRecovery) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AccountRoleAdmissionRecovery) ProtoMessage() {}
+
+func (x *AccountRoleAdmissionRecovery) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_common_database_rollback_database_table_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AccountRoleAdmissionRecovery.ProtoReflect.Descriptor instead.
+func (*AccountRoleAdmissionRecovery) Descriptor() ([]byte, []int) {
+	return file_proto_common_database_rollback_database_table_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *AccountRoleAdmissionRecovery) GetRequestId() []byte {
+	if x != nil {
+		return x.RequestId
+	}
+	return nil
+}
+
+func (x *AccountRoleAdmissionRecovery) GetListingId() uint64 {
+	if x != nil {
+		return x.ListingId
+	}
+	return 0
+}
+
+func (x *AccountRoleAdmissionRecovery) GetPlayerId() uint64 {
+	if x != nil {
+		return x.PlayerId
+	}
+	return 0
+}
+
+func (x *AccountRoleAdmissionRecovery) GetSceneInstanceId() string {
+	if x != nil {
+		return x.SceneInstanceId
+	}
+	return ""
+}
+
+func (x *AccountRoleAdmissionRecovery) GetThroughGeneration() uint64 {
+	if x != nil {
+		return x.ThroughGeneration
+	}
+	return 0
+}
+
+func (x *AccountRoleAdmissionRecovery) GetOwnerRevision() uint64 {
+	if x != nil {
+		return x.OwnerRevision
+	}
+	return 0
+}
+
+func (x *AccountRoleAdmissionRecovery) GetRequestDigest() []byte {
+	if x != nil {
+		return x.RequestDigest
+	}
+	return nil
+}
+
+func (x *AccountRoleAdmissionRecovery) GetRequestProto() []byte {
+	if x != nil {
+		return x.RequestProto
+	}
+	return nil
+}
+
+func (x *AccountRoleAdmissionRecovery) GetMaintenanceReceiptId() []byte {
+	if x != nil {
+		return x.MaintenanceReceiptId
+	}
+	return nil
+}
+
+func (x *AccountRoleAdmissionRecovery) GetMaintenanceRequestDigest() []byte {
+	if x != nil {
+		return x.MaintenanceRequestDigest
+	}
+	return nil
+}
+
+func (x *AccountRoleAdmissionRecovery) GetRequiredOwnerEpoch() uint64 {
+	if x != nil {
+		return x.RequiredOwnerEpoch
+	}
+	return 0
+}
+
+func (x *AccountRoleAdmissionRecovery) GetRequiredSaveSeq() uint64 {
+	if x != nil {
+		return x.RequiredSaveSeq
+	}
+	return 0
+}
+
+func (x *AccountRoleAdmissionRecovery) GetSqlProofDigest() []byte {
+	if x != nil {
+		return x.SqlProofDigest
+	}
+	return nil
+}
+
+func (x *AccountRoleAdmissionRecovery) GetRecoveredMs() uint64 {
+	if x != nil {
+		return x.RecoveredMs
+	}
+	return 0
+}
+
+// 本工具的审定计划，不是跨实例RPC，也不是业务写者自行提交的排空ACK。
+type SaveBarrierMaintenanceReceipt_PromotionPlan struct {
+	state                  protoimpl.MessageState `protogen:"open.v1"`
+	Format                 string                 `protobuf:"bytes,1,opt,name=format,proto3" json:"format,omitempty"`
+	MaintenanceId          string                 `protobuf:"bytes,2,opt,name=maintenance_id,json=maintenanceId,proto3" json:"maintenance_id,omitempty"`
+	PlayerId               uint64                 `protobuf:"varint,3,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	RowSchema              string                 `protobuf:"bytes,4,opt,name=row_schema,json=rowSchema,proto3" json:"row_schema,omitempty"`
+	RouteSchema            string                 `protobuf:"bytes,5,opt,name=route_schema,json=routeSchema,proto3" json:"route_schema,omitempty"`
+	HomeZone               uint32                 `protobuf:"varint,6,opt,name=home_zone,json=homeZone,proto3" json:"home_zone,omitempty"`
+	StorageId              uint32                 `protobuf:"varint,7,opt,name=storage_id,json=storageId,proto3" json:"storage_id,omitempty"`
+	RouteRevision          uint64                 `protobuf:"varint,8,opt,name=route_revision,json=routeRevision,proto3" json:"route_revision,omitempty"`
+	RouteGeneration        string                 `protobuf:"bytes,9,opt,name=route_generation,json=routeGeneration,proto3" json:"route_generation,omitempty"`
+	RouteWatermark         uint64                 `protobuf:"varint,10,opt,name=route_watermark,json=routeWatermark,proto3" json:"route_watermark,omitempty"`
+	PlacementVersion       uint64                 `protobuf:"varint,11,opt,name=placement_version,json=placementVersion,proto3" json:"placement_version,omitempty"`
+	AuditedOwnerUpperBound uint64                 `protobuf:"varint,12,opt,name=audited_owner_upper_bound,json=auditedOwnerUpperBound,proto3" json:"audited_owner_upper_bound,omitempty"`
+	OriginalOwner          uint64                 `protobuf:"varint,13,opt,name=original_owner,json=originalOwner,proto3" json:"original_owner,omitempty"`
+	TargetOwner            uint64                 `protobuf:"varint,14,opt,name=target_owner,json=targetOwner,proto3" json:"target_owner,omitempty"`
+	OriginalSaveEpoch      uint64                 `protobuf:"varint,15,opt,name=original_save_epoch,json=originalSaveEpoch,proto3" json:"original_save_epoch,omitempty"`
+	OriginalSaveSeq        uint64                 `protobuf:"varint,16,opt,name=original_save_seq,json=originalSaveSeq,proto3" json:"original_save_seq,omitempty"`
+	TargetSaveSeq          uint64                 `protobuf:"varint,17,opt,name=target_save_seq,json=targetSaveSeq,proto3" json:"target_save_seq,omitempty"`
+	SchemaGen              uint32                 `protobuf:"varint,18,opt,name=schema_gen,json=schemaGen,proto3" json:"schema_gen,omitempty"`
+	// 全部非fence列含NULL、未知blob和原世代的逐字节摘要；不丢弃未知资产字段。
+	FirstBusinessSha256  []byte `protobuf:"bytes,19,opt,name=first_business_sha256,json=firstBusinessSha256,proto3" json:"first_business_sha256,omitempty"`
+	SecondBusinessSha256 []byte `protobuf:"bytes,20,opt,name=second_business_sha256,json=secondBusinessSha256,proto3" json:"second_business_sha256,omitempty"`
+	OriginalFence        string `protobuf:"bytes,21,opt,name=original_fence,json=originalFence,proto3" json:"original_fence,omitempty"`
+	RevokedFence         string `protobuf:"bytes,22,opt,name=revoked_fence,json=revokedFence,proto3" json:"revoked_fence,omitempty"`
+	ReceiptId            []byte `protobuf:"bytes,23,opt,name=receipt_id,json=receiptId,proto3" json:"receipt_id,omitempty"`
+	RedisAddr            string `protobuf:"bytes,24,opt,name=redis_addr,json=redisAddr,proto3" json:"redis_addr,omitempty"`
+	RedisDb              int32  `protobuf:"varint,25,opt,name=redis_db,json=redisDb,proto3" json:"redis_db,omitempty"`
+	AuditEvidenceSha256  []byte `protobuf:"bytes,26,opt,name=audit_evidence_sha256,json=auditEvidenceSha256,proto3" json:"audit_evidence_sha256,omitempty"`
+	WritersStopped       bool   `protobuf:"varint,27,opt,name=writers_stopped,json=writersStopped,proto3" json:"writers_stopped,omitempty"`
+	QueuesDrained        bool   `protobuf:"varint,28,opt,name=queues_drained,json=queuesDrained,proto3" json:"queues_drained,omitempty"`
+	MappingAddr          string `protobuf:"bytes,29,opt,name=mapping_addr,json=mappingAddr,proto3" json:"mapping_addr,omitempty"`
+	MappingDb            int32  `protobuf:"varint,30,opt,name=mapping_db,json=mappingDb,proto3" json:"mapping_db,omitempty"`
+	// 空摘要代表键原本缺席；有缓存时，必须先逐字段核对已提交SQL，执行时再CAS原bytes。
+	Caches        []*SaveBarrierMaintenanceReceipt_PromotionPlan_CacheObservation `protobuf:"bytes,31,rep,name=caches,proto3" json:"caches,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SaveBarrierMaintenanceReceipt_PromotionPlan) Reset() {
+	*x = SaveBarrierMaintenanceReceipt_PromotionPlan{}
+	mi := &file_proto_common_database_rollback_database_table_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SaveBarrierMaintenanceReceipt_PromotionPlan) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SaveBarrierMaintenanceReceipt_PromotionPlan) ProtoMessage() {}
+
+func (x *SaveBarrierMaintenanceReceipt_PromotionPlan) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_common_database_rollback_database_table_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SaveBarrierMaintenanceReceipt_PromotionPlan.ProtoReflect.Descriptor instead.
+func (*SaveBarrierMaintenanceReceipt_PromotionPlan) Descriptor() ([]byte, []int) {
+	return file_proto_common_database_rollback_database_table_proto_rawDescGZIP(), []int{19, 0}
+}
+
+func (x *SaveBarrierMaintenanceReceipt_PromotionPlan) GetFormat() string {
+	if x != nil {
+		return x.Format
+	}
+	return ""
+}
+
+func (x *SaveBarrierMaintenanceReceipt_PromotionPlan) GetMaintenanceId() string {
+	if x != nil {
+		return x.MaintenanceId
+	}
+	return ""
+}
+
+func (x *SaveBarrierMaintenanceReceipt_PromotionPlan) GetPlayerId() uint64 {
+	if x != nil {
+		return x.PlayerId
+	}
+	return 0
+}
+
+func (x *SaveBarrierMaintenanceReceipt_PromotionPlan) GetRowSchema() string {
+	if x != nil {
+		return x.RowSchema
+	}
+	return ""
+}
+
+func (x *SaveBarrierMaintenanceReceipt_PromotionPlan) GetRouteSchema() string {
+	if x != nil {
+		return x.RouteSchema
+	}
+	return ""
+}
+
+func (x *SaveBarrierMaintenanceReceipt_PromotionPlan) GetHomeZone() uint32 {
+	if x != nil {
+		return x.HomeZone
+	}
+	return 0
+}
+
+func (x *SaveBarrierMaintenanceReceipt_PromotionPlan) GetStorageId() uint32 {
+	if x != nil {
+		return x.StorageId
+	}
+	return 0
+}
+
+func (x *SaveBarrierMaintenanceReceipt_PromotionPlan) GetRouteRevision() uint64 {
+	if x != nil {
+		return x.RouteRevision
+	}
+	return 0
+}
+
+func (x *SaveBarrierMaintenanceReceipt_PromotionPlan) GetRouteGeneration() string {
+	if x != nil {
+		return x.RouteGeneration
+	}
+	return ""
+}
+
+func (x *SaveBarrierMaintenanceReceipt_PromotionPlan) GetRouteWatermark() uint64 {
+	if x != nil {
+		return x.RouteWatermark
+	}
+	return 0
+}
+
+func (x *SaveBarrierMaintenanceReceipt_PromotionPlan) GetPlacementVersion() uint64 {
+	if x != nil {
+		return x.PlacementVersion
+	}
+	return 0
+}
+
+func (x *SaveBarrierMaintenanceReceipt_PromotionPlan) GetAuditedOwnerUpperBound() uint64 {
+	if x != nil {
+		return x.AuditedOwnerUpperBound
+	}
+	return 0
+}
+
+func (x *SaveBarrierMaintenanceReceipt_PromotionPlan) GetOriginalOwner() uint64 {
+	if x != nil {
+		return x.OriginalOwner
+	}
+	return 0
+}
+
+func (x *SaveBarrierMaintenanceReceipt_PromotionPlan) GetTargetOwner() uint64 {
+	if x != nil {
+		return x.TargetOwner
+	}
+	return 0
+}
+
+func (x *SaveBarrierMaintenanceReceipt_PromotionPlan) GetOriginalSaveEpoch() uint64 {
+	if x != nil {
+		return x.OriginalSaveEpoch
+	}
+	return 0
+}
+
+func (x *SaveBarrierMaintenanceReceipt_PromotionPlan) GetOriginalSaveSeq() uint64 {
+	if x != nil {
+		return x.OriginalSaveSeq
+	}
+	return 0
+}
+
+func (x *SaveBarrierMaintenanceReceipt_PromotionPlan) GetTargetSaveSeq() uint64 {
+	if x != nil {
+		return x.TargetSaveSeq
+	}
+	return 0
+}
+
+func (x *SaveBarrierMaintenanceReceipt_PromotionPlan) GetSchemaGen() uint32 {
+	if x != nil {
+		return x.SchemaGen
+	}
+	return 0
+}
+
+func (x *SaveBarrierMaintenanceReceipt_PromotionPlan) GetFirstBusinessSha256() []byte {
+	if x != nil {
+		return x.FirstBusinessSha256
+	}
+	return nil
+}
+
+func (x *SaveBarrierMaintenanceReceipt_PromotionPlan) GetSecondBusinessSha256() []byte {
+	if x != nil {
+		return x.SecondBusinessSha256
+	}
+	return nil
+}
+
+func (x *SaveBarrierMaintenanceReceipt_PromotionPlan) GetOriginalFence() string {
+	if x != nil {
+		return x.OriginalFence
+	}
+	return ""
+}
+
+func (x *SaveBarrierMaintenanceReceipt_PromotionPlan) GetRevokedFence() string {
+	if x != nil {
+		return x.RevokedFence
+	}
+	return ""
+}
+
+func (x *SaveBarrierMaintenanceReceipt_PromotionPlan) GetReceiptId() []byte {
+	if x != nil {
+		return x.ReceiptId
+	}
+	return nil
+}
+
+func (x *SaveBarrierMaintenanceReceipt_PromotionPlan) GetRedisAddr() string {
+	if x != nil {
+		return x.RedisAddr
+	}
+	return ""
+}
+
+func (x *SaveBarrierMaintenanceReceipt_PromotionPlan) GetRedisDb() int32 {
+	if x != nil {
+		return x.RedisDb
+	}
+	return 0
+}
+
+func (x *SaveBarrierMaintenanceReceipt_PromotionPlan) GetAuditEvidenceSha256() []byte {
+	if x != nil {
+		return x.AuditEvidenceSha256
+	}
+	return nil
+}
+
+func (x *SaveBarrierMaintenanceReceipt_PromotionPlan) GetWritersStopped() bool {
+	if x != nil {
+		return x.WritersStopped
+	}
+	return false
+}
+
+func (x *SaveBarrierMaintenanceReceipt_PromotionPlan) GetQueuesDrained() bool {
+	if x != nil {
+		return x.QueuesDrained
+	}
+	return false
+}
+
+func (x *SaveBarrierMaintenanceReceipt_PromotionPlan) GetMappingAddr() string {
+	if x != nil {
+		return x.MappingAddr
+	}
+	return ""
+}
+
+func (x *SaveBarrierMaintenanceReceipt_PromotionPlan) GetMappingDb() int32 {
+	if x != nil {
+		return x.MappingDb
+	}
+	return 0
+}
+
+func (x *SaveBarrierMaintenanceReceipt_PromotionPlan) GetCaches() []*SaveBarrierMaintenanceReceipt_PromotionPlan_CacheObservation {
+	if x != nil {
+		return x.Caches
+	}
+	return nil
+}
+
+type SaveBarrierMaintenanceReceipt_PromotionPlan_CacheObservation struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Key           string                 `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	Present       bool                   `protobuf:"varint,2,opt,name=present,proto3" json:"present,omitempty"`
+	Sha256        []byte                 `protobuf:"bytes,3,opt,name=sha256,proto3" json:"sha256,omitempty"`
+	RedisType     string                 `protobuf:"bytes,4,opt,name=redis_type,json=redisType,proto3" json:"redis_type,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SaveBarrierMaintenanceReceipt_PromotionPlan_CacheObservation) Reset() {
+	*x = SaveBarrierMaintenanceReceipt_PromotionPlan_CacheObservation{}
+	mi := &file_proto_common_database_rollback_database_table_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SaveBarrierMaintenanceReceipt_PromotionPlan_CacheObservation) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SaveBarrierMaintenanceReceipt_PromotionPlan_CacheObservation) ProtoMessage() {}
+
+func (x *SaveBarrierMaintenanceReceipt_PromotionPlan_CacheObservation) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_common_database_rollback_database_table_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SaveBarrierMaintenanceReceipt_PromotionPlan_CacheObservation.ProtoReflect.Descriptor instead.
+func (*SaveBarrierMaintenanceReceipt_PromotionPlan_CacheObservation) Descriptor() ([]byte, []int) {
+	return file_proto_common_database_rollback_database_table_proto_rawDescGZIP(), []int{19, 0, 0}
+}
+
+func (x *SaveBarrierMaintenanceReceipt_PromotionPlan_CacheObservation) GetKey() string {
+	if x != nil {
+		return x.Key
+	}
+	return ""
+}
+
+func (x *SaveBarrierMaintenanceReceipt_PromotionPlan_CacheObservation) GetPresent() bool {
+	if x != nil {
+		return x.Present
+	}
+	return false
+}
+
+func (x *SaveBarrierMaintenanceReceipt_PromotionPlan_CacheObservation) GetSha256() []byte {
+	if x != nil {
+		return x.Sha256
+	}
+	return nil
+}
+
+func (x *SaveBarrierMaintenanceReceipt_PromotionPlan_CacheObservation) GetRedisType() string {
+	if x != nil {
+		return x.RedisType
+	}
+	return ""
+}
+
+type AccountRoleAdmissionRecovery_Request struct {
+	state                      protoimpl.MessageState      `protogen:"open.v1"`
+	RequestId                  []byte                      `protobuf:"bytes,1,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
+	SellerAccount              string                      `protobuf:"bytes,2,opt,name=seller_account,json=sellerAccount,proto3" json:"seller_account,omitempty"`
+	Seal                       *base.RoleTradeSeal         `protobuf:"bytes,3,opt,name=seal,proto3" json:"seal,omitempty"`
+	Admission                  *base.RoleAdmissionIdentity `protobuf:"bytes,4,opt,name=admission,proto3" json:"admission,omitempty"`
+	AdmissionRequestDigest     []byte                      `protobuf:"bytes,5,opt,name=admission_request_digest,json=admissionRequestDigest,proto3" json:"admission_request_digest,omitempty"`
+	ExpectedClosedThrough      uint64                      `protobuf:"varint,6,opt,name=expected_closed_through,json=expectedClosedThrough,proto3" json:"expected_closed_through,omitempty"`
+	ExpectedRequiredOwnerEpoch uint64                      `protobuf:"varint,7,opt,name=expected_required_owner_epoch,json=expectedRequiredOwnerEpoch,proto3" json:"expected_required_owner_epoch,omitempty"`
+	ExpectedRequiredSaveSeq    uint64                      `protobuf:"varint,8,opt,name=expected_required_save_seq,json=expectedRequiredSaveSeq,proto3" json:"expected_required_save_seq,omitempty"`
+	MaintenanceReceiptId       []byte                      `protobuf:"bytes,9,opt,name=maintenance_receipt_id,json=maintenanceReceiptId,proto3" json:"maintenance_receipt_id,omitempty"`
+	MaintenanceRequestDigest   []byte                      `protobuf:"bytes,10,opt,name=maintenance_request_digest,json=maintenanceRequestDigest,proto3" json:"maintenance_request_digest,omitempty"`
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
+}
+
+func (x *AccountRoleAdmissionRecovery_Request) Reset() {
+	*x = AccountRoleAdmissionRecovery_Request{}
+	mi := &file_proto_common_database_rollback_database_table_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AccountRoleAdmissionRecovery_Request) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AccountRoleAdmissionRecovery_Request) ProtoMessage() {}
+
+func (x *AccountRoleAdmissionRecovery_Request) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_common_database_rollback_database_table_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AccountRoleAdmissionRecovery_Request.ProtoReflect.Descriptor instead.
+func (*AccountRoleAdmissionRecovery_Request) Descriptor() ([]byte, []int) {
+	return file_proto_common_database_rollback_database_table_proto_rawDescGZIP(), []int{20, 0}
+}
+
+func (x *AccountRoleAdmissionRecovery_Request) GetRequestId() []byte {
+	if x != nil {
+		return x.RequestId
+	}
+	return nil
+}
+
+func (x *AccountRoleAdmissionRecovery_Request) GetSellerAccount() string {
+	if x != nil {
+		return x.SellerAccount
+	}
+	return ""
+}
+
+func (x *AccountRoleAdmissionRecovery_Request) GetSeal() *base.RoleTradeSeal {
+	if x != nil {
+		return x.Seal
+	}
+	return nil
+}
+
+func (x *AccountRoleAdmissionRecovery_Request) GetAdmission() *base.RoleAdmissionIdentity {
+	if x != nil {
+		return x.Admission
+	}
+	return nil
+}
+
+func (x *AccountRoleAdmissionRecovery_Request) GetAdmissionRequestDigest() []byte {
+	if x != nil {
+		return x.AdmissionRequestDigest
+	}
+	return nil
+}
+
+func (x *AccountRoleAdmissionRecovery_Request) GetExpectedClosedThrough() uint64 {
+	if x != nil {
+		return x.ExpectedClosedThrough
+	}
+	return 0
+}
+
+func (x *AccountRoleAdmissionRecovery_Request) GetExpectedRequiredOwnerEpoch() uint64 {
+	if x != nil {
+		return x.ExpectedRequiredOwnerEpoch
+	}
+	return 0
+}
+
+func (x *AccountRoleAdmissionRecovery_Request) GetExpectedRequiredSaveSeq() uint64 {
+	if x != nil {
+		return x.ExpectedRequiredSaveSeq
+	}
+	return 0
+}
+
+func (x *AccountRoleAdmissionRecovery_Request) GetMaintenanceReceiptId() []byte {
+	if x != nil {
+		return x.MaintenanceReceiptId
+	}
+	return nil
+}
+
+func (x *AccountRoleAdmissionRecovery_Request) GetMaintenanceRequestDigest() []byte {
+	if x != nil {
+		return x.MaintenanceRequestDigest
+	}
+	return nil
+}
+
 var File_proto_common_database_rollback_database_table_proto protoreflect.FileDescriptor
 
 const file_proto_common_database_rollback_database_table_proto_rawDesc = "" +
 	"\n" +
-	"3proto/common/database/rollback_database_table.proto\x1a\x1bproto/db/proto_option.proto\x1a+proto/common/rollback/transaction_log.proto\x1a+proto/common/rollback/player_snapshot.proto\"\x91\x05\n" +
+	"3proto/common/database/rollback_database_table.proto\x1a\x1bproto/db/proto_option.proto\x1a+proto/common/rollback/transaction_log.proto\x1a+proto/common/rollback/player_snapshot.proto\x1a&proto/common/base/role_admission.proto\"\x91\x05\n" +
 	"\x0ftransaction_log\x12\x13\n" +
 	"\x05tx_id\x18\x01 \x01(\x04R\x04txId\x12#\n" +
 	"\rtimestamp_sec\x18\x02 \x01(\x04R\ftimestampSec\x12\x17\n" +
@@ -2169,7 +2942,7 @@ const file_proto_common_database_rollback_database_table_proto_rawDesc = "" +
 	"\x11account_directory\x12\x18\n" +
 	"\aaccount\x18\x01 \x01(\tR\aaccount\x12\x1d\n" +
 	"\n" +
-	"created_ms\x18\x02 \x01(\x04R\tcreatedMs:\"\x8a\x92\xf4\x01\x11account_directory\x92\x92\xf4\x01\aaccount\"\x84\x02\n" +
+	"created_ms\x18\x02 \x01(\x04R\tcreatedMs:\"\x8a\x92\xf4\x01\x11account_directory\x92\x92\xf4\x01\aaccount\"\xb8\x02\n" +
 	"\faccount_role\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x18\n" +
 	"\aaccount\x18\x02 \x01(\tR\aaccount\x12\x1d\n" +
@@ -2178,7 +2951,8 @@ const file_proto_common_database_rollback_database_table_proto_rawDesc = "" +
 	"\x0eowner_revision\x18\x04 \x01(\x04R\rownerRevision\x12\x1d\n" +
 	"\n" +
 	"updated_ms\x18\x05 \x01(\x04R\tupdatedMs\x12(\n" +
-	"\x10trade_listing_id\x18\x06 \x01(\x04R\x0etradeListingId:.\x8a\x92\xf4\x01\faccount_role\x92\x92\xf4\x01\tplayer_id\xa8\x93\xf4\x01\x01\xb0\x93\xf4\x01\x04\xb8\x93\xf4\x01\x04\"\xe4\x03\n" +
+	"\x10trade_listing_id\x18\x06 \x01(\x04R\x0etradeListingId\x122\n" +
+	"\x15initial_player_commit\x18\a \x01(\x04R\x13initialPlayerCommit:.\x8a\x92\xf4\x01\faccount_role\x92\x92\xf4\x01\tplayer_id\xa8\x93\xf4\x01\x01\xb0\x93\xf4\x01\x04\xb8\x93\xf4\x01\x04\"\xe4\x03\n" +
 	"\x12account_role_trade\x12\x1d\n" +
 	"\n" +
 	"listing_id\x18\x01 \x01(\x04R\tlistingId\x12\x1b\n" +
@@ -2247,6 +3021,102 @@ const file_proto_common_database_rollback_database_table_proto_rawDesc = "" +
 	"\rallow_restore\x18\a \x01(\rR\fallowRestore\x12\x1d\n" +
 	"\n" +
 	"created_ms\x18\b \x01(\x04R\tcreatedMs:/\x8a\x92\xf4\x01\x1baccount_role_import_receipt\x92\x92\xf4\x01\n" +
+	"request_id\"\x84\x0e\n" +
+	" save_barrier_maintenance_receipt\x12\x1d\n" +
+	"\n" +
+	"receipt_id\x18\x01 \x01(\fR\treceiptId\x12\x1b\n" +
+	"\tplayer_id\x18\x02 \x01(\x04R\bplayerId\x12%\n" +
+	"\x0erequest_digest\x18\x03 \x01(\fR\rrequestDigest\x12\x1d\n" +
+	"\n" +
+	"plan_proto\x18\x04 \x01(\fR\tplanProto\x12=\n" +
+	"\x05phase\x18\x05 \x01(\x0e2'.save_barrier_maintenance_receipt.PhaseR\x05phase\x12\x1d\n" +
+	"\n" +
+	"updated_ms\x18\x06 \x01(\x04R\tupdatedMs\x1a\xdf\n" +
+	"\n" +
+	"\rPromotionPlan\x12\x16\n" +
+	"\x06format\x18\x01 \x01(\tR\x06format\x12%\n" +
+	"\x0emaintenance_id\x18\x02 \x01(\tR\rmaintenanceId\x12\x1b\n" +
+	"\tplayer_id\x18\x03 \x01(\x04R\bplayerId\x12\x1d\n" +
+	"\n" +
+	"row_schema\x18\x04 \x01(\tR\trowSchema\x12!\n" +
+	"\froute_schema\x18\x05 \x01(\tR\vrouteSchema\x12\x1b\n" +
+	"\thome_zone\x18\x06 \x01(\rR\bhomeZone\x12\x1d\n" +
+	"\n" +
+	"storage_id\x18\a \x01(\rR\tstorageId\x12%\n" +
+	"\x0eroute_revision\x18\b \x01(\x04R\rrouteRevision\x12)\n" +
+	"\x10route_generation\x18\t \x01(\tR\x0frouteGeneration\x12'\n" +
+	"\x0froute_watermark\x18\n" +
+	" \x01(\x04R\x0erouteWatermark\x12+\n" +
+	"\x11placement_version\x18\v \x01(\x04R\x10placementVersion\x129\n" +
+	"\x19audited_owner_upper_bound\x18\f \x01(\x04R\x16auditedOwnerUpperBound\x12%\n" +
+	"\x0eoriginal_owner\x18\r \x01(\x04R\roriginalOwner\x12!\n" +
+	"\ftarget_owner\x18\x0e \x01(\x04R\vtargetOwner\x12.\n" +
+	"\x13original_save_epoch\x18\x0f \x01(\x04R\x11originalSaveEpoch\x12*\n" +
+	"\x11original_save_seq\x18\x10 \x01(\x04R\x0foriginalSaveSeq\x12&\n" +
+	"\x0ftarget_save_seq\x18\x11 \x01(\x04R\rtargetSaveSeq\x12\x1d\n" +
+	"\n" +
+	"schema_gen\x18\x12 \x01(\rR\tschemaGen\x122\n" +
+	"\x15first_business_sha256\x18\x13 \x01(\fR\x13firstBusinessSha256\x124\n" +
+	"\x16second_business_sha256\x18\x14 \x01(\fR\x14secondBusinessSha256\x12%\n" +
+	"\x0eoriginal_fence\x18\x15 \x01(\tR\roriginalFence\x12#\n" +
+	"\rrevoked_fence\x18\x16 \x01(\tR\frevokedFence\x12\x1d\n" +
+	"\n" +
+	"receipt_id\x18\x17 \x01(\fR\treceiptId\x12\x1d\n" +
+	"\n" +
+	"redis_addr\x18\x18 \x01(\tR\tredisAddr\x12\x19\n" +
+	"\bredis_db\x18\x19 \x01(\x05R\aredisDb\x122\n" +
+	"\x15audit_evidence_sha256\x18\x1a \x01(\fR\x13auditEvidenceSha256\x12'\n" +
+	"\x0fwriters_stopped\x18\x1b \x01(\bR\x0ewritersStopped\x12%\n" +
+	"\x0equeues_drained\x18\x1c \x01(\bR\rqueuesDrained\x12!\n" +
+	"\fmapping_addr\x18\x1d \x01(\tR\vmappingAddr\x12\x1d\n" +
+	"\n" +
+	"mapping_db\x18\x1e \x01(\x05R\tmappingDb\x12X\n" +
+	"\x06caches\x18\x1f \x03(\v2@.save_barrier_maintenance_receipt.PromotionPlan.CacheObservationR\x06caches\x1au\n" +
+	"\x10CacheObservation\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x18\n" +
+	"\apresent\x18\x02 \x01(\bR\apresent\x12\x16\n" +
+	"\x06sha256\x18\x03 \x01(\fR\x06sha256\x12\x1d\n" +
+	"\n" +
+	"redis_type\x18\x04 \x01(\tR\tredisType\"h\n" +
+	"\x05Phase\x12\x11\n" +
+	"\rPHASE_UNKNOWN\x10\x00\x12\x0e\n" +
+	"\n" +
+	"PLAN_FIXED\x10\x01\x12\x13\n" +
+	"\x0fWRITERS_REVOKED\x10\x02\x12\x10\n" +
+	"\fSQL_PROMOTED\x10\x03\x12\x15\n" +
+	"\x11BARRIER_CONFIRMED\x10\x04:4\x8a\x92\xf4\x01 save_barrier_maintenance_receipt\x92\x92\xf4\x01\n" +
+	"receipt_id\"\xc8\t\n" +
+	"\x1faccount_role_admission_recovery\x12\x1d\n" +
+	"\n" +
+	"request_id\x18\x01 \x01(\fR\trequestId\x12\x1d\n" +
+	"\n" +
+	"listing_id\x18\x02 \x01(\x04R\tlistingId\x12\x1b\n" +
+	"\tplayer_id\x18\x03 \x01(\x04R\bplayerId\x12*\n" +
+	"\x11scene_instance_id\x18\x04 \x01(\tR\x0fsceneInstanceId\x12-\n" +
+	"\x12through_generation\x18\x05 \x01(\x04R\x11throughGeneration\x12%\n" +
+	"\x0eowner_revision\x18\x06 \x01(\x04R\rownerRevision\x12%\n" +
+	"\x0erequest_digest\x18\a \x01(\fR\rrequestDigest\x12#\n" +
+	"\rrequest_proto\x18\b \x01(\fR\frequestProto\x124\n" +
+	"\x16maintenance_receipt_id\x18\t \x01(\fR\x14maintenanceReceiptId\x12<\n" +
+	"\x1amaintenance_request_digest\x18\n" +
+	" \x01(\fR\x18maintenanceRequestDigest\x120\n" +
+	"\x14required_owner_epoch\x18\v \x01(\x04R\x12requiredOwnerEpoch\x12*\n" +
+	"\x11required_save_seq\x18\f \x01(\x04R\x0frequiredSaveSeq\x12(\n" +
+	"\x10sql_proof_digest\x18\r \x01(\fR\x0esqlProofDigest\x12!\n" +
+	"\frecovered_ms\x18\x0e \x01(\x04R\vrecoveredMs\x1a\xa7\x04\n" +
+	"\aRequest\x12\x1d\n" +
+	"\n" +
+	"request_id\x18\x01 \x01(\fR\trequestId\x12%\n" +
+	"\x0eseller_account\x18\x02 \x01(\tR\rsellerAccount\x12.\n" +
+	"\x04seal\x18\x03 \x01(\v2\x1a.common.base.RoleTradeSealR\x04seal\x12@\n" +
+	"\tadmission\x18\x04 \x01(\v2\".common.base.RoleAdmissionIdentityR\tadmission\x128\n" +
+	"\x18admission_request_digest\x18\x05 \x01(\fR\x16admissionRequestDigest\x126\n" +
+	"\x17expected_closed_through\x18\x06 \x01(\x04R\x15expectedClosedThrough\x12A\n" +
+	"\x1dexpected_required_owner_epoch\x18\a \x01(\x04R\x1aexpectedRequiredOwnerEpoch\x12;\n" +
+	"\x1aexpected_required_save_seq\x18\b \x01(\x04R\x17expectedRequiredSaveSeq\x124\n" +
+	"\x16maintenance_receipt_id\x18\t \x01(\fR\x14maintenanceReceiptId\x12<\n" +
+	"\x1amaintenance_request_digest\x18\n" +
+	" \x01(\fR\x18maintenanceRequestDigest:3\x8a\x92\xf4\x01\x1faccount_role_admission_recovery\x92\x92\xf4\x01\n" +
 	"request_idB\x17Z\x15proto/common/databaseb\x06proto3"
 
 var (
@@ -2261,34 +3131,47 @@ func file_proto_common_database_rollback_database_table_proto_rawDescGZIP() []by
 	return file_proto_common_database_rollback_database_table_proto_rawDescData
 }
 
-var file_proto_common_database_rollback_database_table_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
+var file_proto_common_database_rollback_database_table_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_proto_common_database_rollback_database_table_proto_msgTypes = make([]protoimpl.MessageInfo, 24)
 var file_proto_common_database_rollback_database_table_proto_goTypes = []any{
-	(*TransactionLog)(nil),             // 0: transaction_log
-	(*PlayerSnapshot)(nil),             // 1: player_snapshot
-	(*RollbackAuditLog)(nil),           // 2: rollback_audit_log
-	(*PlayerDebt)(nil),                 // 3: player_debt
-	(*RollbackAudit)(nil),              // 4: rollback_audit
-	(*IdSegment)(nil),                  // 5: id_segment
-	(*PlayerName)(nil),                 // 6: player_name
-	(*PlayerRoute)(nil),                // 7: player_route
-	(*ZoneMergeFence)(nil),             // 8: zone_merge_fence
-	(*ZoneMergedInto)(nil),             // 9: zone_merged_into
-	(*RouteMeta)(nil),                  // 10: route_meta
-	(*RouteReconcile)(nil),             // 11: route_reconcile
-	(*AccountDirectory)(nil),           // 12: account_directory
-	(*AccountRole)(nil),                // 13: account_role
-	(*AccountRoleTrade)(nil),           // 14: account_role_trade
-	(*AccountRoleTransferReceipt)(nil), // 15: account_role_transfer_receipt
-	(*AccountRoleAdmission)(nil),       // 16: account_role_admission
-	(*AccountRoleTradeHolder)(nil),     // 17: account_role_trade_holder
-	(*AccountRoleImportReceipt)(nil),   // 18: account_role_import_receipt
+	(SaveBarrierMaintenanceReceipt_Phase)(0),            // 0: save_barrier_maintenance_receipt.Phase
+	(*TransactionLog)(nil),                              // 1: transaction_log
+	(*PlayerSnapshot)(nil),                              // 2: player_snapshot
+	(*RollbackAuditLog)(nil),                            // 3: rollback_audit_log
+	(*PlayerDebt)(nil),                                  // 4: player_debt
+	(*RollbackAudit)(nil),                               // 5: rollback_audit
+	(*IdSegment)(nil),                                   // 6: id_segment
+	(*PlayerName)(nil),                                  // 7: player_name
+	(*PlayerRoute)(nil),                                 // 8: player_route
+	(*ZoneMergeFence)(nil),                              // 9: zone_merge_fence
+	(*ZoneMergedInto)(nil),                              // 10: zone_merged_into
+	(*RouteMeta)(nil),                                   // 11: route_meta
+	(*RouteReconcile)(nil),                              // 12: route_reconcile
+	(*AccountDirectory)(nil),                            // 13: account_directory
+	(*AccountRole)(nil),                                 // 14: account_role
+	(*AccountRoleTrade)(nil),                            // 15: account_role_trade
+	(*AccountRoleTransferReceipt)(nil),                  // 16: account_role_transfer_receipt
+	(*AccountRoleAdmission)(nil),                        // 17: account_role_admission
+	(*AccountRoleTradeHolder)(nil),                      // 18: account_role_trade_holder
+	(*AccountRoleImportReceipt)(nil),                    // 19: account_role_import_receipt
+	(*SaveBarrierMaintenanceReceipt)(nil),               // 20: save_barrier_maintenance_receipt
+	(*AccountRoleAdmissionRecovery)(nil),                // 21: account_role_admission_recovery
+	(*SaveBarrierMaintenanceReceipt_PromotionPlan)(nil), // 22: save_barrier_maintenance_receipt.PromotionPlan
+	(*SaveBarrierMaintenanceReceipt_PromotionPlan_CacheObservation)(nil), // 23: save_barrier_maintenance_receipt.PromotionPlan.CacheObservation
+	(*AccountRoleAdmissionRecovery_Request)(nil),                         // 24: account_role_admission_recovery.Request
+	(*base.RoleTradeSeal)(nil),                                           // 25: common.base.RoleTradeSeal
+	(*base.RoleAdmissionIdentity)(nil),                                   // 26: common.base.RoleAdmissionIdentity
 }
 var file_proto_common_database_rollback_database_table_proto_depIdxs = []int32{
-	0, // [0:0] is the sub-list for method output_type
-	0, // [0:0] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	0,  // 0: save_barrier_maintenance_receipt.phase:type_name -> save_barrier_maintenance_receipt.Phase
+	23, // 1: save_barrier_maintenance_receipt.PromotionPlan.caches:type_name -> save_barrier_maintenance_receipt.PromotionPlan.CacheObservation
+	25, // 2: account_role_admission_recovery.Request.seal:type_name -> common.base.RoleTradeSeal
+	26, // 3: account_role_admission_recovery.Request.admission:type_name -> common.base.RoleAdmissionIdentity
+	4,  // [4:4] is the sub-list for method output_type
+	4,  // [4:4] is the sub-list for method input_type
+	4,  // [4:4] is the sub-list for extension type_name
+	4,  // [4:4] is the sub-list for extension extendee
+	0,  // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_proto_common_database_rollback_database_table_proto_init() }
@@ -2301,13 +3184,14 @@ func file_proto_common_database_rollback_database_table_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_common_database_rollback_database_table_proto_rawDesc), len(file_proto_common_database_rollback_database_table_proto_rawDesc)),
-			NumEnums:      0,
-			NumMessages:   19,
+			NumEnums:      1,
+			NumMessages:   24,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
 		GoTypes:           file_proto_common_database_rollback_database_table_proto_goTypes,
 		DependencyIndexes: file_proto_common_database_rollback_database_table_proto_depIdxs,
+		EnumInfos:         file_proto_common_database_rollback_database_table_proto_enumTypes,
 		MessageInfos:      file_proto_common_database_rollback_database_table_proto_msgTypes,
 	}.Build()
 	File_proto_common_database_rollback_database_table_proto = out.File

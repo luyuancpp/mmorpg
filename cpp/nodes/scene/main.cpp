@@ -12,6 +12,7 @@
 #include "core/system/redis.h"
 #include "frame/manager/frame_time.h"
 #include "player/system/player_lifecycle.h"
+#include "player/system/player_ownership_metrics.h"
 #include "player/system/player_equip.h"
 #include "player/system/player_inbox_system.h"
 #include "player/system/player_mystery_merchant.h"
@@ -112,9 +113,14 @@ int main(int argc, char *argv[])
         // 捕获的 node 活到本作用域结束(含析构里的兜底 drain 循环),作用域之后立即清掉。
         // 本地 ACK 在 TTL/2 内时 etcd 侧租约至少还剩 TTL/2,正常不可能已被别的进程接手;残余(§12.6.8)只剩
         // 租约被 etcd 提前撤销(人工 revoke / etcd 数据恢复)、本地尚未收到 TTL<=0 的窗口。同一窗口里旧进程
-        // 迟到的同代存盘本身已会覆盖新进程(GO-3 既有问题),A1′ 只是多一个来源。
+        // 迟到的同代存盘覆盖不了新进程:同号新进程按同一 E 登记交接资格会被拒(kRegisterFenceLua,同 E 不同实例),
+        // scene_manager 判定持有实例已被顶替后先铸新 epoch 再派(GO-3,cross-zone-scene-travel.md §13.10),
+        // 旧进程之后的存盘被 owner CAS 拒绝;A1′ 迟到的标记同样过不了资格校验。
         PlayerLifecycleSystem::SetNodeIdentityProbe([&node]()
             { return node.GetServiceDiscoveryManager().etcdService.IsIdentityConfirmedFresh(); });
+
+        // 归属交接 / owner_epoch 计数挂到 Prometheus 出口(设了 MMORPG_METRICS_PORT 才有出口,见 metrics_http_exporter.h)。
+        RegisterPlayerOwnershipMetrics();
 
         // context 先于 node 构造、晚于 node 析构:方法表闭包捕获 grpcService 的 this,服务必须活过 Node。
         node.RegisterGrpcService(context->grpcService);

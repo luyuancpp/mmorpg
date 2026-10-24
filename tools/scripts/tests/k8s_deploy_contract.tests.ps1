@@ -423,6 +423,55 @@ Test-Case "自检:scene-manager 超时预算判定对 5000 / 2000 / 7999 / 0 / �
     Assert-True -Condition (@(Get-SceneManagerTimeoutBudgetViolations -Scalars $prefixed -KeyPrefix 'data.scene_manager_service.yaml.').Count -gt 0) -Because "ConfigMap 前缀下的 7999 也必须报违例"
 }
 
+# login → scene-manager 的调用方超时必须 ≥ scene-manager 服务端 Timeout + 2000(上游比下游宽,与下面 C++ deadline 同一条规则)。
+# 小了的话 scene-manager 还在落点 / 推路由时 login 就按失败收口、给客户端推 3023,服务端随后却可能已放行(结果未知)。
+# 返回违例文本数组,空 = 通过。$LoginTimeout / $SceneManagerTimeout 是原样字符串(缺键为 $null)。
+function Get-LoginSceneManagerRpcTimeoutViolations {
+    param(
+        [AllowNull()][object]$LoginTimeout,
+        [AllowNull()][object]$SceneManagerTimeout
+    )
+    $login = [long]0
+    $sm = [long]0
+    if ($null -eq $LoginTimeout -or -not [long]::TryParse([string]$LoginTimeout, [ref]$login) -or $login -le 0) {
+        return @("login SceneManagerRpc.Timeout='$LoginTimeout' 必须是正整数")
+    }
+    if ($null -eq $SceneManagerTimeout -or -not [long]::TryParse([string]$SceneManagerTimeout, [ref]$sm) -or $sm -le 0) {
+        return @("scene-manager Timeout='$SceneManagerTimeout' 必须是正整数")
+    }
+    if ($login -lt $sm + 2000) {
+        return @(("login SceneManagerRpc.Timeout={0} < scene-manager Timeout({1}) + 2000 = {2}" -f $login, $sm, ($sm + 2000)))
+    }
+    return @()
+}
+
+Test-Case "login 调 scene-manager 的 SceneManagerRpc.Timeout ≥ scene-manager Timeout + 2000(仓库 yaml 与 K8s 产物各算一遍)" {
+    $root = Get-RepoRoot
+    $loginYaml = (ConvertFrom-YamlToFlatMap -Text (Get-Content -LiteralPath (Join-Path $root 'go/login/etc/login.yaml') -Raw)).Scalars
+    $smYaml = (ConvertFrom-YamlToFlatMap -Text (Get-Content -LiteralPath (Join-Path $root 'go/scene_manager/etc/scene_manager_service.yaml') -Raw)).Scalars
+    $got = @(Get-LoginSceneManagerRpcTimeoutViolations -LoginTimeout $loginYaml['SceneManagerRpc.Timeout'] -SceneManagerTimeout $smYaml['Timeout'])
+    Assert-True -Condition ($got.Count -eq 0) -Because ("仓库 yaml:{0}" -f ($got -join ';'))
+
+    $loginFlat = (ConvertTo-FlatManifest -Block (Select-ManifestByName -Output $devOut -Name 'go-svc-login-config')).Scalars
+    $smFlat = (ConvertTo-FlatManifest -Block (Select-ManifestByName -Output $devOut -Name 'go-svc-scene-manager-config')).Scalars
+    $got = @(Get-LoginSceneManagerRpcTimeoutViolations -LoginTimeout $loginFlat['data.login.yaml.SceneManagerRpc.Timeout'] -SceneManagerTimeout $smFlat['data.scene_manager_service.yaml.Timeout'])
+    Assert-True -Condition ($got.Count -eq 0) -Because ("K8s ConfigMap:{0}" -f ($got -join ';'))
+    Assert-Equal -Expected ([string]$loginYaml['SceneManagerRpc.Timeout']) -Actual ([string]$loginFlat['data.login.yaml.SceneManagerRpc.Timeout']) -Because "login ConfigMap 的 SceneManagerRpc.Timeout 必须镜像 login.yaml(生成器不得自带常数)"
+}
+
+Test-Case "自检:login → scene-manager 超时判定对 5000 / 9999 / 0 / 缺键报违例、对 10000 通过(守卫不得静默放行)" {
+    Assert-True -Condition (@(Get-LoginSceneManagerRpcTimeoutViolations -LoginTimeout '10000' -SceneManagerTimeout '8000').Count -eq 0) -Because "10000 = 8000 + 2000 应通过"
+    foreach ($c in @(
+            @{ Why = '改前的 5000'; Login = '5000'; Sm = '8000' }
+            @{ Why = '差 1ms'; Login = '9999'; Sm = '8000' }
+            @{ Why = 'login 0'; Login = '0'; Sm = '8000' }
+            @{ Why = 'login 缺键'; Login = $null; Sm = '8000' }
+            @{ Why = 'scene-manager 缺键'; Login = '10000'; Sm = $null }
+        )) {
+        Assert-True -Condition (@(Get-LoginSceneManagerRpcTimeoutViolations -LoginTimeout $c.Login -SceneManagerTimeout $c.Sm).Count -gt 0) -Because "$($c.Why) 必须报违例"
+    }
+}
+
 # ─────────────────────────────────────────────────────────────────
 # C++ gRPC 客户端 deadline 预算(docs/design/grpc-muduo-transport.md §16.3 / §16.4)
 # ─────────────────────────────────────────────────────────────────
@@ -1325,8 +1374,24 @@ Test-Case 'zone Redis 口令(prod):node-config 的 zoneredis.password == MMORPG_
     foreach ($name in @('gate', 'scene')) {
         $block = Select-CppWorkloadBlock -Output $prodRun.Output -Kind 'Deployment' -Name $name -Label "prod $name"
         Assert-Equal -Expected $expected -Actual (Get-ZoneRedisAuthHash -Block $block -Label "prod $name") -Because "${name}:指纹必须只由口令决定(期望值只用口令算出)"
-        Assert-Match -Text $block -Pattern '(?m)^      annotations:[ ]*\r?\n        mmorpg\.io/cpp-log-sidecar-config-hash: "[0-9a-f]{12}"[ ]*\r?\n        mmorpg\.io/zone-redis-auth-hash: "[0-9a-f]{12}"[ ]*\r?\n      labels:' -Because "${name}:两条注解必须同在 Pod 模板的一个 annotations 段(sidecar 在前);重复的 annotations: 键各解析器行为不一"
+        Assert-Match -Text $block -Pattern '(?m)^      annotations:[ ]*\r?\n        mmorpg\.io/cpp-log-sidecar-config-hash: "[0-9a-f]{12}"[ ]*\r?\n        mmorpg\.io/zone-redis-auth-hash: "[0-9a-f]{12}"[ ]*\r?\n(?:        prometheus\.io/(?:scrape|port|path): "[^"]*"[ ]*\r?\n){3}      labels:' -Because "${name}:两条注解必须同在 Pod 模板的一个 annotations 段(sidecar 在前);重复的 annotations: 键各解析器行为不一"
         Assert-True -Condition (-not $block.Contains($ProdEnv.MMORPG_REDIS_PASSWORD)) -Because "${name}:工作负载里只有指纹,不出现口令明文"
+    }
+}
+
+Test-Case 'C++ Prometheus 出口(-CppMetricsPort 缺省 9400):gate / scene 的 Deployment 与 scene Fleet 都带 MMORPG_METRICS_PORT、metrics 容器端口与 prometheus.io/* 抓取注解' {
+    $cases = @(
+        @{ Label = 'dev gate Deployment'; Block = (Select-CppWorkloadBlock -Output $devOut -Kind 'Deployment' -Name 'gate' -Label 'dev gate') },
+        @{ Label = 'dev scene Deployment'; Block = (Select-CppWorkloadBlock -Output $devOut -Kind 'Deployment' -Name 'scene' -Label 'dev scene') },
+        @{ Label = 'dev scene Fleet'; Block = (Select-CppWorkloadBlock -Output $agonesOut -Kind 'Fleet' -Name 'scene' -Label 'dev scene Fleet') }
+    )
+    foreach ($case in $cases) {
+        $block = $case.Block -replace "`r`n", "`n"
+        Assert-Match -Text $block -Pattern '- name: MMORPG_METRICS_PORT\s+value: "9400"' -Because "$($case.Label):进程按这个变量开 /metrics(cpp/libs/engine/core/metrics/metrics_http_exporter.h)"
+        Assert-Match -Text $block -Pattern 'containerPort: 9400\s+name: metrics' -Because "$($case.Label):声明 metrics 容器端口"
+        Assert-Match -Text $block -Pattern 'prometheus\.io/scrape: "true"' -Because "$($case.Label):与 Go 服务同一套抓取注解"
+        Assert-Match -Text $block -Pattern 'prometheus\.io/port: "9400"' -Because "$($case.Label):抓取端口与 env 同值"
+        Assert-Match -Text $block -Pattern 'prometheus\.io/path: "/metrics"' -Because "$($case.Label):出口只认 GET /metrics"
     }
 }
 
@@ -1343,9 +1408,9 @@ Test-Case 'zone Redis 口令(dev 基线,不注入):node-config 写空串,C++ 工
         Assert-NotMatch -Text $case.Output -Pattern 'zone-redis-auth-hash' -Because "$($case.Label):口令为空不写指纹注解"
     }
     $gate = Select-CppWorkloadBlock -Output $devOut -Kind 'Deployment' -Name 'gate' -Label 'dev gate'
-    Assert-Match -Text $gate -Pattern '(?m)^    metadata:[ ]*\r?\n      annotations:[ ]*\r?\n        mmorpg\.io/cpp-log-sidecar-config-hash: "[0-9a-f]{12}"[ ]*\r?\n      labels:[ ]*\r?\n        app: gate[ ]*\r?$' -Because 'Deployment 模板的注解段改由 New-CppPodAnnotationBlock 渲染,dev 无口令时与改动前逐字相同(只有 sidecar 一条)'
+    Assert-Match -Text $gate -Pattern '(?m)^    metadata:[ ]*\r?\n      annotations:[ ]*\r?\n        mmorpg\.io/cpp-log-sidecar-config-hash: "[0-9a-f]{12}"[ ]*\r?\n(?:        prometheus\.io/(?:scrape|port|path): "[^"]*"[ ]*\r?\n){3}      labels:[ ]*\r?\n        app: gate[ ]*\r?$' -Because 'Deployment 模板的注解段改由 New-CppPodAnnotationBlock 渲染,dev 无口令时只有 sidecar 一条指纹,其后是 -CppMetricsPort 的三条抓取注解'
     $fleet = Select-CppWorkloadBlock -Output $agonesOut -Kind 'Fleet' -Name 'scene' -Label 'dev scene Fleet'
-    Assert-Match -Text $fleet -Pattern '(?m)^        metadata:[ ]*\r?\n          annotations:[ ]*\r?\n            mmorpg\.io/cpp-log-sidecar-config-hash: "[0-9a-f]{12}"[ ]*\r?\n          labels:[ ]*\r?\n            app: scene[ ]*\r?$' -Because 'Fleet 模板同上(Pod 模板 metadata 子键在第 10 列)'
+    Assert-Match -Text $fleet -Pattern '(?m)^        metadata:[ ]*\r?\n          annotations:[ ]*\r?\n            mmorpg\.io/cpp-log-sidecar-config-hash: "[0-9a-f]{12}"[ ]*\r?\n(?:            prometheus\.io/(?:scrape|port|path): "[^"]*"[ ]*\r?\n){3}          labels:[ ]*\r?\n            app: scene[ ]*\r?$' -Because 'Fleet 模板同上(Pod 模板 metadata 子键在第 10 列)'
 }
 
 Test-Case 'zone Redis 口令换了,gate / scene 的指纹跟着变(换口令自动滚动),sidecar 指纹不变,node-config 写新值' {
@@ -7698,6 +7763,34 @@ Test-Case '④ Redis 连接总账:db 行 Fixed == go/db/internal/kafka/durable_e
     Assert-Equal -Expected 1 -Actual $poolSize.Count -Because 'durable_enqueue.go 里 durableClientPoolSize 应恰好定义一次(字面量整数)'
     Assert-Equal -Expected ([int]$poolSize[0].Groups[1].Value) -Actual $dbRow[0].Fixed -Because 'db 行的 Fixed 就是 WAITAOF 专用客户端的池大小'
     Assert-Equal -Expected 'zone/0/0/db' -Actual ('{0}/{1}/{2}/{3}' -f $dbRow[0].Scope, $dbRow[0].DefaultPools, $dbRow[0].PubSub, $dbRow[0].PoolMirror) -Because 'db 行其余形状不变:按 zone 计、主池由 ServerConfig.RedisClient.PoolSize 镜像、没有缺省池与 Pub/Sub'
+}
+
+Test-Case 'G3b Redis 连接总账:scene-manager 行 Fixed == go/scene_manager/internal/svc/owner_epoch_mint.go 的 ownerEpochMintPoolSize(铸造专用客户端,不占 go-zero 缺省池)' {
+    # 源码改了池大小,这里先变红,逼着同改总账那一行(owner_epoch_mint.go 头注释的契约)。
+    $RepoRoot = Get-RepoRoot
+    $smRow = @((Get-RedisConnectionLedgerInputs).Clients | Where-Object { $_.Name -eq 'scene-manager' })
+    Assert-Equal -Expected 1 -Actual $smRow.Count -Because 'Redis 连接总账里 scene-manager 只能有一行'
+    $source = [System.IO.File]::ReadAllText((Join-Path $RepoRoot 'go/scene_manager/internal/svc/owner_epoch_mint.go'))
+    $poolSize = [regex]::Matches($source, '(?m)^\s*(?:const\s+)?ownerEpochMintPoolSize\s*=\s*(\d+)\s*$')
+    Assert-Equal -Expected 1 -Actual $poolSize.Count -Because 'owner_epoch_mint.go 里 ownerEpochMintPoolSize 应恰好定义一次(字面量整数)'
+    Assert-Equal -Expected ([int]$poolSize[0].Groups[1].Value) -Actual $smRow[0].Fixed -Because 'scene-manager 行的 Fixed 就是铸造专用客户端的池上限'
+    Assert-Equal -Expected 'zone/1/0' -Actual ('{0}/{1}/{2}' -f $smRow[0].Scope, $smRow[0].DefaultPools, $smRow[0].PubSub) -Because 'scene-manager 行其余形状不变:按 zone 计、一个 go-zero 缺省池、没有 Pub/Sub'
+}
+
+Test-Case 'G3b zone-up DryRun:scene-manager ConfigMap 的 OwnerEpochMint.WaitAOFNumLocal / WaitAOFTimeoutMs == scene_manager_service.yaml,WaitAOFNumReplicas 按共享 Redis 形态(dev 单实例 0、prod 高可用 1)' {
+    # 铸造 owner_epoch 之后的落盘确认(docs/design/zone-redis-regression-guard-20261022.md §4.3.2)。高可用形态下 NumReplicas 若停在 0,
+    # 主节点宕机切主时被提升的副本上可能没有这次铸造,持有者缓存着一个 Redis 里已经不存在的 epoch,下一次存盘被拒、按废黜销毁。
+    $yamlPath = 'go/scene_manager/etc/scene_manager_service.yaml'
+    $flat = ConvertTo-FlatManifest -Block (Select-ManifestByName -Output $devOut -Name 'go-svc-scene-manager-config')
+    foreach ($key in @('OwnerEpochMint.WaitAOFNumLocal', 'OwnerEpochMint.WaitAOFTimeoutMs')) {
+        $expected = Get-EtcValue -RelativePath $yamlPath -KeyPath $key
+        Assert-True -Condition (-not [string]::IsNullOrWhiteSpace($expected)) -Because "前提:$yamlPath 必须显式写出 $key(不写 = Go 代码默认值,ConfigMap 镜像不出来)"
+        Assert-Equal -Expected $expected -Actual (Get-FlatValue -Flat $flat -KeyPath "data.scene_manager_service.yaml.$key") -Because "$key 必须与 $yamlPath 一致(生成器不得自带常数)"
+    }
+    Assert-Equal -Expected '0' -Actual (Get-EtcValue -RelativePath $yamlPath -KeyPath 'OwnerEpochMint.WaitAOFNumReplicas') -Because "$yamlPath 的 WaitAOFNumReplicas 给本机 compose 单实例用,保持 0(写 1 本机启动探针等不到副本而拒启)"
+    Assert-Equal -Expected '0' -Actual (Get-FlatValue -Flat $flat -KeyPath 'data.scene_manager_service.yaml.OwnerEpochMint.WaitAOFNumReplicas') -Because 'dev 档缺省单实例(redis.yaml),铸造的 WAITAOF 不等副本'
+    $prodFlat = ConvertTo-FlatManifest -Block (Select-ManifestByName -Output $prodRun.Output -Name 'go-svc-scene-manager-config')
+    Assert-Equal -Expected '1' -Actual (Get-FlatValue -Flat $prodFlat -KeyPath 'data.scene_manager_service.yaml.OwnerEpochMint.WaitAOFNumReplicas') -Because 'prod 档缺省高可用(redis-ha.yaml),铸造的 WAITAOF 等 1 个副本(与 db、data-service 同源)'
 }
 
 # ─────────────────────────────────────────────────────────────────

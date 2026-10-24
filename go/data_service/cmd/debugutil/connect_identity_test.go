@@ -9,12 +9,14 @@ import (
 	"io"
 	"strings"
 	"testing"
+
+	"github.com/go-sql-driver/mysql"
 )
 
 // r2-ds#1(2026-10-22):TiDB 的实例身份按未知处理;本地调试环境标记读不到就不放行。
 
 func TestMySQLServerIdentity(t *testing.T) {
-	notTiDB := scriptedAnswer{err: errors.New("Error 1305 (42000): FUNCTION zone_1_db.tidb_version does not exist")}
+	notTiDB := scriptedAnswer{err: &mysql.MySQLError{Number: 1305, Message: "FUNCTION zone_1_db.tidb_version does not exist"}}
 	cases := []struct {
 		name    string
 		answers map[string]scriptedAnswer
@@ -36,6 +38,15 @@ func TestMySQLServerIdentity(t *testing.T) {
 		{"server_uuid 查询失败", map[string]scriptedAnswer{
 			tidbVersionQuery: notTiDB,
 			serverUUIDQuery:  {err: errors.New("Error 1193 (HY000): Unknown system variable 'server_uuid'")},
+		}, ""},
+		// tidb_version() 的失败不是「函数不存在」(超时、断连、其它服务端错误):分不清是不是 TiDB,不能去取 server_uuid。
+		{"TiDB 探测超时", map[string]scriptedAnswer{
+			tidbVersionQuery: {err: errors.New("read tcp 127.0.0.1:52011->127.0.0.1:14000: i/o timeout")},
+			serverUUIDQuery:  {value: "per-tidb-server-value"},
+		}, ""},
+		{"TiDB 探测报其它服务端错误", map[string]scriptedAnswer{
+			tidbVersionQuery: {err: &mysql.MySQLError{Number: 1142, Message: "EXECUTE command denied"}},
+			serverUUIDQuery:  {value: "per-tidb-server-value"},
 		}, ""},
 	}
 	for _, c := range cases {

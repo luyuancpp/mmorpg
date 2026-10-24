@@ -300,8 +300,8 @@ class DataService final {
     }
     // ── 资产通道:已落盘账本只读 ─────────────────────────────────
     // 读 zone Redis 里 scene 写的 PlayerAllData blob 的 asset_op_ledger 子字段。只读、不鉴权(与
-    // BatchGetPlayerName 同级)。实现 go/shared/assetop 的 LedgerReader。
-    // 设计见 docs/design/guild-phase2/07-rollback-fail-closed.md §7.8。
+    // BatchGetPlayerName 同级)。实现 go/shared/assetop 的 LedgerReader / SQLCommitLedgerReader / VerifiedLedgerReader。
+    // 设计见 docs/design/guild-phase2/07-rollback-fail-closed.md §7.8;副本核验见 zone-redis-regression-guard-20261022.md §4.5。
     virtual ::grpc::Status GetPlayerAssetOpLedger(::grpc::ClientContext* context, const ::data_service::GetPlayerAssetOpLedgerRequest& request, ::data_service::GetPlayerAssetOpLedgerResponse* response) = 0;
     std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::GetPlayerAssetOpLedgerResponse>> AsyncGetPlayerAssetOpLedger(::grpc::ClientContext* context, const ::data_service::GetPlayerAssetOpLedgerRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::GetPlayerAssetOpLedgerResponse>>(AsyncGetPlayerAssetOpLedgerRaw(context, request, cq));
@@ -414,8 +414,8 @@ class DataService final {
       virtual void BatchGetPlayerName(::grpc::ClientContext* context, const ::data_service::BatchGetPlayerNameRequest* request, ::data_service::BatchGetPlayerNameResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
       // ── 资产通道:已落盘账本只读 ─────────────────────────────────
       // 读 zone Redis 里 scene 写的 PlayerAllData blob 的 asset_op_ledger 子字段。只读、不鉴权(与
-      // BatchGetPlayerName 同级)。实现 go/shared/assetop 的 LedgerReader。
-      // 设计见 docs/design/guild-phase2/07-rollback-fail-closed.md §7.8。
+      // BatchGetPlayerName 同级)。实现 go/shared/assetop 的 LedgerReader / SQLCommitLedgerReader / VerifiedLedgerReader。
+      // 设计见 docs/design/guild-phase2/07-rollback-fail-closed.md §7.8;副本核验见 zone-redis-regression-guard-20261022.md §4.5。
       virtual void GetPlayerAssetOpLedger(::grpc::ClientContext* context, const ::data_service::GetPlayerAssetOpLedgerRequest* request, ::data_service::GetPlayerAssetOpLedgerResponse* response, std::function<void(::grpc::Status)>) = 0;
       virtual void GetPlayerAssetOpLedger(::grpc::ClientContext* context, const ::data_service::GetPlayerAssetOpLedgerRequest* request, ::data_service::GetPlayerAssetOpLedgerResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
       // ── 玩家收件箱:已落盘账本只读 ───────────────────────────────
@@ -1015,8 +1015,8 @@ class DataService final {
     virtual ::grpc::Status BatchGetPlayerName(::grpc::ServerContext* context, const ::data_service::BatchGetPlayerNameRequest* request, ::data_service::BatchGetPlayerNameResponse* response);
     // ── 资产通道:已落盘账本只读 ─────────────────────────────────
     // 读 zone Redis 里 scene 写的 PlayerAllData blob 的 asset_op_ledger 子字段。只读、不鉴权(与
-    // BatchGetPlayerName 同级)。实现 go/shared/assetop 的 LedgerReader。
-    // 设计见 docs/design/guild-phase2/07-rollback-fail-closed.md §7.8。
+    // BatchGetPlayerName 同级)。实现 go/shared/assetop 的 LedgerReader / SQLCommitLedgerReader / VerifiedLedgerReader。
+    // 设计见 docs/design/guild-phase2/07-rollback-fail-closed.md §7.8;副本核验见 zone-redis-regression-guard-20261022.md §4.5。
     virtual ::grpc::Status GetPlayerAssetOpLedger(::grpc::ServerContext* context, const ::data_service::GetPlayerAssetOpLedgerRequest* request, ::data_service::GetPlayerAssetOpLedgerResponse* response);
     // ── 玩家收件箱:已落盘账本只读 ───────────────────────────────
     // 读同一份 PlayerAllData blob 的 inbox_ledger 子字段,读法与错误语义照 GetPlayerAssetOpLedger。

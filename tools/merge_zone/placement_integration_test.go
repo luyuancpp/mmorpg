@@ -181,7 +181,7 @@ func TestIT_Placement_PinMergeVerifyUnmerge(t *testing.T) {
 		t.Fatal(err)
 	}
 	itSetHome(t, 9050, itDstZone)
-	shared.Set(ctx, "PlayerAllData:9001", "live-cache", 0)
+	shared.Set(ctx, "PlayerAllData:{9001}", "live-cache", 0)
 	itMarkCapable(t, itSrcZone, itDstZone)
 
 	manifest := filepath.Join(t.TempDir(), "merge.json")
@@ -208,7 +208,7 @@ func TestIT_Placement_PinMergeVerifyUnmerge(t *testing.T) {
 	if itPlacement(t, 9050) != "" {
 		t.Error("a target-zone native got a placement record")
 	}
-	if n, _ := shared.Exists(ctx, "PlayerAllData:9001").Result(); n != 1 {
+	if n, _ := shared.Exists(ctx, "PlayerAllData:{9001}").Result(); n != 1 {
 		t.Error("pin mode must not invalidate the shared player cache (nothing moved)")
 	}
 	itAssertNoFence(t, "a finished pin merge")
@@ -278,7 +278,7 @@ func TestIT_Placement_PinMergeVerifyUnmerge(t *testing.T) {
 	if n := itCount(t, db, zoneDBName(itSrcZone)+".player_database"); n != 3 {
 		t.Errorf("source rows after unmerge = %d, want 3 (they never moved)", n)
 	}
-	if n, _ := shared.Exists(ctx, "PlayerAllData:9001").Result(); n != 1 {
+	if n, _ := shared.Exists(ctx, "PlayerAllData:{9001}").Result(); n != 1 {
 		t.Error("a pin-mode unmerge must not invalidate the shared cache")
 	}
 }

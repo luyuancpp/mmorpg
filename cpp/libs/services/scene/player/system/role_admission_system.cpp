@@ -21,6 +21,8 @@
 #include "node/system/node/muduo_grpc_channel_slot.h"
 #include "player/system/player_lifecycle.h"
 #include "player/system/player_scene.h"
+#include "player/comp/last_persisted_snapshot_comp.h"
+#include "player/comp/player_ownership_comp.h"
 #include "proto/common/base/node.pb.h"
 #include "proto/data_service/data_service.pb.h"
 #include "proto/scene/scene.pb.h"
@@ -49,6 +51,10 @@ struct RoleAdmissionState {
     std::optional<common::base::RoleTradeSeal> completedSeal;
     RoleAdmissionSystem::Clock::time_point retryAt{};
     RoleAdmissionSystem::Clock::time_point registerDeadline{};
+    // 只读应用确认至多一个physical命令；超时交付false后仍保槽，直到原transport回调解除。
+    uint64_t snapshotSqlSequence{0}, snapshotSqlInFlight{0};
+    RoleAdmissionSystem::Clock::time_point snapshotSqlDeadline{};
+    std::function<void(std::optional<RoleAdmissionSystem::SqlAck>)> snapshotSqlCompletion;
     };
     RoleAdmissionSystem::Dependencies dependencies;
     std::map<Guid, Role> roles;
@@ -115,7 +121,7 @@ bool RegisterFence(Guid player, std::string candidate, std::optional<std::string
         auto& redis = tlsRedis.GetZoneRedis();
         if (!redis || !redis->connected()) { completed(false, prior); return; }
         const auto record = handoff_sql_barrier::ParseFence(candidate);
-        const std::string owner = "player:" + std::to_string(player) + ":owner_epoch";
+        const std::string owner = player_ownership::OwnerEpochRedisKey(player);
         const std::string barrier = "player:{" + std::to_string(player) + "}:save_barrier";
         const std::string mark = "player:" + std::to_string(player) + ":handoff";
         const auto epoch = std::to_string(record->ownerEpoch);
@@ -173,7 +179,7 @@ void CancelPendingFence(Guid playerId) {
         sent = redis->command([completed](hiredis::Hiredis*, redisReply* reply) {
             completed(reply && reply->type == REDIS_REPLY_INTEGER && (reply->integer == 0 || reply->integer == 1));
         }, "EVAL %s 3 %s %s %s %s %b %b %b", handoff_sql_barrier::kCancelRegistrationLua.c_str(),
-            ("player:" + std::to_string(playerId) + ":owner_epoch").c_str(),
+            player_ownership::OwnerEpochRedisKey(playerId).c_str(),
             ("player:{" + std::to_string(playerId) + "}:save_barrier").c_str(),
             ("player:" + std::to_string(playerId) + ":handoff").c_str(), epoch.c_str(),
             candidate.data(), candidate.size(), prior.data(), prior.size(), revoked.data(), revoked.size()) == REDIS_OK;
@@ -310,6 +316,25 @@ bool SqlReady(const RoleAdmissionSystem::SqlAck& reply, const std::string& floor
         || pending.substr(21) == std::string(20, '0') || pending.substr(21) > "18446744073709551615") return false;
     return pending == reply.playerDatabase && pending == reply.playerDatabase1 && pending >= floor;
 }
+bool ReadSqlAck(Guid playerId, std::function<void(std::optional<RoleAdmissionSystem::SqlAck>)> completed) {
+    bool sent = false;
+    if (state->dependencies.readSqlAck) sent = state->dependencies.readSqlAck(playerId, completed);
+    else if (auto& redis = tlsRedis.GetZoneRedis(); redis && redis->connected()) {
+        const std::string owner = player_ownership::OwnerEpochRedisKey(playerId);
+        const std::string barrier = "player:{" + std::to_string(playerId) + "}:save_barrier";
+        sent = redis->command([completed](hiredis::Hiredis*, redisReply* reply) {
+            if (reply == nullptr || reply->type != REDIS_REPLY_ARRAY || reply->elements != 4) { completed(std::nullopt); return; }
+            std::vector<std::string> values;
+            for (size_t i = 0; i < 4; ++i) {
+                const auto* value = reply->element[i];
+                if (value == nullptr || value->type != REDIS_REPLY_STRING || value->str == nullptr) { completed(std::nullopt); return; }
+                values.emplace_back(value->str, value->len);
+            }
+            completed(RoleAdmissionSystem::SqlAck{values[0], values[1], values[2], values[3]});
+        }, "EVAL %s 2 %b %b", kReadSqlAck, owner.data(), owner.size(), barrier.data(), barrier.size()) == REDIS_OK;
+    }
+    return sent;
+}
 void CheckSql(Guid playerId, Role& role) {
     if (role.sqlInFlight || role.sqlReady) return;
     if (role.requiredEpoch == 0 && role.requiredSeq == 0) { role.sqlReady = true; return; }
@@ -325,22 +350,7 @@ void CheckSql(Guid playerId, Role& role) {
             current.sqlReady = reply && SqlReady(*reply, Version(expected.first, expected.second));
         }
     };
-    bool sent = false;
-    if (state->dependencies.readSqlAck) sent = state->dependencies.readSqlAck(playerId, completed);
-    else if (auto& redis = tlsRedis.GetZoneRedis(); redis && redis->connected()) {
-        const std::string owner = "player:" + std::to_string(playerId) + ":owner_epoch";
-        const std::string barrier = "player:{" + std::to_string(playerId) + "}:save_barrier";
-        sent = redis->command([completed](hiredis::Hiredis*, redisReply* reply) {
-            if (reply == nullptr || reply->type != REDIS_REPLY_ARRAY || reply->elements != 4) { completed(std::nullopt); return; }
-            std::vector<std::string> values;
-            for (size_t i = 0; i < 4; ++i) {
-                const auto* value = reply->element[i];
-                if (value == nullptr || value->type != REDIS_REPLY_STRING || value->str == nullptr) { completed(std::nullopt); return; }
-                values.emplace_back(value->str, value->len);
-            }
-            completed(RoleAdmissionSystem::SqlAck{values[0], values[1], values[2], values[3]});
-        }, "EVAL %s 2 %b %b", kReadSqlAck, owner.data(), owner.size(), barrier.data(), barrier.size()) == REDIS_OK;
-    }
+    const bool sent = ReadSqlAck(playerId, std::move(completed));
     if (!sent) role.sqlInFlight = false;
 }
 void CloseOrAck(Guid playerId, Role& role) {
@@ -493,6 +503,113 @@ std::optional<common::base::RoleAdmissionIdentity> RoleAdmissionSystem::Confirme
     }
     return identity;
 }
+std::function<void()> RoleAdmissionSystem::CaptureSnapshotCommit(entt::entity player,
+    std::shared_ptr<const PlayerAllData> source, uint64_t epoch, uint64_t seq) {
+    if (!tlsEcs.actorRegistry.valid(player) || !source || epoch == 0 || seq == 0 || source->last_save_seq() != seq) return {};
+    const auto playerId = tlsEcs.GetPlayerId(player);
+    const auto identity = ConfirmedIdentity(playerId);
+    const auto* owner = tlsEcs.actorRegistry.try_get<PlayerOwnerEpochComp>(player);
+    const auto* admission = tlsEcs.actorRegistry.try_get<PlayerRoleAdmissionComp>(player);
+    if (playerId == 0 || tlsEcs.GetPlayer(playerId) != player || !identity || identity->scene_instance_id().empty()
+        || owner == nullptr || owner->epoch != epoch || admission == nullptr
+        || admission->generation != identity->generation() || admission->ownerRevision != identity->owner_revision()
+        || source->player_database_data().player_id() != playerId || source->player_database_1_data().player_id() != playerId
+        || source->player_database_data().fence_owner_epoch() != 0 || source->player_database_data().fence_save_seq() != 0
+        || source->player_database_1_data().fence_owner_epoch() != 0 || source->player_database_1_data().fence_save_seq() != 0) return {};
+    const auto expectedIdentity = identity->SerializeAsString();
+    const std::weak_ptr<RoleAdmissionState> original = state;
+    const std::weak_ptr<const PlayerAllData> originalSource = source;
+    return [original, originalSource, player = player, playerId, expectedIdentity, epoch, seq] {
+        if (!Owns(original) || !tlsEcs.actorRegistry.valid(player) || tlsEcs.GetPlayer(playerId) != player
+            || tlsEcs.GetPlayerId(player) != playerId) return;
+        const auto currentIdentity = ConfirmedIdentity(playerId);
+        const auto* owner = tlsEcs.actorRegistry.try_get<PlayerOwnerEpochComp>(player);
+        const auto* admission = tlsEcs.actorRegistry.try_get<PlayerRoleAdmissionComp>(player);
+        const auto payload = originalSource.lock();
+        if (!payload || !currentIdentity || currentIdentity->SerializeAsString() != expectedIdentity
+            || owner == nullptr || owner->epoch != epoch || admission == nullptr
+            || admission->generation != currentIdentity->generation()
+            || admission->ownerRevision != currentIdentity->owner_revision()) return;
+        tlsEcs.actorRegistry.get_or_emplace<PlayerLastPersistedSnapshotComp>(player).RememberRedisCommit(payload, epoch, seq);
+    };
+}
+bool RoleAdmissionSystem::ConfirmSnapshotSqlCommit(entt::entity player, const PlayerAllData& snapshot,
+                                                  std::function<void(bool)> completed) {
+    if (!completed || !tlsEcs.actorRegistry.valid(player)) return false;
+    const auto playerId = tlsEcs.GetPlayerId(player);
+    if (playerId == 0 || tlsEcs.GetPlayer(playerId) != player) return false;
+    const auto* stored = tlsEcs.actorRegistry.try_get<PlayerLastPersistedSnapshotComp>(player);
+    const auto* owner = tlsEcs.actorRegistry.try_get<PlayerOwnerEpochComp>(player);
+    const auto* admission = tlsEcs.actorRegistry.try_get<PlayerRoleAdmissionComp>(player);
+    const auto identity = ConfirmedIdentity(playerId);
+    const auto& first = snapshot.player_database_data();
+    const auto& second = snapshot.player_database_1_data();
+    const uint64_t epoch = stored ? stored->committed_owner_epoch : 0, seq = stored ? stored->committed_save_seq : 0;
+    if (stored == nullptr || stored->snapshot.get() != &snapshot || owner == nullptr || admission == nullptr
+        || !identity || identity->player_id() != playerId || identity->scene_instance_id().empty()
+        || admission->generation != identity->generation() || admission->ownerRevision != identity->owner_revision()
+        || first.player_id() != playerId || second.player_id() != playerId || epoch == 0 || seq == 0
+        || owner->epoch != epoch || first.fence_owner_epoch() != 0 || first.fence_save_seq() != 0
+        || second.fence_owner_epoch() != 0 || second.fence_save_seq() != 0) return false;
+    std::string bytes;
+    if (!snapshot.SerializeToString(&bytes)) return false;
+    const auto expectedIdentity = identity->SerializeAsString();
+    const auto version = Version(epoch, seq);
+    const std::weak_ptr<RoleAdmissionState> original = state;
+    auto& role = state->roles.at(playerId);
+    if (role.snapshotSqlInFlight != 0 || role.snapshotSqlSequence == UINT64_MAX) return false;
+    const auto requestId = ++role.snapshotSqlSequence;
+    role.snapshotSqlInFlight = requestId;
+    role.snapshotSqlDeadline = Now() + std::chrono::seconds(10);
+    ArmTimer();
+    const auto finished = std::make_shared<bool>(false);
+    auto reply = [original, player = player, playerId, epoch, seq, version, bytes = std::move(bytes), expectedIdentity,
+                  finished, completed = std::move(completed)](std::optional<SqlAck> ack) {
+        if (*finished) return;
+        *finished = true;
+        if (!Owns(original)) return; // 原RoleState已消失，不向新宿主交回旧资格。
+        auto found = state->roles.find(playerId);
+        if (found == state->roles.end()) return;
+        const auto currentIdentity = ConfirmedIdentity(playerId);
+        if (!tlsEcs.actorRegistry.valid(player) || tlsEcs.GetPlayer(playerId) != player
+            || tlsEcs.GetPlayerId(player) != playerId || !currentIdentity
+            || currentIdentity->SerializeAsString() != expectedIdentity) { completed(false); return; }
+        const auto* currentOwner = tlsEcs.actorRegistry.try_get<PlayerOwnerEpochComp>(player);
+        const auto* currentAdmission = tlsEcs.actorRegistry.try_get<PlayerRoleAdmissionComp>(player);
+        const auto* current = tlsEcs.actorRegistry.try_get<PlayerLastPersistedSnapshotComp>(player);
+        std::string currentBytes;
+        if (currentOwner == nullptr || currentOwner->epoch != epoch || currentAdmission == nullptr
+            || currentAdmission->generation != currentIdentity->generation()
+            || currentAdmission->ownerRevision != currentIdentity->owner_revision()
+            || current == nullptr || !current->HasSnapshot() || current->committed_owner_epoch != epoch
+            || current->committed_save_seq != seq || !current->snapshot->SerializeToString(&currentBytes)
+            || currentBytes != bytes) { completed(false); return; }
+        completed(ack && ack->ownerEpoch == std::to_string(epoch) && ack->pending == version && SqlReady(*ack, version));
+    };
+    role.snapshotSqlCompletion = std::move(reply);
+    const bool sent = ReadSqlAck(playerId, [original, playerId, requestId](std::optional<SqlAck> ack) {
+        if (!Owns(original)) return;
+        auto found = state->roles.find(playerId);
+        if (found == state->roles.end() || found->second.snapshotSqlInFlight != requestId) return;
+        found->second.snapshotSqlInFlight = 0;
+        auto completed = std::move(found->second.snapshotSqlCompletion);
+        // 超时已释放应用闭包；迟到transport只解除原槽，不能重新交付旧资格。
+        if (completed) completed(std::move(ack));
+    });
+    const bool completedSynchronously = *finished;
+    if (!sent && !completedSynchronously) {
+        *finished = true;
+        if (Owns(original)) {
+            auto found = state->roles.find(playerId);
+            if (found != state->roles.end() && found->second.snapshotSqlInFlight == requestId) {
+                found->second.snapshotSqlInFlight = 0;
+                found->second.snapshotSqlCompletion = {};
+            }
+        }
+    }
+    // 依赖若违约在同步回调后又返回false，也不能向调用方伪报“尚未接管”并二次收尾。
+    return sent || completedSynchronously;
+}
 bool RoleAdmissionSystem::Seal(const common::base::RoleTradeSeal& seal) {
     const auto local = ReadLocalNode();
     if (seal.player_id() == 0 || seal.listing_id() == 0 || seal.owner_revision() == 0 || seal.through_generation() == 0
@@ -554,9 +671,24 @@ void RoleAdmissionSystem::ObserveTradeSaveQueued(Guid playerId, uint64_t epoch, 
 }
 void RoleAdmissionSystem::BeginCallback(Guid playerId) { auto it = state->roles.find(playerId); if (it != state->roles.end()) ++it->second.callbacks; }
 void RoleAdmissionSystem::EndCallback(Guid playerId) { auto it = state->roles.find(playerId); if (it != state->roles.end() && it->second.callbacks > 0) --it->second.callbacks; }
+bool RoleAdmissionSystem::HasAdmissionInFlight(Guid playerId) {
+    const auto found = state->roles.find(playerId);
+    if (found == state->roles.end()) return false;
+    const auto& role = found->second;
+    // 偏保守:任何一项登记相关的异步步骤没结清都算在途(误判只让这一次凭证不写,不会写错)。
+    return role.waitingRegister || role.registerCalls != 0 || role.waitingFence || role.fenceInFlight
+        || role.pendingFenceRevoke || role.fenceRevokeInFlight || role.callbacks != 0;
+}
+std::string RoleAdmissionSystem::LocalInstanceId() { return ReadLocalNode().instanceId; }
 void RoleAdmissionSystem::OnDestroyed(Guid) { ArmTimer(); }
 void RoleAdmissionSystem::Tick() {
+    const auto originalState = state;
     for (auto& [playerId, role] : state->roles) {
+        if (role.snapshotSqlInFlight != 0 && role.snapshotSqlCompletion && Now() >= role.snapshotSqlDeadline) {
+            auto expired = std::move(role.snapshotSqlCompletion);
+            expired(std::nullopt); // 不释放physical槽，不再排新命令；迟到回包只清槽。
+            if (state != originalState) return;
+        }
         if (role.retryAt > Now()) continue;
         role.retryAt = Now() + std::chrono::seconds(1);
         if (role.waitingRegister) { SendRegister(playerId); continue; }

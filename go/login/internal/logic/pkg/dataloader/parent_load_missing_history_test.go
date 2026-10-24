@@ -51,8 +51,15 @@ func TestParentLoadMissingEitherInitialSQLRowNeverPublishesParent(t *testing.T) 
 			}
 			setTestParentIdentity(t, rc, "redis-live", "")
 			before := mr.Dump()
+			initial := savebarrier.InitialPlayerData(seedTestPlayerID)
+			missingType := string(initial.PlayerDatabaseData.ProtoReflect().Descriptor().FullName())
+			if table == "PlayerDatabase_1" {
+				missingType = string(initial.PlayerDatabase_1Data.ProtoReflect().Descriptor().FullName())
+			}
+			missingReads := 0
 			reads := &coldSQLReads{read: func(task *dbpb.DBTask) ([]byte, error) {
-				if task.MsgType == table || strings.HasSuffix(task.MsgType, "."+table) {
+				if task.MsgType == missingType {
+					missingReads++
 					return nil, nil
 				}
 				return initialCommitSQLRead(task)
@@ -60,6 +67,9 @@ func TestParentLoadMissingEitherInitialSQLRowNeverPublishesParent(t *testing.T) 
 			calls := 0
 			var result error
 			ensurePlayerAllDataInRedisAsync(ctx, rc, testParentLoadScripts, true, reads, reads, seedTestPlayerID, 0, func(err error) { calls++; result = err })
+			if missingReads != 1 {
+				t.Fatalf("缺行注入前提不成立: type=%q missingReads=%d", missingType, missingReads)
+			}
 			if calls != 1 || reads.count != 2 || result == nil || mr.Dump() != before {
 				t.Fatalf("缺单行仍放行或写键: calls=%d reads=%d error=%v", calls, reads.count, result)
 			}

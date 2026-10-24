@@ -83,8 +83,9 @@ const (
 	travelSmokeRpcTimeout = 10 * time.Second
 	// 首登等进场的预算,与 prepareBehaviorClient / team-smoke 同值。
 	travelSmokeSceneReadyTimeout = 15 * time.Second
-	// 一跳传送的总预算:源端存盘落地 + 写 handoff 标记 + scene_manager.EnterScene + Kafka 下发 124,
+	// 一跳传送的总预算的缺省值:源端存盘落地 + 写 handoff 标记 + scene_manager.EnterScene + Kafka 下发 124,
 	// 再加 FollowRedirect 自身各段的上限(探测 5s、验签 10s、Login 与 EnterGame 各 15s),最后等新 zone 的 NotifyEnterScene。
+	// 实际用 travel_smoke.hop_timeout_seconds(config.TravelSmokeConfig,缺省同值);验收冻结硬上限时调到 ≥ 75s。
 	travelSmokeRedirectTimeout = 60 * time.Second
 	// 移动探针等 MoveAck 的窗口。纠偏是同步裁决、随手回发,本地毫秒级;3s 内没有就当没有。
 	travelSmokeMoveAckTimeout = 3 * time.Second
@@ -298,6 +299,9 @@ type travelSmokeBot struct {
 	mu       sync.Mutex
 	records  []travelSmokeRecord
 	progress travelSmokeProgress
+
+	// 一跳传送的总预算(travel_smoke.hop_timeout_seconds),构造后只读。
+	hopTimeout time.Duration
 
 	// 以下只由主流程读写。
 	lastRequestAt time.Time
@@ -542,6 +546,7 @@ func travelSmokeLogin(cfg *config.Config, account string, stats *metrics.Stats) 
 		player:     gameobject.NewPlayer(gc.PlayerId),
 		stats:      stats,
 		homePlayer: gc.PlayerId,
+		hopTimeout: time.Duration(cfg.TravelSmoke.HopTimeoutSeconds) * time.Second,
 	}
 	// 覆盖 main.go 注册的通用重登(它会自动建角)。进程全局,本模式独占进程。
 	pkg.SetRedirectRelogin(bot.relogin)
@@ -837,13 +842,13 @@ func (b *travelSmokeBot) countSince(since int, messageId uint32) int {
 func (b *travelSmokeBot) travelTo(targetZone, sceneConfigId uint32) (*travelSmokeHop, error) {
 	b.pace()
 	since, before := b.mark()
-	call, err := travelSmokeStartTravel(b.gc, b.stats, targetZone, sceneConfigId, travelSmokeRedirectTimeout)
+	call, err := travelSmokeStartTravel(b.gc, b.stats, targetZone, sceneConfigId, b.hopTimeout)
 	if err != nil {
 		return nil, fmt.Errorf("send TravelToZone{zone=%d}: %w", targetZone, err)
 	}
 	b.lastRequestAt = time.Now()
 
-	deadline := time.Now().Add(travelSmokeRedirectTimeout)
+	deadline := time.Now().Add(b.hopTimeout)
 	for {
 		records, progress := b.snapshot(since)
 		scan, err := travelSmokeScanHop(call.snapshot(), records)
@@ -866,7 +871,7 @@ func (b *travelSmokeBot) travelTo(targetZone, sceneConfigId uint32) (*travelSmok
 			}
 		}
 		if !time.Now().Before(deadline) {
-			return nil, fmt.Errorf("TravelToZone{zone=%d}: %s", targetZone, travelSmokeDescribeTimeout(scan, progress, before, b.gateAddr()))
+			return nil, fmt.Errorf("TravelToZone{zone=%d}: %s", targetZone, travelSmokeDescribeTimeout(scan, progress, before, b.gateAddr(), b.hopTimeout))
 		}
 		time.Sleep(travelSmokePollInterval)
 	}
@@ -877,7 +882,7 @@ func (b *travelSmokeBot) travelTo(targetZone, sceneConfigId uint32) (*travelSmok
 // 窗口内收到过没回显请求号的 TravelToZone 回包、而调用既没见到回包也没见到 124 时,优先报它
 // (travelSmokeUncorrelatedCause):回包其实到了(还可能是同步拒绝),"都没到"会把排查指向错误的方向。
 // 写成纯函数是为了单测各分支的提示(sync_smoke_scenario_test.go)。
-func travelSmokeDescribeTimeout(scan travelSmokeScan, progress, before travelSmokeProgress, gate string) string {
+func travelSmokeDescribeTimeout(scan travelSmokeScan, progress, before travelSmokeProgress, gate string, hopTimeout time.Duration) string {
 	redirectSeen := scan.hop != nil
 	reloginStarted := progress.reloginStarted > before.reloginStarted
 	reloginDone := progress.reloginFinished > before.reloginFinished
@@ -901,7 +906,7 @@ func travelSmokeDescribeTimeout(scan travelSmokeScan, progress, before travelSmo
 			"(看目标 zone 的 scene_manager 与 scene 日志)"
 	}
 	return fmt.Sprintf("等待超时(%s):reply_seen=%t uncorrelated_replies=%d redirect_seen=%t relogin_started=%t relogin_done=%t arrived=%t 当前 gate=%s late_tips=%v。%s",
-		travelSmokeRedirectTimeout, scan.replySeen, uncorrelated.count, redirectSeen, reloginStarted, reloginDone, scan.arrived, gate, scan.lateTips, hint)
+		hopTimeout, scan.replySeen, uncorrelated.count, redirectSeen, reloginStarted, reloginDone, scan.arrived, gate, scan.lateTips, hint)
 }
 
 // travelSmokeScanHop 判一跳传送窗口的现状:先看 TravelToZone 调用的结局(reply,判据见 travelSmokeJudgeTravelReply),

@@ -487,6 +487,12 @@ func startServer(watchCtx context.Context, cfg config.Config, ctx *svc.ServiceCo
 	}
 	fmt.Printf("  kafka:       %v\n", cfg.Kafka.Brokers)
 	fmt.Printf("  redis:       %s\n", cfg.Node.RedisClient.Host)
+	// 排队与放行锁所在实例(G4a 第 1a 批):没配 Node.QueueRedis 时与上一行共用同一个 client。
+	if cfg.Node.QueueRedis != nil {
+		fmt.Printf("  queue redis: %s\n", cfg.Node.QueueRedis.Host)
+	} else {
+		fmt.Printf("  queue redis: shared\n")
+	}
 	fmt.Println("=============================================================")
 	server.Start()
 

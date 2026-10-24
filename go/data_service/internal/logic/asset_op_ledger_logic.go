@@ -2,12 +2,12 @@ package logic
 
 import (
 	"context"
-	"fmt"
 
 	"data_service/internal/metrics"
 	"data_service/internal/svc"
 	componentpb "proto/common/component"
 	dbpb "proto/common/database"
+	"shared/savebarrier"
 )
 
 // GetPlayerAssetOpLedger 的实现(docs/design/guild-phase2/07-rollback-fail-closed.md §7.8.2)。
@@ -45,13 +45,10 @@ const (
 	assetOpLedgerReadError  = "error"
 )
 
-// playerAllDataKeyPrefix 取 message 全名,与 scene(`MessageAsyncClient<Guid, PlayerAllData>`)、
-// login(player_class_backfill.go)、match(team/presence.go)同源,不手写字面量:
-// 给 player_cache.proto 加 package 时这里跟着变,而不是静默读错 key。
-var playerAllDataKeyPrefix = string((&dbpb.PlayerAllData{}).ProtoReflect().Descriptor().FullName())
-
+// playerAllDataKey 是 scene 存盘写的父快照键 PlayerAllData:{<pid>},与 scene(`MessageAsyncClient<Guid, PlayerAllData>`)、
+// login、match、friend 同经 savebarrier.ParentKey 构造,不手写字面量。
 func playerAllDataKey(playerID uint64) string {
-	return fmt.Sprintf("%s:%d", playerAllDataKeyPrefix, playerID)
+	return savebarrier.ParentKey(playerID)
 }
 
 // GetPlayerAssetOpLedger 读玩家已落盘的资产账本。返回的 error 已经是 gRPC status,可直接回给调用方。

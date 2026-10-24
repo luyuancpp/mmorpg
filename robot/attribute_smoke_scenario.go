@@ -454,8 +454,10 @@ type attributePanelResponse interface {
 //
 // 迁移前等的是生成 handler 写进 gameobject.Player 的「面板序号 + 来源消息号」,信封错误则由 prepareBehaviorClient 的
 // 收包回调翻译成同一个 tip,与业务拒绝分不清。GmSetPlayerLevel 先推一份 NotifyAttributePanelChanged 再回响应,
-// 当时要靠来源消息号才不错位;现在回包按请求号认领,拿到的就是本次的响应。推送照旧经 handler 写 Player,
-// 那份属性状态全包已没有读者,所以直接解析(交接 §8.1 做法 1),不再经 handler。
+// 当时要靠来源消息号才不错位;现在回包按请求号认领,拿到的就是本次的响应。attribute-smoke / pet-smoke 不读
+// Player 上那份属性状态,所以本次回包直接解析(交接 §8.1 做法 1),不再经 handler。但 equip / equip_forge 冒烟的
+// panelAfter 还靠它识别 NotifyAttributePanelChanged 推送,所以推送必须继续经 prepareBehaviorClient 的
+// onMessage → handler.MessageBodyHandler 写 Player,那份状态与对应 handler 写入不能删。
 //
 // 调用约束:caller 所在连接的 RecvLoop 必须已启动;不得在 RecvLoop goroutine 上调用(同步等回包会自锁)。
 func requestAttributePanel(caller *smokeCaller, messageId uint32, request proto.Message, response attributePanelResponse,
@@ -464,8 +466,16 @@ func requestAttributePanel(caller *smokeCaller, messageId uint32, request proto.
 	if err != nil {
 		return nil, 0, err
 	}
+	return attributePanelOutcome(messageId, envelopeTip, response, allowedTips...)
+}
+
+// attributePanelOutcome 是 requestAttributePanel 的结局判定(纯函数,单测见 equip_smoke_scenario_test.go)。
+// envelopeTip != 0 时 response 未填充。attribute / pet / equip 三个冒烟的属性请求都经它判定,
+// 改判据只改这一处。
+func attributePanelOutcome(messageId, envelopeTip uint32, response attributePanelResponse,
+	allowedTips ...uint32) (*scene.AttributePanelInfo, uint32, error) {
 	if envelopeTip != 0 {
-		return nil, 0, attributeSmokeEnvelopeRejection(messageId, envelopeTip)
+		return nil, 0, sceneRequestEnvelopeRejection(messageId, envelopeTip)
 	}
 	if tip := response.GetErrorMessage().GetId(); tip != 0 {
 		if slices.Contains(allowedTips, tip) {
@@ -481,9 +491,10 @@ func requestAttributePanel(caller *smokeCaller, messageId uint32, request proto.
 	return panel, 0, nil
 }
 
-// attributeSmokeEnvelopeRejection 把 gate 信封拒绝(MessageContent.error_message 非空、响应体为空)报成 error,
-// 与 scene 的业务拒绝分开:请求没到 scene 的业务逻辑,不能当成 scene 给的码去断言。
-func attributeSmokeEnvelopeRejection(messageId, tip uint32) error {
+// sceneRequestEnvelopeRejection 把 gate 信封拒绝(MessageContent.error_message 非空、响应体为空)报成 error,
+// 与 scene 的业务拒绝分开:不能当成 scene 业务逻辑给的码去断言(1003 也可能是结局未知,见 sceneRequestEnvelopeHint)。
+// attribute / pet / equip 冒烟共用这一份,保证同一次运行里信封拒绝的日志格式只有一种。
+func sceneRequestEnvelopeRejection(messageId, tip uint32) error {
 	return fmt.Errorf("rejected by gate envelope: message_id=%d tip=%d%s", messageId, tip, sceneRequestEnvelopeHint(tip))
 }
 
@@ -572,7 +583,7 @@ func (s *attributeSmokeSession) autoAllocate(poolId uint32) (map[uint32]uint32, 
 		return nil, err
 	}
 	if envelopeTip != 0 {
-		return nil, attributeSmokeEnvelopeRejection(messageId, envelopeTip)
+		return nil, sceneRequestEnvelopeRejection(messageId, envelopeTip)
 	}
 	if tip := response.GetErrorMessage().GetId(); tip != 0 {
 		return nil, fmt.Errorf("auto allocation rejected by scene: tip=%d", tip)

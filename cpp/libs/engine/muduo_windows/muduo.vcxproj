@@ -56,6 +56,9 @@
     <ClCompile Include="src\muduo\net\TcpClient.cc" />
     <ClCompile Include="src\muduo\net\TcpConnection.cc" />
     <ClCompile Include="src\muduo\net\TcpServer.cc" />
+    <ClCompile Include="src\muduo\net\http\HttpContext.cc" />
+    <ClCompile Include="src\muduo\net\http\HttpResponse.cc" />
+    <ClCompile Include="src\muduo\net\http\HttpServer.cc" />
     <ClCompile Include="src\muduo\net\Timer.cc" />
     <ClCompile Include="src\muduo\net\TimerQueue.cc" />
     <ClCompile Include="src\muduo\net\WindowsWakeup.cc" />
@@ -112,6 +115,10 @@
     <ClInclude Include="src\muduo\net\TcpClient.h" />
     <ClInclude Include="src\muduo\net\TcpConnection.h" />
     <ClInclude Include="src\muduo\net\TcpServer.h" />
+    <ClInclude Include="src\muduo\net\http\HttpContext.h" />
+    <ClInclude Include="src\muduo\net\http\HttpRequest.h" />
+    <ClInclude Include="src\muduo\net\http\HttpResponse.h" />
+    <ClInclude Include="src\muduo\net\http\HttpServer.h" />
     <ClInclude Include="src\muduo\net\Timer.h" />
     <ClInclude Include="src\muduo\net\TimerId.h" />
     <ClInclude Include="src\muduo\net\TimerQueue.h" />

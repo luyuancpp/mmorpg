@@ -15,6 +15,7 @@ import (
 	"match/internal/metrics"
 
 	dspb "proto/data_service"
+	inboxpb "proto/player_inbox"
 
 	"shared/kafkacmd"
 	"shared/kafkautil"
@@ -35,8 +36,9 @@ import (
 // SceneNodeRpcPrefix / BattleNodeRpcPrefix 是 match 侧 watch 的两个发现前缀。
 // 与 load_reporter 的 sceneNodePrefix 同写法:字符串字面量,不依赖生成的枚举名。
 const (
-	SceneNodeRpcPrefix  = "SceneNodeService.rpc/"
-	BattleNodeRpcPrefix = "BattleNodeService.rpc/"
+	SceneNodeRpcPrefix   = "SceneNodeService.rpc/"
+	BattleNodeRpcPrefix  = "BattleNodeService.rpc/"
+	PlayerInboxRpcPrefix = "PlayerInboxNodeService.rpc/"
 )
 
 type ServiceContext struct {
@@ -46,10 +48,16 @@ type ServiceContext struct {
 	// 仅main显式装配，缺失时CancelActivityBattle拒绝；不复用网络探测或其它服务秘密。
 	ActivityCancelAuth   *serviceauth.Verifier
 	ActivityCancelSecret string
+	BattleOutcomeAuth    *serviceauth.Verifier
+	BattleOutcomeSecret  string
+	resultPublisher      *kafka.Writer
 	// 候选扫描游标是可重建调度状态，只由matcher循环访问；不参与SQL写决策。
 	GlobalScanMs      uint64
 	GlobalScanPlayer  uint64
 	GlobalGatherSlots chan struct{}
+	// 终局恢复与候选游标独立；只由同一matcher循环访问，不参与SQL终局裁决。
+	GlobalOutcomeRetryMs uint64
+	GlobalOutcomeBattle  uint64
 	// 投影维护独立走有界游标；首次完整修复前不以缺投影宣称本区人数不足。
 	GlobalRegionRepairMs            uint64
 	GlobalRegionRepairPlayer        uint64
@@ -283,10 +291,61 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		pubctx, pubcancel := context.WithCancel(context.Background())
 		sc.rankPublisherCancel = pubcancel
 		sc.rankPublisherDone = make(chan struct{})
+		outcomeSecret := os.Getenv("MMORPG_MATCH_OUTCOME_SECRET_BATTLE")
+		outcomeVerifier, err := serviceauth.New(map[string]string{"battle": outcomeSecret})
+		inboxSecret := os.Getenv("MMORPG_PLAYER_INBOX_SECRET_MATCH")
+		if err != nil || len(inboxSecret) < 32 {
+			pubcancel()
+			close(sc.rankPublisherDone)
+			sc.Stop()
+			panic("全球终局必须配置独立Battle/Match入箱签名密钥")
+		}
+		sc.BattleOutcomeAuth, sc.BattleOutcomeSecret = outcomeVerifier, outcomeSecret
+		inboxNodes := discovery.NewNodeWatcher("player_inbox", PlayerInboxRpcPrefix, nil, func(entry discovery.NodeEntry) { discovery.RemoveEndpointConn(entry.Endpoint) })
+		sc.resultPublisher = &kafka.Writer{Addr: kafka.TCP(c.Kafka.Brokers...), Balancer: &kafka.Hash{}, RequiredAcks: kafka.RequireAll, Async: false, MaxAttempts: 1, WriteTimeout: 2 * time.Second, AllowAutoTopicCreation: false}
+		resolveInbox := func(ctx context.Context) (inboxpb.PlayerInboxClient, error) {
+			if err := ctx.Err(); err != nil {
+				return nil, err
+			}
+			node, ok := inboxNodes.PickRandom()
+			if !ok {
+				return nil, fmt.Errorf("收件箱尚无正式发现端点")
+			}
+			conn, err := discovery.DialEndpoint(node.Endpoint)
+			if err != nil {
+				return nil, err
+			}
+			return inboxpb.NewPlayerInboxClient(conn), nil
+		}
+		publishResult := func(ctx context.Context, battle uint64, raw []byte) error {
+			return sc.resultPublisher.WriteMessages(ctx, kafka.Message{Topic: c.ResultTopic, Key: []byte(fmt.Sprint(battle)), Value: raw})
+		}
+		var publishers sync.WaitGroup
+		publishers.Add(3)
 		go func() {
-			defer close(sc.rankPublisherDone)
+			defer publishers.Done()
 			authority.RunRankPublisher(pubctx, store, c.GlobalMatch.RankEndpoint, secret)
 		}()
+		go func() { defer publishers.Done(); inboxNodes.Run(pubctx, etcdCli) }()
+		go func() {
+			defer publishers.Done()
+			ticker := time.NewTicker(2 * time.Second)
+			defer ticker.Stop()
+			for {
+				call, cancel := context.WithTimeout(pubctx, 40*time.Second)
+				err := store.PublishBattleOutcomesOnce(call, resolveInbox, inboxSecret, publishResult)
+				cancel()
+				if err != nil && pubctx.Err() == nil {
+					logx.Errorf("终局原件投递等待恢复: %v", err)
+				}
+				select {
+				case <-pubctx.Done():
+					return
+				case <-ticker.C:
+				}
+			}
+		}()
+		go func() { publishers.Wait(); close(sc.rankPublisherDone) }()
 	}
 
 	return sc
@@ -347,6 +406,9 @@ func (sc *ServiceContext) Stop() {
 		}
 		if sc.Authority != nil {
 			_ = sc.Authority.DB.Close()
+		}
+		if sc.resultPublisher != nil {
+			_ = sc.resultPublisher.Close()
 		}
 		if sc.LoginSessions != nil {
 			_ = sc.LoginSessions.Close()

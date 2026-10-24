@@ -124,6 +124,26 @@ func playerFieldIndexKey(playerID uint64) string {
 	return fmt.Sprintf("player:{%d}:__fields", playerID)
 }
 
+// reservedPlayerKeySuffixes 与 go/shared/redisslot 的保留后缀表逐字一致(本 module 引不到 shared,只镜像;
+// 两边测试钉同一份排序后的字面量,改一边必须同批改另一边)。这些是别的模块落在 player:{id}: 前缀下的玩家域键
+// (docs/design/redis-player-store-cluster.md §5.2),不是 data_service 的字段:owner_epoch、handoff、location 等是
+// string,会被下面的 string 拷贝带走 —— 拷到目标端等于伪造一份归属代次 / 交接标记 / 位置。一律不拷。
+var reservedPlayerKeySuffixes = map[string]struct{}{
+	"asset_sql_commit": {}, "channel_switch_cooldown": {}, "handoff": {}, "leave_release_wait": {}, "leave_tomb": {},
+	"location": {}, "location_revision": {}, "location_revision_floor": {}, "login_generation": {}, "owner_epoch": {},
+	"save_barrier": {}, "sync_digest": {},
+}
+
+// isReservedPlayerKey 报告 player:{id}:<suffix> 是否是别的模块的玩家域键。
+func isReservedPlayerKey(playerID uint64, key string) bool {
+	prefix := fmt.Sprintf("player:{%d}:", playerID)
+	if !strings.HasPrefix(key, prefix) {
+		return false
+	}
+	_, ok := reservedPlayerKeySuffixes[key[len(prefix):]]
+	return ok
+}
+
 // scanPlayerKeys 列出一名玩家在 src 上的全部 player:{id}:* 键。
 //
 // Cluster 修正:本工具依赖的 go-redis(见 go.mod)里 ClusterClient.Scan 不带 key 时只会打到**一个**
@@ -178,7 +198,8 @@ func scanPlayerKeys(ctx context.Context, src redis.UniversalClient, playerID uin
 }
 
 // copyPlayerStringKeys copies all string keys matching player:{id}:* from src to dst (SET with TTL 0).
-// 锁键被显式排除,见 playerDataLockKey;目标端的字段索引先删,见 playerFieldIndexKey。
+// 锁键被显式排除,见 playerDataLockKey;别的模块的玩家域键排除,见 reservedPlayerKeySuffixes;
+// 目标端的字段索引先删,见 playerFieldIndexKey。
 //
 // apply 模式下拷贝之前先查 data_service 的数据锁,锁在就报错、一个键都不拷(调用方走 abortKeepingFence,围栏保留)。
 // 前提是 data_service 写门禁(routing.AcquirePlayerWriteLock):写者在数据锁到手之后复核合服围栏,提交脚本校验数据锁 token。
@@ -209,6 +230,10 @@ func copyPlayerStringKeys(ctx context.Context, src, dst redis.UniversalClient, p
 	for _, k := range scanned {
 		if k == lockKey {
 			log.Printf("player %d: skipping %s (copying a lock with no TTL would deadlock the player in the target zone)", playerID, k)
+			continue
+		}
+		if isReservedPlayerKey(playerID, k) {
+			log.Printf("player %d: skipping %s (player-store key owned by another module, not a data_service field)", playerID, k)
 			continue
 		}
 		all = append(all, k)

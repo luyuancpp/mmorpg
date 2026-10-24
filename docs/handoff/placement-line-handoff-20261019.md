@@ -222,6 +222,7 @@
   - 冲突一:`merge_run.go`、`unmerge.go` 正好有 D1 未提交的改动;
   - 冲突二:开服线交接 §5 写了「不要再改 tools/merge_zone」;
   - 两份交接互相都没提对方,需要负责人定谁改、谁先改。
+  - **2026-10-24 已解决**:D1 接手会话同意由「数据覆盖审计交接文档」会话改,r2-mz#1 已落码并经评审修正(未编译,待 Codex)。merge_zone 里它改的位置只有:`player_rows.go` 702-819(删键清单拆出 KeepBarrier 版本,731-733 注释)、`merge_run.go` runMerge copy 分支约 514-533(改调 `invalidatePlayerCachesKeepBarrier`)、`unmerge.go` 5'b 约 305-327(只加注释)、`audit_resources.go` 第 384-388 行(`verifySaveBarriers` 登记与行尾注释)、新文件 `save_barrier_verify.go`、`player_rows_barrier_test.go`、`save_barrier_integration_test.go`;runbook 只动 §5 步骤 1、§8 Step 5 断言表、§10.1。`requireFence`、`routeSource`、`routeReads`、`routeDB` 等路由 / 围栏行都是 D1 的,没有碰。route-source=db 下屏障删 / 留走同一条路径。评审提的「每个 auditor 30s 预算在 `runAuditMode`(约 409 行),大清单可能稳定报 INFRA」属 D1 维护的段落,留给 D1 决定。详见 PROGRESS「2026-10-24 Claude:第二轮审计 r2-mz#1」。
 - **自动快照**:工作区随时会被署名 luyuan-cpp 的「补充…」提交整区收走。本线的未提交文件可能挂在无关的提交说明下入库,所以核对现状一律以工作区为准。
 
 ## 6. 上线前仍缺的大项(本线前置,只登记,不在本交接执行)

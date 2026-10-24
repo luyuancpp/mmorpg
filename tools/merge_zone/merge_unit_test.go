@@ -700,7 +700,7 @@ func TestSaveOutboxPreflightRequiresAllBucketsDrained(t *testing.T) {
 func TestPlayerCacheKeys_CoversParentSubAndDiscoveredTables(t *testing.T) {
 	keys := playerCacheKeys(42, []string{"player_database", "player_database_1", "player_centre_database"})
 	want := map[string]bool{
-		"PlayerAllData:42":          true,
+		"PlayerAllData:{42}":        true,
 		"BagAllData:42":             true,
 		"QuestAllData:42":           true,
 		"MailAllData:42":            true,
@@ -727,7 +727,7 @@ func TestPlayerCacheKeys_CoversParentSubAndDiscoveredTables(t *testing.T) {
 
 func TestPlayerCacheKeys_DeduplicatesTableAndMsgTypeOverlap(t *testing.T) {
 	// 表名与 MsgType 同名是常态;重复的键会让 pipeline 白跑一次 DEL。
-	keys := playerCacheKeys(7, []string{"PlayerAllData", "player_database"})
+	keys := playerCacheKeys(7, []string{"BagAllData", "player_database"})
 	seen := map[string]int{}
 	for _, k := range keys {
 		seen[k]++
@@ -1104,7 +1104,7 @@ func TestRedisDBDefaultsMatchServiceYAML(t *testing.T) {
 	}{
 		// go-zero RedisConf 没有 DB 字段 → mapping Redis 恒为 DB 0(见 main.go 注释)。
 		{"mapping (data_service MappingRedis, go-zero 无 DB 字段)", defaultMappingRedisDB, 0},
-		{"guild (guild.yaml RedisClient.DB)", defaultGuildRedisDB, 2},
+		{"guild (guild.yaml RedisClient.DB;2026-10-23 由 2 改为 0)", defaultGuildRedisDB, 0},
 		{"shared/login (login.yaml Node.RedisClient.DB)", defaultSharedRedisDB, 0},
 	}
 	for _, c := range cases {

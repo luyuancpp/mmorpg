@@ -200,8 +200,9 @@ func RunFeaturesSmoke(cfg *config.Config, stats *metrics.Stats) error {
 		if err != nil {
 			return err
 		}
-		// 只认任务逻辑在响应体里的业务拒绝(featureServerError)。信封拒绝(gate 限流 / 1003 等)说明重复领取
-		// 根本没到任务逻辑,超时则不知道结局,都不能证明「服务器拒绝了重复领取」。
+		// 只认任务逻辑在响应体里的业务拒绝(featureServerError)。信封拒绝(gate 限流 / 1003 等)不能证明任务逻辑
+		// 判过这次重复领取:可能根本没到任务逻辑,1003 也可能是结局未知(RPC0 超时 / 断开);超时同样不知道结局。
+		// 这些都不能证明「服务器拒绝了重复领取」。
 		_, repeatErr := session.call(game.SceneMissionClientPlayerClaimMissionRewardMessageId, request)
 		if _, rejected := repeatErr.(*featureServerError); !rejected {
 			if repeatErr != nil {
@@ -483,7 +484,8 @@ func (s *featureSmokeSession) recordFeatureReply(reply *base.MessageContent, _ e
 }
 
 // featureCallResult 把 callVia 的结局(err 的形状同 pkg.GameClient.CallSyncThen)翻译成返回值,cursor 是发送前的
-// FeatureSequence。拒绝分三种报:信封拒绝(gate / 路由服 / 战斗直连面拦下,请求没到业务逻辑)返回包裹
+// FeatureSequence。拒绝分三种报:信封拒绝(gate / 路由服 / 战斗直连面在信封里给了 tip;通常请求没执行,但 1003
+// 也可能表示结局未知 —— RPC0 或 gRPC 调用超时 / 断开后回的,业务可能已执行,不能当作没发生而重试)返回包裹
 // *pkg.ServerTipError 的 error;业务拒绝(响应体 tip)返回 *featureServerError;快照记下的其余失败(响应残缺、
 // 解码失败)返回普通 error。没有回包的结局(超时 / 连接被关)分开报,error 包裹 pkg 的哨兵。
 func (s *featureSmokeSession) featureCallResult(id uint32, cursor uint64, err error) (proto.Message, error) {

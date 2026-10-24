@@ -186,6 +186,21 @@ func TestUnityClientRpcGeneratesRequestOneWayPushAndOmitsServerOnly(t *testing.T
 	if strings.Contains(content, "this IRpcChannel") {
 		t.Error("调用桩不得生成为扩展方法")
 	}
+	// 没有前导注释的方法不写 <summary>:Move 的签名紧跟它的消息号常量。
+	lines := strings.Split(content, "\n")
+	moveIndex := slices.IndexFunc(lines, func(line string) bool {
+		return strings.HasPrefix(strings.TrimSpace(line), "public static void Move(")
+	})
+	if moveIndex < 1 {
+		t.Fatal("缺少 Move 的签名行")
+	}
+	previous := strings.TrimSpace(lines[moveIndex-1])
+	if previous == "/// </summary>" {
+		t.Error("没有前导注释的方法不得输出 <summary>")
+	}
+	if previous != "public const uint MoveMessageId = 1;" {
+		t.Errorf("Move 的签名必须紧跟它的消息号常量,前一行是 %q", previous)
+	}
 }
 
 func TestUnityClientRpcRemovesStaleStubsAndKeepsStableMeta(t *testing.T) {
@@ -240,6 +255,108 @@ func TestUnityClientRpcRemovesStaleStubsAndKeepsStableMeta(t *testing.T) {
 	}
 }
 
+func TestUnityClientRpcRefusesToOverwriteHandWrittenFileWithStubName(t *testing.T) {
+	rpcRegressionLogger(t)
+	root := t.TempDir()
+	rpcDir := filepath.Join(root, "Assets", "Scripts", "Net", "Generated", "Rpc")
+	if err := os.MkdirAll(rpcDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	target := filepath.Join(rpcDir, "GuildServiceRpc.cs")
+	const handWritten = "// 与生成桩同名的手写脚本。\r\nnamespace Game { public static class GuildServiceRpc {} }\r\n"
+	if err := os.WriteFile(target, []byte(handWritten), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	// AlphaServiceRpc.cs 按文件名排在 GuildServiceRpc.cs 之前:检查必须在写第一个文件之前全部做完。
+	services, files := rpcRegressionFixture()
+	alpha, alphaFile := rpcRegressionServiceFile("proto/test/alpha.proto", "alphapb", "AlphaService",
+		rpcRegressionMethod{"Read", ".alphapb.Request", ".alphapb.Response", internal.ClientRpcRequest, 40})
+	services = append(services, alpha)
+	files = append(files, alphaFile)
+
+	_, count, err := rpcRegressionGenerate(t, root, services, files)
+	if err == nil || count != 0 {
+		t.Fatalf("与生成桩同名的手写脚本必须让生成失败: count=%d err=%v", count, err)
+	}
+	for _, expected := range []string{"GuildServiceRpc.cs", "refusing to overwrite"} {
+		if !strings.Contains(err.Error(), expected) {
+			t.Errorf("错误必须指明 %q: %v", expected, err)
+		}
+	}
+	if got := string(rpcRegressionRead(t, target)); got != handWritten {
+		t.Error("手写脚本被覆盖")
+	}
+	entries, err := os.ReadDir(rpcDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	names := make([]string, 0, len(entries))
+	for _, entry := range entries {
+		names = append(names, entry.Name())
+	}
+	if !slices.Equal(names, []string{"GuildServiceRpc.cs"}) {
+		t.Errorf("拒绝覆盖时目录里不得新增文件: %v", names)
+	}
+	if _, err := os.Stat(rpcDir + ".meta"); !os.IsNotExist(err) {
+		t.Errorf("拒绝覆盖时不得写目录 meta: err=%v", err)
+	}
+}
+
+func TestUnityClientRpcKeepsStubWhoseOldNameDiffersOnlyInCase(t *testing.T) {
+	rpcRegressionLogger(t)
+	foo, fooFile := rpcRegressionServiceFile("proto/test/foo.proto", "foopb", "FooService",
+		rpcRegressionMethod{"Read", ".foopb.Request", ".foopb.Response", internal.ClientRpcRequest, 1})
+	services := internal.RPCServiceInfoList{foo}
+	files := []*descriptorpb.FileDescriptorProto{fooFile}
+
+	// 期望内容取自干净目录里的同一输入:产物逐字节确定,两次生成的相对 Assets 路径相同,.meta GUID 也相同。
+	clean, _, err := rpcRegressionGenerate(t, t.TempDir(), services, files)
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantSource := rpcRegressionRead(t, filepath.Join(clean.dir, "FooServiceRpc.cs"))
+	wantMeta := rpcRegressionRead(t, filepath.Join(clean.dir, "FooServiceRpc.cs.meta"))
+	if !bytes.Contains(wantSource, []byte("public static class FooServiceRpc")) {
+		t.Fatalf("基准产物不是 FooServiceRpc:\n%s", wantSource)
+	}
+
+	// 预置服务名改大小写之前的旧桩 fooServiceRpc.cs(带生成标记)。内容就是本次产物,写入时内容不变不落盘,
+	// 磁盘上的名字保持小写开头,目录列表返回的就是 fooServiceRpc.cs。
+	root := t.TempDir()
+	rpcDir := filepath.Join(root, "Assets", "Scripts", "Net", "Generated", "Rpc")
+	if err := os.MkdirAll(rpcDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(rpcDir, "fooServiceRpc.cs"), wantSource, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	layout, count, err := rpcRegressionGenerate(t, root, services, files)
+	if err != nil || count != 1 {
+		t.Fatalf("预期生成一个服务文件: count=%d err=%v", count, err)
+	}
+
+	// 大小写不敏感的文件系统(Windows、默认配置的 macOS)上 fooServiceRpc.cs 与 FooServiceRpc.cs 是同一个文件:
+	// 按原样比较文件名会把它当成旧桩删掉,连同刚写的 FooServiceRpc.cs.meta。大小写敏感的文件系统上二者是两个文件,
+	// FooServiceRpc.cs 是新写的,fooServiceRpc.cs 按小写比较也不删(本用例不对它下断言)。
+	// 两种文件系统上,下面的断言都必须成立。
+	for _, check := range []struct {
+		name string
+		want []byte
+	}{
+		{"FooServiceRpc.cs", wantSource},
+		{"FooServiceRpc.cs.meta", wantMeta},
+	} {
+		got, err := os.ReadFile(filepath.Join(layout.dir, check.name))
+		if err != nil {
+			t.Errorf("%s 不得被当成旧桩删除: %v", check.name, err)
+			continue
+		}
+		if !bytes.Equal(got, check.want) {
+			t.Errorf("%s 内容必须是本次产物\nwant:\n%s\ngot:\n%s", check.name, check.want, got)
+		}
+	}
+}
+
 func TestUnityClientRpcSelectsServiceOptionRatherThanName(t *testing.T) {
 	rpcRegressionLogger(t)
 	services, files := rpcRegressionFixture()
@@ -269,7 +386,11 @@ func TestUnityClientRpcMapsNestedAndNamespacedTypes(t *testing.T) {
 	files := []*descriptorpb.FileDescriptorProto{{
 		Name: proto.String("proto/test/types.proto"), Package: proto.String("sample_proto.v2"),
 		MessageType: []*descriptorpb.DescriptorProto{{
-			Name: proto.String("Outer"), NestedType: []*descriptorpb.DescriptorProto{{Name: proto.String("Inner")}},
+			Name: proto.String("Outer"), NestedType: []*descriptorpb.DescriptorProto{
+				{Name: proto.String("Inner")},
+				// map<..> 字段的合成 entry 消息:protoc 的 C# 生成器不为它生成类型。
+				{Name: proto.String("ItemsEntry"), Options: &descriptorpb.MessageOptions{MapEntry: proto.Bool(true)}},
+			},
 		}},
 	}, {
 		Name: proto.String("proto/test/override.proto"), Package: proto.String("ignored"),
@@ -288,6 +409,9 @@ func TestUnityClientRpcMapsNestedAndNamespacedTypes(t *testing.T) {
 	}
 	if _, err := index.resolve(".not_present.Request"); err == nil {
 		t.Error("缺失的描述符类型必须拒绝，不能输出猜测的 C# 类型")
+	}
+	if actual, err := index.resolve(".sample_proto.v2.Outer.ItemsEntry"); err == nil {
+		t.Errorf("map entry 没有 C# 类型,必须拒绝: got=%q", actual)
 	}
 }
 

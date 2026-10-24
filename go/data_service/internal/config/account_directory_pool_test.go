@@ -20,7 +20,10 @@ func TestAccountDirectoryPoolDefaultsWhenAbsent(t *testing.T) {
 			t.Fatalf("%s: absent MaxOpenConn must stay zero-valued, got %d", name, c.AccountDirectory.MaxOpenConn)
 		}
 		got, err := c.AccountDirectory.PoolMaxOpenConn()
-		if err != nil || got != DefaultAccountDirectoryMaxOpenConn || got != 8 {
+		if DefaultAccountDirectoryMaxOpenConn != 8 {
+			t.Fatalf("DefaultAccountDirectoryMaxOpenConn = %d, want 8", DefaultAccountDirectoryMaxOpenConn)
+		}
+		if err != nil || got != DefaultAccountDirectoryMaxOpenConn {
 			t.Fatalf("%s: PoolMaxOpenConn() = %d, %v; want 8, nil", name, got, err)
 		}
 	}

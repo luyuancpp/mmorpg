@@ -674,7 +674,7 @@ func TestEquipFeatureMessagesHonorEnvelopeErrorsAndKeepTheirSource(t *testing.T)
 // 信封拒绝一律是 error 且点名信封码(迁移前它被通用分发解成全零响应,只能报「残缺」、看不到码);
 // 生成 handler 没落快照、残缺响应也是 error;响应体业务拒绝原样作为 tip 交给调用方;完整响应原样返回。
 func TestEquipFeatureOutcomeSeparatesEnvelopeBodyTipAndIncompleteReplies(t *testing.T) {
-	id := game.SceneBagClientPlayerEquipItemMessageId
+	id := uint32(game.SceneBagClientPlayerEquipItemMessageId)
 	complete := &scene.EquipItemResponse{
 		Bag:       equipTestBag(equipSmokeBagInventory, 28, nil),
 		Equipment: equipTestBag(equipSmokeBagEquipment, 10, nil),
@@ -713,31 +713,40 @@ func TestEquipFeatureOutcomeSeparatesEnvelopeBodyTipAndIncompleteReplies(t *test
 	}
 }
 
-// attributePanel 的结局判定(equipPanelOutcome):信封拒绝与响应体拒绝分开报、各自点名码;受理了却没带面板也是 error。
-func TestEquipPanelOutcomeSeparatesEnvelopeAndBodyRejections(t *testing.T) {
-	id := game.SceneAttributeClientPlayerGetAttributePanelMessageId
+// 属性请求的结局判定(attributePanelOutcome,attribute / pet / equip 共用):信封拒绝与响应体拒绝分开报、各自点名码;
+// allowedTips 只放行响应体业务码;受理了却没带面板也是 error。
+func TestAttributePanelOutcomeSeparatesEnvelopeAndBodyRejections(t *testing.T) {
+	id := uint32(game.SceneAttributeClientPlayerGetAttributePanelMessageId)
 
-	panel, err := equipPanelOutcome(id, smokeTipServiceUnavailable, &scene.GetAttributePanelResponse{})
-	if err == nil || panel != nil || !strings.Contains(err.Error(), "envelope") ||
+	panel, tip, err := attributePanelOutcome(id, smokeTipServiceUnavailable, &scene.GetAttributePanelResponse{})
+	if err == nil || panel != nil || tip != 0 || !strings.Contains(err.Error(), "envelope") ||
 		!strings.Contains(err.Error(), "kServiceUnavailable") {
-		t.Fatalf("envelope rejection = (%v, %v), want an envelope error naming kServiceUnavailable", panel, err)
+		t.Fatalf("envelope rejection = (%v, %d, %v), want an envelope error naming kServiceUnavailable", panel, tip, err)
+	}
+	// 信封码即使出现在 allowedTips 里也不放行:它不是 scene 业务逻辑给的码
+	if _, _, err := attributePanelOutcome(id, smokeTipServiceUnavailable, &scene.GetAttributePanelResponse{},
+		smokeTipServiceUnavailable); err == nil {
+		t.Fatal("envelope rejection listed in allowedTips was tolerated, want an error")
 	}
 
-	panel, err = equipPanelOutcome(game.SceneAttributeClientPlayerGmSetPlayerLevelMessageId, 0, &scene.GmSetPlayerLevelResponse{
-		ErrorMessage: &base.TipInfoMessage{Id: tipInvalidParameter},
-	})
-	if err == nil || panel != nil || strings.Contains(err.Error(), "envelope") ||
-		!strings.Contains(err.Error(), "kInvalidParameter") {
-		t.Fatalf("body rejection = (%v, %v), want a non-envelope error naming kInvalidParameter", panel, err)
+	rejected := &scene.GmSetPlayerLevelResponse{ErrorMessage: &base.TipInfoMessage{Id: tipInvalidParameter}}
+	panel, tip, err = attributePanelOutcome(game.SceneAttributeClientPlayerGmSetPlayerLevelMessageId, 0, rejected)
+	if err == nil || panel != nil || tip != tipInvalidParameter || strings.Contains(err.Error(), "envelope") ||
+		!strings.Contains(err.Error(), fmt.Sprintf("tip=%d", tipInvalidParameter)) {
+		t.Fatalf("body rejection = (%v, %d, %v), want a non-envelope error naming tip=%d", panel, tip, err, tipInvalidParameter)
+	}
+	panel, tip, err = attributePanelOutcome(game.SceneAttributeClientPlayerGmSetPlayerLevelMessageId, 0, rejected, tipInvalidParameter)
+	if err != nil || panel != nil || tip != tipInvalidParameter {
+		t.Fatalf("tolerated body rejection = (%v, %d, %v), want (nil, %d, nil)", panel, tip, err, tipInvalidParameter)
 	}
 
-	if panel, err := equipPanelOutcome(id, 0, &scene.GetAttributePanelResponse{}); err == nil || panel != nil {
+	if panel, _, err := attributePanelOutcome(id, 0, &scene.GetAttributePanelResponse{}); err == nil || panel != nil {
 		t.Fatalf("accepted without panel = (%v, %v), want an error", panel, err)
 	}
 
 	want := equipTestPanel()
-	if panel, err := equipPanelOutcome(id, 0, &scene.GetAttributePanelResponse{Panel: want}); err != nil || panel != want {
-		t.Fatalf("accepted panel = (%v, %v), want the response's panel", panel, err)
+	if panel, tip, err := attributePanelOutcome(id, 0, &scene.GetAttributePanelResponse{Panel: want}); err != nil || tip != 0 || panel != want {
+		t.Fatalf("accepted panel = (%v, %d, %v), want the response's panel", panel, tip, err)
 	}
 }
 

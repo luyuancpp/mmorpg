@@ -487,7 +487,7 @@ func (s *petSmokeSession) callTolerant(messageId uint32, request proto.Message, 
 		return nil, 0, err
 	}
 	if envelopeTip != 0 {
-		return nil, 0, petSmokeEnvelopeRejection(messageId, envelopeTip)
+		return nil, 0, sceneRequestEnvelopeRejection(messageId, envelopeTip)
 	}
 	if tip := response.GetErrorMessage().GetId(); tip != 0 {
 		if slices.Contains(allowedTips, tip) {
@@ -534,7 +534,7 @@ func (s *petSmokeSession) autoAllocate(petId uint64) (map[uint32]uint32, error) 
 		return nil, err
 	}
 	if envelopeTip != 0 {
-		return nil, petSmokeEnvelopeRejection(messageId, envelopeTip)
+		return nil, sceneRequestEnvelopeRejection(messageId, envelopeTip)
 	}
 	if tip := response.GetErrorMessage().GetId(); tip != 0 {
 		return nil, fmt.Errorf("auto allocation rejected by scene: tip=%d", tip)
@@ -545,12 +545,6 @@ func (s *petSmokeSession) autoAllocate(petId uint64) (map[uint32]uint32, error) 
 			response.GetPetId(), len(response.GetSuggested()), petId)
 	}
 	return response.GetSuggested(), nil
-}
-
-// petSmokeEnvelopeRejection 把 gate 信封拒绝(MessageContent.error_message 非空、响应体为空)报成 error,
-// 与 scene 的业务拒绝分开:请求没到 scene 的业务逻辑,不能当成 scene 给的码去断言。
-func petSmokeEnvelopeRejection(messageId, tip uint32) error {
-	return fmt.Errorf("rejected by gate envelope: message_id=%d tip=%d%s", messageId, tip, sceneRequestEnvelopeHint(tip))
 }
 
 // relogin 下线(LeaveGame + Disconnect)后用同一账号重新登录进场,返回新会话。

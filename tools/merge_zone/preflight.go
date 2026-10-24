@@ -803,6 +803,8 @@ func scanAllKeys(ctx context.Context, rdb queueKeyReader, match string) ([]strin
 type preflightDeps struct {
 	// sceneRdb: scene_manager 的 Redis(scene_nodes:zone:{z}:load)。
 	sceneRdb redis.UniversalClient
+	// sceneNodes: etcd 场景节点注册表(scene_registry.go)。P2 的正面证据,nil 即拒绝。
+	sceneNodes sceneRegistry
 	// mappingRdb: data_service mapping Redis(lock:player:*)。
 	mappingRdb *redis.Client
 	// sharedRdb: 共享 DB 0(player:session:* / kafka:retry|dead:queue:*)。
@@ -835,10 +837,10 @@ func runPreflight(ctx context.Context, d preflightDeps, p preflightParams) error
 	if d.sceneRdb == nil {
 		return fmt.Errorf("preflight: no scene_manager Redis handle — cannot prove the %s zone %d is down", p.scope, p.zone)
 	}
-	if err := assertZoneDown(ctx, d.sceneRdb, p.zone); err != nil {
+	if err := assertZoneDown(ctx, d.sceneRdb, d.sceneNodes, p.zone); err != nil {
 		return fmt.Errorf("preflight P2 (%s zone %d): %w", p.scope, p.zone, err)
 	}
-	log.Printf("preflight P2 OK: %s zone %d has no live scene nodes", p.scope, p.zone)
+	log.Printf("preflight P2 OK: %s zone %d has no registered scene node in etcd and an empty load set", p.scope, p.zone)
 
 	// P3 Kafka 消费积压。
 	if d.lag == nil {

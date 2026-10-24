@@ -994,4 +994,12 @@
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
+  <ItemGroup Label="ProtoGeneratorSources">
+    <ClCompile Include="common\base\currency_type.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClInclude Include="common\base\currency_type.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+  </ItemGroup>
 </Project>

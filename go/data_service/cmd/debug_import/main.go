@@ -72,8 +72,9 @@ func main() {
 		allowHosts   = flag.String("allow-target-host", "", "comma-separated non-loopback hosts allowed as write targets (local docker service names)")
 		allowFenced  = flag.Bool("allow-fenced-tables", false, "legacy playerdb: write player_database / player_database_1 rows without aligning the save barrier (the player will NOT load)")
 
-		// r2-ds#1(2026-10-22):身份取不到(TiDB、旧版导出包)且目标库没有本地调试环境标记时,缺省拒绝写入。
-		allowUnverifiedTarget = flag.Bool("allow-unverified-target-identity", false, "player-bundle: write even when a target cannot be proven distinct from the export source (identity unavailable and no local marker table); prints a WARNING per target")
+		// r2-ds#1(2026-10-22):写目标证明不了不是导出来源(MySQL 身份取不到 / 无同角色来源可比对、所有 Redis 目标)
+		// 且没有本地调试环境标记时,缺省拒绝写入。旧 player / playerdb 导出不记来源身份,每个写目标都要标记或本开关。
+		allowUnverifiedTarget = flag.Bool("allow-unverified-target-identity", false, "write even when a target cannot be proven distinct from the export source and carries no local marker (debug_import_local_target table / debug_import:local_target key). player-bundle: TiDB, unmatched MySQL sources and every Redis target need it; legacy player / playerdb exports record no source identity, so every target needs it. Prints a WARNING per target")
 	)
 	flag.Parse()
 
@@ -121,12 +122,15 @@ func main() {
 		overridePlayerID(data, *playerID)
 	}
 
+	legacyOpts := legacyImportOptions{
+		dryRun: *dryRun, allowHosts: *allowHosts, allowFencedTables: *allowFenced, allowUnverifiedTarget: *allowUnverifiedTarget,
+	}
 	switch data.Mode {
 	case "player":
 		fmt.Fprintln(os.Stderr, "注意:player 导出写回的是 data_service 的 player:{id}:<field> 键族,不在登录加载链路上;本地复现玩家请用 player-bundle")
-		err = importPlayerRedis(ctx, *configPath, data, *dryRun, *allowHosts)
+		err = importPlayerRedis(ctx, *configPath, data, legacyOpts)
 	case "playerdb":
-		err = importPlayerDB(ctx, *dbConfigPath, data, *dryRun, *allowHosts, *allowFenced)
+		err = importPlayerDB(ctx, *dbConfigPath, data, legacyOpts)
 	default:
 		err = fmt.Errorf("unsupported import mode %q (only player and playerdb exports are supported)", data.Mode)
 	}
@@ -137,9 +141,20 @@ func main() {
 	}
 }
 
+// legacyImportOptions 是旧 player / playerdb 两种导入共用的开关。
+type legacyImportOptions struct {
+	dryRun     bool
+	allowHosts string
+	// allowFencedTables 只对 playerdb:放行两张带行内围栏的表(只写行、不对齐屏障,本地 login 必拒)。
+	allowFencedTables bool
+	// allowUnverifiedTarget:写目标没有本地调试环境标记时仍放行,逐个打 WARNING。旧导出文件不记来源实例身份,
+	// 标记是唯一的证明(2026-10-22,r2-ds#1 评审补充)。
+	allowUnverifiedTarget bool
+}
+
 // ── Player Redis import ─────────────────────────────────────────
 
-func importPlayerRedis(ctx context.Context, configPath string, data *exportFile, dryRun bool, allowHosts string) error {
+func importPlayerRedis(ctx context.Context, configPath string, data *exportFile, opts legacyImportOptions) error {
 	if data.PlayerID == 0 {
 		return errors.New("export file has no player_id (use -player to override)")
 	}
@@ -175,7 +190,7 @@ func importPlayerRedis(ctx context.Context, configPath string, data *exportFile,
 		fmt.Fprintf(os.Stderr, "    %-30s %6d bytes\n", name, len(fields[name]))
 	}
 
-	if dryRun {
+	if opts.dryRun {
 		fmt.Fprintf(os.Stderr, "\n[DRY RUN] No changes written. Use --dry-run=false to apply.\n")
 		return nil
 	}
@@ -185,7 +200,7 @@ func importPlayerRedis(ctx context.Context, configPath string, data *exportFile,
 	if err != nil {
 		return err
 	}
-	if err := checkLegacyRedisTargets(dsCfg, data.HomeZoneID, allowHosts); err != nil {
+	if err := checkLegacyRedisTargets(dsCfg, data.HomeZoneID, opts.allowHosts); err != nil {
 		return err
 	}
 
@@ -200,6 +215,11 @@ func importPlayerRedis(ctx context.Context, configPath string, data *exportFile,
 	client, err := svcCtx.Router.ClientForZone(data.HomeZoneID)
 	if err != nil {
 		return fmt.Errorf("get Redis client for zone %d: %w", data.HomeZoneID, err)
+	}
+	// 写前闸门二:地址闸挡不住 port-forward 到 127.0.0.1 的线上实例,而旧导出文件不记来源实例身份,
+	// 所以每个写目标都要凭本地调试环境标记证明自己是本地(2026-10-22,r2-ds#1 评审补充)。
+	if err := checkLegacyPlayerTargetsMarked(ctx, dsCfg, client, data.HomeZoneID, opts.allowUnverifiedTarget); err != nil {
+		return err
 	}
 
 	if err := writeLegacyPlayerFields(ctx, client, data.PlayerID, fieldNames, fields); err != nil {
@@ -247,6 +267,28 @@ func checkLegacyRedisTargets(c config.Config, homeZone uint32, allowHosts string
 	return checkDataServiceTargets(c, allowHosts)
 }
 
+// checkLegacyPlayerTargetsMarked 是旧 player 模式的写前闸门二(2026-10-22,r2-ds#1 评审补充)。会写的实例:
+// 玩家字段写进的数据 Redis(dataRedis,DevRedis 或 Regions 集群);homeZone>0 时还要登记映射,写 MappingRedis,
+// RouteStore 为 db_first 时还先写全局库的 player_route。旧导出文件不记来源身份,每个实例都只能凭本地调试环境标记
+// 证明自己是本地,否则要 -allow-unverified-target-identity 显式放行。
+func checkLegacyPlayerTargetsMarked(ctx context.Context, c config.Config, dataRedis goredis.Cmdable, homeZone uint32, allowUnverified bool) error {
+	targets := []importTarget{redisImportTarget(ctx, "data_service 数据 Redis", dataRedis)}
+	if homeZone > 0 {
+		mapping := goredis.NewClient(&goredis.Options{Addr: c.MappingRedis.Host, Password: c.MappingRedis.Pass})
+		defer mapping.Close()
+		targets = append(targets, redisImportTarget(ctx, "data_service MappingRedis", mapping))
+		if c.RouteStore.Normalize().DBFirst() {
+			global, err := debugutil.OpenMySQL(ctx, debugutil.GlobalMySQL(c), 1)
+			if err != nil {
+				return fmt.Errorf("核对目标全局库(player_route)失败: %w", err)
+			}
+			defer global.Close()
+			targets = append(targets, mysqlImportTarget(ctx, roleGlobalDB, "data_service 全局库(player_route)", global))
+		}
+	}
+	return admitWriteTargets(nil, targets, allowUnverified)
+}
+
 // writeLegacyPlayerFields 把导出字段写回 data_service 的 player:{id}:<field> 键族,并把版本重置为 "1"。
 //
 // 同一个 MULTI 里先删字段索引 player:{id}:__fields(go/data_service/internal/logic/data_logic.go 的 fieldIndexKey):
@@ -271,7 +313,7 @@ func writeLegacyPlayerFields(ctx context.Context, client goredis.Cmdable, player
 
 // ── Player DB (MySQL) import ────────────────────────────────────
 
-func importPlayerDB(ctx context.Context, dbConfigPath string, data *exportFile, dryRun bool, allowHosts string, allowFencedTables bool) error {
+func importPlayerDB(ctx context.Context, dbConfigPath string, data *exportFile, opts legacyImportOptions) error {
 	if data.PlayerID == 0 {
 		return errors.New("export file has no player_id (use -player to override)")
 	}
@@ -295,7 +337,7 @@ func importPlayerDB(ctx context.Context, dbConfigPath string, data *exportFile, 
 		if len(match.Rows) == 0 {
 			continue
 		}
-		if fencedPlayerTables[match.Table] && !allowFencedTables {
+		if fencedPlayerTables[match.Table] && !opts.allowFencedTables {
 			return fmt.Errorf("table %s 带行内围栏,旧 playerdb 导入不对齐存盘屏障,导入后本地 login 会拒绝该玩家;请改用 debug_fetch -mode player-bundle 导出再导入(确需只写行时加 -allow-fenced-tables)", match.Table)
 		}
 		// 导入先删掉该玩家在这张表的全部行再插回导出的行:导出被 -limit 截断时会静默丢行。
@@ -356,7 +398,7 @@ func importPlayerDB(ctx context.Context, dbConfigPath string, data *exportFile, 
 	}
 	fmt.Fprintf(os.Stderr, "  Total rows: %d\n", totalRows)
 
-	if dryRun {
+	if opts.dryRun {
 		fmt.Fprintf(os.Stderr, "\n[DRY RUN] No changes written. Use --dry-run=false to apply.\n")
 		return nil
 	}
@@ -365,7 +407,7 @@ func importPlayerDB(ctx context.Context, dbConfigPath string, data *exportFile, 
 	if err != nil {
 		return err
 	}
-	if err := debugutil.CheckLocalWriteTarget("MySQL", cfg.ServerConfig.Database.Hosts, allowHosts); err != nil {
+	if err := debugutil.CheckLocalWriteTarget("MySQL", cfg.ServerConfig.Database.Hosts, opts.allowHosts); err != nil {
 		return err
 	}
 	db, _, _, err := debugutil.OpenZoneDB(ctx, dbConfigPath, zoneID)
@@ -373,6 +415,13 @@ func importPlayerDB(ctx context.Context, dbConfigPath string, data *exportFile, 
 		return err
 	}
 	defer db.Close()
+
+	// 写前闸门二(2026-10-22,r2-ds#1 评审补充):线上 TiDB / MySQL 经 port-forward 到 127.0.0.1 时地址闸放行,
+	// 本模式会把该玩家的其它表 DELETE + INSERT 成导出时的旧状态(带 -allow-fenced-tables 时连两张围栏表也写)。
+	// 旧导出文件不记来源实例身份,目标库只能凭本地调试环境标记证明自己是本地。
+	if err := admitWriteTargets(nil, []importTarget{mysqlImportTarget(ctx, roleZoneDB, "MySQL 落点库", db)}, opts.allowUnverifiedTarget); err != nil {
+		return err
+	}
 
 	// 表的处理顺序 = 导出文件里 matches 数组的顺序(JSON 数组,有序;debug_fetch 按 table_name, column_name
 	// ORDER BY 产出),不是 Go map 的随机迭代序。而且下面**每张表单独一个事务**、提交后才碰下一张表,

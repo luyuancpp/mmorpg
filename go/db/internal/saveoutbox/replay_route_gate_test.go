@@ -10,6 +10,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/require"
+	"shared/placement"
 	"shared/savebarrier"
 )
 
@@ -85,17 +86,19 @@ func TestRouteGateClosingMidTickStopsClaiming(t *testing.T) {
 	require.Equal(t, 1.0, resultCount(r, "route_not_ready"))
 }
 
-// failingCommandHook 让一个客户端上指定名字的命令一律返回注入的错误(模拟 mapping Redis 重启 / 切主期间连接被拒)，不经网络。
-type failingCommandHook struct{ command string }
+// failingCommandHook 让一个客户端上指定名字的命令一律返回注入的错误(模拟 mapping Redis 重启 / 切主期间的读失败)，不经网络。
+type failingCommandHook struct {
+	command string
+	err     error
+}
 
 func (h failingCommandHook) DialHook(next redis.DialHook) redis.DialHook { return next }
 
 func (h failingCommandHook) ProcessHook(next redis.ProcessHook) redis.ProcessHook {
 	return func(ctx context.Context, cmd redis.Cmder) error {
 		if cmd.Name() == h.command {
-			err := errors.New("injected: mapping Redis connection refused")
-			cmd.SetErr(err)
-			return err
+			cmd.SetErr(h.err)
+			return h.err
 		}
 		return next(ctx, cmd)
 	}
@@ -105,31 +108,73 @@ func (h failingCommandHook) ProcessPipelineHook(next redis.ProcessPipelineHook) 
 	return next
 }
 
-// 跨 zone 索引迁移读权威 home_zone 时 mapping Redis 读不到：基础设施故障与意图本身无关，不计次、不迁索引、报错留待下一次到期；
-// mapping 读回来再按既有语义判定(键缺失或不匹配才计次，见 TestHomeZoneIndexMigrationRequiresAuthoritativeMapping)。
+// redisReplyError 模拟服务端错误回复：实现 redis.Error，与 go-redis 解析出的回复错误属于同一类。
+type redisReplyError string
+
+func (e redisReplyError) Error() string { return string(e) }
+
+func (redisReplyError) RedisError() {}
+
+// 跨 zone 索引迁移读权威 home_zone 时 mapping Redis 读不到：传输故障、重启切主期间的服务端回复(LOADING)、权限配置错误(NOPERM)
+// 都与意图本身无关，不计次、不迁索引、报错留待下一次到期。服务端回复里只有 WRONGTYPE 按确定性数据错误计次
+// (TestHomeZoneWrongTypeConsumesAttempt)；键缺失或不匹配照常计次(TestHomeZoneIndexMigrationRequiresAuthoritativeMapping)。
 func TestHomeZoneReadErrorDoesNotConsumeAttempt(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		injected error
+	}{
+		{"transport", errors.New("injected: mapping Redis connection refused")},
+		{"loading", redisReplyError("LOADING Redis is loading the dataset in memory")},
+		{"noperm", redisReplyError("NOPERM User go_db has no permissions to access the 'player:zone:64' key")},
+	} {
+		injected := tc.injected
+		t.Run(tc.name, func(t *testing.T) {
+			rc := fixtureRedis(t)
+			ctx := context.Background()
+			in := testIntent(t, fixtureID, 7, 9, 2) // 归属已迁到 zone 2，旧 zone 1 的补投桶里还留着它
+			storeObservedIntent(t, rc, fixtureID, 1, in)
+			mapping := redis.NewClient(&redis.Options{Addr: rc.Options().Addr})
+			t.Cleanup(func() { _ = mapping.Close() })
+			mapping.AddHook(failingCommandHook{command: "get", err: injected})
+			p := &recordingPublisher{}
+			r, err := New(rc, mapping, p, nil, openRouteGate(), Config{ZoneID: 1, Batch: 2, Budget: 100 * time.Millisecond, RetryAfter: time.Second,
+				Interval: 10 * time.Millisecond}, prometheus.NewRegistry())
+			require.NoError(t, err)
+			r.now = func() time.Time { return time.UnixMilli(fixtureNowMs) }
+			r.jitter = func() time.Duration { return 0 }
+			_, err = r.Tick(ctx)
+			require.ErrorIs(t, err, injected, "读不到权威 home_zone 必须报错并带上原因,不能当成不匹配")
+			require.Empty(t, p.tasks)
+			require.Equal(t, "0", rc.HGet(ctx, savebarrier.Key(fixtureID), fieldAttempts).Val(), "mapping 读失败不计次")
+			require.Equal(t, int64(1), rc.ZCard(ctx, pendingIndexKey(1, 0)).Val(), "不迁索引")
+			require.Zero(t, rc.ZCard(ctx, pendingIndexKey(2, 0)).Val())
+			require.Equal(t, in.first, rc.HGet(ctx, savebarrier.Key(fixtureID), fieldFirst).Val(), "原意图保留")
+			require.Equal(t, 1.0, resultCount(r, "redis_error"))
+			require.Zero(t, resultCount(r, "invalid"))
+		})
+	}
+}
+
+// 权威 home_zone 键被写成别的类型(真实 GET 稳定回 WRONGTYPE，miniredis 同此行为)：这是该玩家映射数据的确定性错误，重读不会变好。
+// 必须与键缺失同口径计次，次数用完进 exhausted 并告警；若当成基础设施故障不计次，意图会永远停在基数退避上，返场一直被拒而没有告警。
+// 红证据(变异核对)：把 replay.go 里 WRONGTYPE 从计次分支挪回故障分支，本用例因 Tick 报错、attempts=0 而失败。
+func TestHomeZoneWrongTypeConsumesAttempt(t *testing.T) {
 	rc := fixtureRedis(t)
 	ctx := context.Background()
 	in := testIntent(t, fixtureID, 7, 9, 2) // 归属已迁到 zone 2，旧 zone 1 的补投桶里还留着它
 	storeObservedIntent(t, rc, fixtureID, 1, in)
-	mapping := redis.NewClient(&redis.Options{Addr: rc.Options().Addr})
-	t.Cleanup(func() { _ = mapping.Close() })
-	mapping.AddHook(failingCommandHook{command: "get"})
+	require.NoError(t, rc.HSet(ctx, placement.HomeZoneKey(fixtureID), "zone", "2").Err(), "映射键被误写成 hash")
 	p := &recordingPublisher{}
-	r, err := New(rc, mapping, p, nil, openRouteGate(), Config{ZoneID: 1, Batch: 2, Budget: 100 * time.Millisecond, RetryAfter: time.Second,
-		Interval: 10 * time.Millisecond}, prometheus.NewRegistry())
-	require.NoError(t, err)
-	r.now = func() time.Time { return time.UnixMilli(fixtureNowMs) }
-	r.jitter = func() time.Duration { return 0 }
-	_, err = r.Tick(ctx)
-	require.Error(t, err, "读不到权威 home_zone 必须报错,不能当成不匹配")
-	require.Empty(t, p.tasks)
-	require.Equal(t, "0", rc.HGet(ctx, savebarrier.Key(fixtureID), fieldAttempts).Val(), "mapping 读失败不计次")
+	r := testReplay(t, rc, p) // mapping 与 rc 同一个 miniredis
+	_, err := r.Tick(ctx)
+	require.NoError(t, err, "确定性的数据错误按意图不合法计次,不当作本拍故障")
+	require.Empty(t, p.tasks, "缺权威 home_zone 时不发布任何任务")
+	require.Equal(t, "1", rc.HGet(ctx, savebarrier.Key(fixtureID), fieldAttempts).Val(), "与键缺失同口径计一次")
 	require.Equal(t, int64(1), rc.ZCard(ctx, pendingIndexKey(1, 0)).Val(), "不迁索引")
 	require.Zero(t, rc.ZCard(ctx, pendingIndexKey(2, 0)).Val())
 	require.Equal(t, in.first, rc.HGet(ctx, savebarrier.Key(fixtureID), fieldFirst).Val(), "原意图保留")
-	require.Equal(t, 1.0, resultCount(r, "redis_error"))
-	require.Zero(t, resultCount(r, "invalid"))
+	require.Equal(t, 1.0, resultCount(r, "invalid"))
+	require.Zero(t, resultCount(r, "redis_error"))
 }
 
 // 装配漏传就绪闸必须拒启，不能静默当作恒放行。

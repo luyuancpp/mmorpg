@@ -675,18 +675,24 @@ func tableColumns(ctx context.Context, db *sql.DB, schema, table string) ([]stri
 
 // defaultCacheMsgTypes 是 login 的 PlayerAllData 组装链会缓存的子消息名。
 // 键形状 = `<proto message FullName>:<player_id>`:
-//   - go/login/internal/logic/pkg/dataloader/data_loader.go::buildParentKey
 //   - go/login/.../ensure_player_all_data_async.go 的 subKey
 //   - go/db/internal/kafka/key_ordered_consumer.go::buildCacheKey
 //
 // proto/common/database/*.proto **没有** package 声明,所以 FullName 就是
 // message 名本身(player_database 而不是 common.database.player_database)。
 // 这几个名字与 zone 库表名同名不是巧合:表名就是 message 名。
+// 父快照不在这张表里:它的键带玩家 hash tag,见 playerParentKey。
 var defaultCacheMsgTypes = []string{
-	"PlayerAllData", // login 组装出来的父键
 	"BagAllData",
 	"QuestAllData",
 	"MailAllData",
+}
+
+// playerParentKey 与 go/shared/savebarrier.ParentKey 逐字一致:PlayerAllData:{<pid>}(玩家域 hash tag,
+// docs/design/redis-player-store-cluster.md §5.2;本模块不依赖 shared,只镜像,单测钉住字面量)。
+// C++ scene 存盘写它,login 冷加载 / 种子、data_service 账本、friend、match 读它。
+func playerParentKey(pidStr string) string {
+	return "PlayerAllData:{" + pidStr + "}"
 }
 
 // assetSQLCommitKey 是 go/db 发布的资产 SQL 提交证据键(docs/design/db-write-fencing-mysql.md §6.6)。
@@ -728,7 +734,9 @@ func playerCacheKeys(pid uint64, tables []string) []string {
 //   - hash 里 C++ 严格屏障写的 schema_gen / schema_writer 随整把键原样保留:合服后新加载实体的令牌必然不同,
 //     首次存盘照常做一次世代比较,这是期望行为;行内 persist_schema_gen 也随行拷过去,比较结论与合服前相同。
 //
-// 删掉它反而让曾进过场景(owner_epoch≠0)的被拷玩家全部卡在「历史玩家父快照与提交屏障缺失」(fail-closed,但整批无法登录)。
+// 保留它的价值(2026-10-22 更正:login 冷加载已改由 savebarrier.Reconcile 判定):目标库两行若比屏障记录的 ACK 旧,
+// login 判 SQLBehind 拒登,而不是在屏障缺失时按 V7 把旧行静默采纳;两行与屏障同版时冷加载走 V1 一致路径,不制造每人
+// 一次的 PARENT-LOAD-ADOPT-SQL 告警与采纳写入。删掉它不再让玩家整批登录不了(两行同版非零时 login 会采纳),但这两层保护都没了。
 // 资产 SQL 提交证据照删:删它的方向安全(只让资产待办多等一次存盘),理由见 assetSQLCommitKey。
 // -verify-merged 的 verify:save_barrier 逐人核对上面的前提(save_barrier_verify.go)。
 func playerCacheKeysKeepBarrier(pid uint64, tables []string) []string {
@@ -736,7 +744,8 @@ func playerCacheKeysKeepBarrier(pid uint64, tables []string) []string {
 	names := make([]string, 0, len(defaultCacheMsgTypes)+len(tables))
 	names = append(names, defaultCacheMsgTypes...)
 	names = append(names, tables...)
-	out := make([]string, 0, len(names)+2) // +2:资产 SQL 提交证据,以及 playerCacheKeys 追加的父快照屏障
+	out := make([]string, 0, len(names)+3) // +3:父快照、资产 SQL 提交证据,以及 playerCacheKeys 追加的父快照屏障
+	out = append(out, playerParentKey(pidStr))
 	seen := make(map[string]struct{}, len(names))
 	for _, n := range names {
 		if _, dup := seen[n]; dup {

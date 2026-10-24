@@ -4,7 +4,41 @@
 > 「**已核实**」= 本会话在代码上沿路径走通过;「**上一会话报出,未核实**」= 只见于上一会话的聊天记录,本机没有对应代码,无法复核。
 > 设计与落码记录的权威出处是 [`cross-zone-scene-travel.md`](../design/cross-zone-scene-travel.md)(本轮内容在 §12);本文只讲"现在是什么状态、接下来做什么、别踩什么"。
 >
-> **2026-10-22 现状(一屏版,先读这段)**。它取代 10-20 的同名一屏版;10-20 版被对抗复核指出的订正点,记在 PROGRESS「2026-10-22 跨 zone 交接收尾续:GO-WATCH 与 GO-6 补 resync 落码,文档按复核订正」。本次核对没有跑构建或测试。
+> **2026-10-24 现状(一屏版,先读这段)**。它取代下面 10-23 的同名一屏版。本轮只落码、写文档,没有跑任何构建或测试。
+> - **服务器代码:本线已全部落码,待 Codex 编译与测试。** 剩下的只有运行验证、压测基线、客户端项和两条需单独评审的残余。
+> - **10-24 落码(未编译、未测试)**:
+>   - GO-3 复核订正:etcd 复核改读 C++ 节点号占位键,读失败回 17 不写,复核请求合并、只复用加入之后发起的那一轮;实例消失记录在重新在册时作废、全量重同步后改记;屏障内资格是 F 时交给换手门;LeaveScene 释放路径同样接入。新增 `scene_manager_owner_replaced_recheck_total`。依据见设计文档 §13.10 第 2 条「2026-10-24 复核订正」;
+>   - C++ 节点 Prometheus 出口(10-23 的"需单独授权"项,负责人已授权):`MMORPG_METRICS_PORT` 开 `GET /metrics`,用 muduo 自带 HttpServer,不新增第三方依赖;scene 导出 `[TravelHandoff]` / `[OwnerEpoch]` 计数与此刻冻结人数 / 最长冻结时长;`k8s_deploy.ps1 -CppMetricsPort`(缺省 9400)渲染 env、容器端口与抓取注解。runbook 缺口 G1 / G2 / G3 / G6 关闭;
+>   - 合服工具 `assertZoneDown`(10-23 归别的线,负责人已授权):除 `ZCARD` 负载集外,还要 etcd 注册表的正证(该 zone 没有在册 scene 节点),读不到即失败;`merge_zone` 新增必填 `-etcd-endpoints`,`dev_tools.ps1` 用 `-MergeEtcdEndpoints` 传入。runbook 见 `docs/ops/merge-zone-runbook.md`。
+> - **剩下的**:
+>   1. 只差运行(Codex):命令见 PROGRESS「2026-10-24 跨 zone 收尾续」条;runbook v3.1 全部场景(场景 G3 已改名 RS)、`scene-manager-alerts.yaml` 的 promtool 校验;
+>   2. 等压测基线:`handoff_pending_no_marker` 比值告警的阈值;GO-3 每次带位置的 EnterScene 多一次 `HGET`,成本待压测;
+>   3. 客户端(交 Codex / 客户端任务):gate 信封码 1003 显示裸编号、§13.6 三处过时注释、34 张 4K 审图 PNG;
+>   4. 整树重生成时删 `player_migration_event.proto`(§4 第 3 条清单),`storage.proto` 只改了注释;
+>   5. 需单独评审的残余:资格 E 小于当前 owner_epoch 的被顶替情形(设计文档 §13.10 残余 5,收口设计在 `location-release-binding.md` §17,未落码);34 栅栏改绑后目标拒绝入场的一支(§13.10 第 3 条残余,要改客户端契约);
+>   6. 归别的线:Redis 水平扩展方案定了以后重核多键 Lua、Battle 结算持久幂等;
+>   7. 不做:`SendTipAndKickToClient` 收敛(形似代码不抽象,AGENTS §11.2)。
+> - **Java 版**:GO-3 与 34 来源栅栏在 Java 仓 `PARITY.md` 是「Java 待做」;合服行补了 P2 要求注册表正证的备注;C++ Prometheus 出口是本仓内部实现,Java 不适用。
+>
+> **2026-10-23 现状(一屏版)**。*(已被上面 10-24 版取代,保留作记录。)* 它取代下面 10-22 的同名一屏版。本轮只落码、写文档,没有跑任何构建或测试。
+> - **服务器代码:本线已全部落码。** 剩下的只有运行验证、压测基线、需要单独授权的项和归别的线的项。
+> - **10-23 落码(未编译、未测试)**:
+>   - GO-3:持有进程被同号新进程顶替后的接管,不改 proto(`go/scene_manager/internal/logic/owner_replaced.go`;`enterscenelogic.go` / `leavescenelogic.go` 接入;`load_reporter.go` 登记实例消失;`go/shared/savebarrier/handoff_fence.go`);
+>   - gate 34 来源栅栏:只认会话当前绑定 scene 进程的 34(`session_identity_fence.h` `ClassifySceneKickSource`、`gate_service_handler.cpp`);
+>   - `handoff_pending_no_marker` 口径 B 的分母计数 `scene_manager_enter_scene_handoff_admitted_total`;
+>   - 10-20 至 10-22 落的 CL-C1、交接 SQL 屏障可观测、`RequestTravelEnterScene` 改用 `HasLiveGateSession`、CPP-3 跨配置守卫、login `SceneManagerRpc.Timeout` 10000、robot 单跳预算可配。多数已随整点保存进 main,以 git 为准。
+> - **按"最标准"处置、不再改 proto 的**:标记残留与 M13 已由落地围栏线的资格围栏覆盖;GO-3 不需要 `PlayerLocation` 字段 10。依据见设计文档 §13.10。
+> - **剩下的**:
+>   1. 只差运行(Codex):命令见 PROGRESS「2026-10-23 跨 zone 收尾」条;runbook v3.0 全部场景(含新增 G3)、`scene-manager-alerts.yaml` 的 promtool 校验;
+>   2. 等压测基线:`handoff_pending_no_marker` 比值告警的阈值;GO-3 让每次带位置的 EnterScene 多一次 `HGET`,成本待压测;
+>   3. 需单独授权:C++ 节点接 Prometheus(新增依赖,runbook G1 / G2);
+>   4. 客户端(交 Codex / 客户端任务):gate 信封码 1003 显示裸编号、§13.6 三处过时注释、34 张 4K 审图 PNG;
+>   5. 整树重生成时删 `player_migration_event.proto`(§4 第 3 条清单);
+>   6. 归别的线:合服工具 `assertZoneDown`、Redis 水平扩展方案定了以后重核多键 Lua、Battle 结算持久幂等;
+>   7. 不做:`SendTipAndKickToClient` 收敛(形似代码不抽象,AGENTS §11.2)。
+> - **Java 版**:GO-3 与 34 来源栅栏已在 Java 仓 `PARITY.md` 登记「Java 待做」,要先核对 Java 的节点号复用与 gate 踢线来源;其余是本仓内部实现,客户端契约不变。
+
+> **2026-10-22 现状(一屏版)**。*(已被上面 10-23 版取代,保留作记录。)* 它取代 10-20 的同名一屏版;10-20 版被对抗复核指出的订正点,记在 PROGRESS「2026-10-22 跨 zone 交接收尾续:GO-WATCH 与 GO-6 补 resync 落码,文档按复核订正」。本次核对没有跑构建或测试。
 > - **09-19 / 09-21 交接记录里要落的码,都已进 main**:
 >   - 09-21 那一轮:Z1、A′、GO-5、epoch==0 铸造;
 >   - 09-28 第二轮:设计文档 §13.1–§13.6;
@@ -240,7 +274,7 @@
        - 场景 B3:runbook 10-01 升到 v2.6,状态栏写明 B3 按 GO-2 拆成 B3a(回滚执行了 → 源端凭回执采纳解冻)/ B3b(回滚没执行 → 已放行销毁 + 踢线)/ B3c(unpause 后的迟到投递)。复核那一刻正文还没跟上:场景 B 下面仍是旧的 B3 加"v2.5 注:§7 记 SKIP",文件在工作树里有未提交改动,说明改写在途。执行口径见「验证顺序」第 5 步。
        - 以 runbook 当前文字和它的 Changelog 为准;本文不写死 B3 的执行口径。
    - GO-3 同 node_id 重注册后死节点接管永不触发——要在 `PlayerLocation` 里记进程实例标识(proto);
-     **2026-09-28:本轮不落,待用户拍板**。
+     **2026-09-28:本轮不落,待用户拍板**。*2026-10-23:负责人已授权"按最标准的方式做",已落码(未编译),改用持有进程自己在交接资格里盖的实例号,R1 不再成立、不改 proto,见设计文档 §13.10。*
      - 已有设计:把 C++ 进程的 `node_uuid` 与发现键的 create_revision 盖进 `PlayerLocation`,判"已替换"要四条证据同时成立(第 ④ 条是时序闸:记录写入早于现任进程 launch_time 至少 6s)。
      - 不落的原因是设计残余 R1:
        - 滞留在 Kafka / gate 里的路由事件,可能在同号新进程注册之后才投递给它。
@@ -378,7 +412,7 @@ docs/design/cross-zone-scene-travel.md 的 §12 与 §13(各小节的验证清�
    合并之后要把"按 HEAD 核对"的 GO-2 结论重核一遍,Codex 的验证在合并之后的树上做。
    CPP-3(疏散改派待确认表)10-08 落码(05f91f4b29)、10-09 审查修正,均已进 main,未编译;
    设计与验证清单见 cross-zone-scene-travel.md §13.8,实跑步骤见 runbook 场景 V。
-3. GO-3 本轮刻意不落(残余 R1 会违反交接不变量 I0 / I3),等用户拍板,不要自行开工。
+3. GO-3 本轮刻意不落(残余 R1 会违反交接不变量 I0 / I3),等用户拍板,不要自行开工。*2026-10-23:已按负责人授权落码,方案与残余见设计文档 §13.10。*
 4. 同一个 main 工作树上有别的 Claude 会话在改文件,还有每小时一次的自动保存会把半成品卷进 main:
    - 动手前 ListAgents + SendMessage 互报范围。
    - 提交只用 git commit -- <显式路径>,提交前 git diff --cached 逐行核对。

@@ -148,14 +148,18 @@ namespace exit_release_mark
 
     // KEYS=owner/save_barrier/handoff，ARGV=E/原mark/300/原H/本轮F。
     // owner与原H同时成立才HSET资格+SET标记；完全相同F只认幂等，不延长TTL。
+    // 返回 1 写成 / 0 owner 已不是 E / -2 原 H 已被轮换。会话结束凭证改用 kCredentialMarkLua(同一组返回码)。
 	inline const std::string& kLuaWriteIfOwnerEpoch = handoff_sql_barrier::kReleaseMarkLua;
 
 	// 条件写的应答分类。一律不重试(R7):写不成的后果只是玩家这一次重登可能回 18、下一次重试放行,
 	// 而重试会把"这一刻已落盘"的凭证推迟到一个不再成立的时刻。
+	// kEpochMoved 与 kSuperseded 都是"不写是对的",分开是为了排障:前者是归属已推进,后者是本次消费的原资格已被
+	// 更新的登记 / 撤销 / 发布轮换(save_barrier.handoff_fence,r2-lc#1 / r2-lc#2 之后的主要拒绝路径)。
 	enum class MarkWriteResult : uint8_t
 	{
 		kWritten,	 // 返回 1
 		kEpochMoved, // 返回 0:owner_epoch 已变,不写是对的
+		kSuperseded, // 返回 -2:原资格已被轮换,不写是对的
 		kFailed,	 // 空应答 / ERROR / 非整数 / 其它整数
 
 		kCount
@@ -178,11 +182,17 @@ namespace exit_release_mark
 		{
 			return MarkWriteResult::kFailed;
 		}
-		if (value == 1)
+		switch (value)
 		{
+		case 1:
 			return MarkWriteResult::kWritten;
+		case 0:
+			return MarkWriteResult::kEpochMoved;
+		case -2:
+			return MarkWriteResult::kSuperseded;
+		default:
+			return MarkWriteResult::kFailed;
 		}
-		return value == 0 ? MarkWriteResult::kEpochMoved : MarkWriteResult::kFailed;
 	}
 
 	// 运行期开关的取值(M14):nullptr / 空串 / 不认识的值 → defaultValue;"0" / "false" / "off" → false;

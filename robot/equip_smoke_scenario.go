@@ -41,7 +41,6 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
-	"proto/common/base"
 	"proto/scene"
 	"robot/config"
 	"robot/generated/pb/game"
@@ -61,7 +60,10 @@ const equipSmokeAccount = "robot_9103"
 const equipSmokeRpcTimeout = 10 * time.Second
 
 // errEquipSmokeTimeout 是 equipSmokeSession 的请求等满 equipSmokeRpcTimeout 仍没回包时的超时哨兵(smokeCaller 包裹它)。
-var errEquipSmokeTimeout = errors.New("等响应超时(scene 没有这个方法,或 robot 不是用 proto-gen 之后的产物重编的?)")
+// 文案点名 gate 不回显请求号这一种原因,是因为 prepareBehaviorClient 不丢弃背包 / 属性消息号上 id = 0 的回包,
+// 会交给 handler 静默落进 Player,不会打 `reply without request id dropped`;此时超时是唯一的现象。
+var errEquipSmokeTimeout = errors.New("等响应超时(scene 没有这个方法?robot 不是用 proto-gen 之后的产物重编的?" +
+	"或 gate 没回显请求号:直连模式需要带 2026-10-19 rpc_reply_bridge 修复的 gate)")
 
 // 同一个消息号两次发送之间至少隔这么久。
 //
@@ -663,7 +665,7 @@ func (s *equipSmokeSession) call(messageId uint32, request proto.Message) (proto
 // 判定顺序:信封拒绝 → 生成 handler 没落快照 → 响应体业务拒绝 → 残缺响应 → 成功。
 func equipFeatureOutcome(messageId, envelopeTip uint32, snapshot gameobject.FeatureSnapshot, recorded bool) (proto.Message, uint32, error) {
 	if envelopeTip != 0 {
-		return nil, 0, equipEnvelopeRejection(messageId, envelopeTip)
+		return nil, 0, sceneRequestEnvelopeRejection(messageId, envelopeTip)
 	}
 	if !recorded {
 		// 回包已交 dispatch 却没有快照:响应体解不开、handler 表里没有这个消息号,或 Player 不在 PlayerList(handler 打了日志)
@@ -678,13 +680,6 @@ func equipFeatureOutcome(messageId, envelopeTip uint32, snapshot gameobject.Feat
 		return nil, 0, fmt.Errorf("message_id=%d returned an incomplete response (%s)", messageId, snapshot.Failure)
 	}
 	return snapshot.Response, 0, nil
-}
-
-// equipEnvelopeRejection 是 gate / 路由服信封拒绝的报错:请求没到 scene 的 handler,body 为空。
-// 原因说明与 currency 等共享 helper 同源(sceneRequestEnvelopeHint)。
-func equipEnvelopeRejection(messageId, envelopeTip uint32) error {
-	return fmt.Errorf("message_id=%d rejected by gate envelope tip=%s%s",
-		messageId, equipTipText(envelopeTip), sceneRequestEnvelopeHint(envelopeTip))
 }
 
 // getBag 读一个包的全量快照,并复核快照自身一致(布局引用的实例都存在、不重复、不悬空)。
@@ -784,43 +779,16 @@ func (s *equipSmokeSession) expectBagsUnchanged(inventory, equipment *scene.BagI
 	return nil
 }
 
-// equipPanelResponse 是属性 RPC 响应的公共形状(GetAttributePanelResponse / GmSetPlayerLevelResponse,
-// protoc-gen-go 生成的 getter):响应体业务拒绝码 + 全量面板。
-type equipPanelResponse interface {
-	proto.Message
-	GetErrorMessage() *base.TipInfoMessage
-	GetPanel() *scene.AttributePanelInfo
-}
-
-// attributePanel 发一个属性 RPC 并等**它自己的**回包,直接从回包解出面板(smokeCaller.call,按 MessageContent.id 认领)。
-// response 传与请求配对的响应类型的空实例。
+// attributePanel 发一个属性 RPC 并等**它自己的**回包,直接从回包解出面板(requestAttributePanel,按 MessageContent.id 认领);
+// 任何拒绝都是 error,判据与 attribute / pet 冒烟共用 attributePanelOutcome。response 传与请求配对的响应类型的空实例。
 //
 // 回包不经生成 handler、不写 Player 上的面板:这份面板只有调用方要。于是 Player 上的面板 / 序号 / 来源只由推送
 // (NotifyAttributePanelChanged,经 prepareBehaviorClient 的收包回调交 handler)推进,panelAfter 认推送靠的正是这一点。
 // GmSetPlayerLevel 会先推一份面板再回响应:回包按请求号认领,那份推送不会被当成响应。
-func (s *equipSmokeSession) attributePanel(messageId uint32, request proto.Message, response equipPanelResponse) (*scene.AttributePanelInfo, error) {
+func (s *equipSmokeSession) attributePanel(messageId uint32, request proto.Message, response attributePanelResponse) (*scene.AttributePanelInfo, error) {
 	s.throttle(messageId)
-	envelopeTip, err := s.rpc().call(messageId, request, response)
-	if err != nil {
-		return nil, err
-	}
-	return equipPanelOutcome(messageId, envelopeTip, response)
-}
-
-// equipPanelOutcome 判一次属性 RPC 的结局:信封拒绝、响应体业务拒绝、受理了却不带面板都是 error。
-// envelopeTip != 0 时 response 未填充。
-// 迁移前信封拒绝被 prepareBehaviorClient 翻译成 Player 上的 tip,与响应体拒绝报同一句话;现在两者分开报。
-func equipPanelOutcome(messageId, envelopeTip uint32, response equipPanelResponse) (*scene.AttributePanelInfo, error) {
-	if envelopeTip != 0 {
-		return nil, equipEnvelopeRejection(messageId, envelopeTip)
-	}
-	if tip := response.GetErrorMessage().GetId(); tip != 0 {
-		return nil, fmt.Errorf("属性请求 message_id=%d 被拒: tip=%s", messageId, equipTipText(tip))
-	}
-	if response.GetPanel() == nil {
-		return nil, fmt.Errorf("attribute response message_id=%d was accepted but carries no panel", messageId)
-	}
-	return response.GetPanel(), nil
+	panel, _, err := requestAttributePanel(s.rpc(), messageId, request, response)
+	return panel, err
 }
 
 // panelAfter 取一次成功穿 / 脱之后的面板。两件事都验(设计文档 §4.3:成功后 Recalculate + PushPanel):

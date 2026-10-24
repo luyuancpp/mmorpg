@@ -25,6 +25,8 @@ namespace player_inbox {
 static const char* PlayerInbox_method_names[] = {
   "/player_inbox.PlayerInbox/FetchItems",
   "/player_inbox.PlayerInbox/AckItems",
+  "/player_inbox.PlayerInbox/EnqueueBattleSettlement",
+  "/player_inbox.PlayerInbox/LookupBattleSettlement",
 };
 
 std::unique_ptr< PlayerInbox::Stub> PlayerInbox::NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options) {
@@ -36,6 +38,8 @@ std::unique_ptr< PlayerInbox::Stub> PlayerInbox::NewStub(const std::shared_ptr< 
 PlayerInbox::Stub::Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options)
   : channel_(channel), rpcmethod_FetchItems_(PlayerInbox_method_names[0], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   , rpcmethod_AckItems_(PlayerInbox_method_names[1], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_EnqueueBattleSettlement_(PlayerInbox_method_names[2], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_LookupBattleSettlement_(PlayerInbox_method_names[3], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   {}
 
 ::grpc::Status PlayerInbox::Stub::FetchItems(::grpc::ClientContext* context, const ::player_inbox::FetchPlayerInboxRequest& request, ::player_inbox::FetchPlayerInboxResponse* response) {
@@ -84,6 +88,52 @@ void PlayerInbox::Stub::async::AckItems(::grpc::ClientContext* context, const ::
   return result;
 }
 
+::grpc::Status PlayerInbox::Stub::EnqueueBattleSettlement(::grpc::ClientContext* context, const ::player_inbox::BattleSettlementInboxRequest& request, ::player_inbox::BattleSettlementInboxResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::player_inbox::BattleSettlementInboxRequest, ::player_inbox::BattleSettlementInboxResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_EnqueueBattleSettlement_, context, request, response);
+}
+
+void PlayerInbox::Stub::async::EnqueueBattleSettlement(::grpc::ClientContext* context, const ::player_inbox::BattleSettlementInboxRequest* request, ::player_inbox::BattleSettlementInboxResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::player_inbox::BattleSettlementInboxRequest, ::player_inbox::BattleSettlementInboxResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_EnqueueBattleSettlement_, context, request, response, std::move(f));
+}
+
+void PlayerInbox::Stub::async::EnqueueBattleSettlement(::grpc::ClientContext* context, const ::player_inbox::BattleSettlementInboxRequest* request, ::player_inbox::BattleSettlementInboxResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_EnqueueBattleSettlement_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::player_inbox::BattleSettlementInboxResponse>* PlayerInbox::Stub::PrepareAsyncEnqueueBattleSettlementRaw(::grpc::ClientContext* context, const ::player_inbox::BattleSettlementInboxRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::player_inbox::BattleSettlementInboxResponse, ::player_inbox::BattleSettlementInboxRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_EnqueueBattleSettlement_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::player_inbox::BattleSettlementInboxResponse>* PlayerInbox::Stub::AsyncEnqueueBattleSettlementRaw(::grpc::ClientContext* context, const ::player_inbox::BattleSettlementInboxRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncEnqueueBattleSettlementRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
+::grpc::Status PlayerInbox::Stub::LookupBattleSettlement(::grpc::ClientContext* context, const ::player_inbox::BattleSettlementInboxRequest& request, ::player_inbox::BattleSettlementInboxResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::player_inbox::BattleSettlementInboxRequest, ::player_inbox::BattleSettlementInboxResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_LookupBattleSettlement_, context, request, response);
+}
+
+void PlayerInbox::Stub::async::LookupBattleSettlement(::grpc::ClientContext* context, const ::player_inbox::BattleSettlementInboxRequest* request, ::player_inbox::BattleSettlementInboxResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::player_inbox::BattleSettlementInboxRequest, ::player_inbox::BattleSettlementInboxResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_LookupBattleSettlement_, context, request, response, std::move(f));
+}
+
+void PlayerInbox::Stub::async::LookupBattleSettlement(::grpc::ClientContext* context, const ::player_inbox::BattleSettlementInboxRequest* request, ::player_inbox::BattleSettlementInboxResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_LookupBattleSettlement_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::player_inbox::BattleSettlementInboxResponse>* PlayerInbox::Stub::PrepareAsyncLookupBattleSettlementRaw(::grpc::ClientContext* context, const ::player_inbox::BattleSettlementInboxRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::player_inbox::BattleSettlementInboxResponse, ::player_inbox::BattleSettlementInboxRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_LookupBattleSettlement_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::player_inbox::BattleSettlementInboxResponse>* PlayerInbox::Stub::AsyncLookupBattleSettlementRaw(::grpc::ClientContext* context, const ::player_inbox::BattleSettlementInboxRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncLookupBattleSettlementRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
 PlayerInbox::Service::Service() {
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       PlayerInbox_method_names[0],
@@ -105,6 +155,26 @@ PlayerInbox::Service::Service() {
              ::player_inbox::AckPlayerInboxResponse* resp) {
                return service->AckItems(ctx, req, resp);
              }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      PlayerInbox_method_names[2],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< PlayerInbox::Service, ::player_inbox::BattleSettlementInboxRequest, ::player_inbox::BattleSettlementInboxResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](PlayerInbox::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::player_inbox::BattleSettlementInboxRequest* req,
+             ::player_inbox::BattleSettlementInboxResponse* resp) {
+               return service->EnqueueBattleSettlement(ctx, req, resp);
+             }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      PlayerInbox_method_names[3],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< PlayerInbox::Service, ::player_inbox::BattleSettlementInboxRequest, ::player_inbox::BattleSettlementInboxResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](PlayerInbox::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::player_inbox::BattleSettlementInboxRequest* req,
+             ::player_inbox::BattleSettlementInboxResponse* resp) {
+               return service->LookupBattleSettlement(ctx, req, resp);
+             }, this)));
 }
 
 PlayerInbox::Service::~Service() {
@@ -118,6 +188,20 @@ PlayerInbox::Service::~Service() {
 }
 
 ::grpc::Status PlayerInbox::Service::AckItems(::grpc::ServerContext* context, const ::player_inbox::AckPlayerInboxRequest* request, ::player_inbox::AckPlayerInboxResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status PlayerInbox::Service::EnqueueBattleSettlement(::grpc::ServerContext* context, const ::player_inbox::BattleSettlementInboxRequest* request, ::player_inbox::BattleSettlementInboxResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status PlayerInbox::Service::LookupBattleSettlement(::grpc::ServerContext* context, const ::player_inbox::BattleSettlementInboxRequest* request, ::player_inbox::BattleSettlementInboxResponse* response) {
   (void) context;
   (void) request;
   (void) response;

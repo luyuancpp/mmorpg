@@ -9,8 +9,8 @@ package main
 //	                player-storage-placement.md §4;go/db 的 Placement.Redis 指向这里)
 //	                go/data_service/etc/data_service.yaml → MappingRedis(Host/Type only;
 //	                go-zero RedisConf 没有 DB 字段 ⇒ 恒 DB 0)
-//	guild    DB 2   guild_rank:zone:{z} / guild:v2:{id} / guild_rank:maintenance_lock
-//	                go/guild/etc/guild.yaml → RedisClient.DB
+//	guild    DB 0   guild_rank:zone:{z} / guild:v2:{id} / guild_rank:maintenance_lock
+//	                go/guild/etc/guild.yaml → RedisClient.DB(2026-10-23 由 2 改为 0)
 //	shared   DB 0   player:session:{pid} / kafka:{retry,processing,dead}:queue:* /
 //	                distributed:lock:kafka:ordering:*(go/db 排序锁,搬库 R2 等它)/
 //	                PlayerAllData:{pid} / {MsgType}:{pid} / player_merge_notice:{pid}
@@ -112,7 +112,7 @@ const (
 	// 把这里改成 15 会让 fence 与 remap 都指向 data_service 从不碰的库:
 	// fence 失效、remap 报告成功却一个 key 都没改 —— 正是合服最危险的静默失败。
 	defaultMappingRedisDB = 0
-	defaultGuildRedisDB   = 2 // guild.yaml RedisClient.DB
+	defaultGuildRedisDB   = 0 // guild.yaml RedisClient.DB(2026-10-23 由 2 改为 0:Redis Cluster 只有 DB 0)
 	// friend 的 DB 3 已删(2026-09-18,friend 移植 F3):它唯一服务的键 friend:online:{pid}
 	// 全仓没有写者、读者也已删除,审计改用 shared 的 player:session 判在线。
 	defaultSharedRedisDB = 0 // login / db / player_locator / scene_manager
@@ -167,6 +167,7 @@ type options struct {
 	migrateBlobs  bool
 	skipBlobs     bool
 	clearHotState bool
+	etcdEndpoints string
 	skipTrade     bool
 	tradeSchema   string
 	guildSchema   string
@@ -271,7 +272,7 @@ func main() {
 
 	flag.StringVar(&o.redisAddr, "redis-addr", "127.0.0.1:6379", "Default Redis address (used when a specific -*-redis-addr is empty)")
 	flag.StringVar(&o.redisPwd, "redis-password", "", "Default Redis password")
-	flag.IntVar(&o.redisDB, "redis-db", defaultGuildRedisDB, "GUILD Redis DB (guild_rank:zone / guild:v2 / guild_rank:maintenance_lock; guild.yaml default 2)")
+	flag.IntVar(&o.redisDB, "redis-db", defaultGuildRedisDB, "GUILD Redis DB (guild_rank:zone / guild:v2 / guild_rank:maintenance_lock; guild.yaml default 0)")
 
 	flag.StringVar(&o.mappingAddr, "mapping-redis-addr", "", "Player mapping Redis address (player:zone:*). Default: -redis-addr")
 	flag.StringVar(&o.mappingPwd, "mapping-redis-password", "", "Player mapping Redis password. Default: -redis-password")
@@ -324,7 +325,9 @@ func main() {
 	flag.BoolVar(&o.migrateBlobs, "migrate-player-blobs", false, "Copy player:{id}:* keys between per-zone data Redis clusters (multi-cluster deployments only)")
 	flag.BoolVar(&o.skipBlobs, "skip-player-blob-migration", false, "Skip the blob step even if -migrate-player-blobs was passed (emergency)")
 	flag.BoolVar(&o.clearHotState, "clear-source-hot-state", false,
-		"After remap: DEL source-zone player:{id}:location / scene:* / world_channels / node_load in the scene_manager Redis, then (last step) SREM S from scene_manager:zones. Refuses unless scene_nodes:zone:{S}:load is empty")
+		"After remap: DEL source-zone player:{id}:location / scene:* / world_channels / node_load in the scene_manager Redis, then (last step) SREM S from scene_manager:zones. Refuses unless the etcd scene-node registry (-etcd-endpoints) has no node of zone S and scene_nodes:zone:{S}:load is empty")
+	flag.StringVar(&o.etcdEndpoints, "etcd-endpoints", "",
+		"Comma-separated etcd client URLs (http://host:2379), read through the etcd v3 JSON gateway. Required with -clear-source-hot-state: positive evidence that zone S has no registered scene node")
 
 	flag.BoolVar(&o.allowEmptySource, "allow-empty-source", false,
 		"Allow -apply when the source zone maps zero players (otherwise refused: an empty mapping usually means the wrong -mapping-redis-db or a missing -backfill-home-zone)")
@@ -575,6 +578,7 @@ func main() {
 			sceneAddr:          o.sceneAddr,
 			scenePwd:           o.scenePwd,
 			sceneDB:            o.sceneDB,
+			etcdEndpoints:      o.etcdEndpoints,
 			dataAddrs:          addrsFromCSV(o.sourceData),
 			dataPwd:            o.dataPwd,
 			dataDB:             o.sourceDataDB,

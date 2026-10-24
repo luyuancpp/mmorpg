@@ -135,6 +135,8 @@ func StartMatcherLoop(ctx context.Context, svcCtx *svc.ServiceContext) {
 		readyCursor := &globalReadyCursor{}
 		safego.Loop(ctx, "match.global.ready.scan", 500*time.Millisecond, func(ctx context.Context) { readyCursor.round(ctx, svcCtx) })
 		safego.Loop(ctx, "match.global", 500*time.Millisecond, func(ctx context.Context) { runGlobalRound(ctx, svcCtx) })
+		// 到期成局巡检只报数(2026-10-22 评审补,global_expired_audit.go),与上面的恢复循环分开:不占它的 500ms 节拍。
+		safego.Loop(ctx, "match.global.expired.audit", globalExpiredAuditInterval, func(ctx context.Context) { auditStrandedExpiredFormations(ctx, svcCtx) })
 		return
 	}
 	interval := time.Duration(svcCtx.Config.MatcherIntervalMs) * time.Millisecond

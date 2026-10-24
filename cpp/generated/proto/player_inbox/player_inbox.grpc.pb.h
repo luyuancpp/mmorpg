@@ -28,7 +28,7 @@
 
 namespace player_inbox {
 
-// ── 服务:scene → 收件箱(拉取 + 落盘后确认)────────────────────────────
+// Scene 分方法签名后拉取/确认；Match 用独立签名专门入箱/查询永久结算原收据。
 //
 class PlayerInbox final {
  public:
@@ -54,6 +54,20 @@ class PlayerInbox final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::player_inbox::AckPlayerInboxResponse>> PrepareAsyncAckItems(::grpc::ClientContext* context, const ::player_inbox::AckPlayerInboxRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::player_inbox::AckPlayerInboxResponse>>(PrepareAsyncAckItemsRaw(context, request, cq));
     }
+    virtual ::grpc::Status EnqueueBattleSettlement(::grpc::ClientContext* context, const ::player_inbox::BattleSettlementInboxRequest& request, ::player_inbox::BattleSettlementInboxResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::player_inbox::BattleSettlementInboxResponse>> AsyncEnqueueBattleSettlement(::grpc::ClientContext* context, const ::player_inbox::BattleSettlementInboxRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::player_inbox::BattleSettlementInboxResponse>>(AsyncEnqueueBattleSettlementRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::player_inbox::BattleSettlementInboxResponse>> PrepareAsyncEnqueueBattleSettlement(::grpc::ClientContext* context, const ::player_inbox::BattleSettlementInboxRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::player_inbox::BattleSettlementInboxResponse>>(PrepareAsyncEnqueueBattleSettlementRaw(context, request, cq));
+    }
+    virtual ::grpc::Status LookupBattleSettlement(::grpc::ClientContext* context, const ::player_inbox::BattleSettlementInboxRequest& request, ::player_inbox::BattleSettlementInboxResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::player_inbox::BattleSettlementInboxResponse>> AsyncLookupBattleSettlement(::grpc::ClientContext* context, const ::player_inbox::BattleSettlementInboxRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::player_inbox::BattleSettlementInboxResponse>>(AsyncLookupBattleSettlementRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::player_inbox::BattleSettlementInboxResponse>> PrepareAsyncLookupBattleSettlement(::grpc::ClientContext* context, const ::player_inbox::BattleSettlementInboxRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::player_inbox::BattleSettlementInboxResponse>>(PrepareAsyncLookupBattleSettlementRaw(context, request, cq));
+    }
     class async_interface {
      public:
       virtual ~async_interface() {}
@@ -63,6 +77,10 @@ class PlayerInbox final {
       // 报告**已落盘**的结局(设计 §7.7)。不受 consumer_enabled 等前置闸限制。
       virtual void AckItems(::grpc::ClientContext* context, const ::player_inbox::AckPlayerInboxRequest* request, ::player_inbox::AckPlayerInboxResponse* response, std::function<void(::grpc::Status)>) = 0;
       virtual void AckItems(::grpc::ClientContext* context, const ::player_inbox::AckPlayerInboxRequest* request, ::player_inbox::AckPlayerInboxResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void EnqueueBattleSettlement(::grpc::ClientContext* context, const ::player_inbox::BattleSettlementInboxRequest* request, ::player_inbox::BattleSettlementInboxResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void EnqueueBattleSettlement(::grpc::ClientContext* context, const ::player_inbox::BattleSettlementInboxRequest* request, ::player_inbox::BattleSettlementInboxResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void LookupBattleSettlement(::grpc::ClientContext* context, const ::player_inbox::BattleSettlementInboxRequest* request, ::player_inbox::BattleSettlementInboxResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void LookupBattleSettlement(::grpc::ClientContext* context, const ::player_inbox::BattleSettlementInboxRequest* request, ::player_inbox::BattleSettlementInboxResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
     };
     typedef class async_interface experimental_async_interface;
     virtual class async_interface* async() { return nullptr; }
@@ -72,6 +90,10 @@ class PlayerInbox final {
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::player_inbox::FetchPlayerInboxResponse>* PrepareAsyncFetchItemsRaw(::grpc::ClientContext* context, const ::player_inbox::FetchPlayerInboxRequest& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::player_inbox::AckPlayerInboxResponse>* AsyncAckItemsRaw(::grpc::ClientContext* context, const ::player_inbox::AckPlayerInboxRequest& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::player_inbox::AckPlayerInboxResponse>* PrepareAsyncAckItemsRaw(::grpc::ClientContext* context, const ::player_inbox::AckPlayerInboxRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::player_inbox::BattleSettlementInboxResponse>* AsyncEnqueueBattleSettlementRaw(::grpc::ClientContext* context, const ::player_inbox::BattleSettlementInboxRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::player_inbox::BattleSettlementInboxResponse>* PrepareAsyncEnqueueBattleSettlementRaw(::grpc::ClientContext* context, const ::player_inbox::BattleSettlementInboxRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::player_inbox::BattleSettlementInboxResponse>* AsyncLookupBattleSettlementRaw(::grpc::ClientContext* context, const ::player_inbox::BattleSettlementInboxRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::player_inbox::BattleSettlementInboxResponse>* PrepareAsyncLookupBattleSettlementRaw(::grpc::ClientContext* context, const ::player_inbox::BattleSettlementInboxRequest& request, ::grpc::CompletionQueue* cq) = 0;
   };
   class Stub final : public StubInterface {
    public:
@@ -90,6 +112,20 @@ class PlayerInbox final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::player_inbox::AckPlayerInboxResponse>> PrepareAsyncAckItems(::grpc::ClientContext* context, const ::player_inbox::AckPlayerInboxRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::player_inbox::AckPlayerInboxResponse>>(PrepareAsyncAckItemsRaw(context, request, cq));
     }
+    ::grpc::Status EnqueueBattleSettlement(::grpc::ClientContext* context, const ::player_inbox::BattleSettlementInboxRequest& request, ::player_inbox::BattleSettlementInboxResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::player_inbox::BattleSettlementInboxResponse>> AsyncEnqueueBattleSettlement(::grpc::ClientContext* context, const ::player_inbox::BattleSettlementInboxRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::player_inbox::BattleSettlementInboxResponse>>(AsyncEnqueueBattleSettlementRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::player_inbox::BattleSettlementInboxResponse>> PrepareAsyncEnqueueBattleSettlement(::grpc::ClientContext* context, const ::player_inbox::BattleSettlementInboxRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::player_inbox::BattleSettlementInboxResponse>>(PrepareAsyncEnqueueBattleSettlementRaw(context, request, cq));
+    }
+    ::grpc::Status LookupBattleSettlement(::grpc::ClientContext* context, const ::player_inbox::BattleSettlementInboxRequest& request, ::player_inbox::BattleSettlementInboxResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::player_inbox::BattleSettlementInboxResponse>> AsyncLookupBattleSettlement(::grpc::ClientContext* context, const ::player_inbox::BattleSettlementInboxRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::player_inbox::BattleSettlementInboxResponse>>(AsyncLookupBattleSettlementRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::player_inbox::BattleSettlementInboxResponse>> PrepareAsyncLookupBattleSettlement(::grpc::ClientContext* context, const ::player_inbox::BattleSettlementInboxRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::player_inbox::BattleSettlementInboxResponse>>(PrepareAsyncLookupBattleSettlementRaw(context, request, cq));
+    }
     class async final :
       public StubInterface::async_interface {
      public:
@@ -97,6 +133,10 @@ class PlayerInbox final {
       void FetchItems(::grpc::ClientContext* context, const ::player_inbox::FetchPlayerInboxRequest* request, ::player_inbox::FetchPlayerInboxResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
       void AckItems(::grpc::ClientContext* context, const ::player_inbox::AckPlayerInboxRequest* request, ::player_inbox::AckPlayerInboxResponse* response, std::function<void(::grpc::Status)>) override;
       void AckItems(::grpc::ClientContext* context, const ::player_inbox::AckPlayerInboxRequest* request, ::player_inbox::AckPlayerInboxResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void EnqueueBattleSettlement(::grpc::ClientContext* context, const ::player_inbox::BattleSettlementInboxRequest* request, ::player_inbox::BattleSettlementInboxResponse* response, std::function<void(::grpc::Status)>) override;
+      void EnqueueBattleSettlement(::grpc::ClientContext* context, const ::player_inbox::BattleSettlementInboxRequest* request, ::player_inbox::BattleSettlementInboxResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void LookupBattleSettlement(::grpc::ClientContext* context, const ::player_inbox::BattleSettlementInboxRequest* request, ::player_inbox::BattleSettlementInboxResponse* response, std::function<void(::grpc::Status)>) override;
+      void LookupBattleSettlement(::grpc::ClientContext* context, const ::player_inbox::BattleSettlementInboxRequest* request, ::player_inbox::BattleSettlementInboxResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
      private:
       friend class Stub;
       explicit async(Stub* stub): stub_(stub) { }
@@ -112,8 +152,14 @@ class PlayerInbox final {
     ::grpc::ClientAsyncResponseReader< ::player_inbox::FetchPlayerInboxResponse>* PrepareAsyncFetchItemsRaw(::grpc::ClientContext* context, const ::player_inbox::FetchPlayerInboxRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::player_inbox::AckPlayerInboxResponse>* AsyncAckItemsRaw(::grpc::ClientContext* context, const ::player_inbox::AckPlayerInboxRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::player_inbox::AckPlayerInboxResponse>* PrepareAsyncAckItemsRaw(::grpc::ClientContext* context, const ::player_inbox::AckPlayerInboxRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::player_inbox::BattleSettlementInboxResponse>* AsyncEnqueueBattleSettlementRaw(::grpc::ClientContext* context, const ::player_inbox::BattleSettlementInboxRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::player_inbox::BattleSettlementInboxResponse>* PrepareAsyncEnqueueBattleSettlementRaw(::grpc::ClientContext* context, const ::player_inbox::BattleSettlementInboxRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::player_inbox::BattleSettlementInboxResponse>* AsyncLookupBattleSettlementRaw(::grpc::ClientContext* context, const ::player_inbox::BattleSettlementInboxRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::player_inbox::BattleSettlementInboxResponse>* PrepareAsyncLookupBattleSettlementRaw(::grpc::ClientContext* context, const ::player_inbox::BattleSettlementInboxRequest& request, ::grpc::CompletionQueue* cq) override;
     const ::grpc::internal::RpcMethod rpcmethod_FetchItems_;
     const ::grpc::internal::RpcMethod rpcmethod_AckItems_;
+    const ::grpc::internal::RpcMethod rpcmethod_EnqueueBattleSettlement_;
+    const ::grpc::internal::RpcMethod rpcmethod_LookupBattleSettlement_;
   };
   static std::unique_ptr<Stub> NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options = ::grpc::StubOptions());
 
@@ -125,6 +171,8 @@ class PlayerInbox final {
     virtual ::grpc::Status FetchItems(::grpc::ServerContext* context, const ::player_inbox::FetchPlayerInboxRequest* request, ::player_inbox::FetchPlayerInboxResponse* response);
     // 报告**已落盘**的结局(设计 §7.7)。不受 consumer_enabled 等前置闸限制。
     virtual ::grpc::Status AckItems(::grpc::ServerContext* context, const ::player_inbox::AckPlayerInboxRequest* request, ::player_inbox::AckPlayerInboxResponse* response);
+    virtual ::grpc::Status EnqueueBattleSettlement(::grpc::ServerContext* context, const ::player_inbox::BattleSettlementInboxRequest* request, ::player_inbox::BattleSettlementInboxResponse* response);
+    virtual ::grpc::Status LookupBattleSettlement(::grpc::ServerContext* context, const ::player_inbox::BattleSettlementInboxRequest* request, ::player_inbox::BattleSettlementInboxResponse* response);
   };
   template <class BaseClass>
   class WithAsyncMethod_FetchItems : public BaseClass {
@@ -166,7 +214,47 @@ class PlayerInbox final {
       ::grpc::Service::RequestAsyncUnary(1, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
-  typedef WithAsyncMethod_FetchItems<WithAsyncMethod_AckItems<Service > > AsyncService;
+  template <class BaseClass>
+  class WithAsyncMethod_EnqueueBattleSettlement : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_EnqueueBattleSettlement() {
+      ::grpc::Service::MarkMethodAsync(2);
+    }
+    ~WithAsyncMethod_EnqueueBattleSettlement() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status EnqueueBattleSettlement(::grpc::ServerContext* /*context*/, const ::player_inbox::BattleSettlementInboxRequest* /*request*/, ::player_inbox::BattleSettlementInboxResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestEnqueueBattleSettlement(::grpc::ServerContext* context, ::player_inbox::BattleSettlementInboxRequest* request, ::grpc::ServerAsyncResponseWriter< ::player_inbox::BattleSettlementInboxResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(2, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithAsyncMethod_LookupBattleSettlement : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_LookupBattleSettlement() {
+      ::grpc::Service::MarkMethodAsync(3);
+    }
+    ~WithAsyncMethod_LookupBattleSettlement() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status LookupBattleSettlement(::grpc::ServerContext* /*context*/, const ::player_inbox::BattleSettlementInboxRequest* /*request*/, ::player_inbox::BattleSettlementInboxResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestLookupBattleSettlement(::grpc::ServerContext* context, ::player_inbox::BattleSettlementInboxRequest* request, ::grpc::ServerAsyncResponseWriter< ::player_inbox::BattleSettlementInboxResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(3, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  typedef WithAsyncMethod_FetchItems<WithAsyncMethod_AckItems<WithAsyncMethod_EnqueueBattleSettlement<WithAsyncMethod_LookupBattleSettlement<Service > > > > AsyncService;
   template <class BaseClass>
   class WithCallbackMethod_FetchItems : public BaseClass {
    private:
@@ -221,7 +309,61 @@ class PlayerInbox final {
     virtual ::grpc::ServerUnaryReactor* AckItems(
       ::grpc::CallbackServerContext* /*context*/, const ::player_inbox::AckPlayerInboxRequest* /*request*/, ::player_inbox::AckPlayerInboxResponse* /*response*/)  { return nullptr; }
   };
-  typedef WithCallbackMethod_FetchItems<WithCallbackMethod_AckItems<Service > > CallbackService;
+  template <class BaseClass>
+  class WithCallbackMethod_EnqueueBattleSettlement : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_EnqueueBattleSettlement() {
+      ::grpc::Service::MarkMethodCallback(2,
+          new ::grpc::internal::CallbackUnaryHandler< ::player_inbox::BattleSettlementInboxRequest, ::player_inbox::BattleSettlementInboxResponse>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::player_inbox::BattleSettlementInboxRequest* request, ::player_inbox::BattleSettlementInboxResponse* response) { return this->EnqueueBattleSettlement(context, request, response); }));}
+    void SetMessageAllocatorFor_EnqueueBattleSettlement(
+        ::grpc::MessageAllocator< ::player_inbox::BattleSettlementInboxRequest, ::player_inbox::BattleSettlementInboxResponse>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(2);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::player_inbox::BattleSettlementInboxRequest, ::player_inbox::BattleSettlementInboxResponse>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_EnqueueBattleSettlement() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status EnqueueBattleSettlement(::grpc::ServerContext* /*context*/, const ::player_inbox::BattleSettlementInboxRequest* /*request*/, ::player_inbox::BattleSettlementInboxResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* EnqueueBattleSettlement(
+      ::grpc::CallbackServerContext* /*context*/, const ::player_inbox::BattleSettlementInboxRequest* /*request*/, ::player_inbox::BattleSettlementInboxResponse* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithCallbackMethod_LookupBattleSettlement : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_LookupBattleSettlement() {
+      ::grpc::Service::MarkMethodCallback(3,
+          new ::grpc::internal::CallbackUnaryHandler< ::player_inbox::BattleSettlementInboxRequest, ::player_inbox::BattleSettlementInboxResponse>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::player_inbox::BattleSettlementInboxRequest* request, ::player_inbox::BattleSettlementInboxResponse* response) { return this->LookupBattleSettlement(context, request, response); }));}
+    void SetMessageAllocatorFor_LookupBattleSettlement(
+        ::grpc::MessageAllocator< ::player_inbox::BattleSettlementInboxRequest, ::player_inbox::BattleSettlementInboxResponse>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(3);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::player_inbox::BattleSettlementInboxRequest, ::player_inbox::BattleSettlementInboxResponse>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_LookupBattleSettlement() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status LookupBattleSettlement(::grpc::ServerContext* /*context*/, const ::player_inbox::BattleSettlementInboxRequest* /*request*/, ::player_inbox::BattleSettlementInboxResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* LookupBattleSettlement(
+      ::grpc::CallbackServerContext* /*context*/, const ::player_inbox::BattleSettlementInboxRequest* /*request*/, ::player_inbox::BattleSettlementInboxResponse* /*response*/)  { return nullptr; }
+  };
+  typedef WithCallbackMethod_FetchItems<WithCallbackMethod_AckItems<WithCallbackMethod_EnqueueBattleSettlement<WithCallbackMethod_LookupBattleSettlement<Service > > > > CallbackService;
   typedef CallbackService ExperimentalCallbackService;
   template <class BaseClass>
   class WithGenericMethod_FetchItems : public BaseClass {
@@ -253,6 +395,40 @@ class PlayerInbox final {
     }
     // disable synchronous version of this method
     ::grpc::Status AckItems(::grpc::ServerContext* /*context*/, const ::player_inbox::AckPlayerInboxRequest* /*request*/, ::player_inbox::AckPlayerInboxResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_EnqueueBattleSettlement : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_EnqueueBattleSettlement() {
+      ::grpc::Service::MarkMethodGeneric(2);
+    }
+    ~WithGenericMethod_EnqueueBattleSettlement() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status EnqueueBattleSettlement(::grpc::ServerContext* /*context*/, const ::player_inbox::BattleSettlementInboxRequest* /*request*/, ::player_inbox::BattleSettlementInboxResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_LookupBattleSettlement : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_LookupBattleSettlement() {
+      ::grpc::Service::MarkMethodGeneric(3);
+    }
+    ~WithGenericMethod_LookupBattleSettlement() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status LookupBattleSettlement(::grpc::ServerContext* /*context*/, const ::player_inbox::BattleSettlementInboxRequest* /*request*/, ::player_inbox::BattleSettlementInboxResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -298,6 +474,46 @@ class PlayerInbox final {
     }
   };
   template <class BaseClass>
+  class WithRawMethod_EnqueueBattleSettlement : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_EnqueueBattleSettlement() {
+      ::grpc::Service::MarkMethodRaw(2);
+    }
+    ~WithRawMethod_EnqueueBattleSettlement() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status EnqueueBattleSettlement(::grpc::ServerContext* /*context*/, const ::player_inbox::BattleSettlementInboxRequest* /*request*/, ::player_inbox::BattleSettlementInboxResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestEnqueueBattleSettlement(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(2, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_LookupBattleSettlement : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_LookupBattleSettlement() {
+      ::grpc::Service::MarkMethodRaw(3);
+    }
+    ~WithRawMethod_LookupBattleSettlement() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status LookupBattleSettlement(::grpc::ServerContext* /*context*/, const ::player_inbox::BattleSettlementInboxRequest* /*request*/, ::player_inbox::BattleSettlementInboxResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestLookupBattleSettlement(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(3, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
   class WithRawCallbackMethod_FetchItems : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
@@ -339,6 +555,50 @@ class PlayerInbox final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     virtual ::grpc::ServerUnaryReactor* AckItems(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_EnqueueBattleSettlement : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_EnqueueBattleSettlement() {
+      ::grpc::Service::MarkMethodRawCallback(2,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->EnqueueBattleSettlement(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_EnqueueBattleSettlement() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status EnqueueBattleSettlement(::grpc::ServerContext* /*context*/, const ::player_inbox::BattleSettlementInboxRequest* /*request*/, ::player_inbox::BattleSettlementInboxResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* EnqueueBattleSettlement(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_LookupBattleSettlement : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_LookupBattleSettlement() {
+      ::grpc::Service::MarkMethodRawCallback(3,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->LookupBattleSettlement(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_LookupBattleSettlement() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status LookupBattleSettlement(::grpc::ServerContext* /*context*/, const ::player_inbox::BattleSettlementInboxRequest* /*request*/, ::player_inbox::BattleSettlementInboxResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* LookupBattleSettlement(
       ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
   };
   template <class BaseClass>
@@ -395,9 +655,63 @@ class PlayerInbox final {
     // replace default version of method with streamed unary
     virtual ::grpc::Status StreamedAckItems(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::player_inbox::AckPlayerInboxRequest,::player_inbox::AckPlayerInboxResponse>* server_unary_streamer) = 0;
   };
-  typedef WithStreamedUnaryMethod_FetchItems<WithStreamedUnaryMethod_AckItems<Service > > StreamedUnaryService;
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_EnqueueBattleSettlement : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_EnqueueBattleSettlement() {
+      ::grpc::Service::MarkMethodStreamed(2,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::player_inbox::BattleSettlementInboxRequest, ::player_inbox::BattleSettlementInboxResponse>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::player_inbox::BattleSettlementInboxRequest, ::player_inbox::BattleSettlementInboxResponse>* streamer) {
+                       return this->StreamedEnqueueBattleSettlement(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_EnqueueBattleSettlement() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status EnqueueBattleSettlement(::grpc::ServerContext* /*context*/, const ::player_inbox::BattleSettlementInboxRequest* /*request*/, ::player_inbox::BattleSettlementInboxResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedEnqueueBattleSettlement(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::player_inbox::BattleSettlementInboxRequest,::player_inbox::BattleSettlementInboxResponse>* server_unary_streamer) = 0;
+  };
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_LookupBattleSettlement : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_LookupBattleSettlement() {
+      ::grpc::Service::MarkMethodStreamed(3,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::player_inbox::BattleSettlementInboxRequest, ::player_inbox::BattleSettlementInboxResponse>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::player_inbox::BattleSettlementInboxRequest, ::player_inbox::BattleSettlementInboxResponse>* streamer) {
+                       return this->StreamedLookupBattleSettlement(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_LookupBattleSettlement() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status LookupBattleSettlement(::grpc::ServerContext* /*context*/, const ::player_inbox::BattleSettlementInboxRequest* /*request*/, ::player_inbox::BattleSettlementInboxResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedLookupBattleSettlement(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::player_inbox::BattleSettlementInboxRequest,::player_inbox::BattleSettlementInboxResponse>* server_unary_streamer) = 0;
+  };
+  typedef WithStreamedUnaryMethod_FetchItems<WithStreamedUnaryMethod_AckItems<WithStreamedUnaryMethod_EnqueueBattleSettlement<WithStreamedUnaryMethod_LookupBattleSettlement<Service > > > > StreamedUnaryService;
   typedef Service SplitStreamedService;
-  typedef WithStreamedUnaryMethod_FetchItems<WithStreamedUnaryMethod_AckItems<Service > > StreamedService;
+  typedef WithStreamedUnaryMethod_FetchItems<WithStreamedUnaryMethod_AckItems<WithStreamedUnaryMethod_EnqueueBattleSettlement<WithStreamedUnaryMethod_LookupBattleSettlement<Service > > > > StreamedService;
 };
 
 }  // namespace player_inbox

@@ -28,7 +28,14 @@
 > - §25 待负责人拍板清单
 > - §26 Java 版
 
-> **2026-10-23 注(上面原文保留)**:负责人 10-23 拍板,玩家归属 / 落点映射改为直读 TiDB,撤掉 Redis 映射副本(经「账号登录逻辑/物理服瓶颈」会话转述;设计以 [player-route-mapping-durability-proposal.md](player-route-mapping-durability-proposal.md) 即将新增的章节为准)。本稿以下内容**被取代、待新章节**:redis-mapping 实例及其迁移(§3.2.2、§5.4)、mapping 三族 hash tag(§21、§25.2 第 7 条及子项)、redis-mapping 的 HA 优先级(§25.2 第 18 条第一项)。go/db `Placement.Redis`、data_service `MappingRedis`、guild `MergeMarkerRedis` 三个句柄的去留,也以新章节为准。控制面按 zone 组分实例(§18)与核心路线(§20)不受影响。
+> **2026-10-23 注(上面原文保留)**:负责人 10-23 拍板,玩家归属 / 落点映射改为直读 TiDB,撤掉 Redis 映射副本(经「账号登录逻辑/物理服瓶颈」会话转述;设计见 [player-route-mapping-durability-proposal.md](player-route-mapping-durability-proposal.md) §15「2026-10-23 负责人拍板:映射改为直读 TiDB,撤掉 Redis 副本」,设计已定、未落码)。本稿以下内容**被取代,以该 §15 为准**:redis-mapping 实例及其迁移(§3.2.2、§5.4)、mapping 三族 hash tag(§21、§25.2 第 7 条及子项)、redis-mapping 的 HA 优先级(§25.2 第 18 条第一项)。句柄去留按该稿 §15.4:go/db `Placement.Redis` 删除;guild `MergeMarkerRedis` 删除,改读 SQL 围栏;data_service `MappingRedis` 保留,只剩玩家写锁一个用途;`player:zone` / `placement` / `maprev`、`mapping:route:*`、`merge:in_progress:<z>` 围栏镜像(以 TiDB `zone_merge_fence` 为准)、`db:capability:zone:<z>` 都移出 Redis(2026-10-23 映射线定稿后补)。控制面按 zone 组分实例(§18)与核心路线(§20)不受影响。
+
+> **2026-10-24 注(上面原文保留)**:用户 10-24 明确「玩家数据不要 redis 存储,其他改用的地方还是要用」,记录与键族分类见 [TiDB 决策 §9](global-data-layer-tidb-decision.md)。本稿受影响的有三处:
+> - §19 redis-cache:它要装的子表缓存与玩家读结果都移出 Redis,「必做」结论待重评。
+> - go/db 控制面按组分实例(§18、§24 第 2 批)是否还要,取决于新存盘路径是否保留 Kafka → go/db(TiDB 决策 §9.3 B、§9.4 第 1 条);§18.7 令牌发布脚本的硬依赖与 A / B 二选一随之重评。
+> - §16 里按父快照、补投意图、子表缓存、资产证据推算的核心与缓存的 ops、内存、写带宽要按剩下的键重算;§23 的冷卸载以父键为对象,父快照移出后失去对象,核心内存上界按剩下的键重算。
+>
+> 排队、登录会话等按用途拆实例的部分不受本条影响。只定了方向,未设计、未落码。
 
 ## 1. 结论
 
@@ -407,7 +414,7 @@ merge_zone 合服与撤销时会按玩家删缓存（`playerCacheKeys`）；清�
 
 #### 3.2.2 映射 → `redis-mapping`(第 1 批)
 
-> **(2026-10-23 注,本节原文保留)被取代、待新章节**:映射改为直读 TiDB、撤掉 Redis 映射副本,见文首 2026-10-23 注。
+> **(2026-10-23 注,本节原文保留)被取代**:映射改为直读 TiDB、撤掉 Redis 映射副本,见 [player-route-mapping-durability-proposal.md](player-route-mapping-durability-proposal.md) §15「2026-10-23 负责人拍板:映射改为直读 TiDB,撤掉 Redis 副本」。
 
 - **能拆的理由**:
   - C 族的所有 Lua 都在族内;C++ 不读写映射键。
@@ -1706,16 +1713,17 @@ Cluster 下:跨 slot 的 MGET / MULTI 报 CROSSSLOT;SCAN 只扫当前连接的�
 - **连接数**:每个 C++ 进程连本单元每个主节点,连接数 = 进程数 × 主节点数,要进 maxclients 总账与 nofile 需求(§17 的 B0-4 行)。
 - **脚本只访问 KEYS[] 声明的键,且全部 KEYS 同 slot**:B0-2 已对两段存盘脚本守住。其余 C++ 脚本要同样核对:`exit_release_mark.h` :180 / :260 / :281、`handoff_mark_withdraw.h:54`、`handoff_sql_barrier.h:30`、`player_lifecycle.h:763`、`relocate_confirm.h:148`、`redis_client.h:66`,以及 `player_battle.cpp` 的结算脚本。
 - **依赖同连接 FIFO 的完整清单**:2026-10-18 在 `cpp/libs/services`、`cpp/libs/engine`、`cpp/nodes` 下重新 grep「同连接」「同一条连接」「FIFO」「PING」得到。Cluster 下不同 slot 的命令走不同节点的连接,MOVED / ASK 重发还会打乱顺序,下表每一处都要改成「脚本内原子」,或显式确认正确性不依赖顺序。
+- **(2026-10-23 补充,第二轮审计 r2-lc#1 / r2-lc#2)同连接 FIFO 在今天的单连接部署里也会跨连接失效**:存活探测(`redis_manager.cpp` 的 `DropUnresponsive`,PING 15s 无应答)摘下旧连接、`redisAsyncFree` 正常 close 之后,内核仍在重传旧连接上未确认的命令,它们可能晚于重连后新连接上的命令执行;经四层代理 / Sentinel 也一样。所以「同一条连接」只能保证一条连接内的先后,任何「旧写不得晚于新持有者」的要求都必须在 Redis 端用围栏令牌原子判定。handoff 标记的全部写入口已改用 `save_barrier.handoff_fence`(cross-zone-scene-travel.md 文末两节),下表相应各行已更正(会话结束凭证是"先 HGET 原件、scene 线程重核仍不持有、再以原件 CAS",读与写之间、写与之后的登记之间的顺序都不影响正确性,location-release-binding.md §3.3);表中其余「依赖」项(战斗锁、A2′ 与 GET 的先后等)在摘连接重连时同样要按这条重新核对。
 
 | 位置(当前行号) | 依赖什么 | 现状 |
 |---|---|---|
 | `player_battle.cpp` :397-409 | 结算存盘之后紧跟一条 PING,PING 回来就当场判落盘、销账放锁 | 只是快路径:判落盘按 `IsSettlementDurable` 比字节,失败由发件箱 10 s 重投、reaper、登录补销账兜底。Cluster 下 PING 可能落到别的节点,快路径命中率下降;正确性按注释不受影响,待核实 |
 | `player_battle.cpp` :1996、:2107、:2254 | 销账 / 续锁命令要排在随后的读锁之前;读命令排在条件删锁之后 | 依赖 FIFO。同一玩家的键同 `{pid}` slot 时仍在同一节点连接上,但 MOVED / ASK 重发会打乱,要改为脚本内原子或回调链串行 |
-| `cpp/libs/services/scene/core/system/redis.cpp` :35-51 | 重连后先补发 handoff 撤回与 A2′,再重发玩家加载;改派核实读与随后的凭证补写「必须走这条不重放的连接」 | 撤回与 A2′ 的注释写明正确性不靠这条顺序(靠 `IsSceneChangeBusy` 与 A2′ 应答闸);改派核实读一项依赖 |
+| `cpp/libs/services/scene/core/system/redis.cpp` :35-51 | 重连后先补发 handoff 撤回与 A2′,再重发玩家加载;改派核实读与随后的凭证补写「必须走这条不重放的连接」 | 撤回与 A2′ 的注释写明正确性不靠这条顺序(靠 `IsSceneChangeBusy` 与 A2′ 应答闸);改派核实读一项依赖。*2026-10-23 起改派核实读一项也不依赖(见下方 :1751-1757 行)* |
 | `player_inbox_system.cpp` :454-483 | 收件箱压写后,同连接紧跟一条 PING 走快路径 | 快路径,tick 每秒复查兜底 |
-| `player_lifecycle.cpp` :1044-1046(`SendConditionalMarkWrite`) | 条件写 handoff 标记必然排在退出存盘落地之后 | 依赖 |
-| `player_lifecycle.cpp` :1283 | 放弃补写排在任何更后一轮的 A2′ 之前 | 依赖;注释称两者都是 owner_epoch 条件写、取哪个都只在归属未变时生效,待复核 |
-| `player_lifecycle.cpp` :1751-1757(核实读) | 核实读与随后的凭证补写必须走不重放的同一 FIFO 连接 | 依赖 |
+| `player_lifecycle.cpp` :1044-1046(`SendConditionalMarkWrite`) | 条件写 handoff 标记必然排在退出存盘落地之后 | 依赖。*2026-10-23 更正(r2-lc#2):"排在存盘之后"是回调链因果(落地回调之后才发),不靠 FIFO;防"晚于下一任持有者"改由 `handoff_fence` 原 H→F 的 CAS,不依赖顺序* |
+| `player_lifecycle.cpp` :1283 | 放弃补写排在任何更后一轮的 A2′ 之前 | 依赖;注释称两者都是 owner_epoch 条件写、取哪个都只在归属未变时生效,待复核。*2026-10-23 复核:只比 owner_epoch 不够(同节点重载同 E),已改为只消费被放弃那一轮的原 H,更后一轮登记之后迟到即拒,不再依赖顺序* |
+| `player_lifecycle.cpp` :1751-1757(核实读) | 核实读与随后的凭证补写必须走不重放的同一 FIFO 连接 | 依赖。*2026-10-23 更正:补写在 Lua 里原子复核 owner_epoch 与条目缓存的原 H,核实读与补写之间的顺序不再影响正确性* |
 | `player_lifecycle.cpp` :2606-2610;`cpp/nodes/scene/handler/rpc/scene_handler.cpp:145` | A2′ 的 EVAL 必须排在随后的 AsyncLoad GET 之前 | 依赖 |
 | `player_lifecycle.cpp` :5704-5706;`player_lifecycle.h` :740-746 | 交接取证原为「同一不重放连接上先 DEL 后 MGET」 | **已被 Lua 取代**(`kLuaJudgeTravelOutcome`);注释要求以后若拆回两条命令,必须走同一连接 |
 | `player_lifecycle.h` :1294-1299 | 旧一代 SET 的 ERROR 应答先于新实体的 A2′ 应答到达 | 注释写明这「不是可以依赖的契约」,已改由代际比较 |
@@ -1744,7 +1752,7 @@ Cluster 下:跨 slot 的 MGET / MULTI 报 CROSSSLOT;SCAN 只扫当前连接的�
 
 ## 21. mapping 三族 hash tag 的裁决材料(2026-10-18 新增)
 
-> **(2026-10-23 注,本节原文保留)被取代、待新章节**:映射改为直读 TiDB、撤掉 Redis 映射副本,mapping 三族不再有 Redis 键名可定,见文首 2026-10-23 注。§21.6 给瓶颈文档的同 tag 指引里,与映射无关的两条(令牌发布脚本、围栏 §5.5 推进脚本)仍有效。
+> **(2026-10-23 注,本节原文保留)被取代**:映射改为直读 TiDB、撤掉 Redis 映射副本,mapping 三族不再有 Redis 键名可定,见 [player-route-mapping-durability-proposal.md](player-route-mapping-durability-proposal.md) §15「2026-10-23 负责人拍板:映射改为直读 TiDB,撤掉 Redis 副本」。§21.6 给瓶颈文档的同 tag 指引里,与映射无关的两条(令牌发布脚本、围栏 §5.5 推进脚本)仍有效。
 
 ### 21.1 现状键名与镜像点(2026-10-18 grep)
 
@@ -1896,7 +1904,7 @@ Java 版账号与角色已在 MySQL(§26),本项在 Java 是「已做,实现不�
 5. dbctl 组大小与跨组合服:merge_zone 用源、目标两个 dbctl 句柄,还是规定合服只在组内(§18.2、§18.4、§18.5)。
 6. redis-cache 的形态:Cluster,还是按 zone 组分实例(§19)。
    - **(2026-10-18 新增)** 子表缓存 10-17 起已无生产读者:是否还写子表缓存,redis-cache 是否还要单独部署;「写任务只 DEL 不 SET」与缩短 TTL 需要围栏线同意。
-7. mapping 三族 hash tag 的时机、形态与键名(§21);瓶颈文档 §6.5 由 go/db 存盘管线线按 §21.6 的指引加注。**(2026-10-23 注:本条连同子项被取代、待新章节,映射改为直读 TiDB,见文首 2026-10-23 注。)**
+7. mapping 三族 hash tag 的时机、形态与键名(§21);瓶颈文档 §6.5 由 go/db 存盘管线线按 §21.6 的指引加注。**(2026-10-23 注:本条连同子项被取代,映射改为直读 TiDB,见 [player-route-mapping-durability-proposal.md](player-route-mapping-durability-proposal.md) §15「2026-10-23 负责人拍板:映射改为直读 TiDB,撤掉 Redis 副本」。)**
    - **(2026-10-18 新增)** D1 读方就绪脚本 `RouteReadyReadScript` 在 Cluster 下的改形,交 D1 线。已接入:go/db `route_ready_gate.go`(`RequireRouteReady` 开时 lookup 与复核两步都走,每条写任务多 4 次 INFO)、data_service `route_read.go`(批量就绪读;`getHomeZoneFenceReadyScript` 用 ARGV 前缀在脚本内拼围栏键)、guild `merge_fence.go`。
 8. 账号目录落库的位置与主键(account 还是其哈希),与密码表的位置一并定;单独立项授权(§22)。
 9. 核心 maxmemory 初值与冷卸载阈值、触发条件(§23;S1 开服前)。
@@ -1916,6 +1924,58 @@ Java 版账号与角色已在 MySQL(§26),本项在 Java 是「已做,实现不�
 20. **(2026-10-18 新增)单元边界语义**:(a) 跨单元旅行改为转区的体验能否接受(容量模型 §6 第 5 条、全局单点交接 §8 第 2 条);(b) D12 改写后「逻辑单一」的作用域是全服还是单元——若全服,跨单元读(friend / guild / match / chat 对其他单元玩家的会话、位置)需要 player→单元寻址层与多集群客户端;若单元,跨单元匹配与好友 / 公会在线判定另行设计。客户端与 Java 同批评审(§26)。
 21. **(2026-10-18 新增)补投工作器容量**:缺省 Batch 16、Interval 100 ms(`go/db/internal/saveoutbox/replay.go` 的 `normalized`;`service.go` 的 `Start` 只传 zone 与世代,取缺省值),约 160 名/s/副本,K8s 每 zone 2 副本(`deploy/k8s/manifests/go-svc/db.yaml` 的 `replicas: 2`);2000 万口径下每 zone 每秒约 222~250 份新意图 [I],每份 1~2 次 claim,正常态就可能积压,意图常驻随之上升,ZRANGEBYSCORE / claim / 读 home_zone 的往返也未计入 §16。选项:按实测调 Batch / Interval / 副本数;或在 ACK 齐时同段回收意图(要围栏线评审,Cluster 下与桶改形一起定)。
 22. **(2026-10-18 新增)核心闭包键名是否在首次上线前改带 `{pid}`**(仍是单实例):项目尚未上线时这是最省的路径,以后上 Cluster 只做重分片,§20.7 的迁移问题随之消失;与 §21.5 对 mapping 的推荐同理。代价是现在就要动 C++ / Go 全部镜像点与 Lua 体内键形校验(§20.7)。新键名还不能直接用 `player:{<id>}:…`,那会进入 data_service 的玩家字段命名空间(§20.7 的 2026-10-19 补)。所以前缀与格式要一并定。
+
+### 25.3 拍板记录(2026-10-23,负责人授权「按最标准的方式做」)
+
+**依据与前提**:
+- 负责人 2026-10-22 说 §25.2 的待拍板项「按最标准的做」,第 1a 批也要落码。本会话记为授权,包括第 1a 批改动超过 30 个文件(AGENTS.md §10.2)。
+- 负责人 2026-10-23 补充三条:项目没上线,**玩家数据可以完全清空**;标准是数据强一致、代码可读易懂、可水平扩展。
+- 两条外部决定以对方文档为准,本节只引用:
+  - 映射改为直读 TiDB、撤掉 Redis 映射副本。负责人 10-23 拍板,经「账号登录逻辑/物理服瓶颈」会话转述,设计以 [player-route-mapping-durability-proposal.md](player-route-mapping-durability-proposal.md) 的新章节为准;
+  - **核心(玩家域)分片路线**归「Redis 物理水平扩展设计」会话,设计稿 [redis-player-store-cluster.md](redis-player-store-cluster.md)。负责人 10-22 把「redis 物理水平无限扩展」交给它定方案,10-23 两会话对齐边界:玩家域单独上 Redis Cluster 按 `{player_id}` 分片,控制域留原共享实例。
+- 下表的「标准答案」来自两轮独立的只读分析(各 3 名分析者,合计覆盖 1~22 条全部子项),由本会话合并。两轮结论不同的只有第 10 条,取舍理由写在该行。
+
+**归属与结论**:
+
+| 条目 | 结论 | 归属 / 状态 |
+|---|---|---|
+| 1、1-子项(围栏硬依赖二选一) | 本稿两轮分析都推荐 A(值封装,证据与 ACK 按版本自守)。玩家域稿选了 B(锁、缓存、证据、ACK 同 `{pid}` slot,不拆脚本),**以玩家域稿为准** | 玩家域线 |
+| 2(go/db 句柄拆分)、5(dbctl 组与跨组合服)、14(第 2 批门禁) | 控制域留原共享实例,go/db 句柄拆分列在玩家域稿 §13 的落码顺序里 | 玩家域线 |
+| 3(补投桶改形)、13(核心闭包迁移方式)、22(上线前改名) | 上线前直接改名、按 slot 分桶,不迁移、不双读(数据可清空)。键名用玩家域稿的 `player:{<id>}:*` + 保留后缀表,不用本稿分析推荐的 `pcore:` | 玩家域线,第 2 批已在落码 |
+| 4(单元规模)、15(C++ 集群客户端)、18-子项2(Cluster 故障转移)、20(a)(b)(单元边界语义) | 玩家域稿自研 C++ 路由层,不用 hiredis-cluster。第 20 条原推荐「跨单元 = 转区」**作废**:负责人 10-22 的需求写明保留跨区位置透明,不改成转区体验(`docs/handoff/redis-horizontal-scaling-requirements-20261022.md` §1) | 玩家域线 |
+| 6、6-子项(redis-cache / 子表缓存) | 随第 1 条的选择,以玩家域稿为准 | 玩家域线 |
+| 7、7-子项(mapping 三族 hash tag) | 被取代:映射改为直读 TiDB | 映射线 |
+| 8(账号目录落库) | 追认已落码的方案(`7d9208237`,`account-role-authority.md`):全局 TiDB 薄层,主键是 account 原文,密码表不并入 | 已落码,待 Codex 验证 |
+| 9(核心 maxmemory 与冷卸载) | 核心即玩家域,以玩家域稿为准。控制域实例按第 19 条第 4 项 | 玩家域线 |
+| 9-子项(补投意图常驻) | 补投在玩家域核心上,以玩家域稿为准 | 玩家域线 |
+| 10(redis-queue 形态) | **按 zone 组分实例**(`redis-queue-g<N>`),不改排队键名,不上 Cluster。zones 配置加组字段,首发 1 组;非 dev 档的高可用形态与核心同一套 `-RedisReplicas` 档位规则。**两轮分析的分歧与取舍**:另一轮推荐 Cluster + `{zone}` tag,水平扩展同样成立,但要改 login、scene_manager、Java gateway 三处客户端和全部排队键名;排队键天然按 zone,按组分实例不改任何键、loginqueue 包不改,与 dbctl 组同一机制,取后者(KISS) | 本会话,第 1a 批 |
+| 11(redis-match-cluster) | 纳入本稿:淘汰策略改为 noeviction,limits 调为 2 × maxmemory(1Gi);chat 已改 SQL 原件,不再拆 chat 集群 | **已落码 2026-10-23**,未验证 |
+| 12(friend 在线目录游标) | 随逐主节点 SCAN 一起改,以玩家域稿为准 | 玩家域线 |
+| 16(guild DB 2 → 0) | 上线前改为 DB 0,不搬数据;merge_zone `-redis-db` 与 dev_tools `-MergeRedisDB` 缺省同步改 0 | **已落码 2026-10-23**,未验证 |
+| 17(回档 / 恢复工具在拆分拓扑下的契约) | 多句柄 + 维护闸作原子边界;玩家域部分以玩家域稿为准 | 玩家域线 |
+| 18-子项1(新实例是否走 HA) | 控制域新实例(redis-queue 组)与核心同一套 `-RedisReplicas` 档位规则:dev 单实例,非 dev 高可用。redis-mapping 被取代,其「HA 第一优先级」作废 | 本会话,第 1a 批 |
+| 19-原 §13 第 4 条(maxmemory 初值) | 控制域实例全部显式 noeviction + maxmemory,limits = 2 × maxmemory;release 档缺值拒绝部署。初值:redis-queue 每组 1gb,redis-match-cluster 每主 512mb | 本会话,第 1a 批(queue) |
+| 19-原 §13 第 6 条(Redis 监控) | 直接上 redis_exporter sidecar(核心、redis-ha、redis-match-cluster),告警 `deploy/k8s/redis-alerts.yaml`;玩家域集群的告警归玩家域线 | **已落码 2026-10-23**,未验证 |
+| 19-原 §13 第 8 条(AGENTS §6.2 清库口径) | 改为「对部署拓扑里每个 Redis 实例 FLUSHALL 并核对 DBSIZE=0,Cluster 逐主节点」。AGENTS.md 由负责人改,本会话不改 | **待负责人改 AGENTS.md** |
+| 19-原 §13 第 9 条(stress_summarize 加 Redis 表) | 已由 L-18 会话做成 INFO 快照(`stress_snap.ps1 -RedisTargets`) | 已落码(别的会话) |
+| 19-原 §13 第 10 条(拆分与 L-02 的先后) | 先拆 queue,再打开排队。上线前直接以拆出 queue 的拓扑首次部署,不存在切换窗口;打开排队的门槛另加「queue 已拆分」一条 | 本会话,第 1a 批 |
+| 19-原 §13 第 12 条(purge 浸泡) | 不适用:数据可清空,控制域与 queue 都不做迁移,没有 purge | 结案 |
+| 19-原 §13 第 14 条(deploy/k8s/AGENTS.md 拓扑描述) | 随批更新事实描述;规则条款仍由负责人改 | 本会话,随第 1a 批 |
+| 19-原 §13 第 15 条(启动时查墓碑) | 不适用:不做迁移工具就没有墓碑;mapping 已改直读 TiDB | 结案 |
+| 19-原 §13 第 16 条(`-RedisSplit` 怎么给) | 照 `-RedisReplicas` 的既有惯例:缺省按档位;zone 写路径不给就跟随线上,给了而与线上不同即拒绝;DryRun 按参数与档位渲染 | 本会话,第 1a 批 |
+| 19-原 §13 第 18 条(login Redis 超时没传进 client) | 修:抽出 `redisOptions`,Dial / Read / WriteTimeout 原样传入;拨号超时由 go-redis 缺省 5s 变为配置的 3s | **已落码 2026-10-23**,未验证 |
+| 21(补投工作器容量) | 玩家域稿把「ACK 齐时同段回收意图」列为后续项 | 玩家域线 |
+
+**由此对第 1a 批的修订**(取代 §24 第 1a 行与 §4 的相应描述):
+- 只做 queue 一个用途,mapping 被取代,dbctl 归玩家域线;
+- 不做迁移工具(第 1b 批)、迁移标记、墓碑与 purge,第 1c 批简化为「清空后按新拓扑首次部署」;
+- 部署闸只保留两条:地址要变必须显式确认;任一 zone 排队开着时拒绝切换 queue;
+- scene_manager 读排空标记的句柄随 queue 一起指过去(§3.2.1 约束 1 的 10-18 补)。
+- **(2026-10-23 落码时订正,上面几条原文保留)**:
+  - **gate 排空标记 `gate:<id>:draining` / `drained` 留在核心,不随 queue 拆走**,上一条作废。排空标记是运维置位的低频标志,读方有 login 的 AssignGate 过滤与排空监视器、`k8s_gate_drain.ps1`、scene_manager 的跨 zone 重定向,与排队键之间没有原子操作。留在核心后:scene_manager 与 `k8s_gate_drain.ps1` 不用改;也不需要「按目标 zone 找它所属的 queue 组」这种跨组寻址;§4.4 第 5 条「核心上没有正在进行的排空」的闸也随之不需要。queue 实例只放 `queue:*` / `admit:*` / `admitted:*`、放行锁和 gateway 的 `rl:*` 限流桶。
+  - **`-RedisSplit` 在所有档位缺省都解析为不拆**,第 19 条原 §13 第 16 条「非 dev 缺省拆 queue」改为:首次上线显式 `-RedisSplit queue` 部署;不带参数时渲染逐字节不变;zone 写路径跟随线上,与线上不同须 `-ConfirmRedisSplitSwitch`。
+  - **(2026-10-24)第 1a 批已落码,未编译、未测试**:login 的 `Node.QueueRedis`、`k8s_deploy.ps1 -RedisSplit queue`、模板 `redis-purpose.yaml`、`redis-split-status` / `redis-wipe`,以及 dev_tools / k8s_image / 回档脚本的转发;文件清单与 Codex 验证命令见 PROGRESS「2026-10-24 G4a 第 1a 批落码」。
+  - **queue 实例本批在所有档位都是单实例**(第 18 条子项 1 的「非 dev 高可用」推迟)。理由:`redis-ha.yaml` 的对象名(redis、redis-proxy、mymaster、redis-ha-scripts)写死,要先参数化才能复用;排队数据都带 TTL、可丢,单实例重启期间只影响该组 zone 的新登录。高可用变体列为后续项。
 
 ## 26. Java 版(AGENTS.md §12)(2026-10-18 新增)
 

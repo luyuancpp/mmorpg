@@ -50,6 +50,7 @@ import (
 	"player_inbox/internal/data"
 	"player_inbox/internal/metrics"
 
+	battlepb "proto/battle"
 	base "proto/common/base"
 	componentpb "proto/common/component"
 	inboxpb "proto/player_inbox"
@@ -141,6 +142,66 @@ type itEnv struct {
 	epochs   *itEpochs
 	notifier *itNotifier
 	missing  map[uint64]bool
+}
+
+func TestIntegrationBattleSettlementKeepsPermanentOriginalUntilApplied(t *testing.T) {
+	e := openIntegration(t)
+	ctx := itCtx(t)
+	const player = uint64(8911)
+	e.epochs.set(player, 7)
+	payload := marshal(t, &battlepb.BattleSettlementData{PlayerId: player, BattleId: 9123, Outcome: battlepb.EBattleOutcome_BATTLE_OUTCOME_DRAW, GoldGain: 5})
+	r := &inboxpb.BattleSettlementInboxRequest{PlayerId: player, BattleId: 9123, ExpectedOwnerAccount: "inbox-fixture-8911", ExpectedOwnerRevision: 1, IssuedAtMs: testNowMs - uint64((8 * 24 * time.Hour).Milliseconds()), SettlementPayload: payload}
+	first, err := e.store.EnqueueBattleSettlement(ctx, r)
+	if err != nil || first.GetErrorMessage().GetId() != 0 || first.Seq == 0 {
+		t.Fatalf("可信老来源必须可入箱: %+v %v", first, err)
+	}
+	again, err := e.store.EnqueueBattleSettlement(ctx, r)
+	if err != nil || again.Seq != first.Seq {
+		t.Fatalf("永久原收据必须同seq: %+v %v", again, err)
+	}
+	other := proto.Clone(r).(*inboxpb.BattleSettlementInboxRequest)
+	other.BattleId++
+	other.SettlementPayload = marshal(t, &battlepb.BattleSettlementData{PlayerId: player, BattleId: other.BattleId, Outcome: battlepb.EBattleOutcome_BATTLE_OUTCOME_DRAW})
+	full, err := e.store.EnqueueBattleSettlement(ctx, other)
+	if err != nil || full.GetErrorMessage().GetId() != constants.ErrFull {
+		t.Fatalf("未确认原条必须占单槽: %+v %v", full, err)
+	}
+	domain := inboxpb.PlayerInboxDomain_PLAYER_INBOX_DOMAIN_SCENE_BATTLE_SETTLEMENT
+	identity := e.admission(t, player, 7)
+	fetched, err := e.store.Fetch(ctx, &inboxpb.FetchPlayerInboxRequest{PlayerId: player, Domain: domain, OwnerEpoch: 7, MaxItems: 1, Admission: identity})
+	if err != nil || len(fetched.GetItems()) != 1 || fetched.Items[0].Seq != first.Seq {
+		t.Fatalf("按原入场交付: %+v %v", fetched, err)
+	}
+	for _, outcome := range []inboxpb.PlayerInboxOutcome{inboxpb.PlayerInboxOutcome_PLAYER_INBOX_OUTCOME_REJECTED, inboxpb.PlayerInboxOutcome_PLAYER_INBOX_OUTCOME_SKIPPED, inboxpb.PlayerInboxOutcome_PLAYER_INBOX_OUTCOME_UNKNOWN} {
+		ack, err := e.store.Ack(ctx, &inboxpb.AckPlayerInboxRequest{PlayerId: player, Domain: domain, OwnerEpoch: 7, Admission: identity, Decisions: []*inboxpb.PlayerInboxDecisionReport{dec(first.Seq, outcome, 0, r.BattleId)}})
+		if err != nil || len(ack.GetResults()) != 1 || ack.Results[0].State != statePending {
+			t.Fatalf("非APPLIED不得终结: %+v %v", ack, err)
+		}
+	}
+	void, err := e.store.Void(ctx, VoidParams{PlayerID: player, Domain: domain, Seq: first.Seq, Reason: inboxpb.PlayerInboxVoidReason_PLAYER_INBOX_VOID_CANCELLED, Operator: "fixture"}, nil)
+	if err != nil || void.GetErrorMessage().GetId() != constants.ErrItemStateConflict {
+		t.Fatalf("通用VOID不得取消奖励: %+v %v", void, err)
+	}
+	ack, err := e.store.Ack(ctx, &inboxpb.AckPlayerInboxRequest{PlayerId: player, Domain: domain, OwnerEpoch: 7, Admission: identity, Decisions: []*inboxpb.PlayerInboxDecisionReport{dec(first.Seq, inboxpb.PlayerInboxOutcome_PLAYER_INBOX_OUTCOME_APPLIED, 0, r.BattleId)}})
+	if err != nil || len(ack.GetResults()) != 1 || ack.Results[0].State != stateApplied {
+		t.Fatalf("真实APPLIED可终结: %+v %v", ack, err)
+	}
+	lookup, err := e.store.LookupBattleSettlement(ctx, r)
+	if err != nil || lookup.State != stateApplied || lookup.Seq != first.Seq {
+		t.Fatalf("永久SQL原收据必须保全: %+v %v", lookup, err)
+	}
+	// 模拟消费环已滚出及远超GM七天窗：SQL永久原件仍能重放同一序号，不新增待项。
+	e.clock.advance(uint64((40 * 24 * time.Hour).Milliseconds()))
+	again, err = e.store.EnqueueBattleSettlement(ctx, r)
+	if err != nil || again.State != stateApplied || again.Seq != first.Seq {
+		t.Fatalf("老来源不可复活/换seq: %+v %v", again, err)
+	}
+	if _, err = e.db.ExecContext(ctx, "UPDATE account_role SET account='new-owner',owner_revision=2 WHERE player_id=?", player); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = e.store.LookupBattleSettlement(ctx, r); err == nil {
+		t.Fatal("换主后不能以旧来源补权")
+	}
 }
 
 func openIntegration(t *testing.T) *itEnv {

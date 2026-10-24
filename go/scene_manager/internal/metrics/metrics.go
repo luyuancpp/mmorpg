@@ -102,7 +102,7 @@ var (
 	instanceDestroyedTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Subsystem: subsystem,
 		Name:      "instance_destroyed_total",
-		Help:      "Instance/mirror destroys by kind (instance|mirror) and reason (idle|explicit|cascade|node_death|source_migrated).",
+		Help:      "Instance/mirror destroys by kind (instance|mirror) and reason (idle|explicit|cascade|node_death|source_migrated|source_scaled_in).",
 	}, []string{"zone_id", "kind", "reason"})
 
 	// enterSceneRejectedTotal 统计 EnterScene 在「归属交接 / 归属查询 / 跨 zone 传送目标地图 /
@@ -400,6 +400,34 @@ var (
 		Help:      "EnterScene placements that treated a player's location as ownerless because its scene node was confirmed dead and the re-entry barrier had elapsed.",
 	}, []string{"zone_id"})
 
+	// enterSceneOwnerReplacedTakeoverTotal:节点号还在册,但在册的已是重启后复用该号的新进程,持有这名玩家的旧进程实例
+	// 已从注册表消失且再入屏障已过,EnterScene 把位置当作无持有者落点(owner_replaced.go playerLocationOwnerReplaced,GO-3)。
+	// 与上一条分开计,口径相同:稳态恒 0,scene 进程崩溃并以原号重启后约等于「当时挂在它上面、随后回来的玩家数」。
+	enterSceneOwnerReplacedTakeoverTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Subsystem: subsystem,
+		Name:      "enter_scene_owner_replaced_takeover_total",
+		Help:      "EnterScene placements that treated a player's location as ownerless because the process instance holding the player was gone from the registry (its node id reused by a new process) and the re-entry barrier had elapsed.",
+	}, []string{"zone_id"})
+
+	// enterSceneHandoffAdmittedTotal:凭源 scene 的落盘标记放行、且落点已提交的跨节点 / 跨 zone 交接(同 zone 换节点的落点,
+	// 与跨 zone 第一条腿的等待落点)。它是 enter_scene_rejected_total{reason="handoff_pending_no_marker"} 比值告警的分母
+	// (cross-zone-scene-travel.md §13.9「口径 B」):健康时每次放行之前约有一次 no_marker 拒绝(第一跳),只拒不放才是异常。
+	// 告警阈值等首轮压测基线,本计数先落。
+	enterSceneHandoffAdmittedTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Subsystem: subsystem,
+		Name:      "enter_scene_handoff_admitted_total",
+		Help:      "Cross-node / cross-zone handoffs admitted on the source scene's persisted handoff marker whose placement was committed.",
+	}, []string{"zone_id"})
+
+	// ownerReplacedRecheckTotal:GO-3 判「持有进程已被顶替」时向 etcd 做的线性一致复核(owner_replaced.go),按结果分。
+	// result 取值见 OwnerReplacedRecheck* 常量。absent 在节点崩溃并以原号重启后约等于名下回来的玩家数;
+	// present 非 0 = 本副本镜像滞后;error 持续非 0 = etcd 不可用,名下玩家一直回 17。
+	ownerReplacedRecheckTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Subsystem: subsystem,
+		Name:      "owner_replaced_recheck_total",
+		Help:      "etcd re-checks made while deciding whether a player's holding scene process was replaced by a new process reusing its node id, by result.",
+	}, []string{"zone_id", "result"})
+
 	// deadNodeReconcilePending 是「已判死、但收尾动作还被屏障压着」的节点数。
 	// 它应该在一个屏障时长内回到 0;长期不为 0 = 收尾链路卡住了。
 	deadNodeReconcilePending = prometheus.NewGaugeVec(prometheus.GaugeOpts{
@@ -535,7 +563,8 @@ func register() {
 			kafkaDeliveryTotal, enterSceneRollbackTotal, enterSceneMintReplayRecognizedTotal,
 			ownerEpochMintClockBehindTotal, ownerEpochMintDurableTotal, ownerEpochMintDurableSeconds,
 			reentryBarrierBlockedTotal, deadNodeReconcilePending,
-			enterSceneOwnerDeadTakeoverTotal,
+			enterSceneOwnerDeadTakeoverTotal, enterSceneOwnerReplacedTakeoverTotal, enterSceneHandoffAdmittedTotal,
+			ownerReplacedRecheckTotal,
 			homeZoneLookupTotal,
 			nodeDetachDeferredTotal,
 			worldChannelDirectoryPublishTotal,
@@ -729,6 +758,31 @@ func ResetLeaderGauges() {
 func ObserveEnterSceneOwnerDeadTakeover(zoneID uint32) {
 	register()
 	enterSceneOwnerDeadTakeoverTotal.WithLabelValues(strconv.FormatUint(uint64(zoneID), 10)).Inc()
+}
+
+// ObserveEnterSceneOwnerReplacedTakeover 记一次「持有进程已被同号新进程顶替、按无持有者落点」(GO-3)。
+func ObserveEnterSceneOwnerReplacedTakeover(zoneID uint32) {
+	register()
+	enterSceneOwnerReplacedTakeoverTotal.WithLabelValues(strconv.FormatUint(uint64(zoneID), 10)).Inc()
+}
+
+// ObserveEnterSceneHandoffAdmitted 记一次凭落盘标记放行、且落点已提交的交接。
+func ObserveEnterSceneHandoffAdmitted(zoneID uint32) {
+	register()
+	enterSceneHandoffAdmittedTotal.WithLabelValues(strconv.FormatUint(uint64(zoneID), 10)).Inc()
+}
+
+// owner_replaced_recheck_total 的 result 标签取值。**必须是常量**:它们直接变成 Prometheus label。
+const (
+	OwnerReplacedRecheckAbsent  = "absent"
+	OwnerReplacedRecheckPresent = "present"
+	OwnerReplacedRecheckError   = "error"
+)
+
+// ObserveOwnerReplacedRecheck 记一次 GO-3 的 etcd 复核结果,result 取 OwnerReplacedRecheck* 常量。
+func ObserveOwnerReplacedRecheck(zoneID uint32, result string) {
+	register()
+	ownerReplacedRecheckTotal.WithLabelValues(strconv.FormatUint(uint64(zoneID), 10), result).Inc()
 }
 
 // ObserveReentryBarrierBlocked 记一次被再入屏障挡下的所有权变更尝试。

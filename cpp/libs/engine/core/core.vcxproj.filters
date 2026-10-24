@@ -24,6 +24,9 @@
     <ClCompile Include="network\codec\codec.cpp" />
     <ClCompile Include="network\rpc_channel.cpp" />
     <ClCompile Include="network\rpc_channel_stats.cpp" />
+    <ClCompile Include="metrics\prometheus_text.cpp" />
+    <ClCompile Include="metrics\metrics_registry.cpp" />
+    <ClCompile Include="metrics\metrics_http_exporter.cpp" />
     <ClCompile Include="network\message_statistics.cpp" />
     <ClCompile Include="network\network_utils.cpp" />
     <ClCompile Include="network\client_message_sender.cpp" />
@@ -77,6 +80,9 @@
     <ClInclude Include="network\codec\dispatcher.h" />
     <ClInclude Include="network\rpc_channel.h" />
     <ClInclude Include="network\rpc_channel_stats.h" />
+    <ClInclude Include="metrics\prometheus_text.h" />
+    <ClInclude Include="metrics\metrics_registry.h" />
+    <ClInclude Include="metrics\metrics_http_exporter.h" />
     <ClInclude Include="network\rpc_controller.h" />
     <ClInclude Include="network\rpc_done_callback.h" />
     <ClInclude Include="network\grpc_client_call.h" />

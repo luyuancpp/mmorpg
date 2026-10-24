@@ -14,8 +14,10 @@ package main
 //   scene_manager 的孤儿清理与 rebalance。
 //
 // 安全前置(拒绝执行,不是警告):
-//   scene_nodes:zone:{S}:load 必须为空。它是 C++ 场景节点的心跳负载集,
-//   非空 = 源区还有节点在跑 = zone-down 没完成 = 节点可能还在写这些键。
+//   etcd 场景节点注册表里源区一条注册都没有(正面证据,-etcd-endpoints,见 scene_registry.go),
+//   且 scene_nodes:zone:{S}:load 为空。负载集是 scene_manager 维护的心跳负载集,
+//   非空 = 源区还有节点在跑 = zone-down 没完成 = 节点可能还在写这些键;但它为空不能单独证明下线:
+//   负载键丢失 / 被淘汰时也读作 0(2026-10-23 起改要注册表证据,cross-zone-scene-travel.md §13.10)。
 //   此时删掉 location 会把「老节点仍在存盘」的双写窗口重新打开。
 //
 // 步骤(全部幂等、dry-run 只计数、SCAN + pipeline 分批,绝不 KEYS *):
@@ -355,8 +357,21 @@ func sourceZoneFixedKeys(src uint32) []string {
 
 // ── Redis 执行层 ─────────────────────────────────────────────────
 
-// assertZoneDown 是前置门禁:zone 的负载集非空即拒绝。
-func assertZoneDown(ctx context.Context, rdb redis.UniversalClient, zone uint32) error {
+// assertZoneDown 是前置门禁,两条都满足才放行:
+//   - etcd 场景节点注册表里该 zone 一条注册都没有(正面证据,scene_registry.go);registry 为 nil 或读失败一律拒绝;
+//   - 负载集 scene_nodes:zone:{S}:load 为空(辅助条件:注册已消失、scene_manager 还没摘干净负载集时不抢跑)。
+// 只看负载集不够:负载键丢失 / 被淘汰时 ZCARD 读作 0,活着的 zone 会被当成已下线(cross-zone-scene-travel.md §13.10)。
+func assertZoneDown(ctx context.Context, rdb redis.UniversalClient, registry sceneRegistry, zone uint32) error {
+	if registry == nil {
+		return fmt.Errorf("%w: no etcd scene-node registry to prove zone %d is down (pass -etcd-endpoints)", errZoneStillLive, zone)
+	}
+	registered, err := registry.SceneNodesInZone(ctx, zone)
+	if err != nil {
+		return fmt.Errorf("%w: cannot prove zone %d is down: %v", errZoneStillLive, zone, err)
+	}
+	if registered > 0 {
+		return fmt.Errorf("%w: etcd still registers %d scene node(s) of zone %d — finish zone-down first", errZoneStillLive, registered, zone)
+	}
 	key := fmt.Sprintf(sceneNodeLoadKeyFmt, zone)
 	n, err := rdb.ZCard(ctx, key).Result()
 	if err != nil {
@@ -370,9 +385,9 @@ func assertZoneDown(ctx context.Context, rdb redis.UniversalClient, zone uint32)
 
 // clearSourceZoneHotState 执行全部步骤;任何 Redis 错误立即返回(已删的部分
 // 不回滚 —— 每一步都是幂等的删除,重跑即可补齐)。
-func clearSourceZoneHotState(ctx context.Context, rdb redis.UniversalClient, src uint32, playerIDs []uint64, dryRun bool) (hotStateClearReport, error) {
+func clearSourceZoneHotState(ctx context.Context, rdb redis.UniversalClient, registry sceneRegistry, src uint32, playerIDs []uint64, dryRun bool) (hotStateClearReport, error) {
 	var rep hotStateClearReport
-	if err := assertZoneDown(ctx, rdb, src); err != nil {
+	if err := assertZoneDown(ctx, rdb, registry, src); err != nil {
 		return rep, err
 	}
 

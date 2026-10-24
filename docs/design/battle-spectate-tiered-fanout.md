@@ -244,6 +244,43 @@ Java 版现在的观战与 C++ 同形：上限 20、满员回 1008、只走直�
 
 第 1~5 条不改客户端契约。第 5 条若新增 tip，第 6、7 条若新增枚举值，都要两版同批改。
 
+### 10.1 修复进展（2026-10-24，A 批已落码，未编译，待 Codex 验证）
+
+A 批修第 1、2、5 条。C++ / Go 与 Java 同批完成，每份改动都经过一轮对抗评审和修正。第 3、4 条（编码一次、观众连接配额）仍留在 P0，等实测时一起做；第 6 条是 B 批，第 7 条另议。
+
+| 条目 | C++ / Go（本仓） | Java（0.1.0-SNAPSHOT） |
+|---|---|---|
+| 1 满员专用码（D97） | 新 tip `MatchSpectateFull`「观战人数已满」，Tip.xlsx 第 266 行，fault 留空；导表器已发号 16021。battle 满员改回它；墓碑表满仍回 `kRateLimitExceeded`。`kMaxObserversPerRoom` 移到 `BattleRoomManager` 公开区，测试引用同一个常量 | 满员回 `SPECTATE_FULL`；账本满维持 1003 |
+| 墓碑语义（更正上面第 1 条「拒绝无副作用、重试重新判定是安全的」） | **拒绝分支保留墓碑**。全局 match 收到任何拒绝都会发 RemoveObserver，Remove 本来就要给这个 op 立一个封闭墓碑，用来挡住还在途中的 Add；所以拒绝时不立墓碑也省不下表项，反而会失去「同一个 op 被拒后永远不会翻成准入」的单调性。例外有两种：入参校验失败、墓碑表满，这两种不立墓碑，靠 match 的 Remove 补立 | 同 |
+| 2 观众席回收 | 两段宽限都是 30s 常量：登记后 30s 内没建直连，或直连断开后 30s 内没重连，就回收席位。回收时先封墓碑，再删名单、关直连，不推 166；补签票不延长宽限。所有摘除路径都收口到 `RetireObserver`。定时器只绑 `WeakSelf()`，测试接缝是 `ReclaimExpiredObserverSeats(battleId, now)`。`observer_count` 只数有活直连的观众。回收后 QueryObserver 回 ABSENT，由 match 的恢复循环 cancel 原件，不需要 battle 主动通知 | 同语义：`BattleScheduler.after`，`cancelObserverOperation` 是唯一收口；新增指标 `game_battle_observer_reclaimed_total{reason}` |
+| 5 全局路径错误码与指标 | 每个分支都回明确的 tip：16014 / 16015 / 16016 / 16017 / 16018 / 16019 / 16021；参数错、`ErrOriginalPlayer`、存储或传输故障维持 16004。authority 用 `%w` 包装出可区分的哨兵错误。关闭原因落在意图记录新增的 `close_tip` 字段（`match_authority.proto` 的 `MatchSpectatorIntentRecord` 字段 9，**要加列迁移**），同一个 request_id 重放得到与首答相同的结论；被新请求顶替的旧请求在顶替那一刻写入 16016。每个出口都计 `match_watch_battle_total{outcome}`（新增 full / closed / pending），只有故障才打 Error 日志。随机模式满员不换场，两条路径一致 | 同口径：player 0 在入口回 NO_IDENTITY；被顶替回 16016、已关闭回 16018（原先都回 16004）；每个出口按回执计 outcome |
+
+**客户端可见的变化**：
+- 满员从 16018 / 16004 变成 16021。
+- 直连断开超过 30s 后再握手，会因「not in roster」被拒，客户端要把它当作观战结束。旧客户端收到 16021 只是查不到文案。
+
+**残余，本批未处理**：
+- 半开 TCP 仍会占座：直连没有应用层心跳。
+- 墓碑表满时整个节点拒绝观战。
+- Go 全局路径的 16018 一律记 `not_found`，不细分；要细分得给意图再加一个关闭类别字段。
+- C++ 断线重连宽限的用例用回环连接加直接调用 Detach 模拟，没有经过 `BattleClientEdge` 的真实断开回调。
+- 本地（dev / test）模式两版都发不出合规的 AddObserver：不带 `spectator_operation_id`、`admit_before_ms`、`target_instance_id`，被 battle 一律拒绝（C++：`spectate.go` 本地 addObserver 对 `battle_room_manager.cpp` 的三字段校验；Java：`WatchBattleService.java:373-374` 对 `ObserverOperationLedger.validate`，均已在 A 批评审中核实）。生产强制走全局模式，不受影响，但本地观战冒烟走不通。
+  - **Go 已修（2026-10-24，未编译，待 Codex 验证）**，口径对齐全局 `BeginSpectator` / `cancelGlobalSpectator`：
+    - 每次 WatchBattle 每选中一场生成一份 AddObserver 原件（`newLocalObserverAdd`）：op 是新生成的小写规范 UUID；`admit_before_ms` = match 墙钟 now + 25s。battle 上限是 30s，全局路径用 TiDB now() + 30s；本地没有统一时钟源，留 5s 给 match 与 battle 的墙钟偏差。`target_instance_id` 取 battle 节点在注册表里的 `NodeUuid`（新增 `NodeWatcher.EntryOfNode`），实例为空时不写标记、不发 Add，回 16018。观战记录 `SpectateBattleRecord` 只有 node_id、没有实例字段，所以从注册表取；给记录加字段要按 AGENTS §4 重生，与 `requestbattleticketlogic.go` 判 BattleGone 的同一缺口合并另做。
+    - 观战标记 `spectate:watching:{player_id}` 的值从十进制 battle_id 改成原件 pb，在发 Add 之前用 SETNX 写入。换场、gather 入口清退、复查自我清退、结果未知补偿这四种 RemoveObserver 都从原件里取同一个 op、截止和实例。节点换了实例（进程重启）就不发 Remove。只有回包带回原 op 和原实例、并且 `cancelled=true`，才算拿到取消证明。旧的十进制标记和解析不出来的标记拿不到原 op，只删标记。
+    - **行为变化：重看同一场也要先按旧原件 Remove，再用新 op 去 Add。** 原来的做法是只删标记、靠 battle 的幂等分支重推，但名单里挂着旧 op 时，账本会拒绝新 op，而旧原件的准入截止多半已经过了，也不能原样重放。代价是旧会话会先收到一次 `SpectateEnd(rewatch)`，再凭新分配重连。全局路径本来就是这样（`prepareGlobalWatch` 先 cancel）。
+    - 成功回包带回 `spectator_operation_id`，与全局路径一致。
+    - 回归测试：`spectate_test.go` 新增按账本校验的桩 battle（`observerLedgerBattle`），覆盖 Add 带齐三个字段、Remove 带同一个 op、取消后同 op 迟到的 Add 被拒、重看同场成功；另有一个用例覆盖实例为空时 fail-closed。原有用例改成断言 Remove 带原件的 op；`request_deadline_fence_test.go` 的结果未知补偿用例同样加了这条断言。
+  - **Java 待做**：已登记在 Java 仓 `PARITY.md`「观战 P0 缺陷」行的备注里，本仓不改 Java 代码。
+  - **本地 robot 观战冒烟**（`robot/battle_smoke_scenario.go`：B 随机观战 A）的阻塞点：
+    1. Go 改动尚未编译和测试，要等 Codex 跑完下面的命令。
+    2. 必须走本地模式（`GlobalMatch.Enabled=false`，`match_service.yaml` 默认值）。全局模式下 robot 的 WatchBattle 不带 `request_id`，会在入口回 16004「观战请求参数无效」。
+    3. battle 节点在 etcd 的注册里要有 `nodeUuid` 和 `grpcEndpoint`（C++ NodeInfo 默认会带），并且与 battle 进程内 `gNode->GetNodeInfo().node_uuid()` 是同一个值；否则 match 回 16018，或者 battle 回 kInvalidParameter。
+    4. match 的墙钟不能比 battle 快 5s 以上（battle 跑在 WSL / Docker 而 match 跑在宿主机时要留意），否则 Add 会因截止过远被拒。
+    5. 跑之前要清 Redis（AGENTS §6.2），让 `spectate:battles:active` 里只剩 A 这一场；随机选场挑到残留的场会在 `b-watch-battle-id` 失败。
+    6. 冒烟走 Java 服务端时仍然阻塞，要等 Java 待做项落地。
+  - 另一个口径差异本次未改：本地路径的 `observer_name` 仍然是登录账号（`session.Account`），全局路径用的是角色公共名（`challengePublicName`）。
+
 ## 11. 分阶段落地
 
 每个阶段都带开关，关掉就回到上一阶段的行为。C++ 与 Java 同批。

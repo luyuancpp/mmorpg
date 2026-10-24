@@ -2,6 +2,7 @@ package _go
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"path/filepath"
 	"sync"
@@ -29,7 +30,8 @@ type CasesData struct {
 
 // GoRobotTotalHandlerGenerator 重写 robot/logic/handler/message_body_handler.go:id = 0 的消息(推送,以及迁移前
 // 旧场景用 SendRequest 发出的请求的回包)按 message_id 派发的注册表(docs/design/client-rpc-callback.md §5.5)。
-// 登记规则见 robotHandlerCases;判定 handler 文件是否存在只看磁盘,理由同那里的注释。
+// 登记规则见 robotHandlerCases;判定 handler 文件是否存在只看磁盘(robotHandlerFileExists),理由同那里的注释。
+// handler 文件名会被 Go 工具链特殊对待、stat 失败或路径不是普通文件都 Fatal,不写注册表。
 func GoRobotTotalHandlerGenerator(wg *sync.WaitGroup) {
 	wg.Add(1)
 	go func() {
@@ -42,9 +44,16 @@ func GoRobotTotalHandlerGenerator(wg *sync.WaitGroup) {
 		}
 
 		handlerDir := _config.Global.PathLists.MethodHandlerDirectories.Robot
-		handlerCases := robotHandlerCases(services, _config.Global.Naming.MessageId, func(fileName string) bool {
-			return fileExists(filepath.Join(handlerDir, fileName))
+		handlerCases, err := robotHandlerCases(services, _config.Global.Naming.MessageId, func(fileName string) (bool, error) {
+			return robotHandlerFileExists(filepath.Join(handlerDir, fileName))
 		})
+		if err != nil {
+			logger.Global.Fatal("Failed to compute robot message handler registry",
+				zap.String("dir", handlerDir),
+				zap.Error(err),
+			)
+			return
+		}
 
 		logger.Global.Info("Generating robot message handler file",
 			zap.Int("handler_case_count", len(handlerCases)),
@@ -75,16 +84,39 @@ func GoRobotTotalHandlerGenerator(wg *sync.WaitGroup) {
 //     注册表引用不存在的函数会编不过;已有的手写 handler 与旧桩带着副作用(登录握手、压测主循环、AI 循环、
 //     robot 场景的 callDispatch 都靠它们),照常登记,id = 0 路径的行为不变。本轮没有任何生成器写这类文件,
 //     所以 handlerFileExists 在生成期间任何时刻的答案都等于生成开始时磁盘上的状态。
+//     反过来,删掉旧的 REQUEST / ONE_WAY / SERVER_ONLY handler 文件后,必须先重跑 proto 生成(注册表随之去掉该条)
+//     再编译 robot,否则注册表引用已删除的函数。
 //
-// handlerFileExists 收 handler 文件名(不含目录)。
+// handlerFileExists 收 handler 文件名(不含目录),回答它是否作为普通文件存在;生产传 robotHandlerFileExists。
+// 错误(收集全部后返回,结果为 nil):handlerFileExists 出错(stat 失败、路径不是普通文件)——无法确认的文件
+// 既不能当作存在而登记,也不能当作不存在而漏登;或者非 PUSH 方法的 handler 文件**存在**、但文件名会被 Go 工具链
+// 特殊对待(checkRobotGoFileName:_test.go 只进测试构建,_<GOOS> / _<GOARCH> 是隐式构建约束),登记进去正式构建
+// 就引用不到这个函数。文件不存在时不查文件名:这类方法已不建桩、本来就不登记,不能因为方法名恰好以 Test / Windows
+// 之类结尾就让整次生成失败(PUSH 仍按 ensureRobotPushHandlers 的规则一律校验,因为它的桩一定会被建出来)。
 func robotHandlerCases(services []internal.ClientRpcService, messageIDSuffix string,
-	handlerFileExists func(fileName string) bool) []HandlerCase {
+	handlerFileExists func(fileName string) (bool, error)) ([]HandlerCase, error) {
 	cases := make([]HandlerCase, 0)
+	var errs []error
 	for _, service := range services {
 		for _, classified := range service.Methods {
-			key := classified.Method.KeyName()
-			if classified.Kind != internal.ClientRpcPush && !handlerFileExists(robotHandlerFileName(key)) {
-				continue
+			method := classified.Method
+			key := method.KeyName()
+			if classified.Kind != internal.ClientRpcPush {
+				where := method.Service() + "." + method.Method()
+				fileName := robotHandlerFileName(key)
+				exists, err := handlerFileExists(fileName)
+				if err != nil {
+					errs = append(errs, fmt.Errorf("%s: %w", where, err))
+					continue
+				}
+				if !exists {
+					continue
+				}
+				if err := checkRobotGoFileName(fileName); err != nil {
+					errs = append(errs, fmt.Errorf("%s: existing robot handler file would be left out of a normal build, so the registry cannot reference it: %w",
+						where, err))
+					continue
+				}
 			}
 			cases = append(cases, HandlerCase{
 				MessageID:    key + messageIDSuffix,
@@ -92,7 +124,10 @@ func robotHandlerCases(services []internal.ClientRpcService, messageIDSuffix str
 			})
 		}
 	}
-	return cases
+	if len(errs) > 0 {
+		return nil, errors.Join(errs...)
+	}
+	return cases, nil
 }
 
 // generateTotalHandlerFile 用 templatePath 渲染注册表并写入 fileName(内容不变不落盘)。

@@ -605,7 +605,7 @@ func TestIT_InvalidatePlayerCaches_DeletesLoginAndDbCacheKeys(t *testing.T) {
 		}
 	}
 	// 别人的键不能被误删。资产 SQL 提交证据是 go/db 写的 hash,按真实类型造一把。
-	if err := shared.Set(ctx, "PlayerAllData:99999", "someone-else", 0).Err(); err != nil {
+	if err := shared.Set(ctx, "PlayerAllData:{99999}", "someone-else", 0).Err(); err != nil {
 		t.Fatal(err)
 	}
 	if err := shared.HSet(ctx, "player:{99999}:asset_sql_commit", "version", "v", "data", "d").Err(); err != nil {
@@ -636,7 +636,7 @@ func TestIT_InvalidatePlayerCaches_DeletesLoginAndDbCacheKeys(t *testing.T) {
 			}
 		}
 	}
-	if v, _ := shared.Exists(ctx, "PlayerAllData:99999").Result(); v != 1 {
+	if v, _ := shared.Exists(ctx, "PlayerAllData:{99999}").Result(); v != 1 {
 		t.Error("an unrelated player's cache was deleted")
 	}
 	if v, _ := shared.Exists(ctx, "player:{99999}:asset_sql_commit").Result(); v != 1 {
@@ -1583,6 +1583,7 @@ func itPreflightDeps(t *testing.T, lag kafkaLagSource) preflightDeps {
 	t.Cleanup(func() { _ = reader.db.Close() })
 	return preflightDeps{
 		sceneRdb:      itRedis(t, itSceneRD),
+		sceneNodes:    zoneDownRegistry{},
 		mappingRdb:    itRedis(t, itMappingRD),
 		sharedRdb:     itRedis(t, itSharedRD),
 		teamAuthority: reader,
@@ -1815,7 +1816,7 @@ func TestIT_EndToEnd_MergeVerifyUnmerge(t *testing.T) {
 	guildRdb.ZAdd(ctx, guildZoneRankKey(itDstZone), redis.Z{Member: "21", Score: 70})
 	guildRdb.Set(ctx, guildCacheKey(11), `{"zone_id":901}`, 0)
 	// 从源库读出来、缓存在共享 DB 0 上的那份必须被清掉。
-	shared.Set(ctx, "PlayerAllData:9901", "stale", 0)
+	shared.Set(ctx, "PlayerAllData:{9901}", "stale", 0)
 	// 聚宝斋:源区两条(7002 是更早一次合服搬进 901 的)+ 目标区原住民一条。
 	itSeedListing(t, db, 7001, 9901, itSrcZone, itSrcZone)
 	itSeedListing(t, db, 7002, 9902, itSrcZone, 900)
@@ -1880,7 +1881,7 @@ func TestIT_EndToEnd_MergeVerifyUnmerge(t *testing.T) {
 	if n, _ := guildRdb.Exists(ctx, guildCacheKey(11)).Result(); n != 0 {
 		t.Error("guild:v2:11 cache not invalidated — the guild would keep its old zone for 30 minutes")
 	}
-	if n, _ := shared.Exists(ctx, "PlayerAllData:9901").Result(); n != 0 {
+	if n, _ := shared.Exists(ctx, "PlayerAllData:{9901}").Result(); n != 0 {
 		t.Error("the shared login cache was not invalidated")
 	}
 	// 公告 flag 必须落在 login DB,不是 mapping DB。
@@ -1972,12 +1973,12 @@ func TestIT_EndToEnd_MergeVerifyUnmerge(t *testing.T) {
 
 	// 5) unmerge 撤回,只碰清单里的对象。合服之后有人经目标区读过 9901:共享缓存里是目标库的那份,
 	// 路由改回源区之后它必须失效(A7)。
-	shared.Set(ctx, "PlayerAllData:9901", "read-from-the-target-zone", 0)
+	shared.Set(ctx, "PlayerAllData:{9901}", "read-from-the-target-zone", 0)
 	out, code = itRun(t, "-mode", "unmerge", "-manifest-path", manifest, "-apply")
 	if code != 0 {
 		t.Fatalf("unmerge exit=%d\n%s", code, out)
 	}
-	if n, _ := shared.Exists(ctx, "PlayerAllData:9901").Result(); n != 0 {
+	if n, _ := shared.Exists(ctx, "PlayerAllData:{9901}").Result(); n != 0 {
 		t.Error("the unmerge left a player cache read from the target zone")
 	}
 	if n, _ := mapRdb.Exists(ctx, mergedIntoKey(itSrcZone)).Result(); n != 0 {
@@ -2989,7 +2990,7 @@ func TestIT_Gap_ClearHotState_SweepsZoneZeroLocationsBeforeDeletingScenes(t *tes
 	}
 	seed()
 
-	rep, err := clearSourceZoneHotState(ctx, scene, itSrcZone, []uint64{9801}, true)
+	rep, err := clearSourceZoneHotState(ctx, scene, zoneDownRegistry{}, itSrcZone, []uint64{9801}, true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -3000,7 +3001,7 @@ func TestIT_Gap_ClearHotState_SweepsZoneZeroLocationsBeforeDeletingScenes(t *tes
 		t.Fatal("dry-run deleted a location")
 	}
 
-	rep, err = clearSourceZoneHotState(ctx, scene, itSrcZone, []uint64{9801}, false)
+	rep, err = clearSourceZoneHotState(ctx, scene, zoneDownRegistry{}, itSrcZone, []uint64{9801}, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -3039,7 +3040,7 @@ func TestIT_ClearHotState_RemovesZoneFromSceneManagerRegistry(t *testing.T) {
 		return ok
 	}
 
-	rep, err := clearSourceZoneHotState(ctx, scene, itSrcZone, nil, true)
+	rep, err := clearSourceZoneHotState(ctx, scene, zoneDownRegistry{}, itSrcZone, nil, true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -3047,7 +3048,7 @@ func TestIT_ClearHotState_RemovesZoneFromSceneManagerRegistry(t *testing.T) {
 		t.Fatalf("dry-run = %s, want found=1 removed=0 and the source zone still registered", rep)
 	}
 
-	rep, err = clearSourceZoneHotState(ctx, scene, itSrcZone, nil, false)
+	rep, err = clearSourceZoneHotState(ctx, scene, zoneDownRegistry{}, itSrcZone, nil, false)
 	if err != nil {
 		t.Fatal(err)
 	}

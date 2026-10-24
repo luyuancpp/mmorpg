@@ -2,6 +2,7 @@
 
 > **2026-10-23 初始持久基底后继（待正式生成与运行验证）**：正式 Create 目录与双 SQL 初始行同一 TiDB 事务严格 INSERT，持久 marker 只在首次成功写入；保留无 actor 初始提交 `(1,1)`，首任 actor 由 SceneManager 在采纳地板后铸到 2。完整合同与免冷读种子的提交后顺序见[建角初始持久提交](new-player-first-enter-no-cold-read.md#建角初始持久提交)。空 SQL 或零序号旧缓存不能证明新号，任一真实玩家行缺失均拒绝。
 
+- **2026-10-24 方向变更（先读）**：用户 10-24 明确「玩家数据不要 redis 存储，其他改用的地方还是要用」，见 [TiDB 决策 §9](global-data-layer-tidb-decision.md)。本稿里只服务于 Redis 父快照与资产证据的部分（父快照回退检测、`verified_identity` 实例身份核验、资产放弃的 G5 闸读 Redis 副本）随新存盘路径重写，在途落码开工前先向用户确认是否还做；owner_epoch 铸造等协调键的防回退不受影响。只定了方向，未设计、未落码。
 - 日期：2026-10-22
 - 状态：**2026-10-23 起落码中，未编译、未测试**。负责人 2026-10-22 授权「按最标准的方式做完」，§13 各项按推荐取；项目未上线、玩家数据可以完全清空，§6 的混版与回退兼容不再实现。编译、测试、压测按 AGENTS §10.1 交 Codex。落码相对本稿的取舍见 §14。
 - 来源：[数据一致性等级核对](data-consistency-guarantee-map-20261020.md) §2.2 的 6 条 low（player-save#1、identity-routing-redis-v#2、cross-service-assets-v#1、player-save#2 / identity-routing-redis-v#1、identity-routing-redis#1）。
@@ -166,6 +167,8 @@ V2 / V7 自动采纳的依据：
 
 有歧义的情形（V4、V5）一律不自动处理。
 
+> **2026-10-22 修复（r2-mz#1 评审跟进，未编译、未测试，待 Codex 验证）**：合服工具 `tools/merge_zone` 的 `-verify-merged` 有一行 `verify:save_barrier`，在合服 Step 5 按本表预判每名玩家开服后的第一次冷加载（独立 go.mod，镜像 `savebarrier.Reconcile` 而不引用它）。两份判定共用样例表 `go/shared/savebarrier/testdata/merge_copy_cold_load_cases.json`，login 一侧由 `merge_copy_cold_load_test.go` 走真实冷加载入口对表。**改本表或 `Reconcile` 时同步改样例表**，否则 merge_zone 或 login 的单测会变红。细节见 [db-write-fencing-mysql.md](db-write-fencing-mysql.md)「2026-10-22 修复（r2-mz#1 评审跟进）」。
+
 #### 4.1.5 采纳脚本
 
 KEYS 与 `parentBarrierKeys` 相同：父键、owner、屏障，**不新增**跨键原子范围。在复核通过之后：
@@ -250,6 +253,74 @@ go/db 只在 SQL 提交了版本 V 之后才发布 `ACK = V`，而 V 来自 C++ 
   - 必须按 §8.3 R-b 压测。
 - **配置**：`OwnerEpochMint.WaitAOFNumLocal` / `WaitAOFNumReplicas` / `WaitAOFTimeoutMs`，口径同 go/db（`config.go:318-342`）：两项都写 0 等于不发 WAITAOF，启动时打一行 ERROR；开启时启动先探一次，失败拒启。
 - **连接总账**：在 `k8s_deploy.ps1` 的池表里给 scene_manager 加 Fixed 连接，写法同 db 行的 `Fixed 2`。
+
+#### 4.3.3 G3b 落码定稿（2026-10-24，未编译、未测试，待 Codex 验证）
+
+本节补齐 §4.3.2 落码时定下的细节，同时答复[玩家态 Redis 集群化](redis-player-store-cluster.md) §7 与 §16 第 1 条「铸造后同一节点连接上发 WAITAOF」。G3a 墙钟地板**不在本次**，见本节末。
+
+**落码前的现状**：10-23 的快照提交 `9d2784fbf` 已带上 svc 层（`go/scene_manager/internal/svc/owner_epoch_mint.go`：专用 go-redis 客户端、EVAL 与 WAITAOF 同一 pipeline、启动探针）、配置 `OwnerEpochMint`、指标与告警（`deploy/k8s/owner-epoch-alerts.yaml`），但 logic 没接线：铸造仍走 go-zero 的 `svcCtx.Redis.Eval`，WAITAOF 一次都没发；K8s ConfigMap 不渲染 `OwnerEpochMint`，Redis 连接总账 scene-manager 行 `Fixed = 0`；`owner_epoch.go` 头注释写着 G3a 已生效，与代码不符。本次补齐，改动见 PROGRESS 同日条目。
+
+**同一节点、同一连接**
+
+- 铸造 EVAL 与 `WAITAOF <numlocal> <numreplicas> <timeout>` 放在专用客户端的同一个 pipeline 里（go-redis 一条 pipeline 只占一条连接）。WAITAOF 等的是本连接的 `woff`：Redis `call()` 只在命令产生传播时把它更新为当时的 `master_repl_offset`（`third_party/redis/src/server.c` call 末尾）。换一条连接，或本连接没写过东西，WAITAOF 会立即回满份数，确认不到这次铸造。
+- 不用 go-zero 客户端的理由见 `owner_epoch_mint.go` 头注释：按地址共享一个底层客户端、不暴露 Pipelined；WAITAOF 平均占住连接约 0.5s，会饿死共享池；熔断器把确定性的脚本错误也计成失败。
+- `MaxRetries=-1`：go-redis 在 WAITAOF 读失败时会把整条 pipeline 连同已生效的 EVAL 重发一遍。重发只由 `EvalAndConfirm` 在**EVAL 结果未知**（传输错误）时做，最多 3 次，10–50ms 抖动退避。EVAL 有回复之后不再重发，WAITAOF 的结论如实上报。
+- **重放识别分支写回原值**：重发走新连接。凭标记的铸造被脚本认出「本请求已生效」（返回 `-epoch`）时，若只读不写，新连接的 `woff` 是 0，WAITAOF 立即满足，首发那次铸造的落盘其实没确认。所以脚本在识别分支里 `SET owner_epoch <原值>`：该键没有 TTL，值不变，本连接的偏移越过首发的写，WAITAOF 的确认才覆盖它。CAS 不过（回 0 / -1）的分支不写，此时 WAITAOF 的结论也不使用。
+
+**失败语义**（只针对铸造；不铸造的 CAS 与回滚 Lua 不发 WAITAOF）
+
+| WAITAOF 结论 | Redis 状态 | 处置 | 应答 |
+|---|---|---|---|
+| `confirmed`：份数满足 | 已推进，已落盘 | 照常推路由 / 重定向 | 0 |
+| `not_durable`：份数不足，含服务端等满超时 | 内存里已推进，落盘未知 | **不推**路由 / 重定向；用这次落点走现有单调回滚（bump；同节点 epoch 0 的铸造走 keep）；人数随回滚结果退回 | 7 `ErrKafkaRoute`，回显同推路由失败 |
+| `error`：WAITAOF 被拒、回复形状不对、回复读失败 | 同上 | 同上 | 7 |
+| 没发送：剩余预算不足 1ms | 一个字节都没写 | 不推路由，退回预占 | 3 `ErrUpdateLocation` |
+| EVAL 结果未知，重发 3 次耗尽 | 首发可能已生效 | 同以前 go-zero 自动重发耗尽 | 3 |
+| 关闭：两项份数都写 0 | — | 不确认，照常推路由，启动时打 ERROR | 0 |
+
+- **复用 7，不新增码**：C++ 对 7 的处置（源端原子取证，凭回执采纳 N+2；`SmRejectedBeforeAnyPlacementWrite` 不收 7）与这里的终态完全一致，C++ 不用改。3 同样不在「一定没写」名单里，「没发送」回 3 只会少踢、不会误踢。
+- **回滚本身不等 WAITAOF**：AOF 与复制流是单一有序日志，回滚留下则铸造必然留下；回滚丢了而铸造留下，等于今天的「推送失败 + 回滚失败」终态。残余：确认不足之后又发生切主，铸造与回滚一起丢失，而源端在丢失之前已经凭回执采纳了 N+2。此时源端缓存 N+2 大于 Redis 的 N，存盘被拒、按废黜销毁（丢 ≤300s，G4 让它可观测）。只有「确认不足」与「切主」叠加时才会出现。
+- 不凭标记的铸造（首次落点、等待落点的第二条腿、同节点 epoch 0）遇到「首发结果未知、重发回 0」时仍回 19，这是已登记的残余。现在会打一行 `[OwnerEpochMint] mint EVAL resent after an unknown first result …`，带重发次数。
+- 同落点重连、同节点换图下发的是观察值，不铸造也不确认。正常流程里这个值在铸造当时已确认落盘；只有上一条残余、或 G3b 关闭期间铸出的值，才可能未落盘就被下发。
+
+**时间预算**
+
+- 铸造截止 = 请求截止 −（`KafkaWriteTimeoutSeconds` + 300ms），见 `owner_epoch.go` 的 `ownerEpochMintContext`。WAITAOF 实际等待 = min(`WaitAOFTimeoutMs`, 铸造截止前剩余 − 100ms)，先截断成整毫秒，不足 1ms 不发（WAITAOF 的 timeout 0 是无限阻塞）。这样铸造之后的同步推路由（writer 自己的 5s）与回滚 Lua 一定还在 zrpc `Timeout`（8000ms）之内，失败应答回得到 C++ 源端，不会退化成 30s 看门狗。
+- 按现值：归属查询很快时等满 `WaitAOFTimeoutMs`；归属查询用满 1500ms 时只剩约 1100ms。`Timeout ≥ 归属查询 + Kafka + 1500` 这条不等式不变：WAITAOF 只用剩下的时间，会被截断，不会越界。
+- 专用客户端 `ReadTimeout = WaitAOFTimeoutMs + 1s`，服务端超时先到；取连接的排队同样受铸造截止约束。
+- **`WaitAOFTimeoutMs` 取 2000（配置上限），不取 go/db 的 1500**。`numreplicas=1` 时，要等副本自己按 everysec 刷盘，还要等副本上报：副本只在每秒一次的 `replicationCron` 里、或收到主节点 GETACK 时上报已刷盘偏移，而 GETACK 只在有 WAIT / WAITAOF 进来时发一次（`replication.c` `replicationRequestAckFromSlaves`、`replconfCommand` getack 分支）。低负载时，副本刷盘时刻 F 与上报相位 P 近似独立均匀分布于 [0, 1s)：等待 = P（P ≥ F）或 P + 1s（P < F），平均约 1s、最坏近 2s。1500 会让约 1/8 的铸造回 7 [I]。高负载时别的 WAITAOF 带来的 GETACK 会让上报提前。单实例只等本地刷盘（≤ 约 1s），上限调高对它没有影响。
+
+**对进场延迟与吞吐的影响 [I，未实测]**
+
+- 只在持有者变化时付出：首次登录、跨节点交接、跨 zone 第一条腿、等待落点的第二条腿、同节点 epoch 0。同节点换图、同落点重连不铸造，不受影响。
+- 单实例：本地确认要等下一次后台 fsync，平均约 0.5s、最坏约 1s。高可用：平均约 1s、最坏近 2s（上一条）。`EnterSceneStageUpdateLoc` 子阶段的耗时含这段等待；`scene_manager_owner_epoch_mint_durable_seconds` 单独给出整条 pipeline 的往返。
+- **吞吐上限**：每条连接在 WAITAOF 期间被占住。单副本约 32 条 ÷ 每次占用时长：单实例约 64 次/s，高可用约 32–64 次/s；每 zone 2 个副本，加倍。超出时排队等连接，等待受铸造截止约束，超时回 3（可重试）。登录 ramp 超过这个量级时，**升级路线是组提交**，不是简单调大池（调大池会推高总账、maxclients 与代理 maxconn）：由一个确认协程在粘连连接上，对一批已经拿到回复的铸造做一次「写围栏键 + WAITAOF」，一次 fsync 覆盖整批，写法同 go/db `durable_enqueue.go`。组提交在 Cluster 下要每个主节点一个确认协程，围栏键落在该节点的 slot 上，届时与第 6 批一起设计。
+- 是否上组提交、`ownerEpochMintPoolSize` 取多少，以 §8.3 R-b 为准：开、关 G3b 各跑一轮登录 ramp + 跨节点换图，按 AGENTS §6 出对比表。拿到对比表之前，不对延迟下结论。
+
+**三种拓扑下的取值**
+
+| 拓扑 | numlocal | numreplicas | 保证什么 | 代价 / 残余 |
+|---|---|---|---|---|
+| 单实例（本机 compose；K8s dev 的 `redis.yaml`） | 1 | 0 | 进程崩溃、OOM、重启之后铸造仍在 | 扛不住磁盘损坏；要求 `appendonly yes`（两处都开着），否则启动探针拒启 |
+| redis-ha（1 主 2 从 + 哨兵，`redis-ha.yaml`） | 1 | 1 | 主 Pod 丢失：哨兵在可达的副本里选复制偏移最大的提升，确认过的那个副本只要可达就必然当选 | 一个副本宕机仍可铸造（2 选 1）；两个副本都不可达时铸造全部回 7（不可用，但不回退）；`redis-start.sh` 兜底拉 redis-0 当主的残余见 §4.3.2 |
+| 未来玩家域 Redis Cluster（[集群化设计](redis-player-store-cluster.md) §7：缺省每主 1 副本，可选 2 副本） | 1 | 1 | 每主 1 副本时它是唯一的提升候选，确认过就必然留在新主上 | 该主的副本宕机或全量同步期间，这 1/M 玩家的首登、换节点全部回 7，直到副本追上（分钟级），在线玩家不受影响。每主 2 副本时 `1 1` 只是「大概率」：集群选举按复制偏移排名错开发起时间，不是硬保证。要硬保证得用 `1 2`，代价是任一副本宕机就拒绝铸造。缺省取 `1 1`，与 §7 的 2 副本选项一起评估 |
+
+K8s 上 numreplicas 由 `tools/scripts/k8s_deploy.ps1` 按共享 Redis 的形态渲染（`Get-RouteStoreWaitAOFNumReplicas`，与 go/db、data_service 同源）；numlocal 与 timeout 原样镜像 `scene_manager_service.yaml`，yaml 里 numreplicas 保持 0 给本机。ConfigMap 改了不会自动滚动：单实例切高可用之后必须 `rollout restart deploy/scene-manager`。
+
+**Cluster 落地时（集群化第 6 批）必须改的三处**。在那之前，专用客户端对 `Redis.Type=cluster` 直接拒启（fail-closed）。
+
+1. **不能用 `ClusterClient.Pipelined`**：它按键分组发送，无键的 WAITAOF 会被发到任意节点，确认的是另一台机器的偏移。要先用 `MasterForKey(ctx, keys[0])` 取到持有该 slot 的主节点 `*Client`，再在它上面发 pipeline。
+2. 对 EVAL 而言，MOVED / ASK / TRYAGAIN / CLUSTERDOWN / LOADING 都表示「没执行」：刷新拓扑后到新节点重发（ASK 要在同一 pipeline 里前置 `ASKING`）。这一类重发不计入「结果未知」的 3 次。
+3. EVAL 之后、WAITAOF 之前发生切主：WAITAOF 落到已降级的旧主上，回 `cannot be used with replica instances` → `error` → 回滚。回滚 Lua 在新主上做 CAS：铸造随切主丢了就回 superseded、什么都不改（状态已是铸造之前）；没丢就正常回滚。两种终态都自洽。
+
+**G3a 不在本次**：墙钟地板会让铸造不再恰好 +1，而现有两处判据都依赖「恰好 +1」：C++ `travel_outcome::ClassifyOwnership` 采纳回滚要求 `redisEpoch == markEpoch + 2`（`player_lifecycle.h`）；铸造 Lua 的重放识别比的是 `cur == ARGV[1] + 1`。G3a 要与这两处、以及 §4.3.1 列出的数值假设排查同批改，C++ 需要串行编译。svc 层的 `NowMs` 与 `owner_epoch_mint_clock_behind_total` 已经为它留好；`owner_epoch.go` 头注释已改回如实描述。
+
+**测试（本次新增，未运行）**
+
+- logic `owner_epoch_mint_test.go`：确认先于推路由；`not_durable` / `error` 在同 zone 交接、跨 zone 第一条腿、首次落点、同节点 epoch 0 四条路径上的回滚终态与人数；关闭时照常放行；没发送时零写入、回 3；缺铸造通道时 fail-closed；不铸造的 CAS 不经铸造通道；截止预算；识别分支写回原值。
+- svc `owner_epoch_mint_test.go`：EVAL 与 WAITAOF 在同一 pipeline；关闭时只发 EVAL；脚本错误不重发；结果未知时整条重发及次数上限；预算不足不发；启动探针；WAITAOF 回复判定、预算、客户端参数三个纯函数。
+- `k8s_deploy_contract.tests.ps1` 两条：总账 Fixed 与源码常量一致；ConfigMap 镜像 yaml 并按拓扑渲染 numreplicas。
+- 真 Redis 上的 AOF 与切主演练仍按 §8.1 G3b、§8.2 D2。§9 提到的 `k8s_deploy.ps1` 重启提示原文是「在存盘关键写补上 WAITAOF 之前」，C++ 存盘 Lua 至今没加，提示仍然成立，不改。
 
 ### 4.4 G4：C++ 存盘被拒细分（只检测）
 

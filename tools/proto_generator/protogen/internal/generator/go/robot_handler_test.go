@@ -1,6 +1,7 @@
 package _go
 
 import (
+	"errors"
 	"go/parser"
 	"go/token"
 	"os"
@@ -77,10 +78,14 @@ func robotCaseRun(t *testing.T, suffix string, existing ...string) (cases []Hand
 	)
 	// GuildService 排在 AuctionService 之前:注册表保持服务的输入顺序,不按名字排序。
 	services := robotFixtureClassify(t, guild, auction)
-	cases = robotHandlerCases(services, suffix, func(fileName string) bool {
+	var err error
+	cases, err = robotHandlerCases(services, suffix, func(fileName string) (bool, error) {
 		queried = append(queried, fileName)
-		return slices.Contains(existing, fileName)
+		return slices.Contains(existing, fileName), nil
 	})
+	if err != nil {
+		t.Fatalf("夹具的 handler 文件名都合法、存在性判断不出错,注册表计算不得失败: %v", err)
+	}
 	return cases, queried
 }
 
@@ -147,6 +152,105 @@ func TestRobotHandlerCasesRegistersPushAlwaysAndOthersOnlyWithHandlerFile(t *tes
 			{MessageID: "AuctionServiceNotifyBidId", FunctionCall: "AuctionServiceNotifyBidHandler"},
 		}
 		robotCaseAssert(t, cases, want, queried)
+	})
+}
+
+func TestRobotHandlerCasesRejectsExistingNonPushHandlerFilesWithGoBuildSuffix(t *testing.T) {
+	robotFixtureLogger(t)
+	files := robotFixtureFiles()
+	guild := robotFixtureService(files[0], "GuildService", 1,
+		robotFixtureMethod{"ReadTest", ".fixturepb.Request", ".fixturepb.Response", internal.ClientRpcRequest},
+		robotFixtureMethod{"MoveWindows", ".fixturepb.Request", ".Empty", internal.ClientRpcOneWay},
+		robotFixtureMethod{"KickArm64", ".fixturepb.Request", ".Empty", internal.ClientRpcServerOnly},
+		robotFixtureMethod{"Read", ".fixturepb.Request", ".fixturepb.Response", internal.ClientRpcRequest},
+	)
+	// guild_service_read_test.go 只进测试构建、guild_service_move_windows.go 只进 Windows 构建:文件存在就会被登记,
+	// 正式构建引用不到函数,必须报错。guild_service_kick_arm64.go 不存在:这类方法不建桩、本来就不登记,
+	// 方法名带构建后缀不能让整次生成失败。
+	existing := []string{"guild_service_read_test.go", "guild_service_move_windows.go", "guild_service_read.go"}
+	cases, err := robotHandlerCases(robotFixtureClassify(t, guild), "MessageId", func(fileName string) (bool, error) {
+		return slices.Contains(existing, fileName), nil
+	})
+	if err == nil {
+		t.Fatalf("已存在的非 PUSH handler 文件名命中 Go 构建后缀必须报错: cases=%+v", cases)
+	}
+	if cases != nil {
+		t.Errorf("报错时不得返回注册表条目: %+v", cases)
+	}
+	// 错误收集全部方法后一起返回,每条都指明服务.方法与文件名。
+	for _, identity := range []string{
+		"GuildService.ReadTest", "guild_service_read_test.go",
+		"GuildService.MoveWindows", "guild_service_move_windows.go",
+	} {
+		if !strings.Contains(err.Error(), identity) {
+			t.Errorf("错误信息必须指明 %q: %v", identity, err)
+		}
+	}
+	for _, unexpected := range []string{"GuildService.KickArm64", "GuildService.Read:"} {
+		if strings.Contains(err.Error(), unexpected) {
+			t.Errorf("没有 handler 文件或文件名合法的 %s 不得报错: %v", unexpected, err)
+		}
+	}
+}
+
+func TestRobotHandlerCasesSkipsMissingNonPushHandlersWithGoBuildSuffix(t *testing.T) {
+	robotFixtureLogger(t)
+	files := robotFixtureFiles()
+	guild := robotFixtureService(files[0], "GuildService", 1,
+		robotFixtureMethod{"KickArm64", ".fixturepb.Request", ".Empty", internal.ClientRpcServerOnly},
+		robotFixtureMethod{"Read", ".fixturepb.Request", ".fixturepb.Response", internal.ClientRpcRequest},
+	)
+	cases, err := robotHandlerCases(robotFixtureClassify(t, guild), "MessageId", func(fileName string) (bool, error) {
+		return fileName == "guild_service_read.go", nil
+	})
+	if err != nil {
+		t.Fatalf("没有 handler 文件的非 PUSH 方法只跳过,不因方法名带构建后缀报错: %v", err)
+	}
+	want := []HandlerCase{{MessageID: "GuildServiceReadMessageId", FunctionCall: "GuildServiceReadHandler"}}
+	if !slices.Equal(cases, want) {
+		t.Fatalf("注册表条目: got=%+v want=%+v", cases, want)
+	}
+}
+
+func TestRobotHandlerCasesRejectsHandlerFileStatErrors(t *testing.T) {
+	robotFixtureLogger(t)
+
+	t.Run("stat出错", func(t *testing.T) {
+		_, guild := robotFixture()
+		statErr := errors.New("access is denied")
+		cases, err := robotHandlerCases(robotFixtureClassify(t, guild), "MessageId", func(fileName string) (bool, error) {
+			if fileName == "guild_service_fetch.go" {
+				return false, statErr
+			}
+			return true, nil
+		})
+		// 读不到的文件既不能当作存在(登记一个可能不存在的函数),也不能当作不存在(漏登手写 handler)。
+		if !errors.Is(err, statErr) || cases != nil {
+			t.Fatalf("stat 出错必须让注册表计算失败: cases=%+v err=%v", cases, err)
+		}
+		if !strings.Contains(err.Error(), "GuildService.Fetch") {
+			t.Errorf("错误信息必须指明 GuildService.Fetch: %v", err)
+		}
+	})
+
+	t.Run("handler路径不是普通文件", func(t *testing.T) {
+		// 生产判定 robotHandlerFileExists:与 handler 同名的目录不能当作 handler 已存在。
+		_, guild := robotFixture()
+		dir := t.TempDir()
+		if err := os.Mkdir(filepath.Join(dir, "guild_service_read.go"), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		cases, err := robotHandlerCases(robotFixtureClassify(t, guild), "MessageId", func(fileName string) (bool, error) {
+			return robotHandlerFileExists(filepath.Join(dir, fileName))
+		})
+		if err == nil || cases != nil {
+			t.Fatalf("handler 路径不是普通文件必须让注册表计算失败: cases=%+v err=%v", cases, err)
+		}
+		for _, identity := range []string{"GuildService.Read:", "guild_service_read.go", "not a regular file"} {
+			if !strings.Contains(err.Error(), identity) {
+				t.Errorf("错误信息必须指明 %q: %v", identity, err)
+			}
+		}
 	})
 }
 

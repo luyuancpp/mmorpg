@@ -11,7 +11,7 @@
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
 
-#include "player/system/travel_freeze_cap.h"
+#include "services/scene/player/system/travel_freeze_cap.h"
 
 // 归属只在冻结快照双 SQL ACK 齐备后切换。登记下限和 H/F/R 资格是永久字段，
 // 发布以同一 Lua 的 H→F 与 SET 提交；未知应答只重放原候选，不以标记 TTL 推断撤销。
@@ -21,7 +21,7 @@ namespace handoff_sql_barrier
     // E|S|N|A|K|T：owner / 原场景实例 / 原 SQL admission generation / 本次加载稳定 nonce /
     // H持有、F冻结、R撤销 / 当前资格 nonce。数字比较在 Lua 中始终按十进制字符串进行。
     inline constexpr std::string_view kFenceField = "handoff_fence";
-    enum class FenceState : uint8_t { kHeld, kFrozen, kRevoked };
+    enum class FenceState : uint8_t { kHeld, kFrozen, kRevoked, kCount };
     struct Fence
     {
         uint64_t ownerEpoch{0};
@@ -283,6 +283,8 @@ return 1
 )";
 
     // A1、疏散和放弃载入补写只消费原 H；不读当前 holder 给旧调用补授权。
+    // 返回 1 写成(同一 F 已在也算,幂等);0 owner_epoch 已不是 E;-2 原 H 已被轮换(更新的登记 / 撤销 / 发布),
+    // 与 kPublishMarkLua 同码,调用方据此区分"归属已推进"与"资格已被取代"(2026-10-23,r2-lc 评审)。
     inline const std::string kReleaseMarkLua = std::string(kFenceLuaHelpers) + R"(
 if #ARGV~=5 or not types3() then return redis.error_reply('HANDOFF release shape') end
 local held,next=fence(ARGV[4]),fence(ARGV[5])
@@ -292,7 +294,28 @@ if not held or not next or raw==nil or held.k~='H' or next.k~='F' or not samehol
     return redis.error_reply('HANDOFF release record') end
 if redis.call('GET',KEYS[1])~=ARGV[1] then return 0 end
 if raw==ARGV[5] then return 1 end
-if raw~=ARGV[4] then return 0 end
+if raw~=ARGV[4] then return -2 end
+redis.call('HSET',KEYS[2],'handoff_fence',ARGV[5])
+redis.call('SET',KEYS[3],ARGV[2],'EX',ARGV[3])
+return 1
+)";
+
+    // 会话结束凭证(location-release-binding.md §3.3):本节点完全不持有该玩家时手里没有缓存的原 H,调用方先 HGET 观察
+    // 现任资格原件,回到 scene 线程上重核"仍完全不持有"、且原件是本进程实例在期望 E 下登记的资格之后,才拿观察到的原件
+    // 做这次 CAS。原件状态 H / F / R 都认:它们只说明这一代资格是怎么结束的(未写标记就销毁 / 已发布或已释放 / 已撤销),
+    // 本节点不再持有时盘上就是 E 代终态。之后任何登记、恢复、撤销、发布都会轮换原件,所以晚到的凭证帧必然 CAS 失败(-2),
+    // 一个字节都不写;跨节点接手先铸 E+1,owner 条件拒(0)。
+    // 返回码与 kReleaseMarkLua 相同:1 写成(同一 F 已在也算);0 owner_epoch 已不是 E;-2 原件已被取代。
+    inline const std::string kCredentialMarkLua = std::string(kFenceLuaHelpers) + R"(
+if #ARGV~=5 or not types3() then return redis.error_reply('HANDOFF credential shape') end
+local observed,next=fence(ARGV[4]),fence(ARGV[5])
+local raw=prior()
+if not observed or not next or raw==nil or next.k~='F' or not sameholder(observed,next)
+    or observed.t==next.t or observed.e~=ARGV[1] or not marker(ARGV[2],ARGV[1]) or ARGV[3]~='300' then
+    return redis.error_reply('HANDOFF credential record') end
+if redis.call('GET',KEYS[1])~=ARGV[1] then return 0 end
+if raw==ARGV[5] then return 1 end
+if raw~=ARGV[4] then return -2 end
 redis.call('HSET',KEYS[2],'handoff_fence',ARGV[5])
 redis.call('SET',KEYS[3],ARGV[2],'EX',ARGV[3])
 return 1

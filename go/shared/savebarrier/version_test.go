@@ -4,6 +4,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"math"
 	databasepb "proto/common/database"
+	"shared/redisslot"
 	"testing"
 )
 
@@ -50,5 +51,20 @@ func TestParseRejectsMalformedAndOverflow(t *testing.T) {
 	}
 	if Key(42) != "player:{42}:save_barrier" {
 		t.Fatal("屏障键未保留玩家 hash tag")
+	}
+}
+
+// 父快照键是与 C++ 的跨语言契约（MessageAsyncClient::RedisKeyFor、严格存盘 Lua 的父键尾缀校验），且必须与屏障同槽。
+func TestParentKeyShapeAndSlot(t *testing.T) {
+	if got := ParentKey(42); got != "PlayerAllData:{42}" {
+		t.Fatalf("ParentKey(42) = %q", got)
+	}
+	if got := ParentKeyFor(&databasepb.PlayerAllData{}, 7); got != ParentKey(7) {
+		t.Fatalf("ParentKeyFor 与 ParentKey 不一致: %q", got)
+	}
+	for _, pid := range []uint64{1, 42, math.MaxUint64} {
+		if redisslot.HashSlot(ParentKey(pid)) != redisslot.HashSlot(Key(pid)) {
+			t.Fatalf("pid %d: 父快照键与屏障键不同槽", pid)
+		}
 	}
 }

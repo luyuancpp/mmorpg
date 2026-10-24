@@ -202,7 +202,23 @@ if not held or not next or raw==nil or held.k~='H' or next.k~='F' or not samehol
     return redis.error_reply('HANDOFF release record') end
 if redis.call('GET',KEYS[1])~=ARGV[1] then return 0 end
 if raw==ARGV[5] then return 1 end
-if raw~=ARGV[4] then return 0 end
+if raw~=ARGV[4] then return -2 end
+redis.call('HSET',KEYS[2],'handoff_fence',ARGV[5])
+redis.call('SET',KEYS[3],ARGV[2],'EX',ARGV[3])
+return 1
+`
+
+// 会话结束凭证(location-release-binding.md §3.3,2026-10-23):原件来自 scene 的 HGET 观察,H / F / R 皆可。
+const cppLuaCredentialFence = cppHandoffFenceHelpers + `
+if #ARGV~=5 or not types3() then return redis.error_reply('HANDOFF credential shape') end
+local observed,next=fence(ARGV[4]),fence(ARGV[5])
+local raw=prior()
+if not observed or not next or raw==nil or next.k~='F' or not sameholder(observed,next)
+    or observed.t==next.t or observed.e~=ARGV[1] or not marker(ARGV[2],ARGV[1]) or ARGV[3]~='300' then
+    return redis.error_reply('HANDOFF credential record') end
+if redis.call('GET',KEYS[1])~=ARGV[1] then return 0 end
+if raw==ARGV[5] then return 1 end
+if raw~=ARGV[4] then return -2 end
 redis.call('HSET',KEYS[2],'handoff_fence',ARGV[5])
 redis.call('SET',KEYS[3],ARGV[2],'EX',ARGV[3])
 return 1
@@ -300,6 +316,7 @@ func TestSourceJudgeScriptAndInheritClearCopiesMatchCpp(t *testing.T) {
 	require.Equal(t, cppLuaJudgeTravelOutcome, prefix+cppFenceRaw(t, source, "kJudgeOutcomeLua"), "kJudgeOutcomeLua")
 	require.Equal(t, cppLuaRevokeFence, prefix+cppFenceRaw(t, source, "kRevokeFenceLua"), "kRevokeFenceLua")
 	require.Equal(t, cppLuaReleaseFence, prefix+cppFenceRaw(t, source, "kReleaseMarkLua"), "kReleaseMarkLua")
+	require.Equal(t, cppLuaCredentialFence, prefix+cppFenceRaw(t, source, "kCredentialMarkLua"), "kCredentialMarkLua")
 	require.Equal(t, cppLuaPublishFence, prefix+cppFenceRaw(t, source, "kPublishMarkLua"), "kPublishMarkLua")
 	require.Equal(t, cppLuaResumeFence, prefix+cppFenceRaw(t, source, "kResumeFenceLua"), "kResumeFenceLua")
 }
@@ -515,7 +532,7 @@ func TestHandoffFenceRejectsLateRegistrationPublishAndRevocation(t *testing.T) {
 	require.Equal(t, "1", eval(cppLuaRevokeFence, newer, published, revoked, "1000"))
 	before = mr.Dump()
 	require.Equal(t, "-2", eval(cppLuaRegisterFence, "7", newer, revoked), "同N不能在撤销后复活")
-	require.Equal(t, "0", eval(cppLuaReleaseFence, "7", "7:1000", "300", newer, published))
+	require.Equal(t, "-2", eval(cppLuaReleaseFence, "7", "7:1000", "300", newer, published), "原H已撤销:资格被取代")
 	require.Equal(t, "-2", eval(cppLuaPublishFence, "7", "7:1000", "300", newer, published))
 	require.Equal(t, before, mr.Dump(), "mark缺席时撤资格也须挡住迟到SET")
 	// 已知恢复floor保N；未知floor同E无资格，新SM owner推进后才可建立新instance。
@@ -566,10 +583,15 @@ func TestStableHandoffTransitionCandidateRecoversLostReplies(t *testing.T) {
 				require.Equal(t, "1", fmt.Sprint(v))
 			}
 			// 已提交但首回包被调用方丢弃，再重放原candidate成功；旧H无法借新状态发布。
+			// owner 未变(7)时旧 H 已被恢复出的 candidate 取代 → -2;owner 已推进到 9 时先按 owner 拒 → 0。
+			wantRelease := "-2"
+			if target != "7" {
+				wantRelease = "0"
+			}
 			before := mr.Dump()
 			v, err := sc.Redis.Eval(cppLuaReleaseFence, keys[:3], "7", "7:1000", "300", held, frozen)
 			require.NoError(t, err)
-			require.Equal(t, "0", fmt.Sprint(v))
+			require.Equal(t, wantRelease, fmt.Sprint(v))
 			require.Equal(t, before, mr.Dump())
 		})
 	}
@@ -610,4 +632,133 @@ func TestHandoffDamagedOwnershipAndMarkerRejectBeforeAnyMutation(t *testing.T) {
 			require.Equal(t, before, mr.Dump())
 		})
 	}
+}
+
+// r2-lc#1 / r2-lc#2(data-overwrite-rollback-audit-r2-20261019.md §3.6):zone Redis 存活探测摘掉无应答的旧连接后,
+// 内核仍可能把旧连接上未确认的标记写重传到 Redis,晚于新连接上的取证 / 同节点重载登记才执行。这里按 Redis 实际执行
+// 顺序重放(迟到的那一条最后执行),断言 scene_manager 的两个消费方 —— 换手门 checkHandoffCommitted 与 LeaveScene
+// 的释放证据 markerReleasesEpoch —— 在新持有期间都拿不到当前代际的标记。拒绝只靠 save_barrier.handoff_fence 原件的
+// CAS,不看墙钟、不看连接顺序。C++ 侧用两条真实连接的同序复现见
+// CurrencyTest.HandoffMarkFramesDelayedOnReplacedConnectionCannotReviveCredentialAgainstRealRedis。
+func TestLateMarkWritesFromReplacedConnectionNeverOpenHandoffGate(t *testing.T) {
+	const epoch = uint64(5)
+	makeFence := func(generation, admission, state, token string) string {
+		return strings.Join([]string{"5", "scene-x", generation, strings.Repeat(admission, 32), state, strings.Repeat(token, 32)}, "|")
+	}
+	setup := func(t *testing.T, id uint64) (*svc.ServiceContext, *miniredis.Miniredis, []string) {
+		t.Helper()
+		sc, mr := newTestSvcCtxWithWorldScenes(t)
+		keys := []string{ownerepoch.OwnerEpochKey(id), fmt.Sprintf("player:{%d}:save_barrier", id),
+			ownerepoch.HandoffKey(id), getPlayerLocationKey(id)}
+		require.NoError(t, mr.Set(keys[0], "5"))
+		return sc, mr, keys
+	}
+	eval := func(t *testing.T, sc *svc.ServiceContext, script string, keys []string, args ...any) any {
+		t.Helper()
+		v, err := sc.Redis.Eval(script, keys, args...)
+		require.NoError(t, err)
+		return v
+	}
+	requireGateClosed := func(t *testing.T, sc *svc.ServiceContext, mr *miniredis.Miniredis, id uint64) {
+		t.Helper()
+		require.False(t, mr.Exists(ownerepoch.HandoffKey(id)), "新持有期间不得出现当前代际的标记")
+		verdict, err := checkHandoffCommitted(sc, id, epoch)
+		require.NoError(t, err)
+		require.False(t, verdict.committed, "换手门放行 = 不存盘就铸 E+1,目标读到冻结时的父快照")
+		raw, _ := sc.Redis.Get(ownerepoch.HandoffKey(id))
+		require.False(t, markerReleasesEpoch(raw, epoch), "LeaveScene 不得把迟到标记当释放证据删 location")
+	}
+
+	t.Run("lc1_publish_lands_after_judge_unchanged", func(t *testing.T) {
+		const id = uint64(63995)
+		sc, mr, keys := setup(t, id)
+		version := "00000000000000000005:00000000000000000001"
+		held, published := makeFence("1", "a", "H", "b"), makeFence("1", "a", "F", "c")
+		revoked, resumed := makeFence("1", "a", "R", "d"), makeFence("1", "a", "H", "e")
+		mr.HSet(keys[1], "pending", version, "player_database", version, "player_database_1", version, "handoff_fence", held)
+		require.NoError(t, mr.Set(keys[3], "location-bytes"))
+		// ① 双 SQL ACK 已齐,BeginTravelHandoff 的 kPublishMarkLua("5:1000")还滞留在旧连接里。
+		// ② 重连后看门狗在新连接上取证:标记尚未到达、owner 未变 → kUnchanged;同一脚本已把资格原子撤成 R。
+		reply, ok := eval(t, sc, cppLuaJudgeTravelOutcome, keys, held, published, revoked, "1000").([]any)
+		require.True(t, ok)
+		require.Equal(t, "5", reply[0])
+		// ③ ResumeTravelAfterRevocation:R → 新 H 确认后才解冻。
+		require.Equal(t, "1", fmt.Sprint(eval(t, sc, cppLuaResumeFence, keys, revoked, resumed, "5", "location-bytes")))
+		// ④ 旧连接上的发布此刻才执行:原 H 已不是现任资格,拒绝且不改任何字节。
+		before := mr.Dump()
+		require.Equal(t, "-2", fmt.Sprint(eval(t, sc, cppLuaPublishFence, keys[:3], "5", "5:1000", "300", held, published)))
+		require.Equal(t, before, mr.Dump())
+		requireGateClosed(t, sc, mr, id)
+		// 解冻后的新持有者自己的下一次交接照常放行:围栏只拒旧资格,不伤活性。
+		require.Equal(t, "1", fmt.Sprint(eval(t, sc, cppLuaPublishFence, keys[:3], "5", "5:2000", "300", resumed,
+			makeFence("1", "a", "F", "f"))))
+		verdict, err := checkHandoffCommitted(sc, id, epoch)
+		require.NoError(t, err)
+		require.True(t, verdict.committed)
+	})
+
+	// A1′、A2′ 放弃补写、改派、改派踢线前补写都走同一段 kReleaseMarkLua,只消费各自缓存的原 H;这里以 A1′ 为代表。
+	t.Run("lc2_release_lands_after_same_node_reload", func(t *testing.T) {
+		const id = uint64(63996)
+		sc, mr, keys := setup(t, id)
+		held, released := makeFence("1", "a", "H", "b"), makeFence("1", "a", "F", "c")
+		reloaded := makeFence("2", "7", "H", "8") // 同节点短重连:同 E、同 S,SQL 确认的新 admission generation
+		require.Equal(t, "1", fmt.Sprint(eval(t, sc, cppLuaRegisterFence, keys[:3], "5", held, "")))
+		// ① 退出存盘落地,A1′("5:1000")滞留在旧连接里,实体随即销毁。
+		// ② 玩家 30s 内短重连回同一节点:不铸新 epoch,新连接上登记 N=2(原子清继承标记)并确认。
+		require.Equal(t, "1", fmt.Sprint(eval(t, sc, cppLuaRegisterFence, keys[:3], "5", reloaded, held)))
+		require.Equal(t, "0", fmt.Sprint(eval(t, sc, cppLuaInheritClear, keys[:3], "5", reloaded)))
+		// ③ 旧 A1′ 此刻才执行:-2 = 原 H 已被新登记轮换,未写,不改任何字节。
+		before := mr.Dump()
+		require.Equal(t, "-2", fmt.Sprint(eval(t, sc, cppLuaReleaseFence, keys[:3], "5", "5:1000", "300", held, released)))
+		require.Equal(t, before, mr.Dump())
+		require.Equal(t, reloaded, mr.HGet(keys[1], "handoff_fence"))
+		requireGateClosed(t, sc, mr, id)
+	})
+
+	// 会话结束凭证(location-release-binding.md §3.3,2026-10-23):本节点完全不持有时没有缓存的原 H,scene 先 HGET 读现任
+	// 原件、核对(本进程实例 / 期望 E / 仍完全不持有)之后以它 CAS(kCredentialMarkLua)。读到原件之后 CAS 帧滞留在旧连接、
+	// 期间同节点短重连登记新 N:迟到的凭证必回 -2,新持有期间换手门与 LeaveScene 都拿不到证据。
+	t.Run("session_ended_credential_lands_after_same_node_reload", func(t *testing.T) {
+		const id = uint64(63997)
+		sc, mr, keys := setup(t, id)
+		held, released := makeFence("1", "a", "H", "b"), makeFence("1", "a", "F", "c")
+		require.Equal(t, "1", fmt.Sprint(eval(t, sc, cppLuaRegisterFence, keys[:3], "5", held, "")))
+		require.Equal(t, "1", fmt.Sprint(eval(t, sc, cppLuaReleaseFence, keys[:3], "5", "5:1000", "300", held, released)))
+		mr.Del(keys[2]) // A1′ 的标记 TTL 到期,location 仍指向本节点
+		// ① 会话结束释放到达,本节点完全不持有:HGET 读到原件 F,凭证 CAS 帧滞留在旧连接。
+		observed := mr.HGet(keys[1], "handoff_fence")
+		require.Equal(t, released, observed)
+		// ② 玩家短重连回同一节点:新连接上登记 N=2 并确认。
+		reloaded := makeFence("2", "7", "H", "8")
+		require.Equal(t, "1", fmt.Sprint(eval(t, sc, cppLuaRegisterFence, keys[:3], "5", reloaded, observed)))
+		require.Equal(t, "0", fmt.Sprint(eval(t, sc, cppLuaInheritClear, keys[:3], "5", reloaded)))
+		// ③ 迟到的凭证帧此刻才执行:原件已被轮换,-2,不改任何字节。
+		before := mr.Dump()
+		require.Equal(t, "-2", fmt.Sprint(eval(t, sc, cppLuaCredentialFence, keys[:3], "5", "5:2000", "300",
+			observed, makeFence("1", "a", "F", "d"))))
+		require.Equal(t, before, mr.Dump())
+		require.Equal(t, reloaded, mr.HGet(keys[1], "handoff_fence"))
+		requireGateClosed(t, sc, mr, id)
+	})
+
+	// 反面:持有节点活着而不持有(A1′ 写过、标记已过期),拿不到凭证时 location 永远删不掉(§15 起等待超时不授权删除)。
+	// 凭证以读到的本节点原件 F 写出后,换手门放行、LeaveScene 拿到 E 代释放证据。
+	t.Run("session_ended_credential_releases_idle_holder", func(t *testing.T) {
+		const id = uint64(63998)
+		sc, mr, keys := setup(t, id)
+		held, released := makeFence("1", "a", "H", "b"), makeFence("1", "a", "F", "c")
+		require.Equal(t, "1", fmt.Sprint(eval(t, sc, cppLuaRegisterFence, keys[:3], "5", held, "")))
+		require.Equal(t, "1", fmt.Sprint(eval(t, sc, cppLuaReleaseFence, keys[:3], "5", "5:1000", "300", held, released)))
+		mr.Del(keys[2])
+		requireGateClosed(t, sc, mr, id)
+		observed := mr.HGet(keys[1], "handoff_fence")
+		require.Equal(t, "1", fmt.Sprint(eval(t, sc, cppLuaCredentialFence, keys[:3], "5", "5:2000", "300",
+			observed, makeFence("1", "a", "F", "d"))))
+		verdict, err := checkHandoffCommitted(sc, id, epoch)
+		require.NoError(t, err)
+		require.True(t, verdict.committed)
+		raw, _ := sc.Redis.Get(ownerepoch.HandoffKey(id))
+		require.True(t, markerReleasesEpoch(raw, epoch))
+	})
 }

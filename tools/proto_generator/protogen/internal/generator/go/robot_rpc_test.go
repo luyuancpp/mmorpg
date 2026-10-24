@@ -6,12 +6,15 @@ import (
 	"go/format"
 	"go/parser"
 	"go/token"
+	"math"
 	"os"
 	"path"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
+	"text/template"
 
 	"protogen/internal"
 	"protogen/logger"
@@ -361,6 +364,35 @@ func TestRobotRpcRejectsNameCollisions(t *testing.T) {
 			},
 			identities: []string{"ClientPlayerShop.Wait", "google/protobuf/duration.proto"},
 		},
+		{
+			// internal.WriteGoMessageId 会把 "__" 折成 "_",调用桩引用的消息号常量名就对不上。
+			name: "消息号常量名含双下划线",
+			services: func(files []*descriptorpb.FileDescriptorProto) []*internal.RPCServiceInfo {
+				return []*internal.RPCServiceInfo{robotFixtureService(files[0], "ClientPlayerShop", 100, request("Get__All"))}
+			},
+			identities: []string{"ClientPlayerShop.Get__All", "ClientPlayerShopGet__AllMessageId"},
+		},
+		{
+			name: "消息号放不进uint32",
+			services: func(files []*descriptorpb.FileDescriptorProto) []*internal.RPCServiceInfo {
+				return []*internal.RPCServiceInfo{robotFixtureService(files[0], "ClientPlayerShop", math.MaxUint32+1, request("Get"))}
+			},
+			identities: []string{"ClientPlayerShop.Get", "4294967296"},
+		},
+		{
+			name: "服务名小写开头",
+			services: func(files []*descriptorpb.FileDescriptorProto) []*internal.RPCServiceInfo {
+				return []*internal.RPCServiceInfo{robotFixtureService(files[0], "clientPlayerShop", 100, request("Get"))}
+			},
+			identities: []string{"clientPlayerShop (proto/test/client.proto)", "upper-case"},
+		},
+		{
+			name: "方法名小写开头",
+			services: func(files []*descriptorpb.FileDescriptorProto) []*internal.RPCServiceInfo {
+				return []*internal.RPCServiceInfo{robotFixtureService(files[0], "ClientPlayerShop", 100, request("get"))}
+			},
+			identities: []string{"ClientPlayerShop.get", "upper-case"},
+		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			files := robotFixtureFiles()
@@ -378,6 +410,45 @@ func TestRobotRpcRejectsNameCollisions(t *testing.T) {
 				t.Errorf("生成失败时不得写出任何文件: entries=%v err=%v", entries, readErr)
 			}
 		})
+	}
+}
+
+func TestRobotRpcOutputIsIndependentOfServiceOrder(t *testing.T) {
+	robotFixtureLogger(t)
+	tmpl, err := template.ParseFiles(robotTemplate("robot_rpc.go.tmpl"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	files, guild := robotFixture()
+	auction := robotFixtureService(files[0], "AuctionService", 100,
+		robotFixtureMethod{"Bid", ".fixturepb.Request", ".altpb.Reply", internal.ClientRpcRequest},
+		robotFixtureMethod{"MoveBid", ".fixturepb.Request", ".Empty", internal.ClientRpcOneWay},
+	)
+	types := newRobotGoTypeIndex(files)
+	wantNames := []string{"auction_service.go", "guild_service.go"}
+
+	var first []robotRpcFile
+	for _, order := range [][]*internal.RPCServiceInfo{{guild, auction}, {auction, guild}} {
+		outputs, err := renderRobotRpcFiles(robotFixtureClassify(t, order...), types, tmpl, "MessageId")
+		if err != nil {
+			t.Fatal(err)
+		}
+		names := make([]string, len(outputs))
+		for index, output := range outputs {
+			names[index] = output.Name
+		}
+		if !slices.Equal(names, wantNames) {
+			t.Fatalf("产物必须按文件名排序: got %v, want %v", names, wantNames)
+		}
+		if first == nil {
+			first = outputs
+			continue
+		}
+		for index := range outputs {
+			if !bytes.Equal(outputs[index].Content, first[index].Content) {
+				t.Errorf("服务传入顺序不同时 %s 的内容必须逐字节相同", outputs[index].Name)
+			}
+		}
 	}
 }
 

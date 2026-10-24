@@ -343,3 +343,6 @@
 342=ClientPlayerJubaozhaiCreateWithdrawal
 343=ClientPlayerJubaozhaiGetWithdrawal
 344=BattleNodeQueryObserver
+345=MatchInternalCommitBattleOutcome
+346=PlayerInboxEnqueueBattleSettlement
+347=PlayerInboxLookupBattleSettlement

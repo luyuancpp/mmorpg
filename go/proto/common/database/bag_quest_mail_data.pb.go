@@ -478,7 +478,7 @@ func (x *QuestAllData) GetScopedStatePresent() bool {
 // session state, mail has an offline-delivery requirement: GM /
 // system / other players send mail to recipients who may not be
 // online on any scene node. So mail probably should NOT live inside
-// PlayerAllData and travel with cross-zone migration — it belongs
+// PlayerAllData and travel with it from node to node — it belongs
 // in an independent Go service (like guild/friend), keyed by
 // player_id, queried over RPC when the player loads.
 //

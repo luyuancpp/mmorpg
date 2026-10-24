@@ -1,12 +1,22 @@
 package store
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
+	"crypto/sha256"
 	"database/sql"
+	"database/sql/driver"
 	"encoding/binary"
+	"encoding/hex"
+	"errors"
 	"os"
+	"os/exec"
+	"path/filepath"
+	"strconv"
+	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -19,9 +29,366 @@ import (
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/luyuancpp/proto2mysql"
+	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
+	"shared/ownerepoch"
+	"shared/savebarrier"
 )
+
+// 真实维护正向链从正式初始SQL双行与真实登记/Begin开始；目标高E只由已编译维护CLI产生。
+// 专用parent与mapping Redis必须为空命名空间；不SCAN/FLUSH，不清父或待投来制造前置。
+func recoveredHolderTiDBFixture(t *testing.T) (*AccountDirectoryStore, *sql.DB, *AccountRoleAdmissionStore, *SQLRoleFreezeVerifier, *dbpb.AccountRoleAdmissionRecovery_Request) {
+	t.Helper()
+	addr, mappingAddr, binaryPath := os.Getenv("ADMISSION_RECOVERY_TEST_REDIS"), os.Getenv("ADMISSION_RECOVERY_TEST_MAPPING_REDIS"), os.Getenv("BARRIER_RESTORE_TEST_BINARY")
+	if addr == "" && mappingAddr == "" && binaryPath == "" && os.Getenv("ADMISSION_RECOVERY_REQUIRE_TESTS") == "" {
+		t.Skip("未启用旧holder完整维护链专用Redis/CLI")
+	}
+	require.Equal(t, "1", os.Getenv("ADMISSION_RECOVERY_REQUIRE_TESTS"))
+	require.NotEmpty(t, addr)
+	require.NotEmpty(t, mappingAddr)
+	require.NotEqual(t, addr, mappingAddr)
+	require.NotEmpty(t, binaryPath)
+	d, global := accountDirectoryTiDB(t)
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
+	t.Cleanup(cancel)
+	_, err := createInitialRoleForTest(d, ctx, "seller", &base.AccountSimplePlayer{PlayerId: 11, ZoneId: 1})
+	require.NoError(t, err)
+	a := NewAccountRoleAdmissionStore(d)
+	identity := admissionTestRequest(11, 1, 1)
+	_, err = a.Register(ctx, identity)
+	require.NoError(t, err)
+	trades := newTestAccountRoleTradeStore(d, testRoleFreezeVerifier())
+	listing, err := trades.Begin(ctx, &dspb.BeginAccountRoleTradeRequest{ListingId: 101, PlayerId: 11, SellerAccount: "seller", ExpectedOwnerRevision: 1})
+	require.NoError(t, err)
+	require.Len(t, listing.Holders, 1)
+	var storage uint32
+	var routeRevision, placementVersion uint64
+	var generation string
+	var watermark uint64
+	require.NoError(t, global.QueryRowContext(ctx, "SELECT storage_id,placement_version,rev FROM player_route WHERE route_shard=? AND player_id=11", placement.RouteRowShard(11)).Scan(&storage, &placementVersion, &routeRevision))
+	rowSchema, ok := placement.StoreDBName(storage)
+	require.True(t, ok)
+	// 沿正式维护方法冻结路由并钉当前已审水位，不修改玩家版本/业务数据。
+	routes := &RouteStore{db: global}
+	_, err = routes.FreezeRouteWriters(ctx)
+	require.NoError(t, err)
+	_, err = routes.UnfreezeRouteWriters(ctx, 1000)
+	require.NoError(t, err)
+	_, err = routes.FreezeRouteWriters(ctx)
+	require.NoError(t, err)
+	require.NoError(t, global.QueryRowContext(ctx, "SELECT generation FROM route_meta WHERE id=1").Scan(&generation))
+	require.NoError(t, global.QueryRowContext(ctx, "SELECT watermark_ms FROM route_reconcile WHERE id=1").Scan(&watermark))
+	require.Positive(t, watermark)
+	cfg, err := mysql.ParseDSN(os.Getenv("ACCOUNT_DIRECTORY_TEST_DSN"))
+	require.NoError(t, err)
+	cfg.DBName = rowSchema
+	rows, err := authoritysql.Open(ctx, cfg.FormatDSN(), rowSchema, true, 1)
+	require.NoError(t, err)
+	t.Cleanup(func() { rows.Close() })
+	model := proto2mysql.NewDB()
+	require.NoError(t, model.OpenDB(rows, rowSchema))
+	first, second := &dbpb.PlayerDatabase{PlayerId: 11}, &dbpb.PlayerDatabase_1{PlayerId: 11}
+	model.RegisterTable(first)
+	model.RegisterTable(second)
+	require.NoError(t, model.FindOneByPK(first))
+	require.NoError(t, model.FindOneByPK(second))
+	require.EqualValues(t, 1, first.FenceOwnerEpoch)
+	require.EqualValues(t, 1, first.FenceSaveSeq)
+	parent := &dbpb.PlayerAllData{PlayerDatabaseData: first, PlayerDatabase_1Data: second, LastSaveSeq: 1}
+	parentRaw, err := proto.Marshal(parent)
+	require.NoError(t, err)
+	cache := redis.NewClient(&redis.Options{Addr: addr, DB: 14, MaxRetries: -1, DialTimeout: time.Second, ReadTimeout: time.Second, WriteTimeout: time.Second})
+	mapping := redis.NewClient(&redis.Options{Addr: mappingAddr, MaxRetries: -1, DialTimeout: time.Second, ReadTimeout: time.Second, WriteTimeout: time.Second})
+	t.Cleanup(func() { cache.Close(); mapping.Close() })
+	maintenance := "old-holder-" + d.schema
+	// 固定home1的原工具MaintenanceKey(1)，只登记本夹具实际创建的键以便精确清理。
+	maintenanceKey := "player:save_barrier:maintenance:1"
+	parentKey := savebarrier.ParentKey(11)
+	ownedCache := []string{ownerepoch.OwnerEpochKey(11), savebarrier.Key(11), parentKey, maintenanceKey, "debug_import:local_target", "debug_import:local_instance_id"}
+	ownedMapping := []string{placement.HomeZoneKey(11), placement.Key(11), placement.MapRevKey(11), placement.RouteWatermarkKey, maintenanceKey, placement.MergeFenceKey(1), "debug_import:local_target", "debug_import:local_instance_id"}
+	for _, group := range []struct {
+		client *redis.Client
+		keys   []string
+	}{{cache, ownedCache}, {mapping, ownedMapping}} {
+		for _, key := range group.keys {
+			n, err := group.client.Exists(ctx, key).Result()
+			require.NoError(t, err)
+			require.Zero(t, n, "不接管任何既有Redis键")
+		}
+	}
+	t.Cleanup(func() {
+		cleanup, done := context.WithTimeout(context.Background(), 10*time.Second)
+		defer done()
+		require.NoError(t, cache.Del(cleanup, ownedCache...).Err())
+		require.NoError(t, mapping.Del(cleanup, ownedMapping...).Err())
+	})
+	created, err := cache.SetNX(ctx, ownerepoch.OwnerEpochKey(11), "17", 0).Result()
+	require.NoError(t, err)
+	require.True(t, created)
+	created, err = cache.SetNX(ctx, parentKey, parentRaw, 0).Result()
+	require.NoError(t, err)
+	require.True(t, created)
+	var nonce [16]byte
+	_, err = rand.Read(nonce[:])
+	require.NoError(t, err)
+	localTarget := hex.EncodeToString(nonce[:])
+	for _, schema := range []string{d.schema, rowSchema} {
+		_, err := global.ExecContext(ctx, "CREATE TABLE `"+schema+"`.debug_import_local_target(marker VARCHAR(64) NOT NULL PRIMARY KEY)")
+		require.NoError(t, err)
+		_, err = global.ExecContext(ctx, "INSERT INTO `"+schema+"`.debug_import_local_target(marker) VALUES(?),(?)", "local-debug-import-target", "old-scene-recovery:"+localTarget)
+		require.NoError(t, err)
+	}
+	for _, client := range []*redis.Client{cache, mapping} {
+		created, err := client.SetNX(ctx, "debug_import:local_target", "local-debug-import-target", 0).Result()
+		require.NoError(t, err)
+		require.True(t, created)
+		_, err = rand.Read(nonce[:])
+		require.NoError(t, err)
+		created, err = client.SetNX(ctx, "debug_import:local_instance_id", hex.EncodeToString(nonce[:]), 0).Result()
+		require.NoError(t, err)
+		require.True(t, created)
+	}
+	v := savebarrier.Version(1, 1)
+	oldR := "17|" + admissionTestInstance + "|1|" + strings.Repeat("a", 32) + "|R|" + strings.Repeat("b", 32)
+	require.NoError(t, cache.HSet(ctx, savebarrier.Key(11), "pending", v, "player_database", v, "player_database_1", v, "schema_gen", strconv.FormatUint(uint64(first.PersistSchemaGen), 10), "handoff_fence", oldR).Err())
+	wm, err := placement.EncodeRouteWatermark(placement.RouteWatermark{Generation: generation, WatermarkMs: watermark})
+	require.NoError(t, err)
+	for key, value := range map[string]string{placement.HomeZoneKey(11): "1", placement.Key(11): placement.StableValue(storage, placementVersion), placement.MapRevKey(11): strconv.FormatUint(routeRevision, 10), placement.RouteWatermarkKey: wm} {
+		created, err := mapping.SetNX(ctx, key, value, 0).Result()
+		require.NoError(t, err)
+		require.True(t, created)
+	}
+	temp := t.TempDir()
+	planFile, evidenceFile := filepath.Join(temp, "plan.json"), filepath.Join(temp, "audit.json")
+	evidence := []byte(`{"fixture":"no-live-writer","upper_bound":"19","queues_drained":true}`)
+	require.NoError(t, os.WriteFile(evidenceFile, evidence, 0600))
+	sum := sha256.Sum256(evidence)
+	args := []string{"-schema", rowSchema, "-zone", "1", "-maintenance-id", maintenance, "-redis", addr, "-redis-db", "14", "-mapping-redis", mappingAddr, "-routing-mode", "db_first", "-route-schema", d.schema, "-audited-owner-upper-bound", "19", "-writers-stopped", "-queues-drained"}
+	command := func(extra ...string) []byte {
+		if len(args) > 0 && strings.Contains(strings.Join(args, " "), "-fence-only-promotion") {
+			extra = append(extra, "-target-observation", filepath.Join(temp, "target-"+strconv.FormatInt(time.Now().UnixNano(), 10)+".json"))
+		}
+		cmd := exec.CommandContext(ctx, binaryPath, append(append([]string{}, args...), extra...)...)
+		cmd.Env = append(os.Environ(), "SAVE_BARRIER_RESTORE_DSN="+cfg.FormatDSN())
+		output, err := cmd.CombinedOutput()
+		require.NoError(t, err, "正式维护CLI输出: %s", string(output))
+		return output
+	}
+	command("-mode", "guard")
+	args = append(args, "-fence-only-promotion", "-plan", planFile, "-audit-evidence", evidenceFile, "-audit-evidence-sha256", hex.EncodeToString(sum[:]), "-local-target-id", localTarget)
+	command("-mode", "plan", "-players", "11")
+	planRaw, err := os.ReadFile(planFile)
+	require.NoError(t, err)
+	planHash := sha256.Sum256(planRaw)
+	output := command("-mode", "apply", "-plan-sha256", hex.EncodeToString(planHash[:]))
+	receipt := &dbpb.SaveBarrierMaintenanceReceipt{}
+	require.NoError(t, protojson.Unmarshal(bytes.TrimSpace(output), receipt))
+	require.Equal(t, dbpb.SaveBarrierMaintenanceReceipt_BARRIER_CONFIRMED, receipt.Phase)
+	var admissionDigest []byte
+	require.NoError(t, global.QueryRowContext(ctx, "SELECT request_digest FROM account_role_admission WHERE player_id=11 AND scene_instance_id=?", []byte(admissionTestInstance)).Scan(&admissionDigest))
+	in := &dbpb.AccountRoleAdmissionRecovery_Request{RequestId: roleImportTestID(23), SellerAccount: "seller", Seal: listing.Holders[0].Seal, Admission: identity.Identity, AdmissionRequestDigest: admissionDigest, MaintenanceReceiptId: receipt.ReceiptId, MaintenanceRequestDigest: receipt.RequestDigest}
+	verifier, err := NewSQLRoleFreezeVerifier([]uint32{storage})
+	require.NoError(t, err)
+	return d, global, a, verifier, in
+}
+
+func TestTiDBRecoverOldHolderFromRealPromotionCLIAndPermanentReplay(t *testing.T) {
+	d, global, a, verifier, in := recoveredHolderTiDBFixture(t)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	var marker string
+	require.NoError(t, global.QueryRowContext(ctx, "SELECT marker FROM debug_import_local_target WHERE marker LIKE 'old-scene-recovery:%'").Scan(&marker))
+	localTarget := strings.TrimPrefix(marker, "old-scene-recovery:")
+	for _, kind := range []string{"wrong-request-digest", "wrong-prior-floor", "wrong-closed", "new-generation", "wrong-maintenance"} {
+		t.Run(kind, func(t *testing.T) {
+			bad := proto.Clone(in).(*dbpb.AccountRoleAdmissionRecovery_Request)
+			switch kind {
+			case "wrong-request-digest":
+				bad.AdmissionRequestDigest[0] ^= 1
+			case "wrong-prior-floor":
+				bad.ExpectedRequiredOwnerEpoch = 17
+				bad.ExpectedRequiredSaveSeq = 2
+			case "wrong-closed":
+				bad.ExpectedClosedThrough = 1
+			case "new-generation":
+				bad.Admission.Generation++
+				bad.Seal.ThroughGeneration++
+			case "wrong-maintenance":
+				bad.MaintenanceRequestDigest[0] ^= 1
+			}
+			_, err := a.PlanCrashedTradeHolder(ctx, bad, verifier, localTarget)
+			require.Error(t, err)
+			var n int
+			require.NoError(t, global.QueryRowContext(ctx, "SELECT COUNT(*) FROM account_role_admission_recovery").Scan(&n))
+			require.Zero(t, n)
+		})
+	}
+	plan, err := a.PlanCrashedTradeHolder(ctx, in, verifier, localTarget)
+	require.NoError(t, err)
+	var count, drained int
+	var closedBefore uint64
+	require.NoError(t, global.QueryRowContext(ctx, "SELECT COUNT(*) FROM account_role_admission_recovery").Scan(&count))
+	require.Zero(t, count)
+	require.NoError(t, global.QueryRowContext(ctx, "SELECT closed_through FROM account_role_admission WHERE player_id=11").Scan(&closedBefore))
+	require.Zero(t, closedBefore)
+	_, err = a.ApplyCrashedTradeHolder(ctx, in, verifier, strings.Repeat("0", 32), plan.SqlProofDigest)
+	require.Error(t, err, "换SQL实例marker必须在任何副作用前拒绝")
+	wrongProof := bytes.Clone(plan.SqlProofDigest)
+	wrongProof[0] ^= 1
+	_, err = a.ApplyCrashedTradeHolder(ctx, in, verifier, localTarget, wrongProof)
+	require.Error(t, err, "不接受新校验结果替换审定SQL正文")
+	require.NoError(t, global.QueryRowContext(ctx, "SELECT drained FROM account_role_trade_holder WHERE listing_id=101").Scan(&drained))
+	require.Zero(t, drained)
+	// 真实TiDB退休事务已经提交，只在测试侧丢一次客户端COMMIT确认；同原件必须可只读恢复。
+	// 不注入生产hook、不伪造网络断线，故障期间没有其它使用该directory的并发请求。
+	cfg, err := mysql.ParseDSN(os.Getenv("ACCOUNT_DIRECTORY_TEST_DSN"))
+	require.NoError(t, err)
+	cfg.DBName = d.schema
+	cfg.Timeout = time.Second
+	cfg.ReadTimeout = 5 * time.Second
+	cfg.WriteTimeout = 5 * time.Second
+	connector, err := mysql.NewConnector(cfg)
+	require.NoError(t, err)
+	fault := &admissionRecoveryCommitReplyLoss{}
+	faultDB := sql.OpenDB(admissionRecoveryCommitReplyConnector{inner: authoritysql.PinCurrentSession(connector, true), fault: fault})
+	defer faultDB.Close()
+	faultDB.SetMaxOpenConns(1)
+	require.NoError(t, authoritysql.AssertCurrentSession(ctx, faultDB, true))
+	originalDB := d.db
+	func() {
+		d.db = faultDB
+		defer func() { d.db = originalDB }()
+		receipt, err := a.ApplyCrashedTradeHolder(ctx, in, verifier, localTarget, plan.SqlProofDigest)
+		require.Error(t, err)
+		require.Nil(t, receipt)
+		require.True(t, fault.lost.Load(), "底层真实COMMIT必须已成功")
+	}()
+	require.NoError(t, global.QueryRowContext(ctx, "SELECT COUNT(*) FROM account_role_admission_recovery WHERE request_id=?", in.RequestId).Scan(&count))
+	require.Equal(t, 1, count)
+	require.NoError(t, global.QueryRowContext(ctx, "SELECT drained FROM account_role_trade_holder WHERE listing_id=101").Scan(&drained))
+	require.Equal(t, 1, drained)
+	type recoveryResult struct {
+		receipt *dbpb.AccountRoleAdmissionRecovery
+		err     error
+	}
+	results := make(chan recoveryResult, 8)
+	var writers sync.WaitGroup
+	for n := 0; n < 8; n++ {
+		writers.Add(1)
+		go func() {
+			defer writers.Done()
+			receipt, err := a.ApplyCrashedTradeHolder(ctx, proto.Clone(in).(*dbpb.AccountRoleAdmissionRecovery_Request), verifier, localTarget, plan.SqlProofDigest)
+			results <- recoveryResult{receipt, err}
+		}()
+	}
+	writers.Wait()
+	close(results)
+	var first *dbpb.AccountRoleAdmissionRecovery
+	for result := range results {
+		require.NoError(t, result.err)
+		if first == nil {
+			first = result.receipt
+		} else {
+			require.True(t, proto.Equal(first, result.receipt), "并发只回同一永久原件")
+		}
+	}
+	require.NotNil(t, first)
+	require.EqualValues(t, 20, first.RequiredOwnerEpoch)
+	require.EqualValues(t, 1, first.RequiredSaveSeq)
+	var actualAck []byte
+	require.NoError(t, global.QueryRowContext(ctx, "SELECT ack_digest FROM account_role_trade_holder WHERE listing_id=101 AND scene_instance_id=?", []byte(admissionTestInstance)).Scan(&actualAck))
+	rpcDigest, err := roleTradeDigest(&dspb.AckRoleTradeDrainRequest{Seal: in.Seal, RequiredOwnerEpoch: 20, RequiredSaveSeq: 1})
+	require.NoError(t, err)
+	require.Equal(t, first.RequestDigest, actualAck)
+	require.NotEqual(t, rpcDigest, actualAck, "维护收据不是伪造的Scene RPC ACK")
+	for attempt := 0; attempt < 2; attempt++ {
+		same, err := a.ApplyCrashedTradeHolder(ctx, proto.Clone(in).(*dbpb.AccountRoleAdmissionRecovery_Request), verifier, localTarget, plan.SqlProofDigest)
+		require.NoError(t, err)
+		require.True(t, proto.Equal(first, same))
+	}
+	bad := proto.Clone(in).(*dbpb.AccountRoleAdmissionRecovery_Request)
+	bad.Admission.SessionId++
+	_, err = a.ApplyCrashedTradeHolder(ctx, bad, verifier, localTarget, plan.SqlProofDigest)
+	require.ErrorIs(t, err, accountdirectory.ErrConflict)
+	trades := newTestAccountRoleTradeStore(d, verifier)
+	_, err = trades.Confirm(ctx, &dspb.ConfirmAccountRoleTradeFreezeRequest{ListingId: 101, PlayerId: 11, SellerAccount: "seller", ExpectedOwnerRevision: 1})
+	require.NoError(t, err, "只有真实提升后的同版双SQL才让冻结确认继续")
+	_, err = trades.Cancel(ctx, &dspb.CancelAccountRoleTradeRequest{ListingId: 101, PlayerId: 11, SellerAccount: "seller", ExpectedOwnerRevision: 1})
+	require.NoError(t, err)
+	newAdmission := admissionTestRequest(11, 2, 1)
+	newAdmission.Identity.OwnerEpoch = 22
+	_, err = a.Register(ctx, newAdmission)
+	require.NoError(t, err)
+	_, err = a.ApplyCrashedTradeHolder(ctx, in, verifier, localTarget, plan.SqlProofDigest)
+	require.NoError(t, err, "原永久收据重放不碰同owner新N")
+	var highest, closed uint64
+	require.NoError(t, global.QueryRowContext(ctx, "SELECT highest_generation,closed_through FROM account_role_admission WHERE player_id=11 AND scene_instance_id=?", []byte(admissionTestInstance)).Scan(&highest, &closed))
+	require.Equal(t, []uint64{2, 1}, []uint64{highest, closed})
+}
+
+type admissionRecoveryCommitReplyLoss struct{ lost atomic.Bool }
+type admissionRecoveryCommitReplyConnector struct {
+	inner driver.Connector
+	fault *admissionRecoveryCommitReplyLoss
+}
+
+func (c admissionRecoveryCommitReplyConnector) Driver() driver.Driver { return c.inner.Driver() }
+func (c admissionRecoveryCommitReplyConnector) Connect(ctx context.Context) (driver.Conn, error) {
+	conn, err := c.inner.Connect(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &admissionRecoveryCommitReplyConn{Conn: conn, fault: c.fault}, nil
+}
+
+type admissionRecoveryCommitReplyConn struct {
+	driver.Conn
+	fault *admissionRecoveryCommitReplyLoss
+	armed bool
+}
+
+func (c *admissionRecoveryCommitReplyConn) Begin() (driver.Tx, error) {
+	return c.BeginTx(context.Background(), driver.TxOptions{})
+}
+func (c *admissionRecoveryCommitReplyConn) BeginTx(ctx context.Context, o driver.TxOptions) (driver.Tx, error) {
+	tx, err := c.Conn.(driver.ConnBeginTx).BeginTx(ctx, o)
+	if err != nil {
+		return nil, err
+	}
+	c.armed = false
+	return &admissionRecoveryCommitReplyTx{Tx: tx, conn: c}, nil
+}
+func (c *admissionRecoveryCommitReplyConn) ExecContext(ctx context.Context, q string, a []driver.NamedValue) (driver.Result, error) {
+	if strings.HasPrefix(q, "INSERT INTO account_role_admission_recovery(") {
+		c.armed = true
+	}
+	return c.Conn.(driver.ExecerContext).ExecContext(ctx, q, a)
+}
+func (c *admissionRecoveryCommitReplyConn) QueryContext(ctx context.Context, q string, a []driver.NamedValue) (driver.Rows, error) {
+	return c.Conn.(driver.QueryerContext).QueryContext(ctx, q, a)
+}
+func (c *admissionRecoveryCommitReplyConn) Ping(ctx context.Context) error {
+	return c.Conn.(driver.Pinger).Ping(ctx)
+}
+func (c *admissionRecoveryCommitReplyConn) ResetSession(ctx context.Context) error {
+	return c.Conn.(driver.SessionResetter).ResetSession(ctx)
+}
+func (c *admissionRecoveryCommitReplyConn) IsValid() bool { return c.Conn.(driver.Validator).IsValid() }
+
+type admissionRecoveryCommitReplyTx struct {
+	driver.Tx
+	conn *admissionRecoveryCommitReplyConn
+}
+
+func (tx *admissionRecoveryCommitReplyTx) Commit() error {
+	err := tx.Tx.Commit()
+	if err == nil && tx.conn.armed && tx.conn.fault.lost.CompareAndSwap(false, true) {
+		return errors.New("测试侧真实退休收据已提交但确认丢失")
+	}
+	return err
+}
 
 const admissionTestInstance = "11111111-2222-3333-4444-555555555555"
 

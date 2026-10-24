@@ -40,9 +40,9 @@ const (
 	identityLockToken = "lock-token-7001"
 )
 
-// identityBlobKey 与 backfillPlayerIdentity 用同一种拼法(PlayerAllData 全名 + player_id)。
+// identityBlobKey 与 backfillPlayerIdentity 用同一种拼法(PlayerAllData 全名 + ":{" + player_id + "}")。
 func identityBlobKey() string {
-	return fmt.Sprintf("%s:%d", (&dbpb.PlayerAllData{}).ProtoReflect().Descriptor().FullName(), identityPlayerID)
+	return fmt.Sprintf("%s:{%d}", (&dbpb.PlayerAllData{}).ProtoReflect().Descriptor().FullName(), identityPlayerID)
 }
 
 // newIdentityBackfillHarness 起 miniredis(支持 EVAL),种下玩家登录锁与一份 PlayerAllData 存档,

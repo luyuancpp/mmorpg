@@ -1,10 +1,26 @@
 # 全球同服、交易与角色归属：Claude Code 审核入口
 
-状态：**实现与验收均未全部完成**。除了剩余编译、真库与双区验收，还须闭合首存前新号恢复、Java 历史快照缺失、迟到释放标记和历练丢失终局的安全恢复问题，不能概括为“只剩跑测试”。本文件是负责人要求的审核入口；完整实施过程与失败原件见 [原交接](global-economy-review-20261021.md)。下面的历史通过结果只覆盖其记录的源码、依赖、环境与命令，不能替代后来变化的源码或重启后的数据库验收。
+状态：**整体尚未完成，不能交付为完成**。历练终局与旧 Scene 登记恢复本项已获准最多 120 个唯一手写路径（115个明确、5个仅旧测试预留）；核心协议、必要服务器导表及官方 Java 同步已实际执行，当前继续修复真实编译问题并完成最新源码构建、真库与双区故障验收。静态收口不代表功能已验收。首存前新号恢复、Java 历史快照缺失和迟到释放标记的实际剩余验证也保留在下文。本文件是负责人要求的审核入口；完整实施过程与失败原件见 [原交接](global-economy-review-20261021.md)。下面的历史通过结果只覆盖其记录的源码、依赖、环境与命令，不能替代后来变化的源码或重启后的数据库验收。
 
-当前剩余工作按交付结果分为四块：三项数据安全修复及其完整调用链、最新三语言构建与回归、剩余真库专项、两版完整双区与故障验收。Unity 最新 Guild 的 234 项已通过。Go 初始 SQL 提交和 C++ 迟到回调围栏仍在实现；Java 缺快照修复已应用，完整 Store 普通回归已通过，真 TiDB 与下游 Data 仍须验收。历练已启动后丢失终局的安全恢复仍是开放项，不因本轮三项修复而自动闭合。
+当前范围授权：负责人最新将此前111／113／114请求统一批准为最多120个唯一手写路径。目前115个已明确，即原108加七个旧测试；另五个预留只限本批真实构建暴露的同类旧测试适配，逐文件保全前后内容、差异与原因。生产逻辑、生成物、客户端和地图不在预留内，不得删断言或跳检查。授权原件 `C:/Users/luyua/.codex/tmp/global-terminal-and-admission-combined-120-authorization-20261024-r1/authorization.json`，SHA `C8DBA9DAC189ACE6CE2CB5CE47742E6A4EA15F65E2DEF45D865893DA262B712B`；具体七路径与边界仍按原提案 `C:/Users/luyua/.codex/tmp/global-terminal-and-admission-combined-120-pending-r1/proposal.pending.json`，SHA `E22C0F40CE2A671DD5EA03AC78BB6D3C764779EC4A5F6C90AEF24BE6CA0CCDB4`。原108及历次授权保留为历史。
 
-最新实际失败也保留在账：Java M9 原 3000 行／20 区夹具确实选择 `TableFullScan`，不是 EXPLAIN 解析遗漏；后继只调整有明确选择性的索引夹具，保留原分布的查询正确性核验，不修改生产索引或强制执行计划，不把该适配当作容量结论。Java Store 修后完整 176 项取得 165 PASS、1 FAIL、2 ERROR、8 SKIP；新增五项全过，但三处旧夹具仍假定建角没有初始状态，正同步适配。两次原件分别为 `C:/Users/luyua/.codex/tmp/java-external-current-green-full-candidate-20261023-r21-m9-diagnostic/run-TiDB-game-data-20261023T084652395Z-e66471e9/proof.json`（SHA `85A36E712CA5092A14B1EA47028198DDECA736DB285387B3918B6C1B9DFA3BE5`）与 `C:/Users/luyua/.codex/tmp/java-current-b0b7551-current-epoch-preparation-r1/player-state-presence-green-r1/run-PlayerStoreBuild/proof.json`（SHA `DA4B3A1D42100ADF465D221E6BB683EB9F2AE6F3041961E3F49BB5BE6877FA42`）。
+逐文件审核入口：原108路径基线清单 `C:/Users/luyua/.codex/tmp/global-terminal-and-admission-combined-108-authorization-r1/scope-inventory-r1.json`，SHA `230A994E45CE31629091A545982E7EB19477742B8ACE9E1BD9D25505F1419C67`，已核 108 唯一路径、0 重复、0 缺文件。原 100 路径清单和同目录 `current-source-observation-r1/` 字节副本保留为当时观察；后续编译修复另有逐文件原件，不能将旧观察冒作全部当前源。这不是编译通过证据，也不将整仓 dirty、后来的输入变化或预留 PARITY 登记全部归为本批作者修改。主恢复 13 路径原冻结为 `%TEMP%/old-scene-admission-recovery-main-20261023-r1/thirteen-path-final-source-freeze-r1.json`（SHA `8713C49AC8F5C4762F6CD24E25285E3C9F99ED4F94A4E6A6E7833352DA07FC3F`）；独立 Java 的旧 OPEN 范围与原待验清单为 `%TEMP%/java-battle-terminal-recovery-implementation-20261023-r1/old-open-recovery-r4-cli-url-shape/final-eight-path-and-validation-pending-r4.json`（SHA `EC3636636C7B0EB74A950952A6FECCE88EE5E0291B7192E422BCA7DE64EA955F`）。后继实际修复摘要另存，不用这些旧冻结值代替当前源码。
+
+当前剩余工作按交付结果分为四块：数据安全调用链的实际验证与必要修复、最新三语言构建与回归、剩余真库专项、两版完整双区与故障验收。Unity 最新 Guild 的 234 项已通过，本轮没有读写独立客户端或地图。正规生成、服务器导表与 Java 官方同步已实际通过；当前 Java Full30 已取得 **9902 PASS／0 FAIL／0 ERROR／1008 外部 SKIP**。C++ 当前完整及补充构建已通过，CrossZone 原19红已闭合；muduo 当前196项已分两次真实XML完整通过，仍有 Currency2失败，不能称C++整体验收完成。Go 当前十五个模块普通验证已闭合；新增DB显式解除5路径的生产构建、完整1126 PASS／18外部SKIP、vet和正式CLI PE均已实际通过。其余14模块当前源码投影0差、无DB域成员，实际旧／新依赖库存逐原行对比0差；完整业务实际依赖闭包仍须各消费端最后准入。Shared与Login两模块保已知旧测试失败，不把普通通过和外部跳过当真库／双区完成。Java 当前真库 Match 有3项失败、Store有5项失败；已捕获TiDB取消后的语句回滚清理panic，最小原建角用例也真实复现回滚结果未知。固定官方修复镜像的本地方案已获安装授权，尚未下载、部署和复验，不能把这些失败改记为通过。Java另十组真实Redis专项527项已全通过、0跳过，基础33组专项当前15组通过、18组尚未通过；Kafka后续在Maven启动前发现原broker2已停止，保留准入失败并先诊断。Java恢复辅助工具后继单源已实际javac，新旧共13个class完成纯闭包；生产恢复入口与两版真实双区仍待运行。原9845／1003等结果只保留为历史，不覆盖后来源。具体当前原件与未验收边界见本文末尾和 [2026-10-23 设计小节](../design/cross-zone-matchmaking.md)。
+
+截至2026-10-24 05:33 UTC的剩余验收分组（各组有具名用例，不代表整体完成比例；旧源码通过项只作历史，不冒充当前输入通过）：
+
+| 范围 | 当前实际结果 | 仍需完成 |
+| --- | --- | --- |
+| Go 17模块普通验证 | 15模块普通闭合；新DB为1126通过／18外部跳过，正式CLI已编译 | Shared、Login原失败保留，最新旧测试适配已写、回归待跑；真库与完整业务链仍待验 |
+| C++ | 共享最新工作区整解 MSBuild 已于05:27自然结束，0错误、51警告；旧CrossZone与muduo196项有历史通过证据 | 当前输入已从1874变为1884项，含10新增、26字节变化；复用现有obj补增量来源核验、Currency及全部受影响套件，旧通过不覆盖这些新输入 |
+| Java普通与Redis | Full30为9902通过／1008外部跳过；另十组真实Redis527项全过 | 不将普通跳过项计作真库通过 |
+| Java基础33组外部专项 | 当前15组完整通过 | 余18组422项：Kafka4组13项；MySQL2组7项；TiDB独立10组293项；TiDB已知失败2组109项。完整Store127及诊断扩展另外保留，不与基础分组混计 |
+| 完整业务链 | 部分辅助工具已编译；主Main A/B整条接线已补齐，AST通过 | 三个最新辅助工具及P4／Observer当前包待实际构建；主36、Java33完整双区故障恢复仍未通过 |
+| 必要决策与运行资源 | 最多120路径、固定官方TiDB hotfix及单次清理均已授权；旧三库已正常停止；交换页执行器05:33已实际编译并通过新旧类型共存、提交余量与2 CPU检查 | 七个旧测试受影响回归、新库下载部署与复验、双区仍待完成；执行器通过不计为业务测试通过 |
+
+Java最新实际分组及运行门禁账：`C:/Users/luyua/.codex/tmp/java-battle-terminal-recovery-implementation-20261023-r1/current-independent-redis-batch-r1/actual-ledger-snapshots/actual-combined-20261024T025216194Z-893191ec.json`，SHA `F2EA08AA0A7F33855E1195EFC6A00F242BD450BD75B17F0290180C8E2837295E`。基础分组、额外诊断和完整业务链须分别结论；没有依据上述数量估算固定完成时间。
+此前失败原件也保留在账：Java M9 原 3000 行／20 区夹具确实选择 `TableFullScan`，不是 EXPLAIN 解析遗漏；后继只调整有明确选择性的索引夹具，保留原分布的查询正确性核验，不修改生产索引或强制执行计划，不把该适配当作容量结论。Java Store 当轮完整 176 项取得 165 PASS、1 FAIL、2 ERROR、8 SKIP；新增五项全过，但三处旧夹具仍假定建角没有初始状态，其后已适配，后继结果见下一段。两次原件分别为 `C:/Users/luyua/.codex/tmp/java-external-current-green-full-candidate-20261023-r21-m9-diagnostic/run-TiDB-game-data-20261023T084652395Z-e66471e9/proof.json`（SHA `85A36E712CA5092A14B1EA47028198DDECA736DB285387B3918B6C1B9DFA3BE5`）与 `C:/Users/luyua/.codex/tmp/java-current-b0b7551-current-epoch-preparation-r1/player-state-presence-green-r1/run-PlayerStoreBuild/proof.json`（SHA `DA4B3A1D42100ADF465D221E6BB683EB9F2AE6F3041961E3F49BB5BE6877FA42`）。当前另有新增恢复路径的 Q47 实际红灯，具体结果和后继修复见文末，不以这些历史数目代表当前源码。
 
 三处旧夹具适配后的完整 Store 后继实际执行 **176 项：168 PASS、8 个原有外部 SKIP，原生命令退出 0**。归档脚本曾误核另一个模块的文件名，原失败保留；仅纠正该路径并复核正确 Store GAV、归档／安装 JAR SHA、全部输入、逐项 XML 与所属进程退出后，独立尾封续接通过，未重复 Maven、未回写原失败。后继原件 `C:/Users/luyua/.codex/tmp/java-current-b0b7551-current-epoch-preparation-r1/player-state-presence-green-archive-successor-r2/proof.json`，SHA `7B96164CDD760CD55BD5F5FBC668C780ED285A538F212CBD20ECAD7DAAC36C8B`。本轮新增 SQL 回归在此使用 H2，不能冒称已取得真 TiDB 初始提交证据；仍须完整适用真库集合，以及新 Store 的下游与完整 30 模块重建。
 
@@ -14,8 +30,8 @@
 
 | 仓库 | HEAD | 保护范围 |
 | --- | --- | --- |
-| `D:/luyuan/xuanming-server-mmo-cpp` | `69f0c1abd54d1a798e617f97daad0b7baf9cf567` | 保留新保存的提交、子模块既有状态、生成器、存盘、路由与并行修复；其中包含本批尚未收尾的部分代码，提交不等于验收完成 |
-| `D:/luyuan/xuanming-server-mmo` | `393be2a2fd5eabf751dd65925b5a12b7ff12a2a2` | 保留最新刷新令牌家族、快照存在性与后继夹具修复，在其基础上继续验证 |
+| `D:/luyuan/xuanming-server-mmo-cpp` | `f83da2e1891488601fc3afbd763c37562a3eca04` | 保留最新保存提交、子模块既有状态、生成器、存盘、路由与并行修复；其中包含本批尚未收尾的部分代码，提交不等于验收完成 |
+| `D:/luyuan/xuanming-server-mmo` | `f2c55b0495f5749704abbaef380f2bf3b4e29358` | 保留最新刷新令牌家族、快照存在性与后继夹具修复，在其基础上继续验证 |
 | `D:/luyuan/mmorpg-client` | `242e35060a7364bb2d3a28bfb2581b04e530f290` | 保留最新帮会经济恢复提示与断言；使用 CurrentMaps，不恢复旧天墉城，不覆盖新地图、资源、prefab 或 meta |
 
 Go 权威源码目录是主仓的 `D:/luyuan/xuanming-server-mmo-cpp/go`，Robot 在同仓 `robot`；验收私有副本只按这些来源的已审清单复制。负责人明确 `D:/luyuan/xuanming-server` 是另一方向的服务器，**排除在本任务源码、依赖、运行包和验收范围之外，不访问或修改该目录**。路径核对按完整目录段，不能用相似前缀混淆两个仓库。
@@ -36,9 +52,11 @@ Go 权威源码目录是主仓的 `D:/luyuan/xuanming-server-mmo-cpp/go`，Robot
 | 人民币寄售 | `go/trade/internal/commerce/{rmb,rmb_mall}.go`；Java game-trade | 持久托管、原资产快照返还、原支付单退款、卖家入账；暂时离线与终局拒绝区分，人工态不能伪装终态 |
 | 官方商城、交付分页 | `go/trade/internal/commerce/mall.go`；Java game-mall | 原账号/修订绑定订单；角色已换主且无原资产操作时对原单退款；稳定游标避免前 20 个离线订单阻塞第 21 单 |
 | 角色出售排空 | `cpp/libs/services/scene/player/system/role_admission_system.{h,cpp}`、player_lifecycle；data_service / trade；Java player-store / trade | 加载副作用前登记入场世代；seal 固定原 instance/revision 与世代上界；必须等待真实 SQL 持久结果，RPC 收到或内存冻结不等于排空完成 |
+| 旧 Scene 登记受控恢复（已编译，生产恢复链待验） | `go/db/internal/barrierrestore`、`go/db/cmd/save_barrier_restore`、`go/data_service/cmd/admission_recover`、admission store／SQL proof；Java `PlayerTradeStore`／`RecoverTradeAdmission` | 主栈审定旧可写 E 上界、永久 R 撤销、只抬双 SQL 围栏且保全业务字节；永久收据后退休指定 holder。两 CLI 默认只读计划，显式执行固定摘要与本地实例；Redis 持久 nonce 允许同实例重启后继续原计划。Java 区分真实 SCENE_ACK／APPLIED 与仅 claim 未 load 的 SQL_NO_ADMISSION，固定剩余 OPEN 集合及最后一条语义；不按 TTL 或 ABSENT 认成功。普通／集成通过不代替真实旧Scene和正式main入口验收 |
 | 好友 | `go/friend/internal/data/friend_repo.go`；Java game-friend | 接受申请与双向好友原子提交；先全员 P，再容量和关系锁；旧身份与旧幂等请求不能跨过户写入 |
 | 帮会与历练 | `go/guild`；Java game-guild | 原 consent、完整 roster、launch 与 ACTIVE 投影持久化；外部开战前先提交原件；TTL 到期不能证明没有迟到结果 |
 | 安全取消开战 | Match authority / match_internal；Java game-match | Cancel 与原 Start 共用永久墓碑；迟到 Start 不复活；回复签名绑定原请求摘要；普通负答不能证明安全释放 |
+| 已开局终局与个人恢复（已编译，完整真库／双区待验） | Go authority/completion 与 PlayerInbox；C++ RoomManager／PlayerInbox／RoleAdmission；Java GlobalMatchStore／BattleCompletionReplay／Scene | 原 Create 的能力／实际采用分开持久；COMPLETE／ABORT 互斥，原事件与逐人来源同事务；正式后台也恢复普通 PVE／PVP 过截止终局；成员全集必须与原 Create 一致；有 Create 不得直接失败清票，无 Create 保留原重排／等待合同。个人整笔效果及域水位同存盘，SQL 确认后通知、真实 APPLIED 后清 ready；禁旧个人直投与通用 VOID |
 | 邮件与收件箱 | `go/mail`、`go/player_inbox`；Java game-mail / inbox | 实际事务先原角色 P，再 inbox、seq、op；条目原身份及永久收据核对；后台恢复不伪造玩家会话 |
 | Team 与匹配 | Go Match SQL authority；Java game-team / game-match | 九类写 UUID 收据、完整队伍原件、成员修订、永久取消、故障恢复；先本区，不足且超时才跨区；逐人核延迟上限 |
 | 观战与客户端恢复 | Match / Battle；客户端 Team / spectator | 观战退出固定原对象；取消先于 Add 留墓碑；客户端持久保存原 UUID 与正文，损坏拒绝新写，旧回调不能改变新状态 |
@@ -78,33 +96,36 @@ Go 权威源码目录是主仓的 `D:/luyuan/xuanming-server-mmo-cpp/go`，Robot
 
 ## 5. 尚未闭合的验收清单
 
-- [ ] 上一轮 C++ 编译、29 个测试程序及 Go/C++ 互通已通过；其后生命周期统计、协议和启动配置又有他人最新改动，仍须按实际影响补构建与回归。保留原始红灯和已通过记录，不能扩大旧结果的源码范围。
+- [ ] 本轮 C++ 当前构建、补充工程与 CrossZone 已通过；muduo／Go互通196项已由两组真实XML完整覆盖，原6分钟idle和200并发保留。仍须合法修复 Currency2旧夹具并复验，不能将其失败或原2个disabled计作通过。各次原始红灯保留。
 - [ ] Go 最新源与既有 17 模块结果逐项核对，受影响 Build / Unit / Vet / RuntimeBuild 补验。
-- [ ] Go 原 515 外部键中，历史 232 个已闭合，**283 个仍待**：data_service 90、match 87、shared 2、db 14、chat 19、rank 5、friend 9、guild 16、trade 32、mail 9。最新源码变化可能使已闭合项需要复验。
+- [ ] Go 原515外部键的历史账为232已闭合、283待补；该283清单是历史映射，不能当作最新剩余总数。当前原Linux信号键已实际闭合，强SQL会话S1等另有当前证据；其余须逐原键、当前源和依赖补验并合并账本，未取得完整当前剩余总数。
 - [ ] 标签专用真库入口、DB 围栏、GUID、Rank/Mail 链与观察者等专项，不能只用普通包的 skip 账代替。
-- [ ] 独立 Java 剩余 12 外测阶段、410 展开项；Chat3 修后已通过。Data17 后继 16 PASS、1 ERROR，剩余 M9 的真实全表扫描已由单项诊断确认；测试夹具适配与新快照存在性修复后须完整复验。所有嵌入新 Common 和新 Store 的运行 JAR 还须当前完整 30 模块重建。
+- [ ] 独立 Java 当前 Full30 的 1008 外部 SKIP 逐键补验；旧 12 阶段／410 项只代表当时账本，不能套用当前数目。当前 Data17 真 TiDB 与 Login36 真 Redis 已分别全部通过且零 SKIP，原 M9 失败已取得修后完整回归；Match、Store 及其他外部集合继续。当前完整 30 模块及 18 个 Boot JAR 内嵌新库已实际重建闭合，但不代表剩余外部专项通过。
 - [x] 客户端最新 `242e35060` 的 Guild 整程序集编译和回归：234 PASS、0 FAIL/SKIP，六个必需新增展开项均实际通过；完整输入、受保护 meta 与产物首终核对通过。该结果不代替后续服务端双区业务验收，不覆盖 CurrentMaps。
-- [ ] 六个 Java 验收工具已对原 18 个 JAR 完成正式 javac；完整 30 模块新 JAR 产出后，须重绑定并补编工具，原工具编译结果不代表新运行包已经验证。
+- [x] Java验收工具已绑定本次Full30／18个Boot JAR；原7份源码12个class及新增finish-audit fixture的1个class均有实际javac，完整13成员闭包已核。这只完成辅助构建，33进程与真实恢复仍未运行。
 - [ ] 独立 Java 16 个非战斗服务各双副本，加 1 个 Battle，共 33 个进程的实际就绪与业务链。
-- [ ] 基于最新模型补齐两版刷新令牌家族：签发、原子轮换、access 校验、撤销与裁剪、旧 JSON 兼容及单测、真实 Redis 验证；负责人已明确授权接手。
+- [ ] 两版刷新令牌家族已接线；当前 Java 的 Token22＋配额6＋设备8 共36项真 Redis 已全部通过且零 SKIP。Go 44 项内存模型、5 项真实 Redis 与 Java 旧23项只作为各自原输入的历史记录，不能把新模型行为表述为旧23项完全同值。Go Login 整模块与运行包仍在普通验证队列，仍须按当前源和依赖闭合。
 - [ ] 两版 mock 支付、退款、卖家收入冷静、提现和完整资产到账；两版“前 20 单离线，第 21 单仍持久到账，再恢复前 20 单”。SQL OMS 成功不能替代真实 Scene 资产落库。
 - [ ] 主栈完整双区：两区真实客户端入口、跨区与逐人延迟、旧会话/旧 scene 拒写、双 ACK、崩溃窗口、恢复后资产恰好一次，最后 source-after 与所属进程清理闭合。
 - [ ] 独立 Java 的 Scene 崩溃、Battle 已存结果后故障及原合同恢复；真实业务与辅助进程全部清理。
 - [ ] 核对并行数据回档审计与混版本持久化修复的最新状态，相关未修复问题不得被本任务测试数量掩盖；入口见 `docs/design/data-overwrite-rollback-audit-r2-20261019.md` 与 `docs/design/mixed-version-persist-field-protection.md`。
-- [ ] 首存前新号恢复必须具有持久创建资格；两张 SQL 行均缺失不能证明从未存盘。迟到的同 owner 释放标记、历练已启动后丢失 Battle 终局也须具名复现并安全闭合，不按 TTL 猜测资产操作终态。
-- [ ] 独立 Java 的 `PlayerStore.loadState` 仍把缺失 `player_state` 行视为默认新号；快照含货币、背包、宠物、任务和三类去重账本。须将建角初始快照与目录同事务创建，读取缺行/null 拒绝，并对齐导入、导出和恢复入口；正常空 protobuf 字节仍合法。不能只修改 Go 的缺失历史分支而遗漏 Java。
+- [ ] Go 首存前新号恢复已补持久创建资格与双行同事务严格插入，当前手写实现已收口，尚无该轮真 TiDB 通过。迟到同 owner 释放标记已取得修前双连接 Redis 红灯，修后围栏已收口，待真 Redis 与 C++ 构建／回归。历练丢失终局的两版 76 路径内实现与回归已接线，主仓正规生成及唯一台账追加已核；新源编译、双 SQL、互斥终局、永久入箱与真实故障仍未闭合，不按 TTL 猜测资产操作终态。
+- [ ] 独立 Java 快照存在性已修：建角初始快照与目录同事务创建，读取缺行/null 拒绝，导入／导出／恢复入口同步收紧，合法空 protobuf 字节仍接受。完整 Store 普通回归 168 PASS、8 原外部 SKIP，下游 Data 350 PASS、33 原外部 SKIP；本轮新增 SQL 用例的这批运行使用 H2，实际 TiDB 适用集合仍待执行。
+- [ ] 主 C++ 的 Inbox 与 Battle 销账已接入 `ConfirmSnapshotSqlCommit`：从原不可变 Redis 提交钩子取得 E/q，完成时再核原实体、准入身份、owner 与整份快照，只有同一版本双 SQL ACK 齐备才销账；未知与迟到回包保留重投义务。相关生产代码已取得本轮完整编译证据，具名回归、真库、实际恢复与迟到回包故障仍待闭合。Java 对应 `onPersisted` 在实际 SQL 事务成功后调用，不能据 Java 结果替主栈背书。资产通道本地 durable 仍只表示 Redis；Go `assetop.RequireSQLCommit` 是独立 SQL 门禁，交易合同／商城强制开启、Mail main 直接开启，Guild 须按实际配置核对。不能仅凭局部函数或普通编译断言三条端到端资产链已通过。
 
-283 个原测试键的完整审核清单已导出至本机被忽略的 `D:/luyuan/xuanming-server-mmo-cpp/build/verification/global-economy-claude-review-20261022/go-pending-original-283-keys.json`。其中两个历史未映射的新键实际上已列入成熟 SQL 12 阶段计划；这里只补审核映射，不增加 PASS、不重复计数。Windows signal 用例在 Windows 不适用，仍须 Linux 验证，不能记成通过。
+历史283个原测试键的完整审核清单在本机被忽略的 `D:/luyuan/xuanming-server-mmo-cpp/build/verification/global-economy-claude-review-20261022/go-pending-original-283-keys.json`。其中两个历史未映射的新键已列入成熟SQL12阶段计划，映射本身不增加PASS。原信号用例后来已在Linux真实通过，精确续接收据见本文23:59条目；Windows整包原SKIP不回写，其他SQL键不跟随计通过。
 
 ## 6. 环境恢复与不可作出的保证
 
-本任务新隔离世界为 `codex-global-clean-20261023-r1`，TiDB `127.0.0.1:24000`、Redis `26379`；etcd 原项目端口 `22379`；专用三副本 Kafka `19492–19494`；Java Redis `13379`。负责人于本轮再次确认尚未上线，并明确授权验收需要时直接清理、重建本项目本地数据库；不清他人数据，故障恢复用例运行中仍须保留其收据和原资产以验证恢复。本任务 MySQL `13316` 已正常停用，其 tmpfs/旧 UUID 不可当作未来当前身份。
+本任务隔离世界为 `codex-global-clean-20261023-r1`，TiDB `127.0.0.1:24000`、Redis `26379`；主36使用新独占etcd `32379`，已实际创建并通过8条只读协议，完整Runtime配置消费仍待运行，不向其他项目的 `22379` 注册或改键。专用Kafka端口 `19492–19494`，当前仅原broker3运行，历史三副本协议不能作当前可用证明；Java Redis `13379`。负责人确认尚未上线，并授权验收需要时清理、重建本项目本地数据库；不清他人数据，故障用例中须保留原收据和资产。本任务MySQL `13316`原tmpfs／旧UUID不可沿用；00:38单次fresh未达7GiB，原CID尚未重新启动。
 
 Docker Engine 曾退出，旧基础设施 StartedAt 与协议证据只能作历史。负责人现已释放内存并要求继续；必须对同 CID、卷、端口、标签、镜像及新启动时间重新取证，重新核对强会话与正式 CHECK，不能把旧结果改成新 epoch。执行进程也已自然退出，需用当前 PID、创建时间和原句柄重新登记三语言队列。
 
-负责人随后明确授权：普通串行编译／单元测试的启动可用内存门槛改为 6291456 KiB（6 GiB）；真库与双区服务启动仍为 7340032 KiB（7 GiB）。运行至少 2883584 KiB、采样预算 2000 ms、未知重型进程为 0、2 CPU 的约束保持；C++ `/m:1 /nr:false /p:CL_MPCount=1`。授权原件 `C:/Users/luyua/.codex/tmp/global-normal-build-six-GiB-user-authorization-r1/authorization.json`，SHA `53467DED6A436065671CD61C4391FFCE87C64F3D1C7DA7ADBC38806A69EE0EE6`。这不是进程 RSS 的硬内存上限，不扩大到真库、服务或压测。不终止外部任务、不改防火墙、不为通过而关闭断言或跳过测试。
+当前生效的是负责人答复“授权按交换页方案继续验证”的双指标策略：启动物理可用至少 **4194304 KiB（4 GiB）** 且保守可用提交余量至少 **12884901888 B（12 GiB）**；运行中每2秒核对物理至少2883584 KiB及提交余量至少8589934592 B，低于即受控停止。一时只执行一个重型作业、2 CPU、未知重型进程为0；C++仍串行，不修改页文件、WSL设置或业务时限。授权原件 `C:/Users/luyua/.codex/tmp/global-current-swap-aware-validation-policy-20261024-r1/authorization.json`，SHA `865ED6902B3350B144179A20DD46AF6529BDA7CEB02062AAF4125763D8EA1B15`。同次原生API给出的可用提交量是保守下界，不称为精确的全机提交余量。
 
-“全球同服、可加副本”仍受已验证容量、数据库事务及部署边界限制。单机双区不能证明跨机房容灾或无限容量。任意整库 PITR 不能靠被恢复的数据库自证最新归属，必须有独立审计的围栏与修订上界；未做真实故障验收前，不能承诺绝对不回档、不损坏。
+以下为已被上述策略替代的历史门槛：负责人先后授权普通串行编译／单测6 GiB、5.5 GiB，之后曾统一普通串行构建、单测、静态检查、Java官方合同同步及本项必要正规no-unity生成按 **5242880 KiB（5 GiB）**启动。当前授权原件 `C:/Users/luyua/.codex/tmp/global-normal-serial-validation-five-GiB-authorization-r1/authorization.json`，SHA `4BF90443B57C3B9436A4ADCDA333F1B42A923A8018E40F0AA781041245146806`。真库、Redis 实测与双区服务启动仍为 7340032 KiB（7 GiB）；运行至少 2883584 KiB、2 秒检查、未知重型进程为 0、2 CPU 保持，C++ `/m:1 /nr:false /p:CL_MPCount=1`。这不是进程 RSS 硬上限，也不授权其他范围的生成、关闭外部应用或跳过测试。旧 5.5 GiB 原件 `global-normal-serial-validation-five-half-GiB-authorization-r1/authorization.json`（SHA `FE4E6626F9B353E45FDB40DD57742C03D2A62792266BBDA759B6AC5726AE2B40`）、更早 6 GiB 与一次性生成授权均保留。调整下限不代表当时内存已经足够，实际启动仍须重新采样。
+
+“全球同服、可加副本”仍受已验证容量、数据库事务及部署边界限制。单机双区不能证明跨机房容灾或无限容量。最新 [玩家态 Redis 集群化设计](../design/redis-player-store-cluster.md) 仍处设计 v2／分批实施，明确登录令牌与会话控制域尚为单主，物理扩容、迁槽及故障转移须按该稿另行实际验收；当前单实例 Redis 双区测试不能冒作这些能力已经完成。本文不改该设计或其分批实现，也不以旧键名覆盖最新代码。任意整库 PITR 不能靠被恢复的数据库自证最新归属，必须有独立审计的围栏与修订上界；未做真实故障验收前，不能承诺绝对不回档、不损坏。
 
 Claude Code 请先审第 2 节的实际调用链与 SQL 提交顺序，再核第 4–5 节遗漏入口；输出文件、行号、触发时序、损害与最小修正。按 AGENTS.md §10.1，Claude 只评审/改码并交具体命令，编译、测试、真库与压测由 Codex 执行。
 
@@ -174,3 +195,446 @@ Java 快照存在性的三项 SQL 回归已在旧生产实现上取得恰好 **3
 Go 生成器最新完整回归真实启动后退出 1：336 个测试 PASS、0 test FAIL/SKIP，但 `protogen/internal/generator/go` 与命令包编译失败。Robot 新 handler 扫描与碰撞预检已有调用但缺两个实现，另 `fileExists` 的一返回值与新调用的两变量签名不符，并使 ast/parser/token 三个导入未使用。原件 `C:/Users/luyua/.codex/tmp/xuanming-global-go-evidence-20261021T233020397Z-4d221b14/generator-current-source-20261023-r9-initial-commit/current-20261023T094906901Z-1c5ea97e/proof.json`，SHA `811347D7166818F9FDB29B1ACF0EC65E38CCBF087D5EC4EF4CFCC890383A42EF`；两个原生命令中 GoList 退出 0、Test 退出 1，五个所属家族进程全部退出，没有执行该轮工具构建或生成写入。最小修复须保留新 REQUEST/PUSH 生成行为和原九项回归，补齐实现与错误传播后重新完整回归，不能删除新功能退回旧版。
 
 历练终局恢复仍未实现，不能因建角、迟到标记或普通回归完成而划掉。当前两版在 formation=4 后丢失 Battle 进程，既有 Cancel 只回真实状态 4；EXPIRED 不解除 launch/参与者占用。新的恢复提交点必须先于任何个人结算 staging，并与全体不可变个人来源及重投资格同事务；COMPLETE 后崩溃仍须能逐人持久到账，ABORT 后迟到旧结果不能生效。现有 SQL 来源归档只接收 Kafka 原件、不自动投递；现有个人账本在销账后可裁剪，不能未经永久幂等接缝就启用 SQL 重放。Battle 快照也没有原账号／归属修订，不能重投时临时查询当前身份冒原身份。此处列明尚未闭合的功能与安全约束，不作为实现或运行证据。
+
+Go 生成器最小修复后的完整回归后继已实际通过：**372 PASS、0 FAIL/test SKIP**，195 个具名顶层与原 8 个必需项全部执行；6 个无测试包另列，不冒测试跳过。原件 `C:/Users/luyua/.codex/tmp/xuanming-global-go-evidence-20261021T233020397Z-4d221b14/generator-current-source-20261023-r10-robot-handler-fix/current-20261023T100535364Z-883819dd/proof.json`，SHA `84AF535A810F5AE09971BFE017A5D74BD45C03538E4EADBBD9FDA211994C2187`，两个原生命令退出 0，完整 128 源、19133 依赖及 14 个根首终核对闭合。修复只补 Robot handler 扫描／碰撞预检及 strict stat 接缝，保留原九项、新增三项接口回归。正式工具构建后继已提交原有限准入等待，但可用内存再次降至约 5.3 GiB，低于用户授权的 6 GiB；记录该时刻尚无 build/gen 原生启动，不把 372 个回归通过冒成新协议产物已生成。
+
+C++ 迟到标记最终手写清单为 `C:/Users/luyua/.codex/tmp/cpp-late-handoff-mark-source-r1/source-freeze-r3.json`，SHA `3161835DCFD1DE1068CDA85D7E5F8F37770F10CDF2933B63CE8D5AA5EEA37C8B`：22 路径（11 生产、9 测试、2 既有设计），含逐文件 before/current、不可覆盖副本与测试映射。新增资格固定原 E/S/N/A，H→F 发布、R 撤销与恢复候选均按原字节重试；登记在途取消也撤资格，回包不能为新实体补旧身份。当前仅手写收口与静态金样一致，不宣称修后编译或真实 Redis 已通过。最终一行 enum kCount 后继没有改变 8 条 Lua 字节；6 GiB 普通构建与 7 GiB 真 Redis 仍分开准入。
+
+正式生成工具构建的该次 600 秒首准入等待已经结束：原 queue 记录子进程 49272 退出 1，原生 build/gen 启动数均为 0；不是编译错误或正规生成通过。原件 `C:/Users/luyua/.codex/tmp/xuanming-global-go-evidence-20261021T233020397Z-4d221b14/go-current-parallel-queue-r5-20261023/stage-0074-exit.json`，SHA `42298EF63ACD14CB7275882E6A82A1D76C6FEDE391E5FDF137888619261E1F7F`。准入发生在原 runner try/finally 之前，因此本次没有完整 proof.json，也没有源码／依赖尾核；不捏造这些证据。Root 随后只读观察该 PID 已不存在，可用内存仍约 5.3 GiB；后继保持 HOLD，不连续重复碰撞。Java Full30 与 C++ 后继也没有趁资源不足启动。
+
+Go 本轮 47 路径的具体审核索引已补齐：`C:/Users/luyua/.codex/tmp/xuanming-global-go-evidence-20261021T233020397Z-4d221b14/login-parent-load-interface-current-fix-r1/handwritten-47-actual-provenance-review-r1.json`，SHA `A9E1EED2D9DD3B6A7805036F6C8323C44538CF257067C6D1DFEC8B67941240DE`。47 个当前输入均与 r4 冻结相同，旧九路径中五个原样、四个有后继重叠；十路径有真实 before、保存的 current 和逐文件 diff，另 37 路径明确标为“当前输入、缺本次 before，不能据此归属”。输入分母不等于本批作者改动数，缺 before 也不等于没改。Claude 应按这些接缝和实际源码评审，不能把整仓提交或 dirty 一并归为本任务。
+
+旧 Scene 的 open admission 仍是条件性的恢复／活性开放项：`Register` 只更新本 instance 行，不因登记更高 E 就关闭旧 UUID 或推进跨实例 SQL writer floor。DB 实际入口在每张玩家行的 `FOR UPDATE` 内比较行版本；只有两张真实行各自提交了高于旧 E 的版本，才分别拒绝旧 E。这个 SQL 入口反例不是端到端损坏复现，现有 Login/Scene 的 pending／handoff 可能约束其可达性，不能据此宣称已发生回档。安全关闭旧 holder 仍须原 UUID/generation/ownerRevision 的撤销证据、真实末次 pending 父内容与双 SQL 同版本／历史下限证明，以及在原锁序内消费这些证据的跨实例关闭入口；仅新登记、Redis 高 owner、TTL 或进程退出均不足。当前 trade 固定旧 holder 后 fail-closed，恢复活性未闭合。只读原件 `C:/Users/luyua/.codex/tmp/xuanming-global-go-evidence-20261021T233020397Z-4d221b14/login-parent-load-interface-current-fix-r1/old-scene-open-admission-writer-readonly-review-r1.json`，SHA `CA6015DE3A3D5781ADC1291498BA7E59C43C64AE4A5B60EA511545E970E8D408`；没有修改该恢复逻辑或重跑其中引用的旧测试。
+
+C++ 保存提交的元数据误拒也已窄修到未发布执行候选：`build/verification/cpp-handoff-current-full-20261023-r6/scoped-git-metadata-successor.json`，SHA `D9C57FF5EF894E23E106C3808AC5F64D2E98E1E0257B32DE3DD0093C036755B4`。只将主 HEAD、父 gitlink 索引和已被实际输入覆盖的 dirty 作为来源记录；未覆盖的 protected 构建依赖、子模块实际 HEAD/dirty、成员、CMake 与 .gitmodules 字节仍严格校验。15 项纯函数回放通过，未执行 Git 主流程、SDK 扫描或 native，不能把原 collector 未递归的子模块整树称为已逐字节封存。
+
+用户已授权历练终局恢复本项最多 **70 个手写文件**的两版实现、构建、真库与故障验证，授权原件 `C:/Users/luyua/.codex/tmp/global-battle-outcome-authorization-r1/authorization.json`，SHA `7DD6DC94168BD98BCAB2972F48148164EFF9837893E7127D0FBEA58D1306CFA1`。方案见 `docs/design/cross-zone-matchmaking.md` 的 2026-10-23 小节：Match SQL 唯一决定 COMPLETE／ABORT，同时保存全局 Kafka 与逐人 Inbox 待投；个人仅永久 APPLIED 后释放 ready。新域限制一条未确认奖励，并补旧 C++ 的双 SQL ACK 确认。当前三路实施中，尚无该新链路的运行通过；旧普通结果不替代新源验证。四个 canonical proto 由 Go 执行者统一维护及正规生成，不修改客户端或 CurrentMaps。
+
+生成工具的资源后继已经实际通过：官方 `proto-gen-build` 一条原生命令退出 0，128 源、19133 依赖首终无变化，三个所属家族条目退出，清理错误为空。原件 `C:/Users/luyua/.codex/tmp/xuanming-global-go-evidence-20261021T233020397Z-4d221b14/generator-current-official-build-20261023-r3-exact-digest-case/formal-build-current-20261023T105910785Z-a31aeae5/proof.json`，SHA `1D5E77CDC0C376E5E120271A98F9C78B1B442763F01DE18FD41BB74DBDCBBB09`。两个正规工具 EXE 均为 24476672 字节，SHA `F1510360385A908B61A831C50955521B5864F20AE548C770542193AFC6A5D66F`。这里只证明工具构建，不代表本项新增协议已经生成。
+
+独立 Java Full30 本轮原生命令已退出 0，逐模块 XML 合计 **10848 项 = 9845 PASS、1003 个既有 SKIP、0 FAIL／ERROR**。该命令约 12 分 25 秒，覆盖已含快照存在性修复的冻结输入，不覆盖上述新终局恢复源。归档器对根 reactor 显示名的匹配仍在核对，原 proof 保留其失败状态；完整家族尾核与后继汇总未封存前，不把命令成功冒成证据全部闭合，也不因此重复运行已经退出成功的 Maven。
+
+Full30 的只读归档后继现已实际闭合：`C:/Users/luyua/.codex/tmp/java-current-b0b7551-current-epoch-preparation-r1/full30-reactor-name-archive-successor-r3/proof.json`，SHA `6C1E7FC1B7686102AEAF4CD618A4B6D1E018A7E9ABCA8185F412538E0378B067`。31 个唯一 reactor SUCCESS、上述 10848 项精确集合、30 个 JAR／154 个安装 GAV、18 个 Boot 内嵌本轮依赖与新 Common 的 SHA、2664 源／253 工具／6506 第三方／154 依赖 head 的首终核对及 94 个所属家族退出全部通过。后继只按实际 POM 修正根 reactor 名与根 `META-INF/build-info.properties` 的固定归档读取位置，没有重跑 Maven、没有改判原失败 proof。现在可将含快照存在性修复的 Full30 普通回归标为通过；1003 个既有外部 SKIP 仍逐项待验，新终局恢复实现仍须后续构建与运行。
+
+终局恢复逐路径清单补出必要入口后，当前计划为 Go 25／C++ 17／Java 28／既有文档 3，共 73 个唯一手写路径，已申请上限 75、待负责人回复；不能把已授权的 70 擅自当作 75。Java 的重投任务装配／关闭与原 Create 绑定结果提交端口暂留候选；实际已写路径仍在 70 内，其他已授权实现继续。C++ 的掉落整笔规划复用现 BagService 的禁发、初始化与流水规则，限定访问 Bag 候选，不为文件数把规则复制到 Scene。经验组件／升级曲线仍属既有未实现产品范围，完整来源保留 `exp_gain`，不将日志报告为经验到账。
+
+负责人已明确回复“授权调整至 75 个并继续完成”。授权原件 `C:/Users/luyua/.codex/tmp/global-battle-outcome-authorization-r2-75/authorization.json`，SHA `93A1408F5C33ECD377979C7E53D6A595FE40479EE14DE407FB8145358FD4222F`；最新计划为 Go 26／C++ 18／Java 28／既有文档 3，共 75：补入 Match 内容日志屏蔽的独立部署模板、Battle main 的实际 Match 发现白名单。额外路径开始实施，仍未编译／真库验收。两版任务自动奖励的正常入包失败会保留持久 claimable 资格，不能误写成丢奖或为了它复制任务框架；新结算须前置核对实际玩家任务 scope、逐个 owned pet 及其配置，当前已实现效果与 Inbox 水位同快照持久，不能只查空容器组件便假称完成。
+
+本项正规协议生成的 stage76、77、78 均为 **0 次原生生成启动**。76 和 78 在 600 秒首准入等待后仍不足 6 GiB；77 因执行计划缺少既有授权元数据在启动前拒绝，原记录保留。78 原件 `C:/Users/luyua/.codex/tmp/xuanming-global-go-evidence-20261021T233020397Z-4d221b14/formal-gen-current-20261023-r4-terminal-wire/formal-run-20261023T115500943Z-0938e8ed/proof.json`，SHA `50C884FF8C82089A8C2D0A9E470CD130ABC486C250199E2521A2B66C1C447873`；对应 stage 退出原件 SHA `5B3C7ADAC60DD381DE138D78828009C73CE144ED1934ACA80524CF907327A568`。没有生成输出、源首尾封存或新功能运行通过可供冒认。一次性将本次 no-unity 生成启动门槛设为 5.5 GiB 的方案仍待负责人明确回复，尚未生效；普通构建 6 GiB、真库／服务 7 GiB 不变。
+
+两版终局源与回归现已接线，继续检查实际接口；静态核查已发现并交修 Java 跨包读取存盘在途状态的不可见方法，不能将“源码已写”报告为编译通过。另补实际 adopted 回执的独立观察标记，区分丢回执与明确的旧协议响应；真实 adopted=0 要先持久冲突事实，不能抛异常回滚后又凭能力预检签出安全中止。C++ 停机后迟到提交回包已加停止闸，个人 150 通知须由 Scene 实际 SQL 持久效果后发送；这些新增路径仍待正规生成、编译和真实故障证据。
+
+负责人随后明确授权“本次协议生成使用 5.5 GiB 门槛”。一次性授权原件 `C:/Users/luyua/.codex/tmp/global-protocol-gen-five-half-GiB-authorization-r1/authorization.json`，SHA `0AABAAEF84EBEAB1EC64B49E0B4853731479EA0B12BC07399FF9CFA0016201BC`；仅本次正规 no-unity 生成启动下限为 5767168 KiB，运行 2883584 KiB、2 CPU、2 秒采样和全部核验不变。Go 唯一执行者接手该次生成，其他两路继续静态收尾；该授权不适用于普通编译、真库、服务或关闭外部应用。是否实际启动、成功仍以该次新证据为准。
+
+C++ 本项 18 路径已按实际源码冻结：`C:/Users/luyua/.codex/tmp/cpp-battle-terminal-sql-source-r1/source-freeze-r1.json`，SHA `607646AFA7F5D924750F7FC0A4BEB3227402BF554550C73CB0814FB2A6789435`，含 14 生产、4 测试、逐项 before/current 副本与摘要。32 个新增用例均未运行，保留原测试名；原迟到标记的 22 路径中仅 Lifecycle、RoleAdmission 头／源三个重叠文件有本项后继，其余 19 原字节相同。该冻结不是新构建或故障通过证据。
+
+本次正规 no-unity 生成现已真实执行：**1 条原生命令退出 0**，更新 102 项输出、没有 Java 输出；26 守护段、11 工程、mixed/vendor/生成器源首终一致，24 个所属家族均退出。原 proof `C:/Users/luyua/.codex/tmp/xuanming-global-go-evidence-20261021T233020397Z-4d221b14/formal-gen-current-20261023-r5-terminal-wire-exception-pending/formal-run-20261023T122611525Z-3797bc0d/proof.json`，SHA `B64322456742928EE20E53E783218EBA441D2F351B342FA65067422A1A2CBF36`，仍保留 `passed=false`／outer exit 1：唯一保护差异是正规生成器追加消息编号台账。只读分类后继 `message-ledger-append-classification-r1.json`，SHA `A3E98E38C3896256A5B6FD9C5B38CDCDD71B00D73FCAE439BC111B5836D99E0D`，已核前 12181 原字节 SHA 完全相等、后缀精确 114 字节仅追加 345／346／347 三个新 RPC、348 条编号和名称各自唯一，并复核全部 40 原 manifest 摘要。Root 独立重核相同结论后接受该追加，无重生成、无手改原 proof；`actual_dependency_closure_pending=true` 继续保留，后续实际构建须闭合依赖与产物，不将生成当作新功能验收。
+
+负责人随后授权增加一个 Java 旧测试夹具路径，上限现为 **76**，分配 Go／共享 proto 26、C++ 18、独立 Java 29、既有文档 3。原件 `C:/Users/luyua/.codex/tmp/global-battle-outcome-authorization-r3-76/authorization.json`，SHA `13FB9098C90A9AE6A8B0A4C5D5116F31CC8A24E0FD8314D31FFF5C496ED9B371`；仅将旧 `GlobalMatchStoreIntegrationTest` 的非法字节换成两份合法不同的 legacy Create，保留不可替换、unknown、abort、ready 及 stale-worker 全部原断言。新取消恢复还区分“从未持久 Create 的开房前中止”与“有 Create 却无 SQL ABORT”，在原已计路径修复，不能为文件数删除原合同。
+
+Java 官方 Sync 的原 Q42 为资源门禁拒绝，**0 native、0 受管源码写入**：首采曾达 6 GiB，完整输入复核后的启动采样差约 17.4 MiB，被原门禁拒绝，原 proof SHA `93ABCB4D20647B91459ADA58F2F3EA1B019A87E4B412FFCEC23162BB0E49879C` 保留。随后才在原 29 路径内应用取消回包边界，当前冻结 `C:/Users/luyua/.codex/tmp/java-battle-terminal-recovery-implementation-20261023-r1/source-candidate-final-r3.json`，SHA `4630219D619F46724562EA7A23DD1A07412C02A31922B4D921D54CE3D5B490FF`。Go 同类四分支及部署密钥前置注释后继仍为 26 路径，冻结 SHA `8A38D3AC86D6F8DD6ECEC99A6F0CBD514A038489FC2B7150916B7397589CB39D`。新增测试数量只是待执行集合，不能记为实际 PASS。
+
+确认三路均无 Redis／etcd／SQL 或服务在途后，只正常暂停本任务带精确 run 标签的两台 Redis，两个 stop 均退出 0、容器非 OOM，AOF 数据卷、CID、镜像与绑定均保；Java 临时 Redis 在停止前确认 DBSIZE=0。原件 `C:/Users/luyua/.codex/tmp/global-owned-redis-build-window-pause-20261023-r1/result.json`，SHA `5C1512A4B9D6B1BBDC2F28AC020CAABBCEBB726BD67C64EC05D9B0902CBF7CE3`。etcd 老项目归属需独立原件，未擅自暂停；其他项目容器未动。当前 Kafka、TiDB 及两 Redis 均暂停，后续恢复真库需新 epoch 与 S1，旧 FC7／EE453 不再代表当前就绪。
+
+Java 官方合同同步及其 `--check` 后继 Q43 已实际通过，**2 条原生命令退出 0**，清理／输出／证据错误为空，2668 项源码在受管合同范围外无变化，原 29 手写路径不变。原件 `C:/Users/luyua/.codex/tmp/java-battle-terminal-recovery-implementation-20261023-r1/official-contract-sync-current-r3-five-half-GiB/actual-sync/proof.json`，SHA `727055E97DDFD04D05316D8578E858294E0577876A42E9F1218CB8703A0BF1D4`；实际同步 8 个 proto、消息台账及 `SOURCE.properties` 共 10 件。绑定后继 SHA `B40437E91C49C91591F4B88AA13EF9A9E53144BC77B5DD005E45915ED0B4BAFF` 保留 canonical 与 Java 正规镜像各自摘要；Java 特有选项会改变镜像字节，不能声称与 canonical 原字节相等。该结果仅证明官方同步与检查，不是 Maven 编译或新业务用例通过。
+
+C++ 最新正式构建 Q13 在工程元数据阶段实际失败，尚未进入源码编译：6 条原生记录中前 5 条退出 0，最后的 normalize 退出 1，原件 `C:/Users/luyua/.codex/tmp/cpp-battle-terminal-current-full-evidence-20261023-r7/run-20261023T130911693Z-e5e29e65/result.json`，SHA `40BAE545BCD8CAA5B2D9EEBB17EF7FBD38EE5092C767F6D8820897DC0407D7A2`。原因是查询参数漏列 `PostBuildEventUseInBuild`，检查器按原规则拒绝缺项；后继只补该查询字段，不改生产工程或放宽断言。后继 Q14 又因启动可用内存 4743980 KiB 低于 5767168 KiB 而 **0 native** 结束，原件 SHA `31C69EABDE0E2F2B8BA86AB626232145475FEC678BF708673DCEE7FBEFA4F8C9`；不能把它归为源码编译错误或编译通过。当前唯一普通验证窗口交 Go Match／Inbox，C++ 与 Java Maven 暂不并发启动。
+
+为使“停机后迟到回包”能按真实回调判定，C++ 仍在原 18 路径内仅给 RoomManager 增加两个受控事件：停止闸安装、实际回调在停止闸后返回。回调仍先锁 weak，停止分支立即返回；不输出原请求、账号、认证或密钥，不改变业务闸、排空时限或传输。Root 独立逆构后与修改前原字节一致，1872 输入映射只这一行变化；当前 18 路径冻结 `C:/Users/luyua/.codex/tmp/cpp-battle-terminal-sql-source-r1/source-freeze-r2-stop-reply-observation.json`，SHA `B92A2FDEF86128EF700D8E1B865BA575D23A6EA1C2D2DEE8BA433BF91E2AE598`。计划使用私有探针维持原两秒入站排空窗口，再释放此前已核实 COMPLETE 的真实回复；必须实际观察成功回调进入停止闸，不能把 relay 尝试晚放、取消回包或 weak 对象已消失算成该场景通过。探针尚未构建／运行。
+
+普通匹配的调用清单又确认一处遗漏：两版 SQL ABORT 原来只有 Guild 取消入口会调用，普通 PVE／PVP 在 Create 成功或回包丢失后若 Battle 崩溃，后台不会自行推进终局，可能长期占用 ready。该入口修复与正式调度回归正在原 Go 26／Java 29 路径内补齐；同时补 Go 的结果成员全集校验，拒绝“原 Create 两人、结果自己的 Teams／Settlements 自洽却仅一人”的 COMPLETE。Java 已有原成员全集校验，补同触发负例。上述新增修正尚未构建或运行。
+
+### 旧 Scene 入场登记恢复的独立范围（已授权实施，待验收）
+
+主栈旧 UUID 的 OPEN admission 在 Scene 崩溃后不会随新实例登记关闭，角色寄售可能一直等待其 holder。Java 对应旧 E 的 OPEN 最终存盘准入会阻塞交易，现有健康补偿器在七天保留期后可清理；它在同 route／P 事务核持久更高 E，不是假造 APPLIED。两者不能混为同一个存储模型。
+
+不能采用“SQL epoch 比登记时 epoch 大就关闭”的捷径：主 C++ 的 B5 可在同一 admission／generation 内采纳 E+2，SQL 登记身份并不随之改写。旧实例可能已经提交 E3/q1，另有 E3/q2 原 pending；此时仅以 3>1 关账，q2 迟到仍可合法写入。现有只读设计原件为 `C:/Users/luyua/.codex/tmp/xuanming-global-go-evidence-20261021T233020397Z-4d221b14/login-parent-load-interface-current-fix-r1/old-scene-open-admission-recovery-readonly-design-r2.json`，SHA `FC433D200CE7C9ED6902AFCFC47AA55B60A311DF8E9EEBB62A7A9F89ED3B60AF`；B5 反例是本轮后续实读补充，不能将其算作真库运行。
+
+负责人先授权另设最多 24 个手写路径的受控维护恢复项，预计 18–22 个，并允许该项必要的正规 no-unity 生成按 5.5 GiB 启动；真库／服务仍 7 GiB。原件 `C:/Users/luyua/.codex/tmp/global-old-scene-admission-recovery-authorization-r1/authorization.json`，SHA `15804774764E86E04AB9726FD4804574E1CA9F0D5CFE74E0BE77E670600A9E78`。后续与原 76 路径合并为 100 唯一路径，最新分配及原件见本文开头；改动与运行证据仍按业务分别记录。主栈在既有 admission store／SQL proof 及维护 CLI 接缝核原 listing、身份、世代、权威 route、两张完整 SQL 行、旧写者所有可发 epoch 的审核上界与已撤销资格；保全并真实处理原 pending／outbox，任何更高在途义务均拒绝恢复。复用已有维护门禁和永久撤销令牌，不新增通用跨 UUID 关账 RPC，不按 TTL 猜排空。最终在原锁序内保存永久 SQL 恢复原件与摘要，退休指定旧前缀／holder，原请求重放幂等，换正文拒绝。Java 仅退休满足同 P／route 和实际最终状态证明的指定旧 OPEN，保留 PENDING 与其他资产待投，不把退休冒成效果 APPLIED。必要表契约走原 schema 事实源和正规生成；不手改输出。
+
+范围包括主栈 admission／SQL proof／目录 schema 装配、窄维护 CLI、现有维护恢复证明输出、原 TiDB 与 CLI 回归；独立 Java 的 PlayerTradeStore／存储 schema 与启动检查、窄 CLI 及其原 SQL／新增 CLI 回归；沿既有设计、审核交接、PROGRESS／PARITY 登记。必须覆盖原崩溃→新实例→旧 holder 阻断的真实重现、B5 同代推进反例、pending 未落拒绝、旧写者迟到拒绝、恢复与 Register／Cancel／过户并发、原件重放、换原件拒绝及两版实际交易恢复。当前进入已授权实现，未把维护声明或旧测试当作恢复通过。Java 对应深核及主 C++ B5 反例的只读原件 `C:/Users/luyua/.codex/tmp/java-battle-terminal-recovery-implementation-20261023-r1/old-scene-open-admission-readonly-crosscheck-r3.json`，SHA `C773B35068EAFFC94A29A7CAB54892094866944867CBA86DD8DADF691B74BC08`。
+
+2026-10-23 本轮资源释放与当前工具验证：负责人授权腾空内存后，仅对核过路径、创建时间和空闲样本的 12 个 Claude／Chrome 进程调用 Windows 工作集回收；未结束进程、关闭窗口、修改系统配置或清业务数据。该批可用物理内存从 4407480 增至 7567312 KiB，记录 `C:/Users/luyua/.codex/tmp/global-validation-memory-reclaim-20261023-r1/reclaim-batch1-r2.json`，SHA `5521F7EC685BAD24BF4A65133FE67729AD61CBF692617D8857A84E3982ABA4CF`。驻留页后续可能重新加载，每次正式启动仍使用现场资源门禁。
+
+最新生成器完整 `go list`／`go test ./...` 两条原生命令均退出 0：**384 PASS、0 FAIL、0 SKIP，201 个顶层及原 8 个必需用例全部通过**；6 个无测试包只按无测试包计，不算跳过测试。128 源、19133 依赖首尾无漂移。当前原件 `C:/Users/luyua/.codex/tmp/xuanming-global-go-evidence-20261021T233020397Z-4d221b14/generator-current-source-20261023-r12-latest-real-inputs-five-GiB/current-20261023T161543206Z-da23e092/proof.json`，SHA `F25596C1D2BE5D7365841B55666413075B4CAA5F08C5FDCAE32037ADF0AA6A11`。随后官方 `proto-gen-build` 一条原生命令退出 0，同一源／依赖首尾无漂移；原件 `C:/Users/luyua/.codex/tmp/xuanming-global-go-evidence-20261021T233020397Z-4d221b14/generator-current-official-build-20261023-r5-actual384-201-five-GiB/formal-build-current-20261023T162056555Z-cfc345cb/proof.json`，SHA `4035EE8F51AAEA43C8AAF05AA79961BCD18CB49E2AA6DD93DFEFCFBA4F255E03`。两份正式工具均为 24491520 字节、SHA `7233E1DEC8B8826D896245A050C94CB2589BE7766121465EF26ECF22A90434B1`。这些通过仅覆盖生成器与工具构建；新协议生成、三语言业务编译、真库和双区仍须接续实际执行。
+
+2026-10-23 当前 no-unity 生成已真实执行一次并退出0，22个所属进程均退出；原严格记录因受保护文件发生必要变更而保持false／外层1，未回写或重跑。原件`formal-gen-current-20261023-r6-current384-P4-five-GiB/formal-run-20261023T162426022Z-1b4cc61b/proof.json`，SHA `E953FA6AF86B15EDC1647C2D4BE2D3059B2C18E759A95DE47B79112F6D079287`；同目录有限接受`generation-protected-delta-acceptance-r1.json`，SHA `168CC50D907C122BB6F54E3DDBAF06F31DCE3BF96C041D043449054FCB0F0421`。四个真实变更逐字逆构命中before：event_id的27／41仅改为reserved、三个C++生成项目只注册当前currency_type。源、26个手写守护、mixed与vendor均无变化，92个生成输出差异已保存。完整实际依赖闭包仍标pending，当前接Java官方Sync／Check与C++最新输入编译，不把生成成功代替业务验证。
+
+当前Java官方Sync与Check已实际通过，两条原生命令退出0、所属进程全退出，受保护域外0变化；当前source2671、受管13项差异。原件`C:/Users/luyua/.codex/tmp/java-battle-terminal-recovery-implementation-20261023-r1/official-contract-sync-current-r5-latest-inputs-five-GiB/actual-sync/proof.json`，SHA `EC47F461229DF1336213E0A5F63B796E5167569029EAE04932D121CDA5561EB5`；当前合同绑定同目录上级`actual-current-contract-bindings.json`，SHA `FD06BDD765436E27D1D39DBB5E40A11F639322CE46F37AE7C9D12CD4DA8FE0AF`。明确并列当前生成原红与有限分类接受，未改写原记录。新两表已进入Java合同，后续当前Full、真库及完整进程链仍待实际运行。
+
+2026-10-23 本轮真实编译与表绑定首红：Go Match当前Capture已通过（959源、34458依赖首尾同），随后`go build -p=1 ./...`真实退出1，缺`table.MatchError_kMatchSpectateFull`，原件`C:/Users/luyua/.codex/tmp/xuanming-global-go-evidence-20261021T233020397Z-4d221b14/go-current-ordinary-post-generation-20261023-r8-E953-five-GiB/capture-20261023T164251783Z-646533d3/execution-20261023T164508459Z-cb3c3562/proof.json`，SHA `F40C4D668901CF6BDDAA655F96B0A745AFA4EF8DC05EF0B5800241CD881316A5`。最新Tip.xlsx第266行已有同名规则，未修改常量、未手写编号；独立Java的MatchTips也依赖该名，故其Full尚未发布。
+
+C++本轮Full Q16实际执行105条原生命令后失败封存，MSBuild的三类错误为同一未导出tip、player_battle.cpp的Windows GetMessage宏碰撞、BattleRoomManager缺少muduo_grpc/channel.h直接定义。原件`C:/Users/luyua/.codex/tmp/cpp-terminal-recovery-current-full-evidence-20261023-r10/run-20261023T164727321Z-b0a08cc8/result.json`，SHA `601B95DC30701EF0DC74F31B33B53A07E7C7F1BE4F9F6FC87E1F39A66BA9FF8D`；391条家族尾核均gone，清理／输出／证据错误为空。原件不回写。两处手写修复均在原100路径内，仅局部隔离同名Windows宏和补已有channel头，递归未知字段校验与READY逻辑保留；当前player_battle.cpp SHA `67D645898D44C982C12244B6DC7D0FB919C921C90D616B36F8A89D642C56AB31`、BattleRoomManager SHA `1552C39C2D89CA1B7658BF1A1DA735D3357EBB3C5570CDC4CCE0693FDF0356F4`，尚待修后编译。
+
+正规隔离导表已实际通过：`C:/Users/luyua/.codex/tmp/go-match-inbox-outcome-20261023-r1/table-sandbox-actual-20261023T165636648Z-7c99fc5d/proof.json`，SHA `2207ED3878F8BBD6396C0D71241F4F8198B91734F93C816C73AEAE11B9485217`。缓存protoc35.1与官方sandbox_export两条原生命令均0；2645份主输入／表输出首尾0漂移，未写主仓。新码16021由正规导表器发号；12个输出差异含同名tip及滞后生成源，45个仅主仓存在的旧Python缓存不删除。下一步为无客户端目标的服务器正式导表、Java官方Sync／Check，再并行执行受影响的当前三语言构建；这些仍未完成。原三lane准入AA39本身允许各路2CPU的活native同任务并行，原Cpp/m:1及资源／Strict保持，没有新增进程豁免。
+
+正规服务器导表随后已实际落地通过：`C:/Users/luyua/.codex/tmp/go-match-inbox-outcome-20261023-r1/table-export-server-apply-stage89-r1/table-sandbox-actual-20261023T170513496Z-ace822a0/proof.json`，SHA `3033E7D844A09FE78B40B4D5DC2D0BEACDC267165439C1F28F45B7422A88785C`。两条原生命令均0，canonical_apply_executed=true；527输入首尾不变，2411个服务器输出中仅17 changed、0 added／removed，client_written=false、package_install_executed=false。17项精确清单在同目录`canonical-output-diff.json`，包括正式Tip状态、tip proto／各语言绑定／tip_text及三份滞后的Go生成源；消费端`go/shared`的Match枚举与segments、C++表绑定和JavaConfig枚举均由官方orchestrator正常部署，未手工复制。主manifest内容摘要未变，旧Python缓存未删除。当前进入必要的Java再次官方同步以及三语言当前源并行编译；83／84／85生成器与核心协议源未变，不无故重复其已通过命令。业务编译、真库、完整双区仍待执行结果。
+
+## 2026-10-23 实编译后的102路径必要修复与当前验证进展
+
+负责人明确授权扩至102，原件`global-terminal-and-admission-combined-102-authorization-r1/authorization.json` SHA `34DC093547BE95CBD54EA17AC27BA1D0DA9ADF62A382C4179D1B122333EF647C`；最新scope清单SHA `03D64D9FBC4C9EA8FD43A396016976C92F8C50B70D7848FD00D4F1E728FAB130`，102唯一路径／0重复／0缺文件，位于本任务C:/Users/luyua/.codex/tmp证据目录。两新路径分别为Lifecycle公开头及Java既有MatchControlContractTest；不增加产品规则。
+
+Go Match当前普通Capture／Build／Unit／Vet／RuntimeBuild已全部真实通过，完整Unit658PASS／0FAIL／121真实外部SKIP，4个无测试包另列。实际索引`xuanming-global-go-evidence-20261021T233020397Z-4d221b14/go-current-ordinary-post-table3033-20261023-r9/match-current-ordinary-actual-index.json` SHA `8A1453A069D755572DA45A937499EC4B156CE7EE10E23A2B25928536034EDDE0`；不将121项跳过计为真库完成。
+
+C++ Q17实际Full失败封存，原件SHA `A5BBDED0D8EA5C56681ED5A9C112E065699A7F90CAE30E498F24217C44562D76`，105native／300条家族尾核均gone。已删只读RetryInheritedMarkClears中重复的holderFence赋值，保Begin时捕获的原资格；另沿既有Lifecycle依赖加只读IsPlayerMutable桥，使BagService复用原唯一判据而不直接包含Scene私有组件。JavaQ46实际到达10模块2726例=2713PASS／1FAIL／12SKIP，原件SHA `5856C744EB62544D7682CEF677E723CB019F900F2C93F38B017DA18A5884F337`，其余20模块未执行；唯一FAIL为旧测试exact2方法断言。批准后仅把它更新为已实现的exact3，并核commit签名／默认失败，原10例不删。生产API与安全判据不改。
+
+验证进程准入也保留真实失败：Go Inbox Capture已过，后续Build因旧CPP根已退出在启动前拒绝，0native；不是编译红。Root独立核新CPP根原生出生时间／路径／镜像及原Go/Java根，仅替CPP收据形成新批准`current-roots-batch-r8-cpp-resume18-20261023/current-stable-roots-approved-all-executors.json` SHA `8A14DCF92552D481FE8088BE65FC67B5C7806F770663C6644951261404464C30`。原分类算法／CPU／资源／控制权不变，不放宽门禁；CPP从18续，不重放1–17。现三路已再次提交当前Full／普通验证，尚无修后全绿、真库或双区通过可冒认。
+
+2026-10-23 17:55 UTC 后继实际结果：Go Inbox Build 已通过，完整 Unit 为 **261 PASS、3 FAIL、0 SKIP**，原件 `go-current-ordinary-post-generation-20261023-r8-E953-five-GiB/derive-player_inbox-Unit-20261023T173039158Z-4a842b2b/execution-20261023T174610343Z-74740550/proof.json` 的摘要为 `F6372025E7487E0D377C3A482E142CF74937854177197DF4E251BA9E2754924D`。三个失败都来自两个旧测试文件：默认入箱类型、登记域集合、永久 GM 审计的载荷预算。正式 Battle 类型使用专用 Match 接口，不写 GM 审计且禁止通用 Void；不能通过扩大 GM 的 1024 字节预算、关闭 Battle 或删断言解决。两个旧测试的最小适配尚未写入，正在合并核对本轮遗漏范围。
+
+Java Q47 完整运行已封存，实际 **5678 项＝5297 PASS、20 FAIL、11 ERROR、350 SKIP**，64 条所属家族尾核均 gone，源首尾无变化。原件 `C:/Users/luyua/.codex/tmp/java-battle-terminal-recovery-implementation-20261023-r1/current-full30-api-contract-fixture-five-GiB-r7/run-Full30/proof.json`，SHA `866CE687E49C5419559FCFF5FD346DB3C775CBEC1FD3441112F5FA0D4DDCC500`。获批的 API 契约测试 10 项已通过；本轮三类红灯分别为 Drain 9 ERROR（8 项是对 DOUBLE 列无差别调用 JDBC getBytes，另 1 项是 H2 负例误用 DROP INDEX 删除 UNIQUE 约束）、Battle 配置旧夹具缺新增 Match 结果接缝（21 项）、Robot 旧观战判据缺正式 FULL 提示（1 项）。不能将其余未执行或跳过项当通过。恢复摘要按正式 SQL 类型编码的最小生产修复及原 14 例内数值／原 blob 漂移断言已准备，不改变永久收据重放协议；未提交旧计划须重新计划，已提交原计划仍先核永久原件。
+
+C++ Q18 的完整构建仍失败：105 条原生命令、328 条家族尾核均 gone，清理／输出／证据错误为空。原件 `C:/Users/luyua/.codex/tmp/cpp-terminal-recovery-current-full-evidence-20261023-r10/run-20261023T174326057Z-eaf2cf6e/result.json`，SHA `D92BBD39D608E28830325DDDAE4F3FC05ACE605CE26EDC9B2D2A3170A6819462`。具体原因为 BagService 经公开生命周期头包含到 handoff_sql_barrier.h 时，其 Scene 私有相对 include 无法从 modules 解析；该头属于此前已批准的 22 路径安全修复，后继只修这一条 include，不新增业务规则、不改 Lua、不放宽检查器。其源变化也须进入 Go DB／SceneManager 对该头的实际读取依赖。
+
+本任务五台所属基础设施已按原 CID、卷及配置正常恢复：TiDB／TiKV／PD 与两台 Redis，7 条原生命令全部退出 0。恢复原件 `C:/Users/luyua/.codex/tmp/xuanming-global-go-evidence-20261021T233020397Z-4d221b14/owned-five-infra-recovery-current-20261023-r1/actual-20261023T175430924Z-b1afdbdd/proof.json`，SHA `E8DB6D2D3F316B9B2B5CCFD79A9201CAB598A372FD2CADD35464737D95682F21`。这是恢复操作通过，不是新 epoch 协议、真库用例或业务通过；没有起停 Kafka、他项目 etcd、MySQL 或其他项目容器。现场可用内存约 10 GiB，当前继续实际验证。
+
+2026-10-23 18:28 UTC 后继：负责人已批准 108 范围，新增仅 data_service 的 account_directory_pool_test.go，默认常量必须 8 与实际值必须等于常量拆为两断言，原 4 个顶层用例保留；不修改生产，不关闭 vet。其原完整 Unit 执行部分为1597 PASS／103外部SKIP，但 config 包被原 suspect-or vet 错误阻断，整轮原件仍失败（SHA `1F11A020D58693BD663E149515CFB9F91040AD10AB507CE6122AF450F2D2AE7A`）。Go Inbox 修后完整普通 Unit 已取得 **264 PASS／0 FAIL／0 SKIP**（SHA `97D62D0B9F1EEE439DC307C92431B91C77128B775A8273989C54F0720BF76AEC`），Vet 与 RuntimeBuild 也实际通过，分别为 `9DBD1E846E239E8953D6BB5D4223034EFBEC122D9ADDDD5D4520307063CD30B6`、`63D58816083CE1BAC6B9343463D1DCEEFA8F0B4CBE0D1D0D32DBC55E143584E6`；不据普通验证声明标签专用真库已完成。
+
+独立 Java Q48 原件 `current-full30-typed-proof-and-contract-fixtures-five-GiB-r8/run-Full30/proof.json`，SHA `FB28492D00AE9D98A8784C91435AF4E5014E590F59C40A2B09C1B8D00B86E8BD`，实际5678项＝5325 PASS／2 FAIL／1 ERROR／350 SKIP，68条家族尾核gone、源首尾无漂移。余下三个失败仅 H2 唯一约束删除负例和 Battle 旧对象同一性期待；同已授权测试路径修复，转为验证包装端口的实际原事件／通道／字节转发与计数，不拆正式 SQL 终局接缝。
+
+随后 StoreDrain 定向原生命令已成功，原14项全部 PASS、0 FAIL／ERROR／SKIP；double数值与原blob漂移拒绝、永久原件重放及并发等原具名用例全部执行。原归档器误将明确104条依赖seed视为域外，原proof `85618F2FC7398AB3C111EF56189DB8BB7A16E55B73B3BF13EE43254CAC73533F` 保持false；仅只读尾封核104条不变seed＋5条本次Store GAV、全部原XML／源／依赖／清理后闭合，未重跑Maven。后继 `C:/Users/luyua/.codex/tmp/java-battle-terminal-recovery-implementation-20261023-r1/store-drain-typed-proof-green-r2/Q49-exact-actual-archive-successor.json`，SHA `261577A682DAE3987E23823CFA0230EF42A856615EC832043670B9031AF801A6`；Root独立核12引用SHA全部一致、Store JAR匹配。这是H2结果，不是TiDB；全30模块下游与完整运行包仍须后继实际验证。
+
+五台基础设施新 epoch 只读协议已实际通过，7条原生命令全0，TiDB双列产品身份与GLOBAL CHECK=1、两Redis PONG／INFO、五CID首尾身份均一致。原件 `C:/Users/luyua/.codex/tmp/xuanming-global-go-evidence-20261021T233020397Z-4d221b14/owned-five-current-epoch-readonly-protocol-r1/actual-protocol-20261023T181656231Z-9bac84c6/proof.json`，SHA `C8DFE0117C187508BAEF91F2071DBBC9B6E41B799DD2538C9F12ECCDA665375B`；只读协议不等于S1强会话、八表CHECK、两张新增恢复表、号段水位或业务通过。C++真Redis已绑定此新epoch，仍待当前构建后实际执行。
+
+Go启用消费者闭包已继续核查：其余7个原模块的旧Capture都实际包含本轮变化的18个Go proto输入及同包Match表枚举，不能以手写源未变复用旧通过。已将proto／schema／friend／rank／player_locator／router／chat全部纳入当前普通验证，连同原10模块共17个；逐旧新SHA及域集合见 `go-current-ordinary-post-table3033-20261023-r11-other-seven-current/other-seven-actual-old-capture-current-source-diff-and-ready.json`，SHA `94E813C03DD677066B79C618AE68D47D2CCA340EECA2EF686E03BB2314D19C00`。这是当前依赖差集与计划，不是实际构建通过；正规生成的依赖闭包仍待这些实际消费者全部闭合。
+
+### 2026-10-23 当前普通构建、真库前置与首次 C++ 运行结果（仍未完成）
+
+Java 当前 Full30 原件为 `C:/Users/luyua/.codex/tmp/java-battle-terminal-recovery-implementation-20261023-r1/current-full30-two-new-test-fixtures-five-GiB-r10/run-Full30/proof.json`，SHA `C2658CC46CC8195027D2189BD24CE4983381BB2FF7BF4F8984E04985DEFBD136`：1 条完整 reactor 原生命令退出 0，826 suite、10910 项＝9902 PASS＋1008 外部 SKIP，0 FAIL／ERROR；89 个进程家族尾核全部退出，2671 源、工具及依赖输入首尾无变化。30 JAR／18 Boot 内嵌本次库闭合 SHA `CAC802E6606B17AAF5E53AB9F787ED9282791FFFC7DDF9C6498DE48059883376`。六个验收工具已按这批新 JAR 重新 javac，原件 `current-full30` 同级任务根下 `six-tools-current-full30-api-five-GiB-r1/evidence/compile-20261023T185918926Z-d1e16f25/proof.json`，SHA `36417EB7074AB37D7C8F44939F395901C23A587A1B53B2E186D41A74CF485405`。这些是普通构建与工具编译，不能冒作真库／33 进程通过。
+
+为使真库阶段消费本次 Full30 而非旧 991 账本，Root 在系统临时目录制作只读 schema 接缝：`C:/Users/luyua/.codex/tmp/java-current-full30-reader-projection-r1/current-full30-reader-projection.ps1`，SHA `156D39F977DFACF82A41A632444591958DD74BF832B32EA096BF723092D3D3EE`。原旧版 ReadFull 分支与原参数校验保留，仅为实际新 schema 投影后续专项字段；完整读取并核对本次 826 XML／10910 唯一用例／1008 SKIP 及 JAR 原件，错误 SHA、路径、模块、HEAD、环境均拒绝。9 项纯检查通过，原件 `pure-result-r1.json` SHA `6AEE5373146A2A6A89C5E3A365DAF336CAFDB0D5EA2BBCB276E920CCE26C609A`；没有因此执行 Maven、改数据库或把 SKIP 转为 PASS。当前 Login 三整类外部36项仍须真实 Redis 复验，旧23项结果只保留为历史。
+
+Go 五块当前普通闭合索引为 `C:/Users/luyua/.codex/tmp/xuanming-global-go-evidence-20261021T233020397Z-4d221b14/go-current-ordinary-post-table3033-20261023-r10-eight-current/five-closed-ordinary-blocks-current-actual-index-r1.json`，SHA `F9DA6662741EE2EBEDC6B66065586EA1FEF075198F27747CE93AE8CE315A6332`：Match 658 PASS／121 外部 SKIP、Inbox 264 PASS／0 SKIP、data_service 1752 PASS／103 外部 SKIP、SceneManager 809 PASS／0 SKIP、DB 1093 PASS／17 外部 SKIP，均零 FAIL，另有各模块 build、vet、运行包实际记录。DB 原红中的四个撤资格 phase 是旧夹具从默认 Redis DB0 读取 DB2 数据，现改为原连接 HGET 并保留永久 PTTL=-1 断言；生产 Lua 未改，原红 SHA `638936FA13FD31729839B53AB373F74420ACECAEA3A9704681045D4C566A666A` 保留。其余十二 Go 模块、真实外部专项及实际双区均继续待办。
+
+新 epoch 的五容器实际协议已通过，物理 SQL 强会话 S1 原用例也真实通过：`xuanming-global-go-evidence-20261021T233020397Z-4d221b14/sql-S1-current-E953-five-epoch-r3/execution-shared-physical-strong-session-20261023T183714977Z-7cf3f4be/proof.json` SHA `E77031873C814228CECC3DC51C402FD10637759A7DC78B33D2357049CC3D9A34`，786 源／17620 依赖零漂移，随机独占数据库已自行清理；没有动 Redis epoch。Java 的原件聚合 `current-owned-five-epoch-S1-typed-r1/current-five-protocol-and-S1-typed.json` SHA `F5FC8249947DEE48B0020AA74BE655D599147B3F0FAF8EA5CC54D4089818BA14`。S1 不等于正式八表 CHECK、新恢复表或全部业务验收。
+
+C++ Q20 两次 MSBuild 与两次 Strict 实际全通过，但最后验证器将已批准的正规生成分类输入误判为边界外，原 Q20 末验退出 1 永久保留。后继 Q21 只修只读消费者的精确21输入解析，单条末验退出0，1874源／150库／32程序当时零差：`C:/Users/luyua/.codex/tmp/cpp-terminal-recovery-current-full-evidence-20261023-r10/run-20261023T190550120Z-ac8cc18a/result.json` SHA `06F8F023E47D0211DD3F07E800B8B041A25EEEA4A798C183ABC89713626DE7B3`。Q22 首次运行中 Kafka 整套通过，CrossZone 实际357项＝338 PASS／19 FAIL／0 SKIP，失败后按原入口停止，后续套件尚未运行；原件 `gtests-current-q20-r8/run-20261023T191042783Z-f23519dc/result.json` SHA `7B766D10550E74127455EB532DAE4830273EC87CFB57F04E9D7E6DBFEFEBEE2B`。当前仅在已授权的 cross_zone_test.cpp 补原成功 Redis 提交及 holder 资格夹具，保留未知撤资格必须冻结、双 SQL ACK 与生产 guard；因此 Q21 库存对后来的测试源码只能作历史，须后继正规增量构建及整套复验，不能称 C++ 测试已通过。
+
+2026-10-23 后继真库与登录专项：Java Q53 当前 Data17 真 TiDB 全部通过，6 XML suite、17 PASS／0 FAIL／ERROR／SKIP，原 M9 精确索引与查询分布断言也真实通过；7 条原生命令全0、完整2671源与依赖首尾无变化，13个所属家族条目全退出。原件 `C:/Users/luyua/.codex/tmp/java-battle-terminal-recovery-implementation-20261023-r1/current-external-actual-full30-current-epoch-r1/run-TiDB-game-data-20261023T192342967Z-0d28de3b/proof.json` SHA `7CEA99CFEAB2CB3EE3BECDA865183F4498D1371AAD1DA56591BFA92474604081`；逐键核验 SHA `F4EC2D2E71F72B2655C2C8834CE79636ABF70339C289E29611389500D4EC0916`。Q54 当前 Login 三整类真 Redis 为36 PASS／0 FAIL／ERROR／SKIP（Token22＋配额6＋设备8），7 条原生命令全0、17个家族条目全退出、源和依赖首尾无变化；原件 `current-external-login-and-store-risk-r3/run-Redis-game-login-20261023T193041463Z-2d703530/proof.json` SHA `1143F3C539EF3160778BCE6363A44785262A6DDA9F8B27D78210609E47DF1C5B`。这两项均绑定本次 C2658 Full30 与新 epoch；旧 Java 23 项不得当作当前36项或旧行为同值。Match、Store、其他真实外测和两版双区故障仍继续，不将普通构建或这53项外测扩大为完整交付。
+
+2026-10-23 后续运行仍未全部通过。C++ Q23 当前完整构建118条原生命令全部退出0、563家族条目全部退出，原件 SHA `DA5E0EB58B34D6C7693EC2969BD28FE3559F5C56E1A7EAD103115A11D39144E6`。Q24 CrossZone357项已全部通过，原19失败闭合；Kafka／AOI／Bag整套也通过，但Currency因旧临时YAML缺新版必填LogLevel而进程FATAL。只修同一旧范围夹具后，Q25仅正规Currency工程增量及Strict通过（SHA `FBB96239171A9EF70259855AAB2AAC003AA813269133916EBF0E6C9EC7058F7C`），150库、其余31程序及完整DLL不变，没有重跑整game。Q26真实Currency318项为316 PASS／2 FAIL／0 SKIP，两项强制真Redis（含uncached换代与丢回包）均实际通过，原红 SHA `7F80A1815FB56DB9515E00C757013CFE66319F17F07A51BF7060B91A1EF4B2F3` 保留。剩两项分别是未知字段物品不能计入可消费数量的旧断言、Battle新增第二域后日志未按域过滤；最小test-only候选已备，生产规则不改。Q27另行实际跑完原余23阶段，48native全0、完整输入和运行库首尾一致，原件 SHA `3BFEC59DFB54798E1466B63CBEC97B013E4B18D57D4C9E24499F9CAA4D1983F4`；原2个disabled另列未跑，整体仍明确为未通过，不能掩盖Currency2失败。Cross与Currency旧夹具归此前22路径安全范围，冻结 `C:/Users/luyua/.codex/tmp/cpp-late-handoff-mark-source-r1/source-freeze-r3.json` SHA `3161835DCFD1DE1068CDA85D7E5F8F37770F10CDF2933B63CE8D5AA5EEA37C8B`，不重复计入当前108。
+
+Java Q55是采样读取已消失PID的image权限错误，尚无业务XML，原监管红 SHA `E9F48245E72368C25DCADEE1AA843FA09916D6831D90CF3644084F333F58F81B` 保留。一次新资源观察unknown0且源／依赖差集0后，明确后继Q56实际跑满Match101，结果98 PASS／1 FAIL／2 ERROR／0 SKIP（SHA `E4C78F97F979ECF8FBFB27B8BC92ECBA9DFFCB8FF0144EAAB9CE08ACB443B5E2`）；新增RealTiDb6全部通过，整Match仍不通过。三红均在RatingStoreSqlTest：类型检查混入正式玩家表，及旧InnoDB锁等待视图在TiDB不存在。候选仅限定原两排行表、用真实DATA_LOCK_WAITS关联TIDB_TRX，保原1213死锁、牺牲者、回滚、重试、Elo和7项测试；尚未获新路径授权，未写源码，修后锁环行为仍须实跑。独立Store127已另行真实执行，结果尚待封存，不能因Match失败停止其他不变输入的专项。
+
+负责人尚未回复的新范围统一请求为108→113：前述三个Go旧测试，加C++ `asset_op_system_test.cpp` 和独立Java `RatingStoreSqlTest.java`。五个候选均只改测试，未写这五个canonical源码；原108授权继续有效，不能把待批113写成已授权。候选原件分别为 `shared-three-old-fixtures-candidate-r2/finite-candidate-review.json`（SHA `EDCF9843BE1764C5D6B28D10DB271B53C9391222C2D84EAF9A393B83CB302C95`）、`C:/Users/luyua/.codex/tmp/cpp-q26-two-fixture-candidates-r1/finite-candidates.json`（SHA `78C71BCCAED8D20E6E3D7B8439F88D195CEA0B08DE41109377F085E15B2924C8`）、Java任务根 `rating-current-tidb-fixture-candidate-r1/candidate-manifest.json`（SHA `FFA33CCDD7A9A10EBFC034673E0059431BE50F8F082270D6DC8D1A7EBA827D37`）。其他已授权验证继续。
+
+原三Kafka已按原CID／卷恢复（SHA `10B8583FDBE6C037A8696B945F713F6303E44D4793C1121FC36509274331C936`），本轮12条只读协议全0，五主题522分区逐分区RF3／ISR3、minISR2、禁unclean、原保留期及首尾身份通过（SHA `1978726E8E1BFABC5016740BE3BE3AE64186B335F78F4D9138E805F2DDA973C0`）。未改主题、offset或消息，不声称Kafka为空。Java只读新schema消费者另核48 sidecar／日志／家族原件并用原VerifyTopic重算，5项正负检查通过，未执行新native或业务投递。主36新独占etcd32379的创建元数据两次红保留，已创建的唯一新CID不能重复create；当前仅恢复原创建后步骤。Java33用Redis discovery，没有etcd依赖，不伪加该配置或触其他项目22379。
+
+两版原故障driver都未含本轮旧Scene维护恢复production CLI，不能以13／5项集成用例冒生产入口已验收。正在既有私有运行生命周期内补真实旧Scene故障、原pending与撤资格原件、production main实际TiDB身份、dry-plan→同plan提交／重放／篡改拒绝；必要CLI／私有fixture必须另以当前源真实编译。没有新业务控制器，不直接写SQL伪造撤资格，不将暂存计划当实际恢复通过。
+
+2026-10-23 20:35 UTC 继续补齐实际证据，整体仍未完成。Go 当前普通完整闭合增加 Router55，现为 Match／Inbox／data_service／SceneManager／DB／Router 六模块，索引 `C:/Users/luyua/.codex/tmp/xuanming-global-go-evidence-20261021T233020397Z-4d221b14/go-current-ordinary-post-table3033-20261023-r11-other-seven-current/six-closed-ordinary-blocks-current-actual-index-r1.json` SHA `39F6BA5659E6359F2FD073B8FA58E2E9D40288C4A383101CA007E0CECB6D9F02`；余十一模块和全部外部用例仍按各自结果核验。新独占 etcd 的最终八条只读协议已真实全0，原件 `owned-private-etcd32379-running-protocol-r7-help-first/actual-20261023T202425611Z-334b4a4b/proof.json` SHA `38596F0F3BAF09759EA7D3E2F9ED1BC7FB35D5176DC36D9096633F9BB7EF68DE`。真实缓存帮助确认合法读取参数后，health／status／空 namespace／卷网及首尾身份均通过；仅用本任务 `127.0.0.1:32379`，没有操作其他项目的22379。原五次失败不回写。主36私有运行副本另修原ownership故障childenv遗漏的第七处有效endpoint，正式Prepare消费和完整业务运行尚待验证，不能只按文本投影声称全部隔离已验收。
+
+C++ Q28 三个补充工程正规 Build／Strict 已真实通过，28native全0，原件 `C:/Users/luyua/.codex/tmp/cpp-terminal-recovery-current-full-evidence-20261023-r10/run-20261023T202309451Z-f9e187b6/result.json` SHA `F5BC895E94E42968F1A07CE15072A5A32F5984B899BF45E261482C822D0D29CE`。Q30 随后实际补跑 ecs_context8项、aoi_delivery21项，全部 PASS／0 SKIP，原件 `gtests-two-supplemental-r14/run-20261023T203456073Z-4a0b1756/result.json` SHA `4724620642E441AE5F1898675E1A1CC7FA78487866B9810014B765B4B1B51970`；Q29重复参数在启动前拒绝，0native原红保留。37项必需专项已有当前源逐XML覆盖原件 `C:/Users/luyua/.codex/tmp/cpp-current-required37-actual-coverage-20261023-r1.json` SHA `EE8A3BA91BF7E36FD3A6F7F2DC3B4FED316F55D29E4501A01D8A7D1F26528B2C`。这些结果不掩盖 Currency2失败，也不代表尚待新native的 muduo 整套及 Go／C++ 互通通过。
+
+Java Q57 当前 Store 五整类127项已封存：122 PASS／3 FAIL／2 ERROR／0 SKIP，原件 `C:/Users/luyua/.codex/tmp/java-battle-terminal-recovery-implementation-20261023-r1/current-external-login-and-store-risk-r3/run-TiDB-game-player-store-current-risk-20261023T195726823Z-d92a7c2c/proof.json` SHA `5804F505520455E067783B1497FA192CBABC9526C6909224B378C8F25D4B59C2`。Drain14／Trade9／Route7／AssetReader8均全部通过，五红均在 Store89；四项有界锁等待在取消后发生 JDBC 回滚通信失败，事务结果未知，生产代码保留原异常，不能改成确定超时或成功。第五项在释放原state锁、等待原holder结束后，新5秒事务仍返回 TIMED_OUT，尚无充分因果解释，不能擅自延长预算或等同前四红。当前源／依赖最终逐项差集0，失败原件仍为失败。
+
+Q58 当前恢复CLI五项真实全部通过，原件 `current-external-login-and-store-risk-r3/run-TiDB-game-data-current-recovery-cli-20261023T201550034Z-787ea64b/proof.json` SHA `4FA5CEEFF31B1C4585B7DB2AA7A33A7D13D19AFF97EAB4B1601C06E65B5D0456`；其中三项真TiDB、两项纯参数／拒远端，身份读取使用测试替身，不能冒 production main 的真实 CLUSTER_INFO 已验收。Go production admission_recover 当前正式 Build 原件 SHA `06DDE3F8F283E47D2B435C2552D5673DE863BAD625243FCE77EA93E556A1534E`，PE SHA `1A999BE5DB2CEDEB9727304737E812BB7AFD13E93C1E84B2751184B41FD45EA3`，尚未执行其真实旧Scene恢复链。Go main 内部正式校验为 SQLVerifier 加专库固定marker两次 FOR UPDATE，外部实际TiDB身份必须另核并绑定同endpoint，不能把marker称作server UUID；Java生产入口则调用 InstanceIdentity.mysql 核实际 CLUSTER_INFO。
+
+Store 诊断仅消费已保存的本任务TiDB日志。Q61第一12秒窗258418字节超过原128KiB上限，严格红 SHA `C9A33949C10F48C32E059DA4A8908F43C624D063DAB9A7E4E23D8334C82FB55D` 保留，未再读取其余三窗或扩大采集。该原stdout真实记录同连接在19:59:48.645收到query取消，随后1317、悲观回滚context canceled，19:59:48.648发生连接运行循环panic；调用栈是 Tracker.Consume → ReplaceBytesUsed → SetMemoryFootprintChangeHook → ART.Cleanup → cleanupStmtBuf → StmtRollback。脱敏摘录原件 `C:/Users/luyua/.codex/tmp/java-battle-terminal-recovery-implementation-20261023-r1/store-tidb-server-panic-redacted-existing-evidence-r1.json` SHA `C45CB06DCE9DBC79CD3C32959ED4CF4A182B31D9DE772D04CCADC28D08001AC3`。第一create异常与该时间和锁账户入口强对应，但客户端XML未存同一server连接ID，另外三项和第五项也未建立逐连接对应，不能扩大因果结论。原完整 TIDB_VERSION 为 v8.5.2／commit f43a13324440f92209e2a9f04c0bbe9cf763978d，镜像及CID前后保持。
+
+官方 [TiDB #71966](https://github.com/pingcap/tidb/issues/71966) 记录了相同的语句回滚／ART内存计账／取消panic调用链，且8.5.8也可复现；这是高度吻合的外部缺陷证据，尚不能替代当前五例逐项复现。[#71967](https://github.com/pingcap/tidb/pull/71967) 在2026-10-15合入master，改为清理专用内存计账并保留后续取消和配额机制；合入master不代表当前8.5镜像已包含修复。尚未升级或重建TiDB镜像，未禁用取消、回滚检查或安全断言。完整主36／Java33双区、真实生产CLI恢复、终局奖励／交易交付和故障验收均继续待办，五个新增测试路径仍等113统一范围授权。
+
+2026-10-23 21:10 UTC 审核来源观察已另行保存：`C:/Users/luyua/.codex/tmp/global-approved108-review-observation-20261023T210834220Z-7aed27e3/observation.json` SHA `B8C9310CD3E1C344BB95FC6C5A1B57F61EEA4069165651B9C51FA5BAE09F997F`。108个已授权唯一路径逐字节副本齐全（主仓66、独立Java42），复制期间源差集0，未写canonical。它只说明该时刻的源码，包含当时文档副本，不是运行证据、作者归属清单或整个长期任务的全部范围；后续文档追加也须以当前文件为准。五个待113授权的路径和此前独立22路径没有偷计入该108快照。
+
+Go 后继 Guild1172 PASS／142外部SKIP、Trade476 PASS／41外部SKIP、Mail9 PASS／10外部SKIP的各自完整普通链已实际闭合。当前九模块索引 `C:/Users/luyua/.codex/tmp/xuanming-global-go-evidence-20261021T233020397Z-4d221b14/go-current-ordinary-post-table3033-20261023-r11-other-seven-current/nine-closed-ordinary-blocks-current-actual-index-r1.json` SHA `4236B16FA0FB82213C93C9095782347E288FAE3917AE34DE7A166738F1A39F16`；其余八模块与全部外测继续，SKIP仍不计通过。Trade当前正式验收test-c编译原件 SHA `5171C6F82D890E67BE0915A92E4BEF63AC5D726CE31840BF9BAC2A5BADB8DF55`，不冒真实业务运行。
+
+C++ 最新局部实际汇总为 `C:/Users/luyua/.codex/tmp/cpp-current-actual-partial-verification-index-20261023-r2.json` SHA `53FD3BEC35701B8A39B22DA818E746994C29552F21BE006D12D78DAD8552703C`。Q31因私有空输出目录遗漏在业务测试前失败；补建该目录后Q32实际跑过原6分钟idle与200并发，并到达C++服务真实ready，但Go客户端启动时仅6651208 KiB、低于约定7340032 KiB，0客户端started，整体红 SHA `FC0DFABFD7078155C2E612F4725F3C3D3423D76A62DD78BEFCE568F277B60CF8` 保留，全部8家族条目已退出。未取得完整muduo XML，不能把这些日志记为套件通过。正将196个原用例按195个Router组与1个ServerInterop组互斥完整划分，各自重新实际执行和产XML；不删用例、不改6分钟等待或断言、不把两次XML伪成一次，原服务7GiB门槛仍保留。
+
+Java33 正式旧OPEN恢复的私有driver和第七个验收夹具已实现、静态纯装配通过，仍未编译或运行。新fixture只调用正式排空／冻结／恢复入口，使用真实 InstanceIdentity.mysql；没有直接SQL写造终态。原私有pending还有一处trade工具源码绑定滞后，仅更新为已实际编译的C3D0正确protobuf包导入，四原driver用例和原故障断言保留。当前七源码编译计划的旧companion引用正在纠正到本轮8A14；在新的精确计划获准并实际javac前，不能拿原六工具36417当作第七个已编译。Q62最小建角单例在新观察6048516 KiB处未准入，0native、未重跑，不能算修复验证。
+
+固定修复镜像的待批方案已完成独立只读审查：`C:/Users/luyua/.codex/tmp/global-current-tidb-hotfix-proposal-20261023-r2/proposal.pending.json` SHA `0F93E355E656C2A5D73FA6CE851F6A0CEF9F88924409A5F11F7E2CAD7F7202DD`，compose SHA `1BD006933A407CF4BD46CD54D583A1E587012A6D16C3331D86F164703FD16178`。官方 [#72042](https://github.com/pingcap/tidb/pull/72042) 完整修复commit为 `5feda11980548d18820cc06d4eec76f20ebfc2a6`；拟使用对应官方TiDB hotfix镜像及PD／TiKV8.5.8，三个linux/amd64 digest逐项核对，下载约1.25GiB。新随机project／网络／两卷必须fresh确认不存在，绝不挂旧卷或连旧PD；仅对本任务原三CID单次正常stop，使用`--timeout=-1`禁默认超时强杀，180秒外部截止后保留状态、停止后续动作。原三容器、原数据卷与日志保留，不动Redis／Kafka／etcd或其他应用。安装授权尚未获答，未拉镜像、未控制容器。正式仓库的`deploy/docker-compose.tidb.yml`仍固定8.5.2；即使未来临时新库通过，也不能声称该部署基线已修复，版本变更须在新运行证据后明确收口。
+
+2026-10-23 21:20 UTC Java后继实际执行：stage0062是七份验收辅助源码的javac，不是此前口头编号Q62的TiDB单例。原件 `C:/Users/luyua/.codex/tmp/java-battle-terminal-recovery-implementation-20261023-r1/java33-production-open-recovery-r1/compile-evidence/compile-20261023T211357777Z-3b3cab58/proof.json` SHA `4A02D81C0F95644679D09A88A216DF94AE94DD9612B8F3E4138FE143C2287DA8`，1native javac0、7主类、所属家族全退、2671源首尾0差。实际分类器使用显式StageOverride后的8A14；旧AA39只在历史plan字段，原runner在native装配前已覆盖，未绕过分类器。七主类之外还有5个内部类，正以独立12成员全目录清单绑定未来runtime，不回写原七主类编译原件，也不把辅助类注入33个业务进程。
+
+随后stage0063才是原57AF精确最小建角单例，实际原件 `C:/Users/luyua/.codex/tmp/java-battle-terminal-recovery-implementation-20261023-r1/store-single-cancel-create-consumer-r1/run-TiDB-game-player-store-cancel-create-single-diagnostic-20261023T211611450Z-e9d352f5/proof.json` SHA `7503E13F6EF09870139CDEA3F6729F78CACBEA7A645A8A47C0E4E74E4202B26B`。唯一原方法0 PASS／0 FAIL／1 ERROR／0 SKIP，Maven38.011秒退出1，再次复现取消后的 JDBC rollback failed／Transaction resolution unknown；原1秒操作预算、900–4000ms与数据断言未改。4native退出为0／0／0／1，4份所属家族8记录均退出，独立源与依赖首尾核对0差，清理／输出／证据错误为空。原失败分支的complete_inputs_unchanged=false不涂绿；独立只读诊断 SHA `0C657B41EED2152C87FF69CC997A2D51B888940C152D038B1E383EA62119FD95` 明确该差集事实。本次没有再抓服务器日志，不能把原五红逐项都归为同一panic；最小复现已红，等待经授权的新版本对照复验，不重复原127项或吞异常。
+
+2026-10-23 21:40 UTC 后继互通真实通过：Q33 B组1项及真正Go客户端父项与11子项全部PASS，原件 SHA `D0F5D92A16C6845EB80EE79A5578CC72F6812CE73078C5F8528D7334185CB0A2`；Q34 A组195项全部PASS／0SKIP／0disabled，原6分钟idle真实通过，原件 SHA `D90F053FFF2C41347294FD68BE52243955CEB4CDF2A2FEE000212B07D5BC705D`。两次独立XML互斥、并集恰好当前完整196项，1874源／150库／32EXE／95运行输入四份首尾及跨组一致，所属2×10记录均退出；没有合成一次运行的XML。逐项组合原件 `C:/Users/luyua/.codex/tmp/xuanming-global-go-evidence-20261021T233020397Z-4d221b14/go-cpp-interop-current-E953-two-groups-20261023-r1/actual-two-xml-exact196-composition-r1.json` SHA `7E577996DBFD9E77734682E6B1345EB22A09BFF57D4DFD73BF749E4A66A562A8`；最新局部C++索引 `C:/Users/luyua/.codex/tmp/cpp-current-actual-partial-verification-index-20261023-r3.json` SHA `6C016ACDBEA36544E05DD6ED802198F49F4FBD120A981282C0E99056CDFD970B`。Q31／32原红保留，Currency两失败及整体未完成状态不变。
+
+Java33七工具的后置纯闭包已通过：r4 `actual-precompiled-seven-pure-closure.json` SHA `0E366688070A18C7BB9F6378F035CF8A6ED2767669795E7DDEBAF94E70831C18`，全12class逐成员／字节首尾相同并实际锁读；原33加补充Scene的全部role／JAR／argv、四driver、plainenv以及六个关键函数体同值，边界原件 SHA `68B02401D3B94159322C4DCEFC9FFC0B4876FA2FA74AE2DF1786976C34468EC6`。新class只进入辅助main的classpath，不注入业务Boot。正式运行pending SHA `201F5EA703C736EB6CC03548C4D82F28CDE1AF82F1502D529FB3D9D8CF257ABF` 尚未批准或运行，须绑定实际基础设施epoch。
+
+Go Login当前Unit真实1102PASS／5SKIP／5FAIL事件（两顶层、三子项），原件 SHA `AE489B88DFE1BC69BE56C4D1F6FFE4F52B49D134D75EAC2043E34CAE07D8EAF3`。一处旧缺失历史夹具未匹配真实小写descriptor，另一处旧取消注入实际已在SQL成功提交之后，不能再断言释放角色名字。最小候选保留原四项提交前断言，新增提交后角色／名字／目录保留及零释放校验；生产0改。parent_load_missing_history_test.go属于旧独立初始提交安全授权，不重复计入108；createplayer_deadline_test.go未在旧授权清单，canonical未写。已把尚待答的113请求统一报告为114，仅再加这一测试路径；未获答前仍按108管理，不能称114已授权。
+
+主36恢复导出器已实现正式Begin与同快照SQL原件导出，独立只读审查又发现pending64索引、TTL、原维护计划验证和恢复围栏／摘要精确断言四处验收缺口，正在私有验收工具中补齐。正式生产SQLVerifier仍会拒绝非法原件，未发现生产绕过；私有工具的只读导出不等于全链恢复证据。当前Robot2437加3个原测试及14份逐字官方供应构成2454输入的编译方案已由Root核pin批准（SHA `B4404E57D87C3915B32A6150475643B65EA39D2AB6A3CC28DAE77ABA60D2F847`），交Go唯一队列接实际Install／Capture／test-c，尚未取得当前私有PE或三项业务通过。整个双区、数据库hotfix安装与其后复验继续待办。
+
+2026-10-23 21:55 UTC Go当前普通新增Friend完整闭合，Unit344 PASS／98真实外部SKIP，当前10／17模块索引 `C:/Users/luyua/.codex/tmp/xuanming-global-go-evidence-20261021T233020397Z-4d221b14/go-current-ordinary-post-table3033-20261023-r11-other-seven-current/ten-closed-ordinary-blocks-current-actual-index-r1.json` SHA `39A115C078960FB48CB317378ECFCA1865CA696F4A09737B7B34A5F4459136E1`；Login只补已授权缺失历史路径的定向验证，不重已诊断但尚待新路径授权的Deadline失败。另一版对应仍为0.1.0-SNAPSHOT，Java Friend真Redis原4项独立后继待实际结果，启动前元数据缺字段的stage0064保持0native原红，不计业务失败或通过。
+
+主36私有配置又补出global-replicas helper的一处有效endpoint滞后，已在具名后继改成本任务32379。实际调用原配置生成函数、保两区及原Fault／Battle／Java环境装配后，PyYAML解析68个配置角色记录（含迁移和共享CWD别名，不代表68个服务），67个etcd消费者全部只用127.0.0.1:32379，逐角色22379／2379／缺字段201负例全拒。原件 `C:/Users/luyua/.codex/tmp/commerce-current-2454-consumer-successor-20261023-r1/pure-all-role-effective-etcd-actual-proof-r1.json` SHA `191A595E4F3C877878F0A4B8C041C31CDB88CB67227BFA89E20B32A99F18A0BB`。这是实际纯配置验收，0服务／0网络／0canonical写；完整Runtime Prepare和业务仍未执行，当前Observer图及2454私有PE尚待闭合，不冒完整双区已就绪。
+后继当前普通索引已到11／17，新增Rank10PASS／5外部SKIP，原件 `go-current-ordinary-post-table3033-20261023-r11-other-seven-current/eleven-closed-ordinary-blocks-current-actual-index-r1.json` SHA `220F98CC1D41F4FD3E7BD439D0ACEFEBD3604723452106AA92B82B714D61E912`。Login缺失历史原父与两子定向实际3PASS／0SKIP（一个父项、两个子项），原件 SHA `3119597ACFDFE0AF629A95812DA808D37B996BEC54370B88435C6C7302AC0CC8`；不覆盖尚未修正的Deadline旧断言，完整Login仍保原红。旧Scene导出器r4已实际编译（SHA `A5E36581913C71FB07AB802B90067540B106975CE03172D9234D417CC69284F1`），75个正式键包括64桶pending、PEXPIRETIME精确绝对期限与QPC单调区间，四项审计缺口已落工具源码，尚未证明实际恢复或这些审计行为全部通过。
+
+P4私有2454安装／Capture实际通过，但第一次test-c181真实退出1（SHA `2053733B2138A03335EA1F53B80737C8CC63F28D892B58961B05DE8B2BAAE656`），原因是canonical Robot既有装备测试两处无类型常量变量推断为int，与正式handler uint32参数不符。27个非vendor测试文件／138个MessageID引用已静查，确认同类两处都在 `robot/equip_smoke_scenario_test.go`；候选只加两次uint32转换，保全部用例，未写canonical。Observer当前2614候选也含同源测试，因此保持0Install／0重跑test-c，不冒当前私有PE完成。原待114请求已统一后继为**最多120路径待批**，当前明确115个，另外最多5个仅限本批真实构建暴露的既有已跟踪旧测试适配，生产／生成物／客户端／地图不在预留内。具体 `C:/Users/luyua/.codex/tmp/global-terminal-and-admission-combined-120-pending-r1/proposal.pending.json` SHA `E22C0F40CE2A671DD5EA03AC78BB6D3C764779EC4A5F6C90AEF24BE6CA0CCDB4`；仍未获答，当前授权上限仍108，七个新增测试路径均未写入。
+
+Java Friend当前4项真实Redis已全PASS／0SKIP（SHA `44290916F9E9A6B150B6D5024A6A18EA7D65BBE9636A55D7C7A479ABE86002CD`）；十个其他Redis专项527项已获Root具体计划批批准 `current-independent-redis-batch-r1/batch-plans.root-approved-r1.json` SHA `5CA19BF8741C54644B49A0B434698FCF1DCF178A9E2EA6EBCBAC952FFE481DD5`，目前仅首个Battle15取得实际通过，不能把527项全部记绿。主36配置r2进一步覆盖原36个nonbattle角色完整集合，70条记录含迁移及别名，68个etcd消费者／204个负例全部过；原件 `pure-all-role-effective-etcd-actual-proof-r2.json` SHA `A37AA8BE750073A23A136497E2C85371FAF3E06D01DBF34E38C225E6112EFFBE`，位于同r1配置证据目录。仍未运行完整Runtime Prepare或业务。
+
+本轮另有一次已清理的核验脚本失误：私有纯checker使用CP函数名，被PowerShell内置cp别名解析为Copy-Item，在主仓根误新建 `OwnedIndependentJava33Schema.java`（14242字节、SHA `C7FE95B2E9F10966FE61C85BA77899EA84D4F735712E893397C42A1C9CD9DD10`、创建22:01:25.095Z）；未覆盖既有文件、原私有源码或地图。组合核验／清理命令被自动审批在进程创建前拒绝，仅给blocked by policy；随后独立只读确认身份，再单独字面Remove-Item成功，无换API／递归／通配。Root已独立确认目标不存在。before／after原件在 `java33-production-open-recovery-r5-finish-audit-candidate/cp-alias-accident.before.json`（`C43751635F9F1259463F04563D6D5F7E1979A9DC9009C6580ACB73A02D3AFDB9`）及 `.after.json`（`917E636D7CC7479E36A6D768527386E6AEBA89EBBEE946B399ACE6407EB05040`）；辅助函数已改名且实际Get-Command核为Function。新候选明确记录历史误落并清理，不宣称本阶段从未写入主仓。此前实际Friend运行已在事件前结束，不能混成同一源码闭包。
+2026-10-23 22:35 UTC 当前实际补验：Java十组Redis专项已逐58份原XML核定 **527 PASS／0 FAIL／0 ERROR／0 SKIP**，具名闭合原件 `C:/Users/luyua/.codex/tmp/java-battle-terminal-recovery-implementation-20261023-r1/current-independent-redis-batch-r1/batch-actual-527-closed-r1.json` SHA `CE45C8E90669E82FDDD3C9047876D5666764B9D08C300BCF9878039C9481BD81`；Root独立复核58个XML路径及SHA均匹配。旧汇总的Hashtable求和元数据曾为null，原件保留，以独立原XML复核收据补充，不涂改原记录。基础33组当前13组通过、20组尚未通过，不能把历史通过数代入当前。
+
+Java恢复辅助fixture后继实际单源javac通过，原件 `java33-production-open-recovery-r5-finish-audit-candidate/compile-evidence/compile-20261023T223155636Z-40d138c9/proof.json` SHA `8E7F90E9F1D754CD6B0CCFAD7BC0A8ED957DB47BB5C5795269002F25BCFC7484`。r6纯装配保原7源12class，加新fixture全目录实际1class／0内部类；辅助main前缀覆盖，共13字节产物逐成员锁读，全部Boot JAR／classpath／argv与33角色及额外Scene、四driver原用例不变。纯闭包 `java33-production-open-recovery-r6-finish-audit-overlay/finish-audit-overlay-finite.actual.json` SHA `1433504D3D8ACC4B20566C814FC78C212914A5232F26590CD31CF565923C7691`，runtime pending SHA `D37A6CC7B2A4D2D69B634DEE41A54BF06BDFAF6E0E24A60152BE2C63FB9AB1D0`；仍未运行真实33进程或生产恢复，不把javac和纯装配算业务通过。
+
+随后Kafka首项stage0077在两次只读Docker inspect后拒绝、0 Maven／0业务用例：原broker2 CID `4dc84db683ca0453b2c7e13c45e8c92b21f6db5a31d5da463e8b08acbca7953d` 实际running=false、OOM=false、restart0、原StartedAt不变且端口映射为空；原件 `current-external-kafka-current-epoch-r4/run-Kafka-game-audit-20261023T223239468Z-a385a4dd/proof.json` SHA `A88153023C988B031CA17BBC4C9B868707E12D6A7653EDC83F7A26A83744D6DB`。不能根据这些字段猜停机原因，未start／stop／重跑其余共享Kafka3项；正准备原三CID有界只读诊断，恢复后须新epoch协议，原1978协议仅作历史。
+
+Go旧Scene私有审计工具的r4追加边界实际发现3个错误：合法到期误拒两种、Redis时钟向前跳被接受；原红SHA `D5CB5D348CAE66E7FE30F06E6353074FFCA5D6B7692D43CD7D3061FA83DF74E3` 保留。r5以Redis TIME增量落入QPC包围区间（只留2ms量化差）、原PEXPIRETIME精确不变和原期限前删除拒绝修复；全部原25子例及新增4子例，加父项共 **31 PASS／0 SKIP**，原件SHA `BDCCF2F6240D8831A5E9024D480AC16118E56019DA5E7174F2DF297D6D23C96C`。原负例输入仅改至到期前1ms，保提前删除拒绝断言；不伪称两个快照可以区分期限后手动删除和自然过期。新r5 PE正式编译原件SHA `B84E42E20F89297C0561940C9C159D9DF14472697C62093CBD4C77D7E437F12F`，PE SHA `1E3416B7BA4E729C8B385577EE027AF19F71213FE1D4BAF6AFC9C6F00FCE4A9E`，未借旧r4产物。
+
+生产admission_recover、生产save_barrier_restore与私有r5导出器三工具当前实际编译索引为 `C:/Users/luyua/.codex/tmp/xuanming-global-go-evidence-20261021T233020397Z-4d221b14/admission-recover-production-current-r1/three-compiled-tools-current-actual-index-r2-ttl-r5.json` SHA `90F7E25999A56E46398C5351CFA3991474299F7B57F385A247492227D5E1D09F`；三者均executed=false，SQL／Redis操作均0，实际生产恢复和完整主36链仍未通过。当前仍只有108路径授权，七个旧测试新路径及固定官方TiDB修复镜像安装均待负责人答复，不以Root内部验收计划批准代替人类范围或安装授权。
+后继Go Locator完整普通块已实际闭合，135PASS／0SKIP，当前12／17索引 `C:/Users/luyua/.codex/tmp/xuanming-global-go-evidence-20261021T233020397Z-4d221b14/go-current-ordinary-post-table3033-20261023-r11-other-seven-current/twelve-closed-ordinary-blocks-current-actual-index-r1.json` SHA `FE434BF5AA42F2BE008F68FDFAFAF8D90692E4A74901F22B3CE24039F7244971`。后续普通模块为Chat、proto、schemamigrate，Shared／Login仍保待批测试失败。旧TiDB全PROCESS可见性及实例摘要只读探针已正规编译，原件SHA `8BCD22F4052CCFDD1EEF9688BA07474D2FF1753FB587377CF7F101DF51BC6ED3`，PE SHA `3FB550CC74EE13100B97418930F057960E8FAE196EA8CC800211E728A8C992B1`；尚未执行探针，不能据编译证明连接已静默、原三台可以停止或hotfix已安装。
+主36恢复验收仍有实现层面的编排缺口，不能仅记成“等窗口运行”：只读接线原件 `C:/Users/luyua/.codex/tmp/commerce-current-2454-consumer-successor-20261023-r1/main36-old-scene-production-recovery-seams-analysis-r1.json` SHA `9A7B693846414796B91035EF37083FA51904989681225124A51BBD6548C5875C` 明确，正常Trade／Mail／Observer之后才可追加不可逆的原Scene崩溃尾阶段，监控必须记录固定原entry及出生时间、用同句柄证明退出后才退休。生产promotion CLI的writers-stopped／queues-drained还需要真实全部写者停止、全部Kafka世代及retry／processing／dead排空、独立旧owner上界、实例marker与路由冻结原件，当前没有完整可执行审计producer，不能硬编码为true或用结束Scene代替。
+
+恢复结论须分两阶段：A证明原Scene崩溃后正式promotion和admission生产main的永久收据、重放／篡改拒绝及业务字节保全，并按现CLI合同继续保持维护关闭；B为恢复后正式取消／确认交易、受控放流及重新登录。当前已有TradeClient.Cancel／Confirm服务调用面，但验收工具尚未接上，且没有已审受控release接缝。A不能冒称B完成，禁止直接删除维护标记来制造重登通过。私有尾阶段的最小具体候选继续补齐，真实生产恢复、放流和完整双区仍未完成。
+2026-10-23 23:10 UTC 后继：Go普通范围已实际闭合15／17模块，最新索引 `C:/Users/luyua/.codex/tmp/xuanming-global-go-evidence-20261021T233020397Z-4d221b14/go-current-ordinary-post-table3033-20261023-r11-other-seven-current/fifteen-closed-ordinary-blocks-current-actual-index-r1.json` SHA `3C14DFEFCC8229136A67D1817CF3634164BAC2FB967A08B02BCFD6BC6CEA7EBF`。SchemaMigrate51PASS／0SKIP；proto28个包如实为no-testfiles，不造用例PASS。剩Shared、Login原红与独立Robot私有test-c原红仍待七旧测试范围授权。Chat的原Linux信号用例已取得实际Linux依赖扫描（822源／33066依赖），捕获SHA `6605ED124D64BC57F453E871FBC61B047DCFCB4CB3CFC24CF51644B9FBEC80AA`；交叉编译及隔离运行须另列实际结果，原Windows的Linux1＋SQL18跳过仍不算通过。
+
+Java另外Bash脚本3项真实通过、0SKIP（原件SHA `68DCA8E4B155897CF2E16B7CAF391E003DE8618499C1C0C50DD4AFD47EEF477B`），Scene原opt-in基准1项真实通过、0SKIP（`53DBD62B307E9653A7F08E44B490E10A5392A5A5E0C62BDE0C5380926B3313ED`），原1000／2000人、100预热＋200测量帧、seed42未改，无性能提升结论。实际批收据 `C:/Users/luyua/.codex/tmp/java-battle-terminal-recovery-implementation-20261023-r1/current-independent-Bash-Benchmark-preparation-r1/batch-actual-green.json` SHA `B1808832F8E14DCFEE80268F8DEC110236CF8F6AC8F4A45E6D38CA2F0A2CDF73`。基础专项进度更新到15／33完整通过、18组尚未完整通过，原13／20与22:35表作为当时快照保留；两版完整双区及恢复A／B仍未完成。
+2026-10-23 23:59 UTC 当前收尾事实（整体仍未完成）：
+
+- 原Chat Linux单例现已实际闭合：`chat|chat|TestChatShutdownSignalBeforeRun` 1 PASS／0 SKIP；实际原件 `C:/Users/luyua/.codex/tmp/xuanming-global-go-evidence-20261021T233020397Z-4d221b14/chat-original-signal-linux-current-r2-E953-fiveG/signal-context-r3-20261023T235323586Z-709da9cc/proof.json`，SHA `C1F5330391FB322260769E6A0D414B951F50DAEF33637F1D7765A8B149DEB5C8`。Root直接核passed=true、pure=false、11条native全部exit0、无first/audit、精确本任务临时容器已清理；0 SQL／Redis／镜像下载。逐键续接 `original-linux-signal-current-exact-key-closure-r1.json` SHA `164FD31422A58D4098B55DB00BB7A7E27C71D37E79438CE3528E4BCDC6B42CD3`；不回写Windows原19跳过，其余18个SQL项继续待验。普通模块仍15／17，不能从这一用例推成17／17。
+- 原215在读取已构建产物上下文时拒绝，0 native；216只完成1次镜像只读inspect，合法镜像缺可选Labels字段导致StrictMode拒绝，未创建容器。两份真红保留。后继修复只在验收消费者中显式传入原构建上下文、按可选字段读取Labels；原编译器、原用例、固定镜像、资源和清理规则不变。实际24个镜像／argv正反例先通过，再取得上述217实际结果。
+- Kafka原broker2的只读日志已证实JVM `Java heap space` 后退出1；Docker自身OOM字段false。原件 `java-battle-terminal-recovery-implementation-20261023-r1/kafka-stage0077-fixed-three-readonly-diagnostic-r1/actual-diagnostic-20261023T224819969Z-8b009eb4/proof.json` SHA `95E5CF5F491F618F80D376DB4F2D73E345EC01F656867D7E79C66059DD45FF0B`。临时三角色heap512m／limit768m仅候选，未控制原容器、未建立新运行世代，不当容量结论。
+- Kafka只读82实际在第19条官方offset工具`--help`返回1，原完整usage能力被独立保留，原红SHA `D8A74B99415C9F294156F3392151C8F0F4918FDDF30CD7BC6B935DFC5D4D6A29`。后继34条只消费该实际能力原件，不再重复已知help行为；31条argv逐字同，3条只读容器复制仅改成全新host输出槽。83实际到第22条earliest-offsets退出137，原红SHA `3F6F411B5349FDECA4E556F139224738F8C7E26881C43DB7F4D210ED08586094`；4.57秒、timed_out=false、双流空、全部所属进程已退，因此不能说是原90秒超时，OOM或其他终止原因尚未证实。未重发offset、未接业务测试，正在准备精确CID及时间窗只读诊断。
+- 根据负责人既有腾空工作集授权，核验原桌面UI PID24660的原生创建时间与完整镜像路径后，仅调用一次EmptyWorkingSet，同句柄仍active；未终止应用或任务。原工作集约1.89GB暂降，83随后实际越过原7GiB门槛，无阈值调整。收据 `%TEMP%/codex-owned-ui-working-set-e19f7e7e850e4c08b3baab6f48ca5bea.json` SHA `41A5818808B132CF5683974C15264AE091EC58FEC4C0C4F2F79180BBBA474EE3`；工作集可按需重新加载，不能称永久释放容量。
+- MySQL原CID的6步新tmpfs世代恢复计划已经内部核准，当前仍0start／未取得新UUID，Friend1／Trade6尚未运行。基础专项仍15／33。TiDB固定官方hotfix安装与七个旧测试新增路径仍待负责人确认；当前手写范围108不变，0新镜像pull。
+- 主36恢复A的正式freeze／guard适配器、Redis队列及快照审计已有具体私有源码和纯回放，仍缺实际工具编译与逐叶完整接线；独立旧owner上界改按本次无Redis／SQL回退的受控世界，在故障前停全部发号者后外部封存。正在补可标识原SM连接的临时TCP边界，避免把NAT端口猜作客户端身份；没有真实上界原件时仍拒绝promotion。操作者marker工具源码与边界测试已在私有目录落地，尚未格式化／编译／测试或执行。恢复后的受控放流、正式交易取消／确认及重新登录B仍未完成，两版完整双区未通过，不扩大成任意PITR或全球容量保证。最新代码和CurrentMaps保持，未commit／push。
+
+2026-10-24 00:40 UTC 补充实际结果，整体仍未完成：
+
+- 三个验收辅助工具已真实完成各自普通单测与独立 PE 编译：操作者 marker 48 PASS、Redis 排空审计 29 PASS、SM 连接元数据边界 16 PASS，共 93 PASS／0 FAIL／0 SKIP；6 条原生命令全0、6个所属家族12条进程记录全部退出。索引 `C:/Users/luyua/.codex/tmp/commerce-current-2454-consumer-successor-20261023-r1/ordinary-three-specific-helpers-r1/three-specific-helper-current-actual-index-r1.json` SHA `D1FCD74F8A45B40A3F7AEFAFAA23392FB8AB6798A0D781D782DB809762548A9A`，Root 独立核35个直接文件引用 SHA 均相符。这些是临时目录中的验收工具；三个 PE 尚未运行，真实 SQL／Redis 审计与完整旧 Scene 恢复没有因此通过，Go普通15／17不变。
+- Kafka83 的137退出已有新的限定证据，补充而不涂改23:59的未知原因记录。218诊断实际只执行前2条只读命令，第3条因7GiB准入等待600秒而未启动，整轮仍失败；原件 `C:/Users/luyua/.codex/tmp/xuanming-global-go-evidence-20261021T233020397Z-4d221b14/kafka-stage83-fixed-seven-readonly-go-role-r1/actual-diagnostic-20261024T000527636Z-cba047a3/proof.json` SHA `A5749EE347C8E258D7D5C4CD7AB8A240CFA3D0D097D0D85421103787CCFBD2CD`。其中第一条当前状态证明原broker1同CID／image／StartedAt、restart0，但已OOMKilled=true／exit137；FinishedAt 23:50:42.252577268Z 落在83原生命令的23:50:37.7455105Z—23:50:42.3181408Z窗口内。限定归因原件 `C:/Users/luyua/.codex/tmp/java-battle-terminal-recovery-implementation-20261023-r1/kafka-stage83-container-oom-bounded-diagnosis-r1/stage0083-container-state-OOM-exit-in-native-window.actual.json` SHA `1AE4440ACF917B9DDBD2BC3FDD01FE35F0325A8400D8FFB911608CBC4F2E6545`。只能确认容器在该窗被OOM终止，不能确认具体被杀进程或宿主内存机制；events／cgroup后续没有执行。broker2另为已确认的JVM堆耗尽exit1／Docker OOM=false，两者分列。
+- Kafka现只余原broker3运行，不能把历史ISR3协议当当前。保留原三容器及9卷，正在准备先恢复new1与old3多数、再new2、最后正常交接old3到new3的逐阶段方案；0新Kafka容器控制、0offset重置、0格式化或旧卷删除。镜像启动脚本行为尚无实际原件，候选不能当已准入。
+- 三工具自然封尾后，MySQL唯一一次fresh实际为00:38:11.4254331Z可用6960044 KiB，小于7340032 KiB；保持84未发布、0原生启动、0新数据库UUID。准入拒绝原件 `C:/Users/luyua/.codex/tmp/java-battle-terminal-recovery-implementation-20261023-r1/kafka-stage83-container-oom-bounded-diagnosis-r1/MySQL6-after83-resource-not-admitted.json` SHA `C9A645590793FDFD5BA31678C220AFF9ED7C80492DC302E3537E72822DB92078`。没有重复探测、降低真库门槛或关闭应用。此前另按既有授权核原生身份，仅各回收一次本任务闲置C++／Java dispatcher和Explorer工作集，进程保持active；工作集会重新载入，不冒称永久释放。
+- 主36的A仍在接故障前全issuer停止、可追溯Redis连接ID切断与独立U封存。B已确认缺少受控解除永久维护闸的正式入口；已在批准108内的现有设计文档追加显式 release-plan／release-apply 方案，拟只改既有5个DB路径，旧guard／plan／apply均保持不自动放流。稳定原plan与每次fresh维护尝试分离；同实例guard解除与永久release收据须同一Lua提交，跨实例只允许保留可核对的部分前缀且SQL仍冻结；正式Cancel仍走原领域接口。设计和纯候选尚未构成生产实现、回归或B验收通过。七个额外旧测试及固定TiDB hotfix安装仍待负责人确认；当前108不变，未覆盖CurrentMaps或他人代码，未commit／push。
+
+2026-10-24 01:28 UTC 继续实际补验，完整双区仍未运行：
+
+- 旧发号连接切断／故障前上界工具r3取得4顶层32 PASS／0 SKIP，以及独立PE编译；索引 `C:/Users/luyua/.codex/tmp/commerce-current-2454-consumer-successor-20261023-r1/cutoff-U-specific-ordinary-r3/cutoff-U-current-actual-index-r1.json` SHA `0EFC60999991B43504322001EE8CE8E7D7882D6767B628BAB50FBFE56A1067C4`。修的是辅助候选把正式string节点号当uint64、遗漏SceneId核对、未绑定完整SM创建目录、误把正常保留pending判未收敛；原r2保留，正式业务规则不放宽。当前准许的收敛是pending与两ACK同规范版本，outbox／更高pending／异ACK仍拒，不删除pending。
+- 正式TradeClient确认／取消薄caller r6也取得4顶层46 PASS／0 SKIP与独立PE编译；索引 `C:/Users/luyua/.codex/tmp/commerce-current-2454-consumer-successor-20261023-r1/trade-completion-specific-ordinary-r6/trade-completion-current-actual-index-r1.json` SHA `9D2AB8EFC4C3CCF0DCEC56A86FB6E1B60ED69CFA108DA09C0EC506F36E211002`。身份只取原Begin及其holder全集，不查当前目录替换旧身份；回包必须对应原tuple、原seal完整集合及明确FROZEN／CANCELLED，后续只读核P、归属、请求与资产业务字节。只保存不含Auth的原请求、正式回包及SQL观察完整pins，HMAC／secret不落盘。Root独立核这两索引20个直接引用和4份proof，均实际passed／audit_errors=0；五组临时验收工具合计171 PASS／0 SKIP、5个PE，0工具main／0真实RPC／0新SQLRedis操作，不计作A／B通过。
+- Java A后原角色重登B的私有fixture r8已实际单源javac通过：`C:/Users/luyua/.codex/tmp/java-battle-terminal-recovery-implementation-20261023-r1/java33-A-to-B-private-wiring-r8-pending-lock-contract/compile-evidence/compile-20261024T011631574Z-9b25881d/proof.json` SHA `13F27E56405CB66536B389C6E01F4892E031CD24190BC9F8A1A97BE1DACA357C`。它拟在原A的正式SQL权威Store.cancelFreeze之后，沿原进程句柄交接SM／Scene，再正式同账号同角色重登、ListSkills／GetBag、原S/N迟到load与旧E保存拒绝、正常新Scene APPLIED及原业务／永久收据核验。r7的挂起守卫曾缺同事务P锁，r8只补正式route→P事务并保持旧A断言。编译不等于实际B，未启动33进程或fixture main；此处Cancel只声明正式SQL权威层接口，不冒称另一个TradeService RPC已经执行，也不套用主C++的Redis维护闸。
+- 记录验收装配自身的红灯：单cached镜像静态检查84在0native时等满600秒；顶部5GiB没有改变原资源装配4处7GiB固定字面，Root漏核该初始化。原红 `DD6D0FB01C89941B8507B423546D08A15245435900CE9B524130173D95EDC14A` 保留；具名后继仅在该静态分支修正4处，并保持运行2.75GiB／2秒／2CPU／未知0，真库与服务仍7GiB。85随后真实单条inspect成功，原件 `kafka-fixed-image-startup-vector-readonly-r3-effective-ordinary5G/actual-image-startup-vector-20261024T011234238Z-b2e88885/proof.json` SHA `B0826E69FE47C4841E20F5876F5C6E6EBA6DD1FAAFEAD2A4174492538CA34AE9`：实际缓存镜像Entrypoint为 `/__cacert_entrypoint.sh`，Cmd为 `/etc/kafka/docker/run`。不能据文件名断言启动不会格式化旧卷。87只读复制前两native实际退出0后因wrapper漏定义NoLink而失败，原件 `2D75650E584074838E7C8E7A50DD61A584424BA41B91015DB88BA333C218AE68`；两个源尚未闭合，修正本地链接检查后才准一次具名后继，未运行脚本／Java或控制Kafka容器。
+- 主栈显式解除已组装5个既有路径的完整Ctmp候选（r1索引 `explicit-release-candidate-r1/candidate-index.pending-r1.json` SHA `DE21040A8FD092899CEEB39A33DD453A1483ECE354B9EE1956D9850AA61DEB0B`），尚未canonical／编译／测试。独立只读审发现退休全集重复漏项、未逐字段绑定原promotion路由、退休PB自洽校验缺项，正在修正后继；新事实reader还须闭合实际producer、完整目标／订阅及每次新短窗观察。旧guard／plan／apply不自动放流。仅在批准108内的5路径、当前before字节仍匹配及最终审无阻塞后，才准CAS和正规DB回归；没有借此扩大文件范围、降低服务门槛或跳过测试。额外7旧测试与固定TiDB hotfix安装仍待负责人答复。
+
+### 2026-10-24 01:48 UTC 显式解除实现落地与当前运行边界
+
+主栈受控解除已在当前108范围内落地5个原有路径：`go/db/cmd/save_barrier_restore/main.go`、`go/db/internal/barrierrestore/{restore.go,scripts.go,restore_test.go,restore_integration_test.go}`。最终候选 `C:/Users/luyua/.codex/tmp/commerce-current-2454-consumer-successor-20261023-r1/explicit-release-candidate-r3/five-path-source-freeze.pending-r3.json` SHA `5BCF100A34893679C43C11A2440A6FED293F3EB056CC5E65C7508CDDDF43D0E0`；CAS实际原件 `canonical-cas-actual-r3.json` SHA `ADA35CB50046E546650414674F2822E0586AC30408AC23CC047565E93B63B2B8`，格式后全pin `canonical-gofmt-final-freeze-r3.json` SHA `5D2D87D0EABF17EB49E6C0896848AE7870CA3D8768237C03DF028C59E69F3FF1`。Root独立核五canonical完全等候选，`git diff --check`实际退出0。只有格式/落地通过，尚不能称新增代码编译、单测或真库已通过。
+
+审核重点：旧guard/plan/apply不自动放流；新release-plan/release-apply显式绑定原维护号、完整zone成员、原promotion与退休永久收据、正式Cancel、审定producer和本次短排他窗。单物理Redis以一次Lua原子提交永久release收据并解除精确guard；core/mapping同实例只执行一次，分实例只允许同原plan的可核对部分前缀，SQL仍保持冻结。每次新attempt必须重新采集两类完整队列观察，≤60秒内实际native起止均对应当前窗口；不能将旧队列结果搬到稳定事实中。实现上限1000成员、2物理Redis、128主题/8192分区/16384订阅分区；不能据此宣称无限容量。r1独审3个核心缺口及r2直接Apply的nil Redis panic都已在同5路径修正并补接口回归源码。真正route audit/unfreeze、重启新SM/Scene、同账号原角色重登及旧writer拒绝仍是另外的正式步骤，尚未实跑。
+
+Java B当前纯接线固定原件 `C:/Users/luyua/.codex/tmp/java-battle-terminal-recovery-implementation-20261023-r1/java33-A-to-B-runtime-overlay-r9/java33-A-to-B-precompiled-overlay.pending.json` SHA `4ACDD6F6C894E23CF8BFA412A41E21C779F56253862952A3E185A7CDF96223C1`；纯装配 `actual-A-to-B-auxiliary-only-pure-assembly-r10.json` SHA `7B3E3A7E5EE36445FFAB18BBFF0DFABDFF332ACF3145C063936D13156F2853F0`；合同/源差审查 `A-to-B-contract-and-source-diff.review.json` SHA `51934C6FE70A14606EBDE5A7C457970FA571C8AD017EF4C62F20D783446D1AA2`。Root独立比较原r6与新pending：只变6个允许的辅助字段，原roles、四driver绑定不变，5个直接原件pin全符；原A没有删除require，当前源8路径0差。实际javac仍为13F27E原件，未重复编译。execution_ready/root_approved/business_execution_approved/native_started仍全false；编译和纯装配不能代替33进程或真实B。
+
+Kafka88两入口与90四个实际引用脚本已真实只读导出，6个唯一路径、含87/89失败副本共8次实际cp，10条绿native及其所属家族已退出；原红不涂改。完整源索引 `C:/Users/luyua/.codex/tmp/java-battle-terminal-recovery-implementation-20261023-r1/kafka-six-source-and-wrapper-artifact-review-r1/six-unique-startup-source-and-format-boundary.actual.json` SHA `2F91FE0E7C8257D26A57CF56A7FE7746251A5778A20727AC2C07E78EAD24D6C1`，90原件SHA `8220C5233CAC6F8BE10DBF9DFCD2C8C95881DA6F069986E175767A7C8BDC609F`。launch会进入KafkaDockerWrapper setup及存储格式化相关分支，不能据已有meta或脚本名声称它不格式化旧卷；目前继续静态检查缓存实现，不启动新Kafka/执行脚本/重置offset/删除旧卷。89是验收包装器错要求dot-source库必须有shebang，具名最小后继只修库文本判据，严格UTF8/NUL/实际引用/链接边界保留。
+
+完整主36和Java33仍未通过；普通DB新回归、Kafka恢复、MySQL原CID新世代、TiDB已知失败及旧测试适配继续待办。7个旧测试的范围方案与官方TiDB hotfix安装仍待负责人答复，未擅自扩到120或下载镜像。01:39只读可用内存6424468 KiB，普通5GiB可继续，真库/服务仍7GiB，未以此观测准入新服务。两仓HEAD仍为表中当前值，未读取/覆盖客户端新地图、未commit/push。
+### 2026-10-24 02:36 UTC DB普通验收闭合，真实A/B继续待验
+
+新增显式解除的当前DB索引为 `C:/Users/luyua/.codex/tmp/xuanming-global-go-evidence-20261021T233020397Z-4d221b14/db-explicit-maintenance-release-current-r1/test-fixture-DB0-successor-r2/DB-current-ordinary-and-CLI-actual-index-r1.json`，SHA `A14BE5737D48F93008B94AFF5A5F046FC0F469D411EAEBBB257F794DD162A8C8`：230生产Build实际退出0（F2E3C285DEC0AD980B41AE984EDEA18E1DDD4A2043BD5E26C13D0C668C070199）；233完整Unit为1126 PASS／18外部SKIP／0 FAIL（27E1F017009ACDA6F276A6020AE3A49B2764DCAEBA7981E33FEACF3DAB685C34）；234 vet实际退出0（EC3F16275C2297D8979202EDD1450C596B71662AA32F76B05E3BDF547BF1AFE4）；236正式save_barrier_restore PE编译退出0（5F93828C82870052407462A6FABB6FD231B5B2D484CD6031E0C3440F08301A0A），PE SHA `095F6B7EAD1CB11B261FD55886241B8EC78BF5AA19EB910FBD62E4EE4E5FFFA3`。Root独立核15个直接文件pin与四proof，均实际passed、first_error=null、audit_errors=[]、native_exit=0。0正式CLI main／0真实release／0新SQLRedis操作。
+
+保留真实失败和最小修复因果：231原完整Unit为1096 PASS／18 SKIP／30 FAIL，3个新增顶层及27子例在同一准备点失败，因为旧promotion夹具core DB2被same-physical分支直接用作mapping，而正式V2合同要求mapping DB0；不是业务校验应放宽。仅在同一个已授权restore_test.go把同物理夹具按原值/类型/TTL复制到同地址DB0，分实例DB2覆盖和全部断言保留，生产4路径不变；最终该测试SHA `05FF7364A186082663C39193C86F885C80276E6F2BD06D8F5914CBC0F27D6E08`，CAS实际 `release-same-physical-DB0-fixture-r5/canonical-cas-actual-r5.json` SHA `EA15CDCBEF9A9EBABFDAEC9035275E2DF4C386577E31C066379FD46054557CB0`。235是误接旧桥白名单而0native拒绝；236只纠正入口，未重跑已绿Build／Unit／vet。两次原红不回写。
+
+十五模块当前后继索引为同目录 `fifteen-closed-ordinary-current-after-B-r2.json` SHA `C14412CCCBE84AA984D10B06DC61A9F40B1D7B6562674CB3DA66EA8FDC3DCDCE`。其他14模块源码投影 `other-fourteen-current-source-projection.json` SHA `522F318F5E9FBD158CEAF77DCD482396135BA2A0ED2425FA0516078CD295A446`，Root读出14项、源码差异总0、DB域成员总0；并未重新hash所有消费者依赖，不能冒称整个36角色依赖已终验。DB当前两次正规Capture实际917源／34504依赖，Build/test-only与旧db服务PE的不可达桥均另列，不因一个测试文件变化重编不受影响的服务，也不只凭HEAD相同跳过输入核验。
+
+故障前完整zone基线工具已在Ctmp实现并真实通过10顶层108 PASS／0 SKIP及独立PE，索引 `C:/Users/luyua/.codex/tmp/commerce-current-2454-consumer-successor-20261023-r1/zone-roster-specific-ordinary-r10/zone-roster-r10-current-actual-index-r1.json` SHA `5E11328559D377411AF740F0EC802BD799C27CC431CAC8098095F281E2EC0D61`；PE SHA `92E1991F91A5A8A39B10406E27A11262F27B86361AB895BEE88548F0474FF373`。108中保留了原Confirm/Cancel的46项，不能把171与108简单相加冒作唯一用例数。新增只读模式枚举真实player_route.home_zone全集，正式placement选实际SQL库，RR事务读取全列后Rollback，再读取原Redis E:q／两ACK／pending／fence存在性，双轮成员和route_meta不变；真实缺fence与显式空损坏分开，受控目标必须原H/E/S/G，正常成员准入全关闭。route_reconcile两份原行都保留，同generation下watermark不退，允许正式leader心跳推进；不拿心跳变化当玩家数据损坏。原r6所有旧函数及46测试正文的字节逆构已核，原始证据 `zone-roster-r10-finite-source-review.json` SHA `3AD28B1EBBE997D810632A3349CB087461A7C86135DE47336C64995152956A97`，格式后源 `0FD59405096BC84D197533F1A4C49712A154F1AA223886574B72CE47871B049C`。工具没有运行实际roster，原Scene原句柄在采集前后仍活也须由coordinator另给原件，不能以工具布尔代替。
+
+Main36仍缺完整可执行A→B接线与实际故障世界。当前补出的真实actor、release成员组装、重登后持久确认、原DBTask采样/重投均是验收工具，不能算生产功能已经真实通过。已纠正一项验收口径：Gate的1003同时可能表示Scene无绑定、RPC超时/断连/停机，客户端断线或收到tip均不足以证明旧SQL写者被围栏拒绝；该结果仅作socket诊断，Main B仍须本轮旧E原DBTask确实投递/消费、生产拒绝路径及SQL业务全列不变。共享zone DBTask没有target_instance_id，不能套节点{type}-{id}消息的UUID字段；本轮DB UUID只作为外部consumer/注册/原句柄身份。WRITE没有TaskResult，broker ack不能算DB拒绝，Redis早拒与SQL quarantine的fence_stale_owner分列。
+
+当前正式login配置仍PinOnCreate=true／NewPlayerStorageId=0，按当前实现回本Node.ZoneId；私有当前配置未把global1000000改回zone。已有成员仍必须从真实player_route确认实际物理落点。A期间正式DS reconciler的leader/lease会变化，接线将按原Begin回包保全后正常停DS并核原句柄，再建立稳定维护基准；不能任意忽略整route_reconcile或停用原生产校验凑绿。正式freeze只将route_meta.writable置0，generation/revision不因此改变。
+
+Java/Kafka只读缓存审查已推进至实际5个类，发现原cached启动确实调用format相关入口，Formatter自身在已格式化目录且ignore=false时先拒绝，深层Loader/Ensemble/Copier及准确消息仍待静态闭合。禁止将“内部format检查被调用”写成“从未调用format”，也不能把自身分支当整条旧卷安全已证明；新恢复候选仍不准入。原三容器/9卷保全，0新Kafka控制/0offset重置/0旧卷格式化写。完整主36、Java33、旧测试7路径及TiDB已知红仍待验/待答，当前108范围和真库7GiB不变，新地图未读写，未commit/push。
+### 2026-10-24 03:02 UTC：有界启动静态审查闭合，真实双区仍未执行
+
+Kafka 缓存镜像的入口审查收口在实际八个 shell 与十二个类，实际十四条 javap 共 790561 字节；条件证明 `C:/Users/luyua/.codex/tmp/java-battle-terminal-recovery-implementation-20261023-r1/kafka-six-source-and-wrapper-artifact-review-r1/eight-shell-twelve-class-wrapper-storage-check-bounded-static.actual.json`，SHA `8D0CDED55533704A964F30D638C35FB7CFE3F5E9FD64F2DDCA342B3245A1CB3F`。Root 独立复核四十个唯一直接引用、十四个 class native family／二十八行均已退出；核实际 Formatter 的已格式化分支先抛错，以及 r3→r4 固定四控制 argv、phase、compose 和资源合同不变，原件 `Root-bounded-eight-shell-twelve-class-static-review-r1.actual.json`，SHA `F1340A7758366EEF214096FB92A507F177EFE79FED5B8479E6C187E2695155DC`。该结论只针对入口包装与存储检查：启动入口确实调用 format 检查；仍须 fresh 原 meta 身份／字节和九卷 owner 证明，不能声明整个 broker 只读、零 format 调用或已经保全实际水位。本轮零 Kafka 容器控制、零安装、零格式化／offset 重置。
+
+主栈 A/B 仍在一个 Main 后继中接线，不把独立工具的编译当作双区通过。真实 actor、成员组装／重登保存 observer、原 DBTask 采样重放继续普通回归。成员工具 stage239 确实得到 41 PASS／2 FAIL／0 SKIP（失败为一个父项及其 valid 子项），原件 SHA `146D4D85D8106BD51937FCA00D824AF78E93E2B23E20B0FDE7A6BA785E79EAF8`。已定位正夹具错误地使用三十二位无连字符 Scene UUID，被正式 ValidAdmission 拒绝；最小后继保留该失败和所有负例、只修正合法正夹具，不放宽生产身份合同。后继尚未取得结果时不记通过。
+
+Windows 测试启动器当前只能终止自建原进程句柄，不能发送受支持的正常关闭信号。因此 A/B 协调中的两台本任务 DS 明确采用 controlled-stop，不能伪称 graceful／已释放 lease：停前须发行方停止、完整 Begin 原件、双 ACK/P0、无 outbox 及队列收敛；停后精确原 handle family 退出、业务和相关 SQL 全列不变、以 SQL 时钟实测旧 lease 失效，再建立稳定基线。租约只用于排除后台 route writer，不能替代旧 holder 退休资格。B 的 DS 新生命周期也须分别登记、停前清队列；未运行则保留未验证。
+
+按负责人已有内存腾空授权，本轮仅一次 WSL clean cache 触发及一次对三小时后重新积累的同一 Codex UI 工作集回收，均核归属，零关闭应用、零数据库删除、零资源合同调整。UI 回收瞬间可用内存 7658836 KiB，随后原 MySQL6 唯一 fresh 在 02:56:08 实测仅 5780336 KiB，低于原 7340032 KiB。真实准入原件 `C:/Users/luyua/.codex/tmp/java-battle-terminal-recovery-implementation-20261023-r1/owned-mysql13316-fresh-epoch-recovery-r3/MySQL6-after100-stage101-resource-admission.actual.json`，SHA `02208C9B3F7920D5BFDF20ABB03D130E010079470A2CB91E6EF246E3B943F85B`；stage101 没有发布、MySQL 没有启动，不把瞬时回收冒作连续窗口，也不循环回收或修改门槛。
+
+当前仍为 Go 十五／十七模块普通闭合、Java 基础十五／三十三组外部专项完整通过；剩余十八组 422 项和完整主 36／Java 33 均未闭合。七旧测试的最多 120 路径方案及官方 TiDB hotfix 安装仍待负责人答复，未扩大 canonical 范围或拉取镜像。本轮保留 CurrentMaps、最新代码和原故障数据，不提交或推送。
+### 2026-10-24：120路径与固定TiDB方案已获明确授权，七旧测试已落地
+
+负责人最新明确批准最多120路径，以及固定三份官方TiDB/PD/TiKV镜像下载、仅正常停止原本任务三台临时数据库（保原容器、卷、记录）、新隔离卷／网络和127.0.0.1:24000本地复验。TiDB授权原件 `C:/Users/luyua/.codex/tmp/global-current-tidb-hotfix-authorization-20261024-r1/authorization.json`，SHA `C9F71818D5BB44B3731CE477B1AE1169A9E8E35DE3C26CE2E7C4B01BE3F415F4`，绑定原提案 `0F93E355E656C2A5D73FA6CE851F6A0CEF9F88924409A5F11F7E2CAD7F7202DD`。此前“七测试／安装待批”只代表历史；当前授权已经到位，尚未实际下载或启动新数据库。
+
+Go五个已知旧测试经最新preimage核对后CAS、仅五文件gofmt及diff-check通过，原件 `C:/Users/luyua/.codex/tmp/xuanming-global-go-evidence-20261021T233020397Z-4d221b14/five-Go-old-test-fixtures-authorized120-current-r1/five-test-CAS-gofmt-actual-current-r1.json`，SHA `AAEC96319D8B752F53273DEEE501DF90699EC4A3E4DE74D99AA4FB9E1AC658E2`。包括shared Redis已核验替身／未核验拒绝、默认安全开关、EnumNumber类型；Login保留四个提交前回滚场景并核提交后角色／名字／目录不释放；Robot仅两处uint32类型。生产、客户端和生成物零修改，五预留零占用。这些测试源码修复还没有新的运行结果。
+
+C++ Asset旧夹具和原108内既有Inbox测试候选按最新源CAS，原件 `C:/Users/luyua/.codex/tmp/cpp-q26-two-fixture-canonical-actual-r2/actual.json`，SHA `697C4A5098C6563F4C6AF934420097EF7724E631BEBB44C70BB74876FEC2F259`；保完整GUID集合、布局1:1、增强与unknown原字节、未知版本不可作普通单位消耗，以及Inbox原节拍／零fetch断言，尚未编译或运行。Java仅Rating旧真库测试CAS，原件 `C:/Users/luyua/.codex/tmp/java-battle-terminal-recovery-implementation-20261023-r1/rating-current-tidb-fixture-authorized-cas-r2/RatingStoreSqlTest-single-path-CAS-and-assertions.actual-pure.json`，SHA `C391FC210508F441D6591864A9A6E993DF6BF9AE6FC3C2244673B0F351273A34`；七@Test、五十条原assert表达式及等待界限不变，尚未编译／SQL。Java Full30现有结果未覆盖这份新测试字节，生产与既有JAR不变。
+
+原DBTask sampler/replay r2已真实44 PASS／0 FAIL／0 SKIP及PE编译通过，当前索引 `C:/Users/luyua/.codex/tmp/commerce-current-2454-consumer-successor-20261023-r1/original-dbtask-replay-r2-specific-ordinary/original-dbtask-replay-r2-current-actual-index-r1.json`，SHA `70AC5C754044200864FD9B2763E4DDCD80D50F621D4CA6116897D6E5897CEFD9`；PE SHA `EA7B67F061720F810D464B9C5B499379534CAE839684D6356E4A6C0863A8071F`。Root核六个直接引用、当前source/test与两proof的passed／first_error／audit。r3另增由正式DBTask解析的只读观测字段，尚未编译。DB实例无NodeInfo UUID，不得制造UUID验收合同；B拒写者按实际进程PID/birth/PE、config/zone/consumer组、db.rpc endpoint与本轮worker日志绑定。Scene仍按正式UUID合同。完整主Main后继已落盘并继续接线，原样本PB必须走正式生成类型，客户端1003和broker ack都不能冒DB拒绝，真实重放和全区SQL不变仍未运行。
+
+Go与Java原24小时队列均自然退出，原未消费stage242保留。新队列采用原不变dispatcher与普通5GiB bootstrap，新Root依据精确原生SafeHandle／出生时间／模块和fresh CIM命令／父子关系封证并放行：`C:/Users/luyua/.codex/tmp/xuanming-global-go-evidence-20261021T233020397Z-4d221b14/parallel-queue-admission-r1/current-roots-batch-r9-go-java-after24h-20261024/current-stable-roots-approved-all-executors.json`，SHA `A9772D4E6559E1093E529A9A17AB8DF569A64A75F63A431FE09F255A8F634D15`。Go55068、Java45572和仍活的C++34952逐原身份核对，未延长旧根／24h，不默用旧8A；具体native仍需各成熟plan。旧shared测试改动必须先做一次真正当前DS Capture，再派actor／members／sampler，不借旧manifest冒当前。普通5GiB、运行2.75GiB和真库／新服务7GiB门槛未改。
+### 2026-10-24 03:49 UTC：最新单一Main已接齐，普通与真实验证仍受资源阻断
+
+当前唯一Main候选r12为 `C:/Users/luyua/.codex/tmp/commerce-current-2454-consumer-successor-20261023-r1/run-owned-commerce-private32379-current2454-oldscene-AB.pending-r12.ps1`，SHA `1A415404723D9276415846A0F53A89F6D3A7C587ED7A0864B0A18EDC5EFC9F3C`；原r6生命周期／清理正逆字节证明 `single-main-r12-original-lifecycle-static-actual.json`，SHA `7FF3D5BD2B1006E9C402EECE32EA9B0DE93E9265F9D3A9AE40C6908777852BA0`。实际A/B源码已连入36业务编排，包含原actor／完整zone基线／cutoff/U、旧Scene退出／Begin、controlled DS停／SQL租约稳定、正式promotion/admission、显式解除／完整36重启、同角色重登／保存、原DBTask真实单投回读／正式worker stale日志／全zone双表逐物理列不变。Root窄核正式CLI的UseProtoNames输出、阶段调用顺序和worker seq=Kafka offset+1的实际来源。该脚本AST通过仍不等于运行通过；三最新PE、当前P4／Observer种子／bindings及两版真实世界尚缺。
+
+Go最终续执行私有索引 `C:/Users/luyua/.codex/tmp/xuanming-global-go-evidence-20261021T233020397Z-4d221b14/five-Go-old-test-fixtures-authorized120-current-r1/current-Go-five-tests-and-remaining-execution-final-private-index-r1.json`，SHA `F3EA5767F5E8554F2B1834637B01BB7C93628DDC5BCDEB02667407B6C748356A`。包括五个已落旧测试、十五模块三shared_test的test-only精确投影、真正当前DS Capture后再派actor／members r5／sampler r3，以及Shared／Login／Robot与P4／Observer的新实际种子、普通回归和绑定顺序；全部当前准入／native位仍false，不用旧Capture冒当前。
+
+本轮Root启动接线曾有实错：首轮新Go／Java真实root命令含变量而未字面携完整已批入口，原classifier正确在Go Capture之前拒绝，原件 `468ADEC0826A613E76E644A1CD33920CEA9280577F5247399500EED9E6B4BBC9`。两队列均finished自然退出，未Kill／未改classifier；A977已是历史，不能继续作当前根准入。后续两个全字面候选各等50秒仍未达到普通5GiB，在进入bootstrap前退出1，实际两queue没有root receipt或stage；原件保在 `go-current-parallel-queue-r7-literal-20261024/two-literal-bootstrap-ordinary-resource-held.actual-r1.json`。新调用的六个真正命名参数另经AST核对，原件 `exact-Go-Java-literal-command-and-named-parameter-AST-actual-r1.json`，SHA `28DEA918138045013A035B84FA273270CFF473EB7A6F9E807F6D22C2FA18F920`；仍须实质资源变化后新启动、逐原classifier实际核定，不能把纯AST当Root准入通过。
+
+03:49 UTC可用内存实际5037696 KiB，普通需5242880、新服务／取包仍需7340032。负责人已批的0F93方案还要求先下载后停止旧库，因此已备单次例外：仅七条原TiDB／TiKV／PD检查和正常停止命令，先在2.75GiB启动／运行下释放旧库占用，再保持原7GiB下载／校验／部署。具体D19方案与742A可执行consumer均已完成，16纯正负和33pin通过，资源／顺序例外已向负责人提出，尚未回复；零Docker控制、零下载、零新SQL epoch。仅CPP一活根伴随分类已另按原算法封证，header仍7GiB，不能替代这份人类资源许可。未覆盖CurrentMaps或他人代码，未commit／push。
+本次暂停在必需资源／顺序例外答复前的三个最终续执行私有入口（均保留未执行项，不代表交付完成）：
+
+- Go：`C:/Users/luyua/.codex/tmp/xuanming-global-go-evidence-20261021T233020397Z-4d221b14/five-Go-old-test-fixtures-authorized120-current-r1/current-Go-five-tests-and-remaining-execution-final-private-index-r1.json`，SHA `F3EA5767F5E8554F2B1834637B01BB7C93628DDC5BCDEB02667407B6C748356A`。
+- C++／Main：`C:/Users/luyua/.codex/tmp/cpp-current-final-private-handoff-index-20261024-r1.json`，SHA `5C2406C3EF7B2F83884E5939B2F825C09C197D726B1F21668B6425E31CA98175`。
+- Java／本地TiDB：`C:/Users/luyua/.codex/tmp/java-battle-terminal-recovery-implementation-20261023-r1/Java-runtime-finish-current-static-preparation-index-20261024-r1.json`，SHA `8095D4E7C00056CFE56618F61021DC6A0BCF4C98AD5D005287F056541653318D`。其中唯一待human／短quiet清理plan为 `hotfix-old-three-stop-before-download-cleanup275-exception-r3/fixed-old-three-cleanup275-consumer-r5-onlyCPP.human-unapproved.pending.json`，SHA `7A27438FF7A59D213324915276428C1850D4D4D5A254A907ACD6844ABF926B3A`；固定镜像／新部署九命令候选 SHA `131F4811661051EFB070466BAE1B680C6AEC974095821192572C83C19540DA64`，仍原7GiB，零下载／部署。
+2026-10-24 04:34 UTC 实际清理及交换页说明（整体仍未完成）：
+
+- 负责人已批准旧三库单次清理例外，授权原件 `C:/Users/luyua/.codex/tmp/global-current-tidb-cleanup275-authorization-20261024-r1/authorization.json`，SHA `20406953A960DB6FB904E8EB09E19D211E6AE607E51E83E419DEBF8747DB0833`。首次执行只完成1条只读inspect，因计划误绑旧01:01启动世代而拒绝，0 stop；失败原件843B9725…保留。原正式17:54恢复原件E8DB6D2D…及本次只读差异证明三CID、镜像、Created、数据卷、端口和网络ID均一致，仅三台启动时间、上次停止时间和endpoint ID共9个动态值陈旧。Root明确批准仅修这些实际值，7条命令和全部资源保护保持。
+- 后继7条命令已真实全部退出0：按TiDB→TiKV→PD正常停止，各返回精确原CID，三台最终均exited／exit0／OOM=false；三个停止请求共5002ms，小于共用180秒截止。原容器、两named数据卷及只读配置mount完整保留，0强杀／删除／下载／新库启动；7个原生家族11条进程记录全退出。实际原件 `C:/Users/luyua/.codex/tmp/java-battle-terminal-recovery-implementation-20261023-r1/hotfix-old-three-stop-before-download-cleanup275-exception-r3/actual-stop275-20261024T041703554Z-1d8cc820/proof.json`，SHA `137F5DEAB30CA8EF33A81401D18FB07E12A059FE133D7F418F6A5E2C7BC234F7`。这证明清理完成，不代表修复版下载、真库复验或完整双区通过。
+- 已按既有腾空可回收内存授权，只回收OS文件页缓存、核身份且空闲的Claude工作集及当前Codex工作集；0应用或任务关闭／0进程终止／0业务数据修改。工作集可重新载入，不能当永久容量。当前Windows自动管理的D盘页文件已分配56GiB、约11.4GiB在用，系统提交余量约42GiB；物理内存在约4–5.4GiB波动。此前5／7GiB为约定的物理内存启动门槛，页文件已启用并不自动改变该门槛。
+- 当前提出的可执行资源政策为：现有交换页下，启动至少4GiB物理＋12GiB提交余量；每次一个重型作业、2CPU；每2秒检查，运行物理至少2.75GiB且提交余量至少8GiB；保留原容器上限、业务超时、断言和无跳测。方案 `C:/Users/luyua/.codex/tmp/global-current-swap-aware-validation-policy-20261024-r1/proposal.pending.json`，SHA `269EFE7F8DD4487588531C6F5096E5FC927972DA6A0D7B66C6697422DE8D1F99`。当前尚待负责人确认，未改页文件、WSL设置或以该政策执行。功能验收不据此宣称性能或全球容量。
+- C++35只有包装器退出0，目标构建原生命令0，不计编译通过。原因是同PowerShell调用把命名参数字符串数组按位置传入，目标Execute未置true；已要求仅改成真实具名参数并用相同签名stub复现红／绿后推进36，目标源码、构建器和断言不改。主36、Java33以及剩余真库仍未完成。
+
+2026-10-24 04:41 UTC 授权更新：负责人已明确答复“授权按交换页方案继续验证”，授权原件 `C:/Users/luyua/.codex/tmp/global-current-swap-aware-validation-policy-20261024-r1/authorization.json`，SHA `865ED6902B3350B144179A20DD46AF6529BDA7CEB02062AAF4125763D8EA1B15`。实际策略为启动物理至少4GiB且系统提交余量至少12GiB；运行物理至少2.75GiB且提交余量至少8GiB，每2秒检查，每次仅一个重型作业、2CPU，原unknown-heavy=0、进程家族清理、业务超时、断言及容器上限保留。当前未改页文件或WSL设置、未关闭用户应用。现有同次GlobalMemoryStatusEx已接收提交余量，临时后继仅导出该字段；采用进程可再提交量保守下界满足阈值，不能把它称为精确全局值。新采样器及三执行器有限装配尚待实际编译／验证，不能从授权推成测试通过。CPP36已进入真实成熟目标，但在实际可用4738788KiB低于旧5242880KiB时拒绝，0构建native；原资源失败保留，后继待新策略装配就绪。
+
+### 2026-10-24 Claude Code 只读评审结论（按严重度，待修）
+
+范围：本批 115 个手写路径，即主仓基线 `f83da2e18`、Java 仓基线 `f2c55b04` 之后的未提交改动，约 1.5 万行。方法：6 路只读查找，再由主会话逐条读源码核实。**未编译、未运行任何测试**（AGENTS.md §10.1）。行号以 2026-10-24 04:45 UTC 工作区为准。
+
+#### A. 必须修（两版同源）
+
+**A1 截止时刻无宽限即判 ABORT，合法终局随机作废**
+- 位置：
+  - Go Match：`go/match/internal/authority/ready_recovery.go:56`，候选条件为 `f.deadline_ms<=NOW`；`completion.go:440`，只有 `stamp < r.DeadlineMs` 时才不写 ABORT。
+  - C++ Battle：`cpp/nodes/battle/logic/battle_room_manager.cpp:744`，在同一个 deadline 强制 DRAW。
+  - Java：`game-match/src/main/java/com/game/match/global/GlobalMatchStore.java:917`（`now(c)<f.getDeadlineMs()`）；Battle 房间计时用的也是同一个 deadline。
+- 触发：
+  1. 房间打满到 deadline，Battle 强制平局，开始 CommitBattleOutcome。
+  2. 同一时刻，各 Match 副本每 500ms 扫描一次，DB 时钟一过 deadline 就走 abortTerminalTx，写入 decision=2。
+  3. 两边抢同一把锁，谁先拿到谁定终局。
+  - 另一条路径：截止前不久打完，但首次提交瞬时失败，5s 后重试时已越过 deadline。
+- 损害：打满时长的局和首次提交失败的局，个人奖励、评分、帮会结算会按调度时机随机作废。这违背 cross-zone-matchmaking.md 2026-10-23 小节「截止不是超时就当没奖励」。
+- 最小修正：
+  - ABORT 条件改为 `deadline_ms + grace <= NOW`。grace 做成配置，默认至少 60s，要覆盖 Battle 提交重试窗口和时钟偏差。
+  - Go 的候选 SQL、abortTerminalTx 与 Java 的 resolveTerminalAfterDeadline 同批改。ABORT 写入之前，COMPLETE 照常接受。
+  - 补两条回归：「deadline 时刻 COMPLETE 与恢复并发」；「截止前打完、首提失败、越过 deadline 后重试」。分别加在 Go completion_test 和 Java BattleTerminalRecoveryTest。
+
+**A2 确定性不可满足的个人结算永久 DEFER，没有出口**
+- 位置：
+  - C++：`cpp/libs/services/scene/battle/system/player_battle.cpp:1887-1916`。HasCompleteBattleEffectInputs 在宝宝不在、宠物表行缺失或没有宠物属性池时返回 false；`:2014` 据此整笔 DEFER。
+  - Java：`game-scene/src/main/java/com/game/scene/battle/BattleSettlementService.java:126-132`。缺宝宝、maxHealth<=0、物品不再 battleUsable 时都返回 DEFERRED。
+  - 出口已被封死：`go/player_inbox/internal/inbox/store_admin.go:42` 禁止对 Battle 域 VOID，`store_consume.go` 的 Ack 只认 APPLIED；Java 对应 `InboxAdminStore.java:107`、`InboxStore.java:614`。
+- 触发：
+  1. v1 局 COMPLETE，结算里带宝宝 X。
+  2. 结算到达之前 X 已经不在了：玩家离线、发件箱积压（见 A3），或 deadline+60s 后战斗冻结已解除，玩家趁机放生或交易转出 X。配置热更删掉宠物表行、物品不再可战斗使用，也会触发。
+  3. 之后每次 Inbox 投递，Scene 都判 DEFER。
+- 损害：
+  - 该条目永远停在 PENDING，`match_battle_settlement_source` 到不了 APPLIED，ReleaseCompletedReady 不放票，票永远停在 state3。
+  - 玩家再也进不了全球匹配。交易资产守卫（`go/data_service/internal/store/account_role_asset_guard.go:164`）因票被占用，会永久拒绝出售该角色。
+  - 同局的金币、掉落、任务奖励一并不发。
+- 最小修正：
+  - 区分「永久不满足」和「暂时不满足」。宝宝已不属于本角色、宠物表或属性池缺行、物品不可战斗使用，属于永久不满足：跳过该子效果（与旧 applyOnce 的跳过/夹紧语义一致），记 ERROR 日志和低基数计数，整笔照常 APPLIED。
+  - 只有金币上限、格满、号段暂缺、存盘在途这类可自愈条件才 DEFER。
+  - 两版同改，补一条回归：「结算前宝宝已转出，整笔仍 APPLIED，其余效果到账」。
+
+**A3 个人入箱发件箱吞吐固定，PENDING 行每 2s 重投，积压时长期卡住 ready 票**
+- 位置：
+  - Go：`go/match/internal/authority/completion.go:521`（`LIMIT 8`）；`:568`，PENDING 写回 `next_retry_ms=stamp+2000`；`go/match/internal/svc/servicecontext.go:332`，ticker 为 2s。每行串行调用 Enqueue+Lookup 两个 RPC，各 2s 超时（deliverBattleOriginal）。放票只认 dispatch_state=2（`ready_recovery.go:179` ReleaseCompletedReady）。
+  - Java：`game-match/src/main/java/com/game/match/rating/BattleCompletionStore.java:108-113`，pendingPlayers 查询为 `applied=0 ... LIMIT 16`。Replay 每个副本每 500ms 跑一轮；`retry_ms` 列写了但不用，也没有索引。
+- 触发：
+  - 离线成员的结算停在 PENDING，每 2s 被重新捞起。
+  - 积压 N 行时，新 COMPLETE 行排在所有更早的 next_retry 之后，约 N/8 轮 × 2s 才首次投递。
+  - 在线玩家应用完之后，还要再等一轮，Match 才观察到 APPLIED。
+- 损害：
+  - 高峰期或离线积压时，打完一局的在线玩家要等几分钟才能重新排队。
+  - 离线行每 2s 对 Inbox 做一次带 P 锁的 Enqueue，与交易、邮件争锁。
+  - 没有积压指标。
+- 最小修正：
+  - 按 inbox_seq=0（首投）与 inbox_seq>0（等 APPLIED）分开处理。等 APPLIED 的行只调 Lookup，并按指数退避（上限例如 5 分钟）。
+  - JoinQueue / ReleaseCompletedReady 遇到 dispatch_state=1 时，对该玩家按需 Lookup 一次，并落 APPLIED。
+  - 批量大小和并发度做成配置。加积压条数和最老待投年龄两个指标，不带 player_id label。
+  - Java：给 retry_ms 建索引作为扫描键，用 CAS 推后兼作退避。
+
+#### B. 方向问题（需负责人先定方向）
+
+**B1 旧 Scene 登记恢复只能在本机运行**
+- 位置：
+  - `go/db/cmd/save_barrier_restore/main.go:473`：SQL 与两个 Redis 都必须是回环地址。
+  - `go/db/internal/barrierrestore/restore.go:668-680` 和 `scripts.go:168-170`：要求存在 `local-debug-import-target` 标记。
+  - `go/data_service/cmd/admission_recover/main.go:89`：CheckLocalWriteTarget。
+- 损害：
+  - 线上 zone 发生旧 Scene 崩溃、寄售被旧 OPEN admission 卡住时，这些工具无法对集群地址执行。
+  - 如果为了执行而在生产库或 Redis 种 debug 标记，按 `go/data_service/cmd/debugutil/connect.go:130-148` 的约定，等于同时为 debug_import 打开了写生产库的闸。
+  - 交接 §2「生产恢复链待验」与实际能力不符。
+- 两种处理：
+  - (a) 明确这套工具只用于本地验证，文档改为「生产无恢复入口」。
+  - (b) 另行定义一种可在生产建立的维护目标标记（不复用 debug_import 语义，由迁移或运维显式创建），并去掉回环限制。
+
+**B2 生产包内嵌验收工具的私有证据格式（明显过度设计）**
+- 位置：`go/db/internal/barrierrestore/restore.go:1807-2759`，包括 MaintenanceReleasePermit 和 verifyMaintenanceReleaseBuild / Fact / StoppedRecord / FreshNative / KafkaClosure / RedisClosure 等；CLI `main.go:241-362`；CLI 共 35 个参数。
+- 问题：
+  - 生产代码解析 Codex 验收原件：`current-go-module-v4-proof`、`owned-recovery-*-v1`、Windows FILETIME 进程出生/退出时间、`go build -p=1` 参数、PE SHA、首终 diff 等。
+  - 这些文件没有签名，除了「文件存在且 SHA 一致」之外不提供安全性，而且只能在 Windows 本机生成。
+  - 与 AGENTS.md §11.2 的 KISS/YAGNI 冲突。
+- 建议：
+  - 整段删除。解除流程只保留三样：操作员提供的审核原件 SHA（与 promotion 的 audit-evidence 同一模式）；SQL 可机器核对的事实（路由已冻结、本次维护的 promotion 都是 BARRIER_CONFIRMED、指定 admission 已 closed、listing 已终态）；每个 Redis 一次 Lua 的 guard/收据 CAS。
+  - releaseSQLSnapshot（`restore.go:1457-1682`）现在对整个 zone 名册逐人核对全列，改为只核本次维护的成员，外加一条 zone 级 COUNT。
+
+#### C. 中等
+
+**C1 WRITERS_REVOKED 之后不复核 Redis 撤销**（`restore.go:531-537`）
+- 触发：revoke Lua 成功、SQL 已记 WRITERS_REVOKED 之后，Redis 在 fsync 前崩溃，回到原值。续跑时直接把 SQL 围栏抬成 T/1，finish Lua 返回 `revocation not confirmed`（`scripts.go:209-210`）。
+- 损害：收据永远停在 SQL_PROMOTED，没有工具出口。
+- 修正：在 WRITERS_REVOKED / SQL_PROMOTED 分支执行前，先重跑一次幂等的 revoke Lua（已撤则跳过）。
+
+**C2 恢复接受 FREEZING，与维护解除要求 CANCELLED 冲突**（`go/data_service/internal/store/account_role_admission_store.go:580`）
+- 触发：退休 FREEZING listing 的旧 holder 后，go/trade 在 rmb_freezing 阶段会自动 Confirm，接着上架，可能被买走。而维护解除（`restore.go:1636-1668`）要求正式 Cancel 原件和 CANCELLED 状态。
+- 损害：卖出后解除永远过不去，route_meta.writable=0 和维护 guard 都没有正式出口。
+- 修正：恢复只接受 CANCEL_PENDING，即先正式 Cancel 再退休。同步修改 `account_role_admission_tidb_test.go` 中「恢复后 Confirm」的用例。
+
+**C3 部署脚本无条件注入 player-inbox-match 密钥**（`tools/scripts/k8s_deploy.ps1:11585-11588`）
+- 触发：在未启用全球匹配、或没有预置该 key 的命名空间部署。生成的 secretKeyRef 不带 optional。
+- 损害：player-inbox 报 CreateContainerConfigError，起不来。Match 侧的 Add-MatchAuthoritySecretEnv 有 Enabled 判断；Go 端缺 key 时也只禁用 Battle 面（`player_inbox_server.go:47-56`），三处不一致。
+- 修正：与 Match 使用同一个 Enabled 条件再注入，并补契约测试。
+
+**C4 退出补发 Ack 在生产里已失效，旧用例靠同步假读才通过**（`cpp/libs/services/scene/player/system/player_inbox_system.cpp:1350`）
+- 原因：生产里的 ReadSqlAck 是异步 Redis EVAL，实体随后就被销毁；回包到达时 FindLiveState 找不到实体，直接丢弃。
+- 用例 ExitFinishAcksTheDurableOutcomeBeforeTheEntityIsDestroyed（`cpp/tests/currency_test/player_inbox_system_test.cpp:2173`）只是因为夹具同步完成才通过。
+- 修正二选一：
+  - 用例改为异步回包，如实断言「不补发，下次落地补确认」，同时修正设计文档里的承诺。
+  - 改为节点级回调，按 playerId+epoch 补发 Ack。
+
+**C5 Battle 缺终局密钥时仍宣告支持 v1**（`cpp/nodes/battle/logic/battle_room_manager.cpp:838`）
+- 损害：Create 被采用为 v1 后，终局永远提交不出去，而且没有日志。
+- 修正：密钥未装配时回 supported=0，并记一次 ERROR。
+
+**C6 两版 Inbox 对离线玩家的语义不一致**
+- Java `game-inbox/src/main/java/com/game/inbox/store/InboxStore.java:226` 在 owner_released=1（写者已释放，通常就是离线）时拒收战斗结算，抛 SecurityException，Replay 因此无界重试。Go 照常入箱。
+- 修正：Java 与 Go 对齐，按原 account/revision 核对后允许离线入箱。
+
+**C7 专用 RPC 把所有存储错误吞成无日志的 codes.Unavailable**
+- 位置：`go/player_inbox/internal/server/player_inbox_server.go:174`；`go/match/internal/logic/global_match.go:470` CommitBattleOutcome 同类，且纯校验放在全员 P 锁之后。
+- 损害：永久冲突会被 Battle 每 5s 重试，持续 6 小时；也无法与瞬时故障区分。
+- 修正：永久冲突回 FailedPrecondition，记日志和计数；纯校验移到加锁之前。
+
+#### D. 低（可顺手）
+
+- `go/match/internal/logic/global_match.go:537`：globalAbortPrepared 在持有有效租约时调用 RecoverExpiredOutcome，恒回 UNKNOWN，cancelPrepared 分支实际不可达。
+- `completion.go:448`：ABORT 行把来源记为 BATTLE_RPC、format_version=1、原字节为空，审计时容易误读。
+- 同一套业务全列摘要算法写了三份：`restore.go:953-1046` readRow、`restore.go:1765-1781` releaseBusinessDigest、`go/data_service/internal/store/account_role_sql_proof.go:213-227`。应收敛到 go/shared 的单一函数，至少加跨模块 golden 测试。
+- 项目尚未上线，以下可删：Match 的 v0/v1 双路径；outcome_protocol_version / preflight_supported_versions / adopted 等能力字段；retireTerminalOutcomeSchedules（`ready_recovery.go:21`）；历史 state5 分支。另外，同一套终局形状校验在 RecoverExpiredOutcome、terminalFormation、abortTerminalTx、validateTerminalResult 中各做了一遍。
+- admission_recover 的 plan/apply 封套和 sql_proof 钉住是冗余步骤，可以合并成 `-mode=check|apply` 单命令。
+
+#### E. 已核实不成立或降级
+
+- 「v1 活动局不再写 battle:activity_result，Guild 1 小时后判 EXPIRED，帮会结算丢失」：不成立。`go/guild/internal/data/activity_repo.go:1754` 写明 EXPIRED 不是终态，迟到的结果仍会结算为 SETTLED，影响只是一段临时的 EXPIRED 状态。
+- 「交易 Seal 落在 v1 局中，结算整笔 DEFER」（`player_battle.cpp:2010` + `role_admission_system.cpp:642`）：主栈上游已经拦住。交易 Begin 的资产守卫在 P 锁下拒绝票被占用的角色（`account_role_asset_guard.go:164`）；Match 入口也在 P 锁下读取 trade_listing_id（`go/match/internal/authority/role_identity.go:98`）。降为纵深防御缺口，不阻塞。
+
+#### F. 旧测试适配核对
+
+七个旧测试是：shared assetop 的 abandon_test 与 config_test、currencytype_test、login 的 createplayer_deadline_test、robot 的 equip_smoke_scenario_test、C++ 的 asset_op_system_test、Java 的 RatingStoreSqlTest；另外核对了 account_directory_pool_test。结论如下：
+- 都是随生产语义调整夹具，没有删弱断言。
+- Login 删掉的「种子写之后」子用例，已由提交后的具名用例以更强的断言替代。
+- RatingStoreSqlTest 把建表等集收窄到两张评分表，属于合理收窄。
+
+#### G. 复杂度结论
+
+- 必要的复杂度：
+  - COMPLETE/ABORT 靠主键互斥并走同一锁序。
+  - 逐人来源与终局在同一事务提交。
+  - 提交结果未知时按原字节重放。
+  - Inbox 只认 APPLIED。
+  - C++ 提交钩子绑定 E/q。
+  - promotion 只抬两列围栏，并在同一事务复核业务摘要。
+- 可删减：见 B2 和 D 各项。另外 promotion 的四阶段可以并成两阶段：每次先跑幂等 revoke Lua → 单个 SQL 事务里 CAS 两行并写收据 → 幂等 finish Lua → BARRIER_CONFIRMED。这样也顺带消除了 C1。
+
+### 2026-10-24 05:33 UTC：当前构建交接与交换页执行器实际通过，继续业务回归
+
+- 已获人类明确授权协调“补齐各模块验证记录”。该会话保留全部最新改动，当前 MSBuild 57716 已自然退出0；完整 game.sln 实际结果为51警告、0错误，日志末次写入05:27:14.5664917Z。原日志为 `C:/Users/luyua/AppData/Local/Temp/client-rpc-verification-resume-20261024T050243Z/step1-msbuild.log`，SHA `BD9B1435BA5CFDF078A9868E5E0B30D96D5085C83AD08C5A8686A9822778373B`；交接 `handoff-result.json` SHA `F6F2510E683684C15957DC353594611B66C74EF7E2C712DF34CF5A2D05302A65`。对方没有前置完整来源快照，因此该实际构建不冒作旧验证包闭包复验。其后已暂停写入和后续构建／测试。CurrentMaps未回退，整仓dirty不归本批作者。
+- 当前C++完整输入观察为1884项，较上一1874项新增10、字节变化26、删除0，差异原件 `C:/Users/luyua/.codex/tmp/cpp-latest-peer-current-source-impact-20261024-r1/current-source-difference-observation.json` SHA `D23E207DBBFEF7A09E9AAD74A5E1F8D84CA0712D409CB02A3481B4922353450B`。包含新指标源码、Redis `{pid}` 键合同和Battle停机SQL确认时序变化，不能只重跑旧两条夹具或将旧150库／32PE称为当前。已确认正规构建可复用canonical默认IntDir/OutDir与现有obj，后续补一次受控增量与受影响套件。
+- 交换页执行器首个实际编译已通过：`C:/Users/luyua/.codex/tmp/global-current-swap-aware-validation-policy-20261024-r1/first-DLL-compile-r1/compile-actual-20261024T053325095Z-41704c8b/proof.json` SHA `1E39E1E6FCD3BDE8128103229CD265301C6D915FEB327E080D8C3190F7C4798E`；1个native实际启动、退出0，全部错误为空，原进程家族已结束。新DLL同目录 `FastProcessSnapshot.swapaware-20261024.dll` SHA `A97238E1F5DA7F3420179C9CFE5A5D2F819DDE53F64FC0778FC70550DBC4B98E`。实际验证先装旧类型后装新命名空间、精确Assembly/GetType、新提交字段和2 CPU；门禁实测物理12290756 KiB、保守提交余量56456744960 B，采样最长102ms、未知重型0。这仅关闭资源执行器验证，不增加任何业务PASS。
+- 先前两条新Go／Java稳定根在业务入口前因Marshal.SizeOf的PowerShell重载错误自然退出，旧共同批准22182FF9不能继续使用；没有业务native发出。修复使用boxed结构体，原149／4299两份原生API均已单独实测。当前直接有限调用仅复用仍活的CPP-only批准8E4E5CC6，不再重建三语言根。05:14首轮因外部MSBuild／clang-query拒绝、0native；对方正常结束后才有上述05:33一次必要成功续验，失败原件仍保留。
+- 下一步已进入C++最新输入增量与回归；Go剩余测试和Java固定镜像下载／三台新库部署按单重型顺序接续。七个旧测试改动、剩余18组外部专项、主36与Java33完整双区仍未通过，不宣称整体完成。

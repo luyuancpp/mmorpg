@@ -504,4 +504,8 @@
     <ClInclude Include="team\team_authority.grpc.pb.h" />
     <ClInclude Include="team\team_authority.pb.h" />
   </ItemGroup>
+  <ItemGroup Label="ProtoGeneratorSources">
+    <ClCompile Include="common\base\currency_type.pb.cc" />
+    <ClInclude Include="common\base\currency_type.pb.h" />
+  </ItemGroup>
 </Project>

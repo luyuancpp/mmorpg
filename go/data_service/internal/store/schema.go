@@ -291,20 +291,22 @@ const routeReconcileBootstrapDDL = "CREATE TABLE IF NOT EXISTS `route_reconcile`
 // 再加一张这类表 = 在这里加一行 + 在 proto 里加 message(路由表再进 routeTableMessages),
 // 不要回到 migrateSchemaOn 里加 if 分支;清单化是为了让"哪些表不由 proto 驱动建"这件事只有一处答案。
 var bootstrapTables = map[string]string{
-	AccountDirectoryTableName:       accountDirectoryDDL,
-	AccountRoleTableName:            accountRoleDDL,
-	AccountRoleTradeTableName:       accountRoleTradeDDL,
-	AccountRoleTransferTableName:    accountRoleTransferDDL,
-	AccountRoleAdmissionTableName:   accountRoleAdmissionDDL,
-	AccountRoleTradeHolderTableName: accountRoleTradeHolderDDL,
-	AccountRoleImportTableName:      accountRoleImportDDL,
-	IdSegmentTableName:              idSegmentBootstrapDDL,
-	PlayerNameTableName:             playerNameBootstrapDDL,
-	PlayerRouteTableName:            playerRouteBootstrapDDL,
-	ZoneMergeFenceTableName:         zoneMergeFenceBootstrapDDL,
-	ZoneMergedIntoTableName:         zoneMergedIntoBootstrapDDL,
-	RouteMetaTableName:              routeMetaBootstrapDDL,
-	RouteReconcileTableName:         routeReconcileBootstrapDDL,
+	AccountDirectoryTableName:             accountDirectoryDDL,
+	AccountRoleTableName:                  accountRoleDDL,
+	AccountRoleTradeTableName:             accountRoleTradeDDL,
+	AccountRoleTransferTableName:          accountRoleTransferDDL,
+	AccountRoleAdmissionTableName:         accountRoleAdmissionDDL,
+	AccountRoleTradeHolderTableName:       accountRoleTradeHolderDDL,
+	AccountRoleImportTableName:            accountRoleImportDDL,
+	AccountRoleAdmissionRecoveryTableName: accountRoleAdmissionRecoveryDDL,
+	SaveBarrierMaintenanceTableName:       saveBarrierMaintenanceDDL,
+	IdSegmentTableName:                    idSegmentBootstrapDDL,
+	PlayerNameTableName:                   playerNameBootstrapDDL,
+	PlayerRouteTableName:                  playerRouteBootstrapDDL,
+	ZoneMergeFenceTableName:               zoneMergeFenceBootstrapDDL,
+	ZoneMergedIntoTableName:               zoneMergedIntoBootstrapDDL,
+	RouteMetaTableName:                    routeMetaBootstrapDDL,
+	RouteReconcileTableName:               routeReconcileBootstrapDDL,
 }
 
 // playerRouteG1aShapeHint 是 player_route 形状守卫失败时的处理提示(G1a 改主键之后,本机跑过旧版第 1a 批迁移的库会撞上)。
@@ -1519,6 +1521,8 @@ func TableMessages() []proto.Message {
 		&dbpb.AccountRoleAdmission{},
 		&dbpb.AccountRoleTradeHolder{},
 		&dbpb.AccountRoleImportReceipt{},
+		&dbpb.AccountRoleAdmissionRecovery{},
+		&dbpb.SaveBarrierMaintenanceReceipt{},
 	}, routeTableMessages()...)
 }
 

@@ -177,6 +177,7 @@ securityContext:
       - 回档时以 `warn` 运行的 zone 必须照传。`k8s_zone_rollback.ps1` 第 0 步不核对这个 env;漏传时 gate / scene 在 Step 6 拒启,那时已停服、已回档,只能补上参数单独重跑 Step 6。
         - (**2026-10-22 三更正**,已落码、未验证)第 0 步 a 现在核对。`-NodeOpenFileLimitMode` 留空时,`-Apply` 在停服之前读 gate(Deployment / external StatefulSet)与 scene Deployment 的模板;装了 Agones 时再读 scene Fleet。上面 `kubectl set env` 手设在单个工作负载上的值也算。
         - 任一带着 `warn`,或读不到(kubectl / Agones 探测失败、没有 gate),都在 Step 1 之前拒绝,报错给出照传的 `-NodeOpenFileLimitMode warn`。
+          - (**2026-10-23 更正上一句**)两种拒绝给的出路不同。有工作负载带着 `warn` 时,报错要求照传 `-NodeOpenFileLimitMode warn`;硬限已修好就显式传 `enforce`。读不到时(还包括 `valueFrom`、变量重复、存档早于这项核对),报错不替操作者选值:先确认该 zone 实际以哪种模式运行,再显式传 `warn` 或 `enforce`。实际以 enforce 运行的 zone 不要为了过检查传 `warn`,那会让 Step 6 拉起的 gate / scene 带上豁免,不再拒启保护。
         - 显式给值不核对:照传 `warn`,或确认硬限已修好后显式传 `enforce`。
     - 上面的 `kubectl set env` 仍可作应急。手设的值不在 last-applied 里,撤销仍按上面显式删。
 - 裸机 / staging 主机:启动节点前 `export NODE_OPEN_FILE_LIMIT_MODE=warn`(见 [linux-staging-stress-runbook.md](./linux-staging-stress-runbook.md) A.1)。

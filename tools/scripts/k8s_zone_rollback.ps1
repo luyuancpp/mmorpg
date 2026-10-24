@@ -37,8 +37,9 @@
            生成 rollback-id(z<id>-<T 紧凑格式>-<当前 UTC 紧凑格式>,-RollbackId 可显式给),报告目录 run/logs/zone-rollback/<rid>/。
         待负责人裁决的路径一律在入口拒绝:-BarrierProtocol strict(裁决 #3)、-AcceptBlockedPlayers(裁决 #4)。
       0. 预检(只读,先于停服;dry-run 只预告,不执行),a / b / d / e / f 都过了才进 Step 1(c 只告警):
-         a. 集群现状:以下三项凡是留空的,都要与集群现状核对,一次 kubectl 读 zone namespace 里的
-            gate(StatefulSet 或 Deployment,两种形态都认)与 Ingress gateway:
+         a. 集群现状:以下四项凡是留空的,都要与集群现状核对,一次 kubectl 读 zone namespace 里的
+            gate(StatefulSet 或 Deployment,两种形态都认)、Ingress gateway 与 scene Deployment(第四项用;
+            scene Fleet 是 CRD,集群装了 Agones 时另读):
               - -GateRouterMode 留空:gate 模板当前的 GATE_CLIENT_RPC_ROUTER 须与 k8s_deploy.ps1 的 -GateRouterMode 默认值一致;
               - -ClientEntryMode 留空:gate 当前形态(StatefulSet = external,Deployment = podip)须与 k8s_deploy.ps1 的
                 -ClientEntryMode 默认值一致;
@@ -48,7 +49,7 @@
               - -NodeOpenFileLimitMode 留空(B0-4,2026-10-22):同一次 kubectl 另读 scene Deployment(scene / scene-world / scene-instance),
                 集群装了 Agones 时再读同名 scene Fleet;gate 与 scene 模板里 NODE_OPEN_FILE_LIMIT_MODE 折算出的模式须与 k8s_deploy.ps1
                 -NodeOpenFileLimitMode 默认值(空 = 不写,进程按 enforce)一致 —— 任一个带着 warn 就拒绝,报错给出照传的 -NodeOpenFileLimitMode warn;
-                没有 gate、Agones 探测或 Fleet 读取失败同样判为读不到。
+                没有 gate、Agones 探测或 Fleet 读取失败同样判为读不到,报错要求确认后显式传 warn 或 enforce(不替操作者选值)。
             不一致或判不出即在停服之前拒绝,要求显式传参;显式传了的项不核对。
             login 第三方登录(微信 / QQ,2026-10-18):没给 -ConfirmLoginAuthProviderChange 时,再读 zone namespace 里的 login ConfigMap
             (AuthProviders 段)与 Secret login-oauth 是否存在,按 k8s_deploy.ps1 防误关闸的同一份判据(lib Get-LoginAuthProviderDrift)
@@ -350,7 +351,8 @@ param(
     # 那时 zone 已停服、MySQL 已回档、Step 5 已丢弃积压,没有干净的中止路径,只能在失败提示给出的 Step 6 单步命令里补上
     # -NodeOpenFileLimitMode warn 单独重跑。所以留空时 -Apply 由第 0 步 a 兜底(2026-10-22):同一次 kubectl 读 gate 与 scene 的模板
     # (集群装了 Agones 时另读 scene Fleet),任一个的 NODE_OPEN_FILE_LIMIT_MODE 折算成 warn、或判不出(没有 gate、kubectl / Agones 探测失败),
-    # 都在 Step 1 停服之前拒绝,报错给出照传的 -NodeOpenFileLimitMode warn;口径同 -GateRouterMode,放行条件跟着 k8s_deploy.ps1 的默认值走。
+    # 都在 Step 1 停服之前拒绝:带 warn 时报错给出照传的 -NodeOpenFileLimitMode warn,判不出时要求确认后显式传 warn 或 enforce;
+    # 口径同 -GateRouterMode,放行条件跟着 k8s_deploy.ps1 的默认值走。
     # 显式给值即操作者的决定,不核对:照传 warn,或确认硬限已修好、显式传 enforce 回到 enforce。
     # 读到的现状随集群现状存进 entry-state.json,同一 rid 重跑、namespace 已删时据此核对;显式值不进入口决定(不按存档比较),重跑可以改。
     # 与 dev_tools.ps1 同一 ValidateSet 且区分大小写:大写或拼错在本脚本入口就拒 —— 若放到 Step 6 才由下游拒,回滚卡在半路(理由同上)。
@@ -421,6 +423,13 @@ param(
     # 不豁免第 0 步:那里拦的是"留空落回默认值"的静默翻转,要换就显式传目标 -GateRouterMode / -ClientEntryMode,
     # Ingress 显式传 -GatewayIngressHost 或 -ConfirmNoGatewayIngress;"已有 Ingress 却缺 trusted proxies"在 k8s_deploy.ps1 那边同样不受它豁免。
     [switch]$AllowDisruptiveSwitch,
+    # 共享 Redis 按用途拆实例(G4a 第 1a 批,k8s_deploy.ps1 同名参数):Step 6 的 zone-up 按它渲染 login 的 Node.QueueRedis 与 gateway 的
+    # 限流 Redis 地址(组号仍取 zones 配置的 redisQueueGroup)。留空(缺省)= 不转发,Step 6 按 k8s_deploy.ps1 的 auto 渲染。
+    # **以 queue 运行的 zone 回档必须显式给 -RedisSplit queue**:auto 靠读本 zone 线上 login ConfigMap 跟随现状,而 Step 1 已删掉整个
+    # zone namespace,Step 6 读不到任何现状,auto 只能落成 none —— 回档后的 login / gateway 会静默连回核心 Redis(排队键与限流桶换了实例,
+    # 排队开着时在途排位全部丢失),k8s_deploy.ps1 的切换闸面对空 namespace 也拦不住。本脚本不在停服前核对这一项,由操作者照传上次部署的值。
+    [ValidateSet("", "none", "queue")]
+    [string]$RedisSplit = "",
 
     # kubectl 目标集群,语义同 k8s_deploy.ps1 的 -KubeContext / -KubeConfig(非空才追加 --context / --kubeconfig)。
     # 第 0 步预检的只读 kubectl 与 Step 1 / Step 6(经 dev_tools.ps1 透传给 k8s_deploy.ps1)用同一组值,保证核对与改动落在同一集群。
@@ -879,7 +888,8 @@ function Get-ClusterZoneEntryState {
         $ingressDetail = "namespace $Namespace 里有 Ingress gateway(host='$($ingress.Host)' class='$($ingress.ClassName)' tls='$($ingress.TlsSecret)')"
     }
 
-    $openFileLimit = [pscustomobject]@{ Mode = $null; Detail = '未核对(本次显式给了 -NodeOpenFileLimitMode,没读 scene Fleet)' }
+    # 这份现状会存进 entry-state.json,同一 rid 重跑时读回,所以说明写「读这份现状的那次运行」,不写「本次」。
+    $openFileLimit = [pscustomobject]@{ Mode = $null; Detail = '未核对(读这份现状的那次运行显式给了 -NodeOpenFileLimitMode,没读 scene Fleet)' }
     if ($null -ne $SceneFleets) {
         $sceneNames = Get-ZoneSceneWorkloadNames
         $sceneDeployments = @($items | Where-Object { $null -ne $_ -and $_.kind -eq 'Deployment' -and $_.metadata.name -in $sceneNames })
@@ -903,7 +913,7 @@ function Get-ClusterZoneEntryState {
 
 <#
 .SYNOPSIS
-    第 0 步预检(-Apply):留空的 -GateRouterMode / -ClientEntryMode / -GatewayIngressHost 逐项与集群现状核对,
+    第 0 步预检(-Apply):留空的 -GateRouterMode / -ClientEntryMode / -GatewayIngressHost / -NodeOpenFileLimitMode 逐项与集群现状核对,
     任一项不一致或判不出就在停服之前抛出,所有问题一次列全。
 
 .DESCRIPTION
@@ -2282,6 +2292,7 @@ if ($LoginQQAppId) { $loginThirdPartyBanner += "QQ -LoginQQAppId $LoginQQAppId$(
 $loginThirdPartyConfirm = if ($ConfirmLoginAuthProviderChange) { '; -ConfirmLoginAuthProviderChange (live login ConfigMap / Secret is not checked)' } else { '; -Apply checks the live login ConfigMap / Secret login-oauth before shutdown' }
 Write-Host "  login 3rd   : $(if ($loginThirdPartyBanner.Count -gt 0) { $loginThirdPartyBanner -join '; ' } else { '(no -LoginWeChatAppId / -LoginQQAppId; Step 6 renders login without WeChat / QQ login)' })$loginThirdPartyConfirm"
 Write-Host "  switch gate : $(if ($AllowDisruptiveSwitch) { '-AllowDisruptiveSwitch (forwarded only to Step 6; permits mode / address changes if the namespace was not fully removed; does not bypass Step 0 checks)' } else { '(unset; Step 6 normally starts with an empty namespace; k8s_deploy.ps1 checks existing cluster state if cleanup was incomplete)' })"
+Write-Host "  redis split : $(if ($RedisSplit) { "-RedisSplit $RedisSplit (forwarded to Step 6)" } else { '(unset; Step 6 renders -RedisSplit auto, which cannot read the deleted namespace and falls back to none: a zone running with queue must pass -RedisSplit queue)' })"
 Write-Host "  kube target : $(if ($KubeContext -or $KubeConfig) { "context='$KubeContext' kubeconfig='$KubeConfig'" } else { '(unset; using the current kubectl context; preflight, Step 1 and Step 6 target the same cluster)' })"
 Write-Host ""
 
@@ -2328,6 +2339,8 @@ if (-not [string]::IsNullOrWhiteSpace($LoginQQEndpoint)) { $upArgs.LoginQQEndpoi
 if ($LoginQQAllowOpenId) { $upArgs.LoginQQAllowOpenId = $true }
 if ($ConfirmLoginAuthProviderChange) { $upArgs.ConfirmLoginAuthProviderChange = $true }
 if ($AllowDisruptiveSwitch) { $upArgs.AllowDisruptiveSwitch = $true }
+# 按用途拆实例(G4a 第 1a 批):非空才转发;以 queue 运行的 zone 必须显式给(见参数注释:Step 6 读不到线上,auto 只能落成 none)。
+if (-not [string]::IsNullOrWhiteSpace($RedisSplit)) { $upArgs.RedisSplit = $RedisSplit }
 if (-not [string]::IsNullOrWhiteSpace($GatewayIngressHost)) { $upArgs.GatewayIngressHost = $GatewayIngressHost }
 if (-not [string]::IsNullOrWhiteSpace($GatewayIngressClassName)) { $upArgs.GatewayIngressClassName = $GatewayIngressClassName }
 if (-not [string]::IsNullOrWhiteSpace($GatewayIngressTlsSecret)) { $upArgs.GatewayIngressTlsSecret = $GatewayIngressTlsSecret }
@@ -3007,7 +3020,7 @@ if ($Apply) {
 Write-Host ""
 
 # ── Step 7: verification checklist ───────────────────────────────
-# 键名按现行实现写:父快照 PlayerAllData:<pid>,子表缓存 <表名>:<pid>(go/db buildCacheKey = {MsgType}:{key});
+# 键名按现行实现写:父快照 PlayerAllData:{<pid>}(玩家域 hash tag,savebarrier.ParentKey),子表缓存 <表名>:<pid>(go/db buildCacheKey = {MsgType}:{key});
 # 以前这里写的 player:{<pid>}:player_database 并不存在。
 Write-Host "── Step 7: post-rollback verification ──" -ForegroundColor Cyan
 Write-Host "  Run these manually:"
@@ -3017,7 +3030,7 @@ $redisAuthHint = if ($RedisPasswordEnv) { " (authenticate with the password in e
 Write-Host "    1. kubectl get pods,sts,svc,ingress -n ${NamespacePrefix}-${ZoneName}$verifyKubeArgs (for external zones, confirm gate-<i> nodePort / Ingress host match their values before rollback)"
 Write-Host "    2. Robot smoke login: pwsh -File tools/scripts/dev_tools.ps1 -Command dev-robot-zones -Zones $ZoneId"
 Write-Host "    3. Before its first login, a player listed as processed in $purgeReportPath has no caches${redisAuthHint}:"
-Write-Host "       redis-cli $redisShown EXISTS 'PlayerAllData:<pid>' 'player_database:<pid>' 'player_database_1:<pid>'   (expect 0)"
+Write-Host "       redis-cli $redisShown EXISTS 'PlayerAllData:{<pid>}' 'player_database:<pid>' 'player_database_1:<pid>'   (expect 0)"
 Write-Host "       then log that player in once (cold read from zone_${ZoneId}_db must succeed); if inventory.json lists blocked players, check one of them is refused with a clear message."
 Write-Host "    4. Metrics on the zone's db: db_ordering_guard_total{outcome=`"stale`"} must stay 0 after the rollback (a nonzero value means offsets went backwards; bump the topic generation),"
 Write-Host "       db_ordering_guard_total{outcome=`"apply_no_cursor`"} must not spike, db_save_outbox_total{result=`"published`"} should stay near 0."

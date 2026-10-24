@@ -562,6 +562,66 @@ TEST(BattleResultCommit, StagingSpanLeavesStagedMarkerTtlMargin)
     EXPECT_LT(571 + std::chrono::seconds(turnbattle::kSlowStagingRetryInterval).count(), spanSec);
 }
 
+// 2026-10-22 评审补(r2-battle#4 should_fix):滞留房间周期提醒按 ClassifyStuckTerminal 数房间表。
+// 原先只数落库用尽的旧协议房间;v1 SQL 终局未确认与占位房间同样排不空,却不在提醒里,值班第 2 步
+// 「等 node_rooms 降到滞留数」永远等不到。改回只看 StagingExhausted 时,下面 sql / placeholder 两条断言转红。
+TEST(BattleStuckTerminal, ClassifiesEveryRoomThatCannotDrain)
+{
+    using turnbattle::ClassifyStuckTerminal;
+    using turnbattle::StuckTerminal;
+    const auto start = turnbattle::ResultCommit::Clock::time_point{};
+
+    // 没有终局提交在途(普通在打的房间 / 本地模式):不算滞留。
+    EXPECT_EQ(ClassifyStuckTerminal(nullptr, false), StuckTerminal::kNone);
+
+    // v1:SQL 终局重试到上限或原件无效。v1 房间不建 ResultCommit。
+    EXPECT_EQ(ClassifyStuckTerminal(nullptr, true), StuckTerminal::kSqlOutcomeUnconfirmed);
+
+    // 占位:BeginResultCommit 序列化失败 / 成员对不上时的空载荷、无待写成员,永不放行。
+    const turnbattle::ResultCommit placeholder(std::string{});
+    EXPECT_FALSE(placeholder.PersonalSettlementsDurable());
+    EXPECT_FALSE(placeholder.StagingExhausted());
+    EXPECT_EQ(ClassifyStuckTerminal(&placeholder, false), StuckTerminal::kPlaceholder);
+
+    // 正常落库中、已落定待发:都还会自己走完,不算滞留。
+    turnbattle::ResultCommit staging("result", StagingMembers());
+    EXPECT_EQ(ClassifyStuckTerminal(&staging, false), StuckTerminal::kNone);
+    {
+        turnbattle::ResultCommit staged("result", StagingMembers());
+        const auto attempt = staged.BeginStaging(start);
+        ASSERT_NE(attempt, 0u);
+        ASSERT_TRUE(staged.FinishStaging(attempt, StagingMembers(), start));
+        EXPECT_EQ(ClassifyStuckTerminal(&staged, false), StuckTerminal::kNone);
+    }
+
+    // 落库到总跨度上限。
+    EXPECT_FALSE(staging.ExhaustStagingIfOverdue(start));
+    ASSERT_TRUE(staging.ExhaustStagingIfOverdue(start + turnbattle::kMaxStagingSpan));
+    EXPECT_EQ(ClassifyStuckTerminal(&staging, false), StuckTerminal::kStagingExhausted);
+
+    // 日志字段名(值班按名字区分三类)。
+    EXPECT_STREQ(turnbattle::StuckTerminalName(StuckTerminal::kStagingExhausted), "staging_exhausted");
+    EXPECT_STREQ(turnbattle::StuckTerminalName(StuckTerminal::kSqlOutcomeUnconfirmed), "sql_unconfirmed");
+    EXPECT_STREQ(turnbattle::StuckTerminalName(StuckTerminal::kPlaceholder), "placeholder");
+}
+
+// 2026-10-23 修复(审计 r2-battle#2):停机时只有「v1 终局已冻结、还没拿到 SQL 决定、也没判用尽」的房间要在排空窗口内
+// 再提交一轮,AbortAllRooms(立即续发)、SqlOutcomesFlushed(排空谓词)、StopSqlOutcomes(未落定留痕)三处都按它判。
+// 修复前停机直接装停止闸、清空待提交集合,这类房间再没有提交机会,只能等 match 截止后判 ABORT。
+// 还在打的 v1 房间没有终局可交、旧协议房间不走 SQL 终局:二者都不能让停机多等。
+TEST(BattleShutdownOutcomeFlush, OnlyFrozenUnconfirmedV1OutcomesAreFlushed)
+{
+    using turnbattle::NeedsShutdownOutcomeFlush;
+    // 参数顺序:outcomeProtocol, outcomePending, outcomeComplete, outcomeExhausted
+    EXPECT_TRUE(NeedsShutdownOutcomeFlush(1, true, false, false));   // 已算出终局、等 SQL 决定:补提交
+
+    EXPECT_FALSE(NeedsShutdownOutcomeFlush(1, false, false, false)); // v1 还在打:作废,match 截止后判 ABORT
+    EXPECT_FALSE(NeedsShutdownOutcomeFlush(1, true, true, false));   // 已拿到 COMPLETE:回复处理已收尾
+    EXPECT_FALSE(NeedsShutdownOutcomeFlush(1, true, false, true));   // 已判用尽(跨度上限 / 原件无效):交 match 恢复裁决
+    EXPECT_FALSE(NeedsShutdownOutcomeFlush(0, true, false, false));  // 旧协议:不走 SQL 终局
+    EXPECT_FALSE(NeedsShutdownOutcomeFlush(2, true, false, false));  // 未知协议版本(建房时已拒):fail-closed 不提交
+}
+
 // 一轮落库的回复汇总(battle_room_manager.cpp StagePersonalSettlements 的编排接缝)。
 // 每名成员只记第一次回复;不在本轮成员里的 id 忽略;全部成员回复过的那一次恰好返回 true。
 TEST(BattleStagingRoundTally, RecordsFirstReplyPerMemberAndCompletesOnce)

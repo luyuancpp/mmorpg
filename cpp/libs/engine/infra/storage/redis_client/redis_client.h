@@ -18,6 +18,7 @@
 #include "deps/hiredis/hiredis.h"
 
 #include "engine/core/type_define/type_define.h"
+#include "engine/infra/storage/redis_cluster/redis_slot.h"
 
 // 普通存盘(无归属校验)。KEYS[1]=数据键, ARGV[1]=payload。
 // 仍走脚本并恒返回 1,而不是裸 SET:三条存盘共用 ScriptSlot 的 EVALSHA / NOSCRIPT 回退
@@ -32,7 +33,7 @@ static constexpr const char* kSaveLuaScript = R"(
 )";
 
 // 带归属校验的存盘变体(scene-owner-reentry-barrier.md §6.2 方案 a)。
-// KEYS[1]=数据键, KEYS[2]=旧 guard 键(如 player:123:owner_epoch,不含花括号),
+// KEYS[1]=数据键, KEYS[2]=guard 键(如 player:{123}:owner_epoch,player_ownership::OwnerEpochRedisKey),
 // ARGV[1]=payload, ARGV[2]=调用方缓存的期望值。
 // 比对与写入在同一段脚本里完成,没有 GET→SET 之间的 TOCTOU。
 //
@@ -59,11 +60,12 @@ static constexpr const char* kSaveIfGuardLuaScript = R"(
     return 1
 )";
 
-// 严格提交屏障:KEYS = 父缓存 / 旧 owner 键 / save_barrier hash / 分桶待投 ZSET。
+// 严格提交屏障:KEYS = 父缓存 / owner 键 player:{pid}:owner_epoch / save_barrier hash / 分桶待投 ZSET。
 // ARGV = 父 bytes / owner / 41 字节版本 / topic / 两条完整 DBTask bytes / 玩家十进制
 //        / 输出世代 / 加载世代 / 模式(warn | enforce)/ 写方令牌。
 // owner 缺失必须由恢复流程处置,禁止沿用旧脚本的自动补种。全部校验先于 SET / HSET:Lua 错误不会回滚写入。
-// 版本按字节比较,不转 double;当前键未同槽,部署前提是同一 Redis 实例。
+// 版本按字节比较,不转 double。父键 <全名>:{pid}、owner 键、屏障键都带 {pid} hash tag;补投索引键第 2c 批前仍不同槽,
+// 部署前提是同一 Redis 实例(docs/design/redis-player-store-cluster.md §5.3、§13)。
 //
 // owner 判定(docs/design/zone-redis-regression-guard-20261022.md §4.4,G4):Redis 里的 owner 与 ARGV[2] 相等才继续。
 //   - owner 缺失:error_reply(见上一段,不补种)。
@@ -159,9 +161,9 @@ static constexpr const char* kSaveWithCommitBarrierLuaScript = R"(
         or #ARGV[1] == 0 or #ARGV[5] == 0 or #ARGV[6] == 0 then
         return redis.error_reply('SAVE_BARRIER invalid outbox')
     end
-    if KEYS[2] ~= 'player:' .. ARGV[7] .. ':owner_epoch'
+    if KEYS[2] ~= 'player:{' .. ARGV[7] .. '}:owner_epoch'
         or KEYS[3] ~= 'player:{' .. ARGV[7] .. '}:save_barrier'
-        or #KEYS[1] <= #ARGV[7] + 1 or string.sub(KEYS[1], -#ARGV[7] - 1) ~= ':' .. ARGV[7] then
+        or #KEYS[1] <= #ARGV[7] + 3 or string.sub(KEYS[1], -#ARGV[7] - 3) ~= ':{' .. ARGV[7] .. '}' then
         return redis.error_reply('SAVE_BARRIER player key mismatch')
     end
     -- GUID 仅逐位求余,中间值小于 640,不把 uint64 转成 double。
@@ -471,6 +473,11 @@ public:
 
 	inline const std::string full_name() const { return std::string(MessageValue::GetDescriptor()->full_name()); }
 
+	// 玩家域父键 <消息全名>:{<key>}(docs/design/redis-player-store-cluster.md §5.2):key 以 hash tag 包住,与同一玩家的
+	// owner_epoch、屏障、补投索引同槽。与 go/shared/savebarrier.ParentKey 逐字一致;严格存盘 Lua 按 ":{<pid>}" 尾缀核对。
+	// 队列的键、发往 Redis 的键都只经这里构造。
+	std::string RedisKeyFor(const MessageKey& key) const { return full_name() + ":" + redis_slot::PlayerTag(key); }
+
 	void SetSaveCallback(const EventCallback& cb) { save_callback_ = cb; }
 	void SetLoadCallback(const EventCallback& cb) { load_callback_ = cb; }
 	void SetLoadFailedCallback(const FailedCallback& cb) { load_failed_callback_ = cb; }
@@ -533,7 +540,7 @@ public:
 	// 前任那份照常落地或被拒,新实体读到的就是落定之后的状态。不同 key 互不影响;同一连接上已在途的 GET 不受影响。
 	void AsyncLoad(const MessageKey& key, int retry_count = 0)
 	{
-		std::string redis_key = full_name() + ":" + std::to_string(key);
+		std::string redis_key = RedisKeyFor(key);
 
 		if (HasUnsettledSave(key) && loading_queue_.find(redis_key) == loading_queue_.end())
 		{
@@ -701,7 +708,7 @@ public:
 	// 按key核实真实GET及重试均已排空；交易封存不能用待入场上下文消失替代它。
 	bool HasPendingLoad(const MessageKey& key) const
 	{
-		const std::string redisKey = full_name() + ":" + std::to_string(key);
+		const std::string redisKey = RedisKeyFor(key);
 		return loading_queue_.contains(redisKey) || pending_retry_queue_.contains(redisKey) ||
 			   loads_awaiting_saves_.contains(redisKey);
 	}
@@ -723,7 +730,7 @@ public:
 	//   - 只看存盘的两个队列(saving_queue_ / pending_save_queue_),不看 pending_retry_queue_(那是载入的)。
 	bool HasUnsettledSave(const MessageKey& key) const
 	{
-		const std::string redisKey = full_name() + ":" + std::to_string(key);
+		const std::string redisKey = RedisKeyFor(key);
 		return saving_queue_.find(redisKey) != saving_queue_.end() ||
 			   pending_save_queue_.find(redisKey) != pending_save_queue_.end();
 	}
@@ -879,7 +886,7 @@ private:
 	{
 		ElementPtr element = std::make_shared<Element>();
 		element->message_key = key;
-		element->redis_key = full_name() + ":" + std::to_string(key);
+		element->redis_key = RedisKeyFor(key);
 		element->message_value = message;
 		element->guard_key = guardKey;
 		element->guard_expected = guardExpected;

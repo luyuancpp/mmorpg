@@ -37,6 +37,9 @@ import (
 type ServiceContext struct {
 	AccountDirectory accountdirectory.Directory
 	RedisClient      *redis.Client
+	// QueueRedis 只给排队(loginqueue.Queue)与放行锁(loginqueue.Dispatcher)用。Node.QueueRedis 没配置时
+	// 与 RedisClient 是同一个指针(newQueueRedis)。gate 排空标记仍走 RedisClient。
+	QueueRedis *redis.Client
 	// SnowFlake 是 PlayerId 发号器。包了一层 fence 闸(见 player_id_gen.go):
 	// 失去 worker id 所有权后必须一个号都发不出去,不能靠"停服"兜底。
 	SnowFlake *PlayerIDGen
@@ -120,26 +123,19 @@ func NewServiceContext() *ServiceContext {
 
 	// Initialize Redis client
 	redisHost := config.AppConfig.Node.RedisClient.Host
-	redisPassword := config.AppConfig.Node.RedisClient.Password
 	redisDB := int(config.AppConfig.Node.RedisClient.DB)
 	if err := config.AppConfig.Node.RedisClient.ValidatePoolSize(); err != nil {
 		panic(fmt.Errorf("Node.RedisClient: %w", err))
 	}
 
-	redisClient := redis.NewClient(&redis.Options{
-		Addr:     redisHost,
-		Password: redisPassword,
-		DB:       redisDB,
-		// 共享 Redis 连接总账按它记账(0 = go-redis 缺省 10 × GOMAXPROCS),见 config.RedisConf.PoolSize。
-		PoolSize:         config.AppConfig.Node.RedisClient.PoolSize,
-		DisableIndentity: true, // suppress CLIENT SETINFO on Redis < 7.2
-	})
+	redisClient := redis.NewClient(redisOptions(config.AppConfig.Node.RedisClient))
 
 	if err := redisClient.Ping(ctx).Err(); err != nil {
 		panic(fmt.Errorf("failed to connect Redis: %w", err))
 	}
 	// 生效值(缺省时是 go-redis 算出来的 10 × GOMAXPROCS):核对 ConfigMap 镜像的 PoolSize 是否真的被加载。
 	logx.Infof("Redis client %s DB=%d pool_size=%d", redisHost, redisDB, redisClient.Options().PoolSize)
+	queueRedis := newQueueRedis(ctx, redisClient, config.AppConfig.Node.QueueRedis)
 
 	kafkaClient, err := kafka.NewKeyOrderedKafkaProducer(config.AppConfig.Kafka)
 
@@ -215,6 +211,7 @@ func NewServiceContext() *ServiceContext {
 	sc := &ServiceContext{
 		authCleanup:          authCleanup,
 		RedisClient:          redisClient,
+		QueueRedis:           queueRedis,
 		KafkaClient:          kafkaClient,
 		ExpandMonitor:        monitor,
 		PlayerLocatorClient:  plClient,
@@ -231,6 +228,52 @@ func NewServiceContext() *ServiceContext {
 	sc.AccountDirectory = accountdirectory.NewClient(sc.DataServiceClient, os.Getenv(accountdirectory.SecretEnv))
 	initialized = true
 	return sc
+}
+
+// redisOptions 把 Node 段的 RedisConf 原样映射成 go-redis 连接选项,配置里写了的每一项都要真的生效。
+// 超时为 0 时沿用 go-redis 缺省(拨号 5s、读写 3s);PoolSize 为 0 时是缺省 10 × GOMAXPROCS,
+// 共享 Redis 连接总账按它记账(见 config.RedisConf.PoolSize)。
+// 2026-10-23 之前这里没传三项超时,etc/login.yaml 与 K8s ConfigMap 写的 DialTimeout 3s 被静默忽略
+// (shared-redis-split-by-purpose.md §2.5 第 8 条)。
+func redisOptions(c config.RedisConf) *redis.Options {
+	return &redis.Options{
+		Addr:             c.Host,
+		Password:         c.Password,
+		DB:               int(c.DB),
+		PoolSize:         c.PoolSize,
+		DialTimeout:      c.DialTimeout,
+		ReadTimeout:      c.ReadTimeout,
+		WriteTimeout:     c.WriteTimeout,
+		DisableIndentity: true, // suppress CLIENT SETINFO on Redis < 7.2
+	}
+}
+
+// queueRedis 是 initLoginQueue 取排队句柄的唯一入口。QueueRedis 为 nil 只出现在只构造了 RedisClient 的
+// ServiceContext(单测);按「未配置 = 与核心共用」处理,与 newQueueRedis 的缺省同一语义。
+func (s *ServiceContext) queueRedis() *redis.Client {
+	if s.QueueRedis != nil {
+		return s.QueueRedis
+	}
+	return s.RedisClient
+}
+
+// newQueueRedis 返回排队与放行锁用的 Redis 句柄。c 为 nil(Node.QueueRedis 整段没写)时原样返回 core:
+// 同一个指针、不多开连接池,行为与拆分前逐字相同。配置了就按 redisOptions 另建一个 client,
+// 与核心同口径:PoolSize 非法或 Ping 不通直接 panic(起服即失败),错误里带句柄名与 Host、不带口令。
+func newQueueRedis(ctx context.Context, core *redis.Client, c *config.RedisConf) *redis.Client {
+	if c == nil {
+		logx.Infof("Redis queue client: shared with core %s", core.Options().Addr)
+		return core
+	}
+	if err := c.ValidatePoolSize(); err != nil {
+		panic(fmt.Errorf("Node.QueueRedis: %w", err))
+	}
+	client := redis.NewClient(redisOptions(*c))
+	if err := client.Ping(ctx).Err(); err != nil {
+		panic(fmt.Errorf("failed to connect Node.QueueRedis %s: %w", c.Host, err))
+	}
+	logx.Infof("Redis queue client %s DB=%d pool_size=%d", c.Host, c.DB, client.Options().PoolSize)
+	return client
 }
 
 // initPlayerNames 给 CreatePlayer / Login / EnterGame 装上角色名登记表的客户端。
@@ -476,7 +519,7 @@ func (s *ServiceContext) initLoginQueue() {
 		panic(fmt.Errorf("login queue: %w", err))
 	}
 	s.LoginQueue = loginqueue.New(
-		s.RedisClient,
+		s.queueRedis(),
 		cfg.QueueEntryTTL,
 		cfg.AdmitTTL,
 		s.QueueTokenSigningSecret(),
@@ -490,7 +533,7 @@ func (s *ServiceContext) initLoginQueue() {
 	queueDispatcher, err := loginqueue.NewDispatcher(
 		s.LoginQueue,
 		s.queueCapProvider,
-		s.RedisClient,
+		s.queueRedis(), // 放行锁与队列同实例:同一 zone 的 leader 只看这一个实例上的锁
 		// dispatcher 这条参数是给 gate token 签名用的(它只挑 gate、
 		// 真正签名在 consume 时由 handler 做),所以传 gate 密钥不是队列密钥。
 		s.GateTokenSigningSecret(),

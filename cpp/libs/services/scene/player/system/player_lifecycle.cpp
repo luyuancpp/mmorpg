@@ -1,4 +1,5 @@
 #include "player_lifecycle.h"
+#include "player_mutability.h"
 #include "engine/core/utils/registry/actor_log.h"
 #include "engine/core/type_define/player_guid_comp.h"
 #include "actor/actor_net_id.h"
@@ -373,37 +374,16 @@ namespace
 				return;
 			}
 			lastLogged = stats;
-			LOG_INFO << "[TravelHandoff] started=" << stats.started
-					 << " started_cross_zone=" << stats.startedCrossZone
-					 << " granted=" << stats.granted
-					 << " granted_without_reply=" << stats.grantedWithoutReply
-					 << " resolved_in_place=" << stats.resolvedInPlace
-					 << " aborted=" << stats.aborted
-					 << " exit_wins=" << stats.exitWins
-					 << " save_watchdog_fired=" << stats.saveWatchdogFired
-					 << " reply_watchdog_fired=" << stats.replyWatchdogFired
-					 << " verify_rearmed=" << stats.verifyRearmed
-					 << " frozen_ms_total=" << stats.frozenMsTotal
-					 << " frozen_ms_max=" << stats.frozenMsMax
-					 << " withdraw_deferred=" << stats.withdrawDeferred
-					 << " withdraw_expired=" << stats.withdrawExpired
-					 << " granted_client_reset=" << stats.grantedClientReset
-					 << " reply_uncorrelated=" << stats.replyUncorrelated
-					 << " reply_unmatched=" << stats.replyUnmatched
-					 << " freeze_cap_reached=" << stats.freezeCapReached
-					 << " dispatch_window_closed=" << stats.dispatchWindowClosed
-					 << " mark_sent_destroyed=" << stats.markSentDestroyed
-					 << " mark_sent_client_reset=" << stats.markSentClientReset
-					 << " destroy_deferred_unsettled_save=" << stats.destroyDeferredUnsettledSave
-					 << " freeze_unstamped=" << stats.freezeUnstamped
-					 << " watchdog_early_fire=" << stats.watchdogEarlyFire
-					 << " handoff_fastpath_forced=" << stats.handoffFastpathForced
-					 << " rolled_back_adopted=" << stats.rolledBackAdopted
-					 << " returned_after_grant=" << stats.returnedAfterGrant
-					 << " rollback_receipt_anomaly=" << stats.rollbackReceiptAnomaly
-					 << " sql_barrier_waited=" << stats.sqlBarrierWaited
-					 << " sql_barrier_expired=" << stats.sqlBarrierExpired
-					 << " sql_owner_rejected=" << stats.sqlOwnerRejected;
+			// 字段名与顺序取 travel_handoff_stats::kFields(与 Prometheus 导出同一份),输出与逐项拼写时逐字相同。
+			std::string line = "[TravelHandoff]";
+			for (const auto &field : travel_handoff_stats::kFields)
+			{
+				line += ' ';
+				line += field.key;
+				line += '=';
+				line += std::to_string(stats.*field.value);
+			}
+			LOG_INFO << line;
 		});
 	}
 
@@ -596,6 +576,9 @@ namespace
 		append("inherit_rewrite_failed", stats.inheritRewriteFailed);
 		append("inherit_rewrite_dropped_node_holds", stats.inheritRewriteDroppedNodeHolds);
 		append("inherit_rewrite_handed_over", stats.inheritRewriteHandedOver);
+		// 2026-10-23 追加在行尾(原有 key 的位置不变):条件写返回 -2,原 H 已被轮换。
+		append("superseded", stats.superseded);
+		append("inherit_rewrite_superseded", stats.inheritRewriteSuperseded);
 		return line;
 	}
 
@@ -641,6 +624,7 @@ namespace
 		append("credential_written", stats.credentialWritten);
 		append("credential_epoch_moved", stats.credentialEpochMoved);
 		append("credential_failed", stats.credentialFailed);
+		append("credential_superseded", stats.credentialSuperseded); // 2026-10-23 追加在行尾
 		return line;
 	}
 
@@ -1060,7 +1044,9 @@ namespace
 	// 条件写标记的四个来源:A1′ 退出收尾,A2′ 载入放弃补写,改派踢线前的凭证兜底补写(待确认表核实出"没变"、
 	// 而 Redis 里已没有同代标记时,见 relocate_confirm::DecideCredential),会话结束释放时本节点完全不持有的凭证补写
 	// (release_fence::DecideSessionEndedCredential,docs/design/location-release-binding.md §3.3)。
-	// 只决定计到哪组计数、日志里写哪个 site。
+	// 前三种消费调用方缓存的原 H;最后一种本节点完全不持有、没有缓存的原资格,消费的是 HGET 观察到并在回调里核对过的
+	// 本进程实例 E 代资格原件(SendSessionEndedCredential,2026-10-23)。
+	// 决定计到哪组计数、日志里写哪个 site、用哪段 Lua。
 	enum class MarkWriteSite : uint8_t
 	{
 		kExitRelease,
@@ -1092,25 +1078,29 @@ namespace
 		using Result = exit_release_mark::MarkWriteResult;
 		auto &stats = exit_release_stats::Get();
 		auto &relocateStats = relocate_confirm_stats::Get();
-		// 每个 site 的三个去向:写成 / owner_epoch 已变没写 / 失败。
+		// 每个 site 的四个去向:写成 / owner_epoch 已变没写 / 原资格已被轮换没写 / 失败。
 		std::atomic<uint64_t> *written = nullptr;
 		std::atomic<uint64_t> *epochMoved = nullptr;
+		std::atomic<uint64_t> *superseded = nullptr;
 		std::atomic<uint64_t> *failed = nullptr;
 		switch (site)
 		{
 		case MarkWriteSite::kExitRelease:
 			written = &stats.written;
 			epochMoved = &stats.epochMoved;
+			superseded = &stats.superseded;
 			failed = &stats.failed;
 			break;
 		case MarkWriteSite::kInheritRewrite:
 			written = &stats.inheritRewritten;
 			epochMoved = &stats.inheritRewriteSkipped;
+			superseded = &stats.inheritRewriteSuperseded;
 			failed = &stats.inheritRewriteFailed;
 			break;
 		case MarkWriteSite::kRelocateRefresh:
 			written = &relocateStats.credentialWritten;
 			epochMoved = &relocateStats.credentialEpochMoved;
+			superseded = &relocateStats.credentialSuperseded;
 			failed = &relocateStats.credentialFailed;
 			break;
 		case MarkWriteSite::kSessionEndedCredential:
@@ -1118,6 +1108,7 @@ namespace
 			auto &releaseStats = release_fence_stats::Get();
 			written = &releaseStats.credentialWritten;
 			epochMoved = &releaseStats.credentialEpochMoved;
+			superseded = &releaseStats.credentialSuperseded;
 			failed = &releaseStats.credentialFailed;
 			break;
 		}
@@ -1139,26 +1130,37 @@ namespace
 		case Result::kEpochMoved:
 			epochMoved->fetch_add(1, std::memory_order_relaxed);
 			break;
+		case Result::kSuperseded:
+			superseded->fetch_add(1, std::memory_order_relaxed);
+			break;
 		default:
 			failed->fetch_add(1, std::memory_order_relaxed);
 			break;
 		}
 	}
 
-	// 条件写 player:{id}:handoff "E:now_ms":owner_epoch 仍等于 E 才写(exit_release_mark::kLuaWriteIfOwnerEpoch)。
-	// A1′、A2′ 放弃补写与改派踢线前的凭证补写(MarkWriteSite::kRelocateRefresh)共用。走 tlsRedis.GetZoneRedis() ——
-	// 与存盘、A2′、标记撤回、改派的核实读同一条连接(FIFO):退出存盘的落地回调已经到了,这条写必然排在它之后执行。
+	// 条件写 player:{id}:handoff "E:now_ms":把调用方给的原资格 CAS 到本轮 F 并写标记,owner_epoch 仍等于 E 才写。
+	// A1′、A2′ 放弃补写、改派踢线前的凭证补写(MarkWriteSite::kRelocateRefresh)消费缓存的原 H(kLuaWriteIfOwnerEpoch);
+	// 会话结束凭证消费 SendSessionEndedCredential 观察并核对过的原件(kCredentialMarkLua,H / F / R 皆可)。
+	// 走 tlsRedis.GetZoneRedis()。"排在退出存盘之后"来自回调链的因果:退出存盘的落地回调到了才调到这里,不靠连接 FIFO。
+	// 防迟到也**不靠** FIFO(r2-lc#2):存活探测摘掉旧连接后,这条 EVAL 可能仍在内核重传、晚于新连接上的同节点重载登记
+	// 才执行。脚本只认调用方给的原件,新登记 / 撤销 / 发布已换掉 handoff_fence 时返回 -2、一个字节都不写。
 	// **一律不重试**(R7):写不成的后果只是这一次重登可能回 18、下一次重试放行;重试会把"这一刻已落盘"的
 	// 凭证推迟到一个不再成立的时刻。在途计数:发出前 +1,回调或派发失败时 -1(R6)。
 	void SendConditionalMarkWrite(Guid playerId, uint64_t epoch, MarkWriteSite site, const std::string& holderFence)
 	{
+        const bool observedQualification = site == MarkWriteSite::kSessionEndedCredential;
         const auto original = handoff_sql_barrier::ParseFence(holderFence);
         const auto published = handoff_sql_barrier::RotateFence(holderFence, handoff_sql_barrier::FenceState::kFrozen);
-        if (!original || !published || original->state != handoff_sql_barrier::FenceState::kHeld || original->ownerEpoch != epoch) {
+        if (!original || !published || original->ownerEpoch != epoch
+            || (!observedQualification && original->state != handoff_sql_barrier::FenceState::kHeld)) {
             CountMarkWrite(site, exit_release_mark::MarkWriteResult::kFailed);
-            LOG_WARN << "[ExitRelease] missing original holder; refusing credential write";
+            LOG_WARN << "[ExitRelease] mark write refused player=" << playerId << " site=" << MarkWriteSiteName(site)
+                     << " owner_epoch=" << epoch << ": no usable original holder qualification (not retried)";
             return;
         }
+        const std::string& script = observedQualification ? handoff_sql_barrier::kCredentialMarkLua
+                                                           : exit_release_mark::kLuaWriteIfOwnerEpoch;
 
 		const std::string markValue = player_ownership::HandoffRedisValue(epoch, TimeSystem::NowMillisecondsUTC());
 		auto &redis = tlsRedis.GetZoneRedis();
@@ -1194,13 +1196,18 @@ namespace
 					LOG_INFO << "[ExitRelease] mark not written player=" << playerId << " mark=" << markValue
 							 << " site=" << MarkWriteSiteName(site) << ": owner_epoch moved on";
 					break;
+				case exit_release_mark::MarkWriteResult::kSuperseded:
+					LOG_INFO << "[ExitRelease] mark not written player=" << playerId << " mark=" << markValue
+							 << " site=" << MarkWriteSiteName(site)
+							 << ": holder qualification superseded (handoff_fence rotated by a newer registration / revoke / publish)";
+					break;
 				default:
 					LOG_WARN << "[ExitRelease] mark write failed player=" << playerId << " mark=" << markValue
 							 << " site=" << MarkWriteSiteName(site) << ReplyFailureSuffix(reply) << " (not retried)";
 					break;
 				}
 			},
-			"EVAL %s 3 %s %s %s %s %s %d %b %b", exit_release_mark::kLuaWriteIfOwnerEpoch.c_str(), ownerEpochKey.c_str(),
+			"EVAL %s 3 %s %s %s %s %s %d %b %b", script.c_str(), ownerEpochKey.c_str(),
             ("player:{" + std::to_string(playerId) + "}:save_barrier").c_str(), handoffKey.c_str(), epochText.c_str(),
             markValue.c_str(), player_ownership::kHandoffMarkTtlSec,
             holderFence.data(), holderFence.size(), published->data(), published->size());
@@ -1214,6 +1221,135 @@ namespace
 			CountMarkWrite(site, exit_release_mark::MarkWriteResult::kFailed);
 			LOG_WARN << "[ExitRelease] mark write failed player=" << playerId << " mark=" << markValue
 					 << " site=" << MarkWriteSiteName(site) << " reason=dispatch_failed (not retried)";
+		}
+	}
+
+	// 会话结束凭证判定的输入。HandleSessionEndedRelease 判一次;SendSessionEndedCredential 的读回调里再判一次(读到的
+	// 原件可能正是本节点一条刚开始的持有写下的 H,那一刻它一定还在下面某张表里)。localHolderPossible 偏保守:
+	// 任何一项本地内存态都算"可能持有",由那条流程自己收尾;误判只让这一次凭证不写。
+	release_fence::SessionEndedFacts CollectSessionEndedFacts(Guid playerId, uint64_t expectedOwnerEpoch)
+	{
+		release_fence::SessionEndedFacts facts;
+		facts.expectedOwnerEpoch = expectedOwnerEpoch;
+		// playerList 里留着无效句柄也算(表不一致,不发证);在途载入与改派待确认条目由各自的流程收尾;登记在途时
+		// handoff_fence 上可能已是它刚写的 H;有未落地的存盘时盘上还不是终态。
+		facts.localHolderPossible = tlsEcs.playerList.count(playerId) != 0 || tlsPendingEnterMap.count(playerId) != 0 ||
+									tlsRelocateConfirms.FindPlayer(playerId) != nullptr ||
+									RoleAdmissionSystem::HasAdmissionInFlight(playerId) || HasUnsettledPlayerSave(playerId);
+		facts.markFeatureEnabled = IsExitReleaseMarkEnabled();
+		facts.devUnsafeCrossNode = IsDevUnsafeCrossNodeHandoff();
+		facts.identityConfirmed = IsNodeIdentityConfirmed();
+		return facts;
+	}
+
+	// 会话结束凭证的资格读回(scene 线程)。按 release_fence::DecideCredentialQualification 核对,只有 kQualified 才把
+	// 读到的原件交给 SendConditionalMarkWrite 做 CAS(kCredentialMarkLua)。日志只写 E / 状态 / 是否本实例,不写令牌原文。
+	void OnSessionEndedQualificationRead(Guid playerId, uint64_t expectedOwnerEpoch, const redisReply *reply)
+	{
+		using release_fence::CredentialQualification;
+		const bool isString = reply != nullptr && reply->type == REDIS_REPLY_STRING && reply->str != nullptr;
+		const bool isNil = reply != nullptr && reply->type == REDIS_REPLY_NIL;
+		const auto recheck =
+			release_fence::DecideSessionEndedCredential(CollectSessionEndedFacts(playerId, expectedOwnerEpoch));
+
+		release_fence::CredentialQualificationFacts facts;
+		facts.replyUsable = isString || isNil;
+		facts.stillWritable = recheck == release_fence::SessionEndedCredential::kWrite;
+		facts.fencePresent = isString;
+		std::string observed;
+		std::optional<handoff_sql_barrier::Fence> fence;
+		if (isString)
+		{
+			observed.assign(reply->str, reply->len);
+			fence = handoff_sql_barrier::ParseFence(observed);
+		}
+		facts.fenceParsed = fence.has_value();
+		const std::string localInstance = RoleAdmissionSystem::LocalInstanceId();
+		if (fence)
+		{
+			facts.fenceMatchesExpectedEpoch = fence->ownerEpoch == expectedOwnerEpoch;
+			facts.fenceOwnedByThisInstance = !localInstance.empty() && fence->sceneInstance == localInstance;
+		}
+		const auto qualification = release_fence::DecideCredentialQualification(facts);
+		release_fence_stats::IncCredentialQualification(qualification);
+
+		const char *const stateName = !fence ? "none"
+									  : fence->state == handoff_sql_barrier::FenceState::kHeld   ? "H"
+									  : fence->state == handoff_sql_barrier::FenceState::kFrozen ? "F"
+																								 : "R";
+		const std::string detail = " player=" + std::to_string(playerId) + " owner_epoch=" + std::to_string(expectedOwnerEpoch) +
+								   " fence_epoch=" + (fence ? std::to_string(fence->ownerEpoch) : std::string("none")) +
+								   " fence_state=" + stateName +
+								   " fence_this_instance=" + (facts.fenceOwnedByThisInstance ? "1" : "0") +
+								   " qualification=" + release_fence::CredentialQualificationName(qualification);
+		switch (qualification)
+		{
+		case CredentialQualification::kQualified:
+			LOG_INFO << "[ReleaseFence] session-ended credential:" << detail << "; writing the credential mark";
+			SendConditionalMarkWrite(playerId, expectedOwnerEpoch, MarkWriteSite::kSessionEndedCredential, observed);
+			return;
+		case CredentialQualification::kReadFailed:
+			LOG_WARN << "[ReleaseFence] session-ended credential:" << detail << ReplyFailureSuffix(reply)
+					 << "; not writing (not retried, the next release request reads again)";
+			return;
+		case CredentialQualification::kHolderAppeared:
+			LOG_INFO << "[ReleaseFence] session-ended credential:" << detail
+					 << " recheck=" << release_fence::SessionEndedCredentialName(recheck)
+					 << "; this node may hold the player again, leaving the release to that flow";
+			return;
+		case CredentialQualification::kNoQualification:
+			LOG_WARN << "[ReleaseFence] session-ended credential:" << detail
+					 << "; no qualification of this instance for this owner_epoch, not writing"
+					 << " (metric=credential_qualification_no_qualification)";
+			return;
+		case CredentialQualification::kMalformed:
+			LOG_ERROR << "[ReleaseFence] session-ended credential:" << detail
+					  << "; handoff_fence is malformed, not writing (metric=credential_qualification_malformed)";
+			return;
+		case CredentialQualification::kCount:
+			break;
+		}
+		LOG_ERROR << "[ReleaseFence] session-ended credential:" << detail << "; unexpected qualification, not writing";
+	}
+
+	// 会话结束凭证(docs/design/location-release-binding.md §3.3;2026-10-23 起带围栏):本节点完全不持有该玩家,没有缓存的
+	// 原 H。先 HGET save_barrier.handoff_fence 读现任资格原件,回调里重采判定、核对原件(OnSessionEndedQualificationRead),
+	// 合格才以读到的原件做 CAS。读与 CAS 之间本节点若开始新的持有,登记会先轮换原件,CAS 回 -2;CAS 帧迟到同理 ——
+	// 不靠连接顺序、不靠墙钟。不能干脆拒发:§15 起等待超时不再授权删 location,持有节点活着而不持有时没有凭证就永远删不掉。
+	// 读失败不重试(同 R7):scene_manager 的下一次 LeaveScene 重试 / 下一次登录撞门会再请一次。读也计入在途标记命令
+	// (R6):回调里才发 CAS,停机排空要等到它。回调只按值捕获玩家号与期望 E,不绑对象、不持连接(AGENTS §11.7)。
+	void SendSessionEndedCredential(Guid playerId, uint64_t expectedOwnerEpoch)
+	{
+		auto &redis = tlsRedis.GetZoneRedis();
+		if (!redis || !redis->connected())
+		{
+			release_fence_stats::IncCredentialQualification(release_fence::CredentialQualification::kReadFailed);
+			LOG_WARN << "[ReleaseFence] session-ended credential: player=" << playerId << " owner_epoch=" << expectedOwnerEpoch
+					 << " qualification=read_failed reason=redis_unavailable; not writing (not retried)";
+			return;
+		}
+		const std::string barrierKey = "player:{" + std::to_string(playerId) + "}:save_barrier";
+		++tlsExitReleaseMarksInFlight;
+		const int ret = redis->command(
+			[playerId, expectedOwnerEpoch](hiredis::Hiredis *, redisReply *reply)
+			{
+				if (tlsExitReleaseMarksInFlight > 0)
+				{
+					--tlsExitReleaseMarksInFlight;
+				}
+				OnSessionEndedQualificationRead(playerId, expectedOwnerEpoch, reply);
+			},
+			"HGET %b handoff_fence", barrierKey.data(), barrierKey.size());
+		if (ret != REDIS_OK)
+		{
+			// 命令没发出去,回调不会来:自己把计数还回去。
+			if (tlsExitReleaseMarksInFlight > 0)
+			{
+				--tlsExitReleaseMarksInFlight;
+			}
+			release_fence_stats::IncCredentialQualification(release_fence::CredentialQualification::kReadFailed);
+			LOG_WARN << "[ReleaseFence] session-ended credential: player=" << playerId << " owner_epoch=" << expectedOwnerEpoch
+					 << " qualification=read_failed reason=dispatch_failed; not writing (not retried)";
 		}
 	}
 
@@ -1398,9 +1534,10 @@ namespace
                 const auto abandonedFence = abandonedIt->second.holderFence;
 				tlsAbandonedInheritClears.erase(abandonedIt);
 				// 补写前先看本节点是否已由更新的一轮接手(判定与理由见 exit_release_mark::DecideAbandonedRewrite)。
-				// 移交时:更新一轮建出实体即作废;它也放弃时由 AbandonInheritClear 补写,那时补写必然排在任何
-				// 更后一轮的 A2′ 之前(同一条连接 FIFO)。它自己的 A2′ 删掉当前代际时会覆盖 rewriteEpoch,
-				// 两者都是 owner_epoch 条件写,取哪一个都只在归属未变时生效。
+				// 移交时:更新一轮建出实体即作废;它也放弃时由 AbandonInheritClear 补写。它自己的 A2′ 删掉当前代际时
+				// 会覆盖 rewriteEpoch,两者都是资格原件 CAS,取哪一个都只在归属未变、且所消费的原 H 仍是现任时生效。
+				// 正确性不靠补写与更后一轮 A2′ / 登记的先后(断线重连后旧连接上的补写可能晚于新连接上的登记才执行,
+				// r2-lc#2):补写只消费被放弃那一轮登记的原 H,更后一轮登记已换掉 handoff_fence 时脚本返回 -2、不写标记。
 				const auto newerIt = tlsPendingEnterMap.find(abandonedPlayer);
 				const auto rewriteDecision = exit_release_mark::DecideAbandonedRewrite(
 					tlsEcs.actorRegistry.valid(tlsEcs.GetPlayer(abandonedPlayer)), newerIt != tlsPendingEnterMap.end());
@@ -1861,10 +1998,11 @@ namespace
 
 	// 发一次核实读。条目必须在 kVerifying 且没有命令在途,否则 no-op。
 	// 命令是只读脚本 relocate_confirm::kLuaReadPlacement(一次读回 owner_epoch / location / handoff,为什么带 shebang、
-	// 为什么不删任何键见它的注释)。**必须走 tlsRedis.GetZoneRedis()**:muduo hiredis::Hiredis::command 是
-	// redisvAsyncCommand 的薄封装,无队列、无重放,与存盘、标记写、载入前的标记清理同一条 FIFO 连接。改走
-	// redis_client.h 那类带重试队列的接口,读数之后的凭证补写可能被重放到某次载入的标记清理之后,等于给活持有者
-	// 发一张放行证。
+	// 为什么不删任何键见它的注释)。走 tlsRedis.GetZoneRedis():muduo hiredis::Hiredis::command 是
+	// redisvAsyncCommand 的薄封装,无队列、无重放 —— 读数之后的凭证补写不会被重放到一个不再成立的时刻(R7)。
+	// 2026-10-23 更正(r2-lc#2):给活持有者发放行证的风险不再由"同一条 FIFO 连接 / 不重放"挡,同一条连接在存活探测
+	// 摘连接重连时本来也保证不了跨连接顺序。补写在 Lua 里只消费条目缓存的原 H(save_barrier.handoff_fence 的 CAS),
+	// 之后任何一次载入登记都会先轮换原件,迟到或被重放的补写只能回 -2、不写。
 	// settle 之前不许读的情形(结果未知 / 还有请求结局未定,relocate_confirm::MustReadAfterSettle)在这里拦:
 	// 不发命令,把下一次核实排到 settleAt。
 	// now 由调用方传入,函数内不另取时钟。
@@ -3955,9 +4093,10 @@ bool PlayerLifecycleSystem::DispatchEmergencyRelocate(Guid playerId, bool earlie
 	// 条件写在 epoch 已变时不写,转写标记留着,改派凭它过门;对已被废黜的节点同样不写,比无条件写严格更安全。
 	// 无论写没写成都照常发改派,由 scene_manager 的换手门裁决(与改动前一致)。
 	// 残余:疏散在回滚**之前**撤回了原标记时回滚回 marker_gone,改派会回 18(三重巧合,cross-zone-scene-travel.md §12.8)。
-	// 写的结局(写成 / owner_epoch 已变没写 / 失败)只记到条目上进日志,**不进任何判定**:没写时 scene_manager 凭的是
-	// 别人的标记,从"这份原文写没写成"推不出改派有没有被放行、被回滚。改派没生效要踢线时,凭证由待确认表按那一次
-	// 核实读到的 owner_epoch 兜底补写(relocate_confirm::DecideCredential)。
+	// 写的结局(写成 / owner_epoch 已变没写 / 实体缓存的原 H 已被轮换没写(-2,2026-10-23)/ 失败)只记到条目上进日志,
+	// **不进任何判定**:没写时 scene_manager 凭的是别人的标记,从"这份原文写没写成"推不出改派有没有被放行、被回滚。
+	// 改派没生效要踢线时,凭证由待确认表按那一次核实读到的 owner_epoch、消费条目缓存的原 H 兜底补写
+	// (relocate_confirm::DecideCredential)。
 	const std::string ownerEpochKey = player_ownership::OwnerEpochRedisKey(playerId);
 	const std::string key = player_ownership::HandoffRedisKey(playerId);
 	const std::string epochText = std::to_string(ownerEpoch);
@@ -3982,6 +4121,12 @@ bool PlayerLifecycleSystem::DispatchEmergencyRelocate(Guid playerId, bool earlie
 				LOG_INFO << "[EmergencyRelocate] handoff mark not written for player " << playerId << " mark=" << value
 						 << ": owner_epoch moved on (e.g. rolled back past this node's cached epoch); keeping the"
 						 << " existing mark, requesting re-home anyway (scene_manager decides)";
+				break;
+			case exit_release_mark::MarkWriteResult::kSuperseded:
+				markWrite = relocate_confirm::MarkWrite::kSuperseded;
+				LOG_INFO << "[EmergencyRelocate] handoff mark not written for player " << playerId << " mark=" << value
+						 << ": the entity's holder qualification was superseded (handoff_fence rotated); requesting"
+						 << " re-home anyway (scene_manager decides)";
 				break;
 			default:
 				LOG_ERROR << "[EmergencyRelocate] conditional handoff mark write failed for player " << playerId
@@ -4501,13 +4646,18 @@ PlayerLifecycleSystem::SaveResult PlayerLifecycleSystem::SavePlayerToRedisImpl(
 	//
 	// 快照只证明「这份字节已进 Redis」,不证明 MySQL 也有:某次存盘的 DBTask 同步被拒 / 投递回执失败时,
 	// DbTaskDispatchSystem 记着这笔欠账(NeedsResave),快路径必须让路、强制真写 —— 重新 marshal 当前内存整份重发,
-	// 绝不重放旧载荷。快照本身不作废:战斗结算 / 资产通道拿它判「已进 Redis」销账,Redis 落地回调也会把它写回。
+	// 绝不重放旧载荷。快照本身不作废；主Inbox/旧Battle销账另核同一原提交E/q的双SQL ACK，
+	// 通用资产通道保留上层Go RequireSQLCommit的独立合同，不能把Redis快照等同完整资产链SQL成功。
 	//
 	// 存盘序号不污染这次比较(db-write-fencing-mysql.md §7.3):快照里的 last_save_seq 在 Replace 时已剥离,新消息此刻还没
 	// 发号,C++ 也不写子表 fence_*,两侧都不带非业务字段,直接 dirty_save::IsEqual,不在热路径上深拷贝。
 	// 快路径是否剥离 stress_test_probe 待负责人定(§14 第 22 条),现行口径同 HEAD:不剥离。
 	const auto *snap = tlsEcs.actorRegistry.try_get<PlayerLastPersistedSnapshotComp>(player);
-	const bool snapshotMatches = allowSkipWhenPersisted && snap != nullptr && snap->HasSnapshot() &&
+	// B5同原入场可推进E；相同业务字节不能替新E提交。未知原提交资格也强制走真实写盘。
+	const auto *skipOwner = tlsEcs.actorRegistry.try_get<PlayerOwnerEpochComp>(player);
+	const bool commitMatchesOwner = skipOwner == nullptr || skipOwner->epoch == 0 ||
+		(snap != nullptr && snap->committed_owner_epoch == skipOwner->epoch && snap->committed_save_seq != 0);
+	const bool snapshotMatches = allowSkipWhenPersisted && commitMatchesOwner && snap != nullptr && snap->HasSnapshot() &&
 								 dirty_save::IsEqual(*message, *snap->snapshot);
 	// 只在快照相等时才查账本:不相等本来就要写,查了也不改结论。
 	const bool dbTaskNeedsResave = snapshotMatches && DbTaskDispatchSystem::NeedsResave(playerId);
@@ -4625,12 +4775,15 @@ PlayerLifecycleSystem::SaveResult PlayerLifecycleSystem::SavePlayerToRedisImpl(
 		return SaveResult::kRejected;
 	}
 	const auto commitIntent = std::shared_ptr<const RedisSaveCommitIntent>(std::move(intent));
+	const auto rememberSnapshotCommit = RoleAdmissionSystem::CaptureSnapshotCommit(player, message, ownerEpoch, saveSeq);
 
 	// 只按值持有不可变任务字节与路由元数据,不借用 ECS 或 Node。每份实际提交都登记 SQL 票据,
 	// 未下发就合并的快照不执行钩子;全局 HandlePlayerAsyncSaved 仍只对最终最新值发布。
 	// Lua 与钩子之间崩溃由 outbox 补投,钩子仍先于全局退出 / 交接判定登记票据。
-	auto publishDbTasks = [commitIntent, playerId, homeZoneId, ownerEpoch, saveSeq, playerIdStr, dbTaskTopic]()
+	auto publishDbTasks = [commitIntent, playerId, homeZoneId, ownerEpoch, saveSeq, playerIdStr, dbTaskTopic, rememberSnapshotCommit]()
 	{
+		// 这里只记该次严格Redis提交的原版本；SQL是否完成由后续只读双ACK确认。
+		if (rememberSnapshotCommit) rememberSnapshotCommit();
 		const db_task_dispatch::SaveGeneration saveGeneration = DbTaskDispatchSystem::BeginSave(playerId);
 		bool allDbTasksQueued = true;
 		auto sendTask = [&](const std::string &dbTaskBytes)
@@ -5684,16 +5837,10 @@ void PlayerLifecycleSystem::HandleSessionEndedRelease(Guid playerId, uint64_t ex
 		return;
 	}
 
-	// 本节点没有可用实体:看是不是"完全不持有"。playerList 里留着无效句柄也算持有(表不一致,不发证);在途载入与改派待确认条目
-	// 由各自的流程收尾(载入建出实体就是持有者,放弃时 A2′ 自己补写;改派由待确认表兜底补写)。
-	release_fence::SessionEndedFacts facts;
-	facts.expectedOwnerEpoch = expectedOwnerEpoch;
-	facts.localHolderPossible = playerIt != tlsEcs.playerList.end() || tlsPendingEnterMap.count(playerId) != 0 ||
-								tlsRelocateConfirms.FindPlayer(playerId) != nullptr;
-	facts.markFeatureEnabled = IsExitReleaseMarkEnabled();
-	facts.devUnsafeCrossNode = IsDevUnsafeCrossNodeHandoff();
-	facts.identityConfirmed = IsNodeIdentityConfirmed();
-	const auto decision = release_fence::DecideSessionEndedCredential(facts);
+	// 本节点没有可用实体:看是不是"完全不持有"。playerList 里留着无效句柄也算持有(表不一致,不发证);在途载入、改派待确认条目、
+	// 在途的入场登记与未落地的存盘由各自的流程收尾(载入建出实体就是持有者,放弃时 A2′ 自己补写;改派由待确认表兜底补写)。
+	const auto decision =
+		release_fence::DecideSessionEndedCredential(CollectSessionEndedFacts(playerId, expectedOwnerEpoch));
 	release_fence_stats::IncCredentialDecision(decision);
 	if (decision != release_fence::SessionEndedCredential::kWrite)
 	{
@@ -5703,10 +5850,13 @@ void PlayerLifecycleSystem::HandleSessionEndedRelease(Guid playerId, uint64_t ex
 				 << ")";
 		return;
 	}
+	// 标记写只能消费 save_barrier.handoff_fence 原件的 CAS(r2-lc#2,2026-10-23)。本节点完全不持有,手里没有缓存的原 H:
+	// 先读现任原件,回调里确认它是本进程实例在期望 E 下的资格、且本节点仍完全不持有,才以它为原件写凭证
+	// (SendSessionEndedCredential;不按读到的 owner_epoch 现造资格)。
 	LOG_INFO << "[ReleaseFence] session-ended release: player " << playerId
-			 << " is not held by this node; writing credential mark for owner_epoch " << expectedOwnerEpoch;
-	// 原实体和原待确认条目均缺席，不能从一个 epoch 读值重建发布资格。
-    LOG_WARN << "[ReleaseFence] no cached holder credential; session-ended mark refused";
+			 << " is not held by this node; reading the holder qualification for a credential mark (expected_owner_epoch="
+			 << expectedOwnerEpoch << ")";
+	SendSessionEndedCredential(playerId, expectedOwnerEpoch);
 }
 
 bool PlayerLifecycleSystem::DiscardStaleHandoffEntity(entt::entity player, uint64_t incomingOwnerEpoch)
@@ -5943,6 +6093,8 @@ void PlayerLifecycleSystem::BeginTravelHandoff(Guid playerId)
 				// 交给 ResolveTravelOutcome:Redis 不可用时保持冻结 + 计数 + 重挂应答看门狗;
 				// 连接恢复后它的原子取证脚本先删掉本次交接这一族标记、再读 owner_epoch 与 location —— 正好把
 				// 可能已落地的标记撤回,再按判定表决定解冻还是销毁。代际用 nowMs(与 travel->requestedAtMs 一致)。
+				// 这条 EVAL 也可能**还没**执行:存活探测摘掉旧连接后它仍在内核重传,晚于取证才到(r2-lc#1)。取证脚本已在
+				// 同一原子步骤里把原 H(或本轮 F)撤成 R,迟到的发布只认原 H,必回 -2、不写标记,判 kUnchanged 解冻是安全的。
 				LOG_ERROR << "[ZoneTravel] SET handoff mark result unknown for player " << playerId
 						  << " (connection dropped before reply); keeping the player frozen until it is verified";
 				// 证据 kMarkWriteUnknown:EnterScene 根本没发出去,epoch 就算变了也不是本次交接推进的,永不踢线。
@@ -6031,9 +6183,12 @@ void PlayerLifecycleSystem::RequestTravelEnterScene(Guid playerId)
 
 	// 传送中实体还活着,gate / session 直接从实体上取,不需要像疏散那样提前抄票据。
 	const auto *session = tlsEcs.actorRegistry.try_get<PlayerSessionSnapshotComp>(playerEntity);
-	if (session == nullptr || session->gate_session_id() == kInvalidSessionId)
+	// 与 StartTravelHandoff 的发起校验、ConcludeHandoffAfterMarkSent 的"要不要踢线"同一把尺子(HasLiveGateSession):
+	// 会话号有效还不够,SessionMap 必须仍把它映射到本玩家。会话已被取代 / 已解绑时拿它发 EnterScene,scene_manager
+	// 会按这个会话号改绑路由,可能把别人的会话带走(cross-zone-scene-travel.md §13.2 既有残余,2026-10-23 收紧)。
+	// 这时只销毁不踢:标记已写,Redis ⊇ 冻结内存(I1),玩家下次登录凭标记照常落地。
+	if (session == nullptr || !HasLiveGateSession(playerEntity, playerId))
 	{
-		// 没有会话:只销毁不踢(Conclude 自己按 HasLiveGateSession 判,这里判不到活会话)。
 		LOG_WARN << "[ZoneTravel] no live gate session for player " << playerId
 				 << " after the handoff mark was written; not sending EnterScene";
 		ConcludeHandoffAfterMarkSent(playerId, travel_freeze_cap::MarkSentSite::kNoGateSession, now);
@@ -6639,7 +6794,6 @@ void PlayerLifecycleSystem::RetryInheritedMarkClears(bool reconnected)
 	{
 		if (RoleAdmissionSystem::IsSealed(playerId)) continue;
 		const InheritClearState &state = ctx.inheritClear;
-    state.holderFence = ctx.handoffFence;
 		const bool waiting = state.phase == exit_release_mark::InheritClearPhase::kRetryWait;
 		const bool inFlight = state.phase == exit_release_mark::InheritClearPhase::kInFlight;
 		if (!waiting && !inFlight)
@@ -7025,6 +7179,11 @@ bool PlayerLifecycleSystem::IsSaveInFlight(Guid playerId)
 // "退出优先"分支摘。它最早属于 player_migrate 搬数据链(Kafka 搬 PlayerAllData + ACK + reaper),
 // 那条链已按 cross-zone-scene-travel.md CZ-1 下线,只留下这个组件与业务侧的拦写闸。
 // ─────────────────────────────────────────────────────────────────────
+
+bool PlayerLifecycleSystem::IsPlayerMutable(entt::entity player)
+{
+	return tlsEcs.actorRegistry.valid(player) && player_mutability::IsPlayerMutable(player);
+}
 
 bool PlayerLifecycleSystem::IsCrossZoneFrozen(entt::entity player)
 {

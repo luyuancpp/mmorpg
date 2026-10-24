@@ -82,6 +82,9 @@ type sceneNodeRegistration struct {
 		Port uint32 `json:"port"`
 	} `json:"grpcEndpoint"`
 	ZoneId uint32 `json:"zoneId"`
+	// NodeUuid 是 C++ 进程启动时生成的实例号(NodeInfo.node_uuid):同一个 node_id 被重启后的新进程复用时,
+	// 只有它能区分两代进程。交接资格里盖的就是它(owner_replaced.go,GO-3)。旧版本注册可能不带。
+	NodeUuid string `json:"nodeUuid"`
 }
 
 // nodeEntry stores a parsed node with its string ID.
@@ -399,7 +402,9 @@ func detachDeadNode(svcCtx *svc.ServiceContext, entry nodeEntry, scenes []string
 // 会被复用同 id 的新节点原样继承,负载分永久虚高,调度一直躲着它。
 //
 // ⚠️ 调用顺序:必须在 reconcileDeadNodeScenes **之后**。reconcile 里的
-// destroyInstanceForce 自己还会对这两个键做减法,先删会被它们重新建出来。
+// destroyOrphanOfDeadNode 认领成功时还会对死节点的这两个键做减法(脚本比对期望属主,
+// 对死节点计数的减法只来自这里;级联到别的节点上的镜像时扣的是镜像属主的计数,与这里的
+// 顺序无关),先删会被它们重新建出来。
 // 删完之后若还有极晚到的在途 destroy 把键重建成小负数,player_count 有 <0
 // 归零钳制,scene_count 的 -1 会被新节点的第一次 Incr 冲平 —— 都是有界的,
 // 与无界的正残留不同。
@@ -424,9 +429,26 @@ func deleteNodeCounters(svcCtx *svc.ServiceContext, zoneID uint32, nodeID string
 // 那些。大世界频道留给 rebalance 路径;已经被改派走的陈旧条目静默丢弃。
 //
 // 「仍指向本节点」以销毁脚本里的比较为准(destroyOrphanOfDeadNode,2026-10-22):循环里那次 GET
-// 只是快速过滤。GET 之后、销毁之前,resolveScene 的死节点自愈可能已经用 reassignSceneNode 把实例
-// 改派到活节点并 CreateScene;以前的 force 脚本不比对属主,会把新属主的场景抹掉、向新节点发
-// DestroyScene、扣新节点的计数。现在脚本发现属主已不是死节点就一个键都不动,记进 stale。
+// 只是快速过滤。GET 之后、销毁之前,只要有写者用 reassignSceneNode 把实例改派到活节点并 CreateScene,
+// 以前不比对属主的 force 脚本就会把新属主的场景抹掉、向新节点发 DestroyScene、扣新节点的计数。现在
+// 脚本发现属主已不是死节点就一个键都不动,记进 stale。(修复时这样的写者是 resolveScene 的死节点自愈;
+// 10-23 起它只重建世界频道,比对作为纵深防御保留。)
+//
+// 结果分四类:
+//   - destroyed:认领并销毁;
+//   - stale:属主已指向别的节点,或映射在 Zscore 之后、脚本之前消失(并发销毁,或
+//     createscenelogic.go rollbackInstanceAllocation 先 DEL 映射、后 ZREM 的那几个往返里)。映射消失时
+//     不当作可认领:删映射的那条路径负责其余清理,这里再抹会与它双还 Agones 名额;
+//   - world_skipped:不在 active 集合里。除世界频道外,还包括在本次 GET 之前就已被销毁的实例,例如同一轮
+//     里先被源场景级联抹掉的共置镜像 —— 所有销毁脚本都在同一次 EVAL 里 DEL 映射并 ZREM;
+//   - failed:Redis 出错,结论未知。failed 的成员留在反向索引里不摘:它的 scene:{id}:node 多半仍指向
+//     死节点,摘掉就让索引与属主映射不一致,同一 node_id 下次判死时也抄不进快照。
+//
+// 限制(修复前即有,见 docs/PROGRESS.md 2026-10-23「死节点收尾与显式 DestroyScene 的销毁改为按认领时属主」
+// 条目残余 R1):收尾队列在进程内,drain 跑完一次不论结果都出队。failed 成员没有重试;本函数中途降级时的
+// 剩余成员也不会被新领导者接手(新领导者的 fullSync 只扫负载集,扫不到已摘出负载集的死节点)。它们只能等
+// 同一 node_id 下次判死时重新抄进快照,或者等实例人数经 LeaveScene(player_locator 租约到期)或玩家重新进场
+// 扣到 0、过了空闲超时后由空闲回收销毁。
 //
 // Why not destroy world channels here:
 //
@@ -445,16 +467,15 @@ func reconcileDeadNodeScenes(ctx context.Context, svcCtx *svc.ServiceContext, en
 
 	zoneId := entry.reg.ZoneId
 	activeKey := activeInstancesKey(zoneId)
-	destroyed, skippedWorld, stale, failed := 0, 0, 0, 0
+	destroyed, skippedWorld, stale := 0, 0, 0
+	var failedMembers []string
 
 	for _, s := range members {
-		// 降级即停,且**不删** setKey:留着集合,新领导者的 fullSync
-		// stale 清理会对同一个死节点重跑本函数,接手剩余成员。
-		// destroyOrphanOfDeadNode 内部是 Lua 原子认领,即便与新领导者
-		// 短暂并发,每个场景的副作用也只会执行一次。
+		// 降级即停,且**不删** setKey:剩余成员原样留在集合里。注意新领导者接不到它们(见函数注释「限制」)。
+		// destroyOrphanOfDeadNode 内部是 Lua 原子认领,即便与新领导者短暂并发,每个场景的副作用也只会执行一次。
 		if !isLeader() {
-			logx.Infof("[Reconcile] lost leadership mid-sweep for node %s (zone %d), aborting; successor will re-sweep",
-				entry.nodeID, entry.reg.ZoneId)
+			logx.Infof("[Reconcile] lost leadership mid-sweep for node %s (zone %d), aborting; remaining members stay in %s",
+				entry.nodeID, entry.reg.ZoneId, setKey)
 			return
 		}
 		sceneId, err := strconv.ParseUint(s, 10, 64)
@@ -472,10 +493,17 @@ func reconcileDeadNodeScenes(ctx context.Context, svcCtx *svc.ServiceContext, en
 
 		// Is this an instance? Only instances are tracked in the active set.
 		// World channels live in world:channels:zone:{z}:conf:{c} and are
-		// handled by the rebalance pipeline.
+		// handled by the rebalance pipeline. 只有 redis.Nil(确实不在集合里)才算世界频道;
+		// 读出错时结论未知,计 failed 并留在反向索引里,不能当成世界频道摘掉。
 		_, zerr := svcCtx.Redis.Zscore(activeKey, s)
-		if zerr != nil {
+		if errors.Is(zerr, redis.Nil) {
 			skippedWorld++
+			continue
+		}
+		if zerr != nil {
+			logx.Errorf("[Reconcile] Zscore %s for scene %d failed; left in %s, retried only if node %s is declared dead again: %v",
+				activeKey, sceneId, setKey, entry.nodeID, zerr)
+			failedMembers = append(failedMembers, s)
 			continue
 		}
 
@@ -484,12 +512,12 @@ func reconcileDeadNodeScenes(ctx context.Context, svcCtx *svc.ServiceContext, en
 		ok, err := destroyOrphanOfDeadNode(ctx, svcCtx, zoneId, sceneId, entry.nodeID)
 		switch {
 		case err != nil:
-			// 已在 destroyOrphanOfDeadNode 里记了错误;不计入 destroyed,免得指标多报。
-			failed++
+			// 已在 destroyOrphanOfDeadNode 里记了错误;不计入 destroyed,免得指标多报;留在反向索引里(见函数注释)。
+			failedMembers = append(failedMembers, s)
 		case !ok:
-			// 上面读属主之后被改派走了(或已被别的路径销毁):脚本比对属主落空,一个键都没动。
-			logx.Infof("[Reconcile] Scene %d no longer owned by dead node %s (zone %d) at destroy time; "+
-				"reassigned after the owner read, skipped", sceneId, entry.nodeID, zoneId)
+			// 脚本比对属主落空,一个键都没动:读属主之后被改派走了,或映射已被别的路径删掉。
+			logx.Infof("[Reconcile] Scene %d not owned by dead node %s (zone %d) at destroy time "+
+				"(reassigned after the owner read, or mapping already gone); skipped", sceneId, entry.nodeID, zoneId)
 			stale++
 		default:
 			destroyed++
@@ -498,12 +526,8 @@ func reconcileDeadNodeScenes(ctx context.Context, svcCtx *svc.ServiceContext, en
 
 	// 只摘掉快照里的成员,不 Del 整个集合:屏障窗口里可能有新场景被建到同一个
 	// node_id 上并加进了这个集合,Del 会把它们的反向索引一起抹掉,以后再没有
-	// 任何路径能发现它们。集合被摘空后 Redis 会自动回收键。
-	if len(members) > 0 {
-		values := make([]any, 0, len(members))
-		for _, m := range members {
-			values = append(values, m)
-		}
+	// 任何路径能发现它们。集合被摘空后 Redis 会自动回收键。failed 的成员不摘。
+	if values := membersExcept(members, failedMembers); len(values) > 0 {
 		if _, err := svcCtx.Redis.Srem(setKey, values...); err != nil {
 			logx.Errorf("[Reconcile] Srem %s failed: %v", setKey, err)
 		}
@@ -511,10 +535,30 @@ func reconcileDeadNodeScenes(ctx context.Context, svcCtx *svc.ServiceContext, en
 
 	metrics.ObserveSceneOrphansReconciled(zoneId, destroyed)
 
-	if destroyed > 0 || stale > 0 || skippedWorld > 0 || failed > 0 {
-		logx.Infof("[Reconcile] Node %s (zone %d): total=%d destroyed=%d world_skipped=%d stale=%d failed=%d",
-			entry.nodeID, zoneId, len(members), destroyed, skippedWorld, stale, failed)
+	failed := len(failedMembers)
+	if failed > 0 {
+		logx.Errorf("[Reconcile] Node %s (zone %d): total=%d destroyed=%d world_skipped=%d stale=%d failed=%d; "+
+			"failed members left in %s (no retry scheduled; picked up only if this node_id is declared dead again)",
+			entry.nodeID, zoneId, len(members), destroyed, skippedWorld, stale, failed, setKey)
+	} else if destroyed > 0 || stale > 0 || skippedWorld > 0 {
+		logx.Infof("[Reconcile] Node %s (zone %d): total=%d destroyed=%d world_skipped=%d stale=%d failed=0",
+			entry.nodeID, zoneId, len(members), destroyed, skippedWorld, stale)
 	}
+}
+
+// membersExcept 返回 members 中不在 keep 里的成员,按 Srem 的参数类型给出。
+func membersExcept(members, keep []string) []any {
+	skip := make(map[string]struct{}, len(keep))
+	for _, k := range keep {
+		skip[k] = struct{}{}
+	}
+	out := make([]any, 0, len(members))
+	for _, m := range members {
+		if _, ok := skip[m]; !ok {
+			out = append(out, m)
+		}
+	}
+	return out
 }
 
 // FindNodeByPodIP maps a Pod IP back to a registered scene node.
@@ -713,6 +757,23 @@ func fullSync(ctx context.Context, svcCtx *svc.ServiceContext) (int64, error) {
 		// watch 重建窗口里漏掉的 DELETE / 换身份:本副本是在**此刻**才知道它没了。
 		noteNodeGoneFromRegistry(prev.reg.ZoneId, prev.nodeID)
 	}
+	// 实例级的同一件事(GO-3):同号新进程顶上来时 (zone,node) 身份还在,消失的是旧进程实例。
+	seenInstances := make(map[string]struct{}, len(next))
+	for _, entry := range next {
+		if entry.reg.NodeUuid != "" {
+			seenInstances[entry.reg.NodeUuid] = struct{}{}
+		}
+	}
+	for _, prev := range prevKnown {
+		if prev.reg.NodeUuid == "" {
+			continue
+		}
+		if _, still := seenInstances[prev.reg.NodeUuid]; !still {
+			noteInstanceGoneFromRegistry(prev.reg.NodeUuid)
+		}
+	}
+	// 在册的实例作废旧的消失记录;仍不在册的已记录实例改记为此刻(断档期间可能「回来又消失」,保守后推一个屏障)。
+	reconcileInstanceGoneObservationsAfterResync(seenInstances)
 
 	// Update activeZones.
 	zones := make([]uint32, 0, len(seenByZone))
@@ -931,6 +992,8 @@ func handleWatchEvent(ctx context.Context, svcCtx *svc.ServiceContext, ev *clien
 		prev, existed := knownNodes[key]
 		knownNodes[key] = entry
 		knownNodesMu.Unlock()
+		// 这个实例(重新)在册:作废它旧的消失记录(GO-3,owner_replaced.go)。
+		forgetInstanceGoneObservation(entry.reg.NodeUuid)
 
 		// Detect role / zone flip on the same etcd key. A legitimate restart
 		// keeps the (zone_id, scene_node_type) tuple stable; a flip almost
@@ -967,6 +1030,10 @@ func handleWatchEvent(ctx context.Context, svcCtx *svc.ServiceContext, ev *clien
 		identityChanged := existed && (prev.reg.ZoneId != entry.reg.ZoneId || prev.nodeID != entry.nodeID)
 		if identityChanged {
 			retireNodeIdentityIfGone(ctx, svcCtx, prev)
+		}
+		// 同一个键换了进程实例(重启后的新进程覆盖了旧注册):旧实例从注册表消失,记下时刻(GO-3)。
+		if existed && prev.reg.NodeUuid != entry.reg.NodeUuid {
+			noteInstanceRetiredIfGone(prev)
 		}
 
 		updateNodeLoad(svcCtx, entry)
@@ -1007,6 +1074,7 @@ func handleWatchEvent(ctx context.Context, svcCtx *svc.ServiceContext, ev *clien
 		}
 		rebuildActiveZones()
 		retireNodeIdentityIfGone(ctx, svcCtx, entry)
+		noteInstanceRetiredIfGone(entry)
 	}
 }
 

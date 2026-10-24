@@ -7,6 +7,7 @@ import (
 	base "proto/common/base"
 	comppb "proto/common/component"
 	dbpb "proto/common/database"
+	"shared/savebarrier"
 
 	"github.com/redis/go-redis/v9"
 	"google.golang.org/protobuf/proto"
@@ -31,7 +32,7 @@ func (l *EnterGameLogic) backfillPlayerIdentity(ctx context.Context, existing *s
 		return fmt.Errorf("身份补齐缺少玩家登录锁: player=%d", state.playerID)
 	}
 	parent := &dbpb.PlayerAllData{}
-	key := fmt.Sprintf("%s:%d", parent.ProtoReflect().Descriptor().FullName(), state.playerID)
+	key := savebarrier.ParentKey(state.playerID)
 	previous, err := l.svcCtx.RedisClient.Get(ctx, key).Bytes()
 	if err != nil {
 		return fmt.Errorf("读取身份补齐存档: %w", err)

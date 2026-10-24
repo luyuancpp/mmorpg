@@ -233,7 +233,8 @@ func robotHandlerFuncFiles(dir string) (map[string]string, error) {
 	return defined, nil
 }
 
-// robotHandlerFileExists 保留 stat 错误，推送桩不能因无权读取而假称已存在。
+// robotHandlerFileExists 保留 stat 错误，推送桩不能因无权读取而假称已存在；注册表(robotHandlerCases)
+// 也用它判定非 PUSH handler，不能据此登记一个可能不存在的函数。
 func robotHandlerFileExists(path string) (bool, error) {
 	info, err := os.Stat(path)
 	if os.IsNotExist(err) {
@@ -246,22 +247,6 @@ func robotHandlerFileExists(path string) (bool, error) {
 		return false, fmt.Errorf("robot handler %s is not a regular file", path)
 	}
 	return true, nil
-}
-
-// fileExists checks if a file already exists.
-func fileExists(filePath string) bool {
-	_, err := os.Stat(filePath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return false
-		}
-		logger.Global.Warn("Error checking file existence",
-			zap.String("file_path", filePath),
-			zap.Error(err),
-		)
-		return true
-	}
-	return true
 }
 
 // camelToSnake converts a CamelCase string to snake_case.

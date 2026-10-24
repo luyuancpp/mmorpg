@@ -337,3 +337,6 @@ const ClientPlayerJubaozhaiListSellerIncomesMessageId = 341
 const ClientPlayerJubaozhaiCreateWithdrawalMessageId = 342
 const ClientPlayerJubaozhaiGetWithdrawalMessageId = 343
 const BattleNodeQueryObserverMessageId = 344
+const MatchInternalCommitBattleOutcomeMessageId = 345
+const PlayerInboxEnqueueBattleSettlementMessageId = 346
+const PlayerInboxLookupBattleSettlementMessageId = 347

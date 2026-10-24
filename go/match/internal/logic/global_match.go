@@ -23,6 +23,7 @@ import (
 	pb "proto/match"
 	"shared/generated/pb/table"
 	"shared/safego"
+	"shared/serviceauth"
 )
 
 func globalJoin(l *JoinQueueLogic, in *pb.JoinQueueRequest, required, zone uint32) (*pb.JoinQueueResponse, error) {
@@ -206,40 +207,19 @@ func globalDirectGather(s *svc.ServiceContext, mode pb.MatchMode, config uint32,
 }
 
 func releaseGlobalFinished(ctx context.Context, s *svc.ServiceContext, t *pb.MatchAuthorityTicketRecord) (bool, error) {
-	f, e := s.Authority.Formation(ctx, t.FormationId)
-	if e != nil {
-		return false, e
-	}
-	conn, e := discovery.DialEndpoint(f.TargetEndpoint)
-	if e != nil {
-		return false, nil
-	}
-	call, cancel := context.WithTimeout(ctx, 3*time.Second)
-	defer cancel()
-	client := battlepb.NewBattleNodeClient(conn)
-	query := &battlepb.QueryBattleCreationRequest{BattleId: f.BattleId, PlacementOperationId: f.OperationId, TargetInstanceId: f.TargetInstanceId}
-	q, e := client.QueryBattleCreation(call, query)
-	if e != nil {
-		return false, nil
-	}
-	// ABSENT不是拒绝迟到Create的墓碑；先固定原operation的取消，再只认可ABORTED。
-	if q.State == battlepb.BattleCreationState_BATTLE_CREATION_ABSENT {
-		_, e = client.DestroyBattle(call, &battlepb.DestroyBattleRequest{BattleId: f.BattleId, PlacementOperationId: f.OperationId, TargetInstanceId: f.TargetInstanceId, Reason: "ready_recovery_original_cancel"})
-		if e != nil {
-			return false, nil
-		}
-		q, e = client.QueryBattleCreation(call, query)
-		if e != nil {
-			return false, nil
-		}
-	}
-	if q.State != battlepb.BattleCreationState_BATTLE_CREATION_ABORTED {
-		return false, nil
-	}
-	return true, s.Authority.ReleaseReady(ctx, t.PlayerId, t.Ticket, t.FormationId)
+	// 原实例消失/内存墓碑都不能证明个人到账；旧协议保持UNKNOWN。
+	return s.Authority.ReleaseCompletedReady(ctx, t)
 }
 
 func runGlobalRound(ctx context.Context, s *svc.ServiceContext) {
+	// 成功开房的state4不在旧Pending集合内，必须独立巡检；不依赖Guild取消或Battle存活。
+	recoverCtx, recoverCancel := context.WithTimeout(ctx, 3*time.Second)
+	var recoverErr error
+	s.GlobalOutcomeRetryMs, s.GlobalOutcomeBattle, recoverErr = s.Authority.RecoverExpiredOutcomes(recoverCtx, s.GlobalOutcomeRetryMs, s.GlobalOutcomeBattle)
+	recoverCancel()
+	if recoverErr != nil && ctx.Err() == nil {
+		logx.Error("全球匹配到期终局恢复未确认，保留原件等待下轮")
+	}
 	pending, e := s.Authority.Pending(ctx)
 	if e != nil {
 		logx.Error("全球匹配恢复查询失败")
@@ -352,7 +332,7 @@ func runGlobalFormation(s *svc.ServiceContext, f *pb.MatchFormationRecord) {
 		return
 	}
 	if len(f.CreateRequest) == 0 {
-		if globalDestroy(s, f) {
+		if globalDestroy(s.Authority, f) {
 			globalAbortPrepared(s, f)
 		}
 		return
@@ -372,6 +352,17 @@ func runGlobalFormation(s *svc.ServiceContext, f *pb.MatchFormationRecord) {
 		return
 	}
 	if result.State == battlepb.BattleCreationState_BATTLE_CREATION_PRESENT {
+		if f.OutcomeProtocolVersion != 1 || result.GetTargetInstanceId() != f.TargetInstanceId {
+			_ = s.Authority.Unknown(ctx, f)
+			return
+		}
+		if e = s.Authority.RecordBattleAdopted(ctx, f, result.TargetInstanceId, result.AdoptedOutcomeProtocolVersion); e != nil {
+			return
+		}
+		if result.AdoptedOutcomeProtocolVersion != 1 {
+			_ = s.Authority.Unknown(ctx, f)
+			return
+		}
 		metrics.ObserveGlobalFlow("recover", "present")
 		_ = s.Authority.Finish(ctx, f, true)
 		return
@@ -390,24 +381,56 @@ func runGlobalFormation(s *svc.ServiceContext, f *pb.MatchFormationRecord) {
 		return
 	}
 	if n < request.AdmitBeforeMs {
+		// 只重放发起前已持久的v1能力原件；不向旧实例补发或追认历史0。
+		if f.OutcomeProtocolVersion != 1 || f.PreflightSupportedVersion != 1 || f.PreflightInstanceId != f.TargetInstanceId || request.OutcomeProtocolVersion != 1 || result.GetTargetInstanceId() != f.TargetInstanceId || result.GetSupportedOutcomeProtocolVersion() != 1 {
+			_ = s.Authority.Unknown(ctx, f)
+			return
+		}
 		if e = createBattle(discovery.NodeEntry{NodeId: f.TargetNodeId, NodeUuid: f.TargetInstanceId, Endpoint: f.TargetEndpoint, PhysicalRegion: f.PhysicalRegion}, request); e == nil {
-			_ = s.Authority.Finish(ctx, f, true)
+			if e = s.Authority.RecordBattleAdopted(ctx, f, f.TargetInstanceId, 1); e == nil {
+				_ = s.Authority.Finish(ctx, f, true)
+			}
+			return
+		}
+		var adoption *outcomeAdoptionError
+		if errors.As(e, &adoption) {
+			_ = s.Authority.RecordBattleAdopted(ctx, f, adoption.instance, adoption.version)
+			_ = s.Authority.Unknown(ctx, f)
 			return
 		}
 	}
-	if globalDestroy(s, f) {
+	if globalDestroy(s.Authority, f) {
 		globalAbortPrepared(s, f)
 	} else {
 		_ = s.Authority.Unknown(ctx, f)
 	}
 }
 
-func globalDestroy(s *svc.ServiceContext, f *pb.MatchFormationRecord) bool {
+// formationDestroyAuthority 是 globalDestroy 对成局权威的全部依赖，生产实现就是 *authority.Store。
+// 收窄成接口只为测试隔离（2026-10-22 评审补，social-match-battle#0）：「无原件不等目标 Battle」这条短路
+// 要有一条不起 TiDB、不起 Battle 的回归（global_destroy_test.go）。
+type formationDestroyAuthority interface {
+	CreateIntentPersisted(ctx context.Context, work *pb.MatchFormationRecord) (bool, error)
+	RecordBattleAdopted(ctx context.Context, work *pb.MatchFormationRecord, instance string, version uint32) error
+	Finish(ctx context.Context, work *pb.MatchFormationRecord, success bool) error
+}
+
+// globalDestroy 返回 true 表示原 operation 已确定不会在目标 Battle 上建房，调用方才可按发房前失败收尾。
+// 只是判定，不提交任何释放：释放与计数在 globalAbortPrepared。
+func globalDestroy(store formationDestroyAuthority, f *pb.MatchFormationRecord) bool {
 	check, stop := context.WithTimeout(context.Background(), 3*time.Second)
-	err := s.Authority.CheckWork(check, f)
+	intentPersisted, err := store.CreateIntentPersisted(check, f)
 	stop()
 	if err != nil {
 		return false
+	}
+	if !intentPersisted {
+		// 2026-10-22 修复（social-match-battle#0）：本代租约下没有 Create 原件，就证明原 operation 从未、
+		// 也不会再发出 Create（见 CreateIntentPersisted），目标 Battle 上不可能有这局，不必等它应答。
+		// 原先这里要求目标实例回 ABORTED：实例从注册中心消失、拨号或查询失败、同端点换了新 UUID
+		// （目标 UUID 不符时 Battle 直接空回包）都拿不到，state 2 票据就被永久卡住。
+		// 真正的释放仍是 globalAbortPrepared → Finish(false)，它在行锁内复核同一租约且仍无原件。
+		return true
 	}
 	conn, e := discovery.DialEndpoint(f.TargetEndpoint)
 	if e != nil {
@@ -424,9 +447,41 @@ func globalDestroy(s *svc.ServiceContext, f *pb.MatchFormationRecord) bool {
 		return false
 	}
 	if q.State == battlepb.BattleCreationState_BATTLE_CREATION_PRESENT {
-		_ = s.Authority.Finish(ctx, f, true)
+		if f.OutcomeProtocolVersion == 1 && q.GetTargetInstanceId() == f.TargetInstanceId {
+			if e = store.RecordBattleAdopted(ctx, f, q.TargetInstanceId, q.AdoptedOutcomeProtocolVersion); e == nil && q.AdoptedOutcomeProtocolVersion == 1 {
+				_ = store.Finish(ctx, f, true)
+			}
+		}
 	}
-	return q.State == battlepb.BattleCreationState_BATTLE_CREATION_ABORTED
+	return q.State == battlepb.BattleCreationState_BATTLE_CREATION_ABORTED && q.GetTargetInstanceId() == f.TargetInstanceId
+}
+
+// 薄协议适配与全局编排同层；唯一业务提交点仍为Authority原事务。
+func CommitBattleOutcome(ctx context.Context, s *svc.ServiceContext, in *pb.CommitBattleOutcomeRequest) (*pb.CommitBattleOutcomeResponse, error) {
+	if details, client := ctxkeys.GetSessionDetails(ctx); client && details != nil {
+		return nil, status.Error(codes.PermissionDenied, "客户端不能提交内部战斗终局")
+	}
+	if s == nil || s.Authority == nil || s.BattleOutcomeAuth == nil {
+		return nil, status.Error(codes.Unavailable, "战斗终局权威或独立签名未装配")
+	}
+	method := pb.MatchInternal_CommitBattleOutcome_FullMethodName
+	caller, err := s.BattleOutcomeAuth.Verify(ctx, method, in)
+	if err != nil || caller != "battle" {
+		return nil, status.Error(codes.PermissionDenied, "Battle原终局证明无效")
+	}
+	digest, err := serviceauth.Digest(in)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "终局原件无效")
+	}
+	decision, err := s.Authority.CommitBattleOutcome(ctx, in)
+	if err != nil {
+		return nil, status.Error(codes.Unavailable, "终局原提交尚未确认")
+	}
+	out := &pb.CommitBattleOutcomeResponse{Decision: decision, RequestDigest: digest}
+	if err = serviceauth.Sign(method+"/reply", out, "match", s.BattleOutcomeSecret, uint64(time.Now().UnixMilli())); err != nil {
+		return nil, status.Error(codes.Unavailable, "终局回执无法签名")
+	}
+	return out, nil
 }
 
 // 全球模式补签只读持久创建意图，Redis投影丢失不构成“战斗已结束”的证据。
@@ -480,20 +535,38 @@ func globalAbortPrepared(s *svc.ServiceContext, f *pb.MatchFormationRecord) {
 		return
 	}
 	f = latest
+	var prepared []preparedMember
+	for _, m := range f.Prepared {
+		prepared = append(prepared, preparedMember{playerId: m.PlayerId, sceneEndpoint: m.Endpoint})
+	}
+	if len(f.CreateRequest) != 0 {
+		// 已发房的runtime ABORTED也不能先释放原票；仅唯一SQL ABORT允许清原备战。
+		// UNKNOWN等原工作租约/固定deadline巡检收尾，COMPLETE仍等待个人APPLIED。
+		terminalCtx, terminalCancel := context.WithTimeout(context.Background(), 3*time.Second)
+		decision, err := s.Authority.RecoverExpiredOutcome(terminalCtx, f)
+		terminalCancel()
+		if err == nil && decision == pb.BattleOutcomeDecision_BATTLE_OUTCOME_DECISION_ABORT {
+			cancelPrepared(s, prepared, f.BattleId)
+		}
+		return
+	}
 	check, stop := context.WithTimeout(context.Background(), 3*time.Second)
 	e = s.Authority.CheckWork(check, f)
 	stop()
 	if e != nil {
 		return
 	}
-	var prepared []preparedMember
-	for _, m := range f.Prepared {
-		prepared = append(prepared, preparedMember{playerId: m.PlayerId, sceneEndpoint: m.Endpoint})
-	}
 	cancelPrepared(s, prepared, f.BattleId)
 	finishCtx, finishCancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer finishCancel()
+	// 走到这里的成局都没有 Create 原件（上面有原件的已经返回）。计数只在提交之后打（2026-10-22 评审补）：
+	// 原先在 globalDestroy 判定时就计 abort/no_create_intent，之后租约变化、CheckWork 或 Finish 失败都没有释放，
+	// 值班会把「尝试」读成「已释放」。
 	if e := s.Authority.Finish(finishCtx, f, false); e != nil {
+		metrics.ObserveGlobalFlow("abort", "no_create_intent_unconfirmed")
 		logx.Error("全球匹配中止提交未确认")
+		return
 	}
+	metrics.ObserveGlobalFlow("abort", "no_create_intent_released")
+	logx.Infof("global formation released before create: no persisted create intent battle_id=%d", f.BattleId)
 }

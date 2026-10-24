@@ -838,8 +838,9 @@ if ($snapshots.Count -eq 0) {
 #     rpc_client_requests_code_total{code,method}(code 是 gRPC 数字码,0 = OK)。每个方法四列:
 #       _n    _count(累计调用次数);_avg 累计均值;_p99 由桶线性插值(桶粗,只看量级;落在 +Inf 桶打 '>最高上界')
 #       _err  code≠0 的次数(含 NotFound 等业务码,不全是故障)
-#     这是客户端侧耗时,含网络、熔断与选点,不能与 D1 / D2 的服务端耗时直接相减。只有 login.yaml 带 Prometheus 段
-#     时 go-zero 才出这些序列(K8s 的 login ConfigMap 目前没有),缺序列打印 n/a。方法与列名见 $loginRpcMethods。
+#     这是客户端侧耗时,含网络、熔断与选点,不能与 D1 / D2 的服务端耗时直接相减。只有 login 配置带 Prometheus 段
+#     时 go-zero 才出这些序列(本机 login.yaml 有;K8s 由 k8s_deploy.ps1 的 login ConfigMap 写入,2026-10-23 起),
+#     缺序列打印 n/a。方法与列名见 $loginRpcMethods。
 $l1Fmt = '  {0,-30}'
 $l1Header = @('snapshot')
 $l1Rule = @('--------')
@@ -958,6 +959,103 @@ if ($smSnapshots.Count -gt 0) {
         $line = "  {0,-30} {1,-9} {2,-9} {3,-8} {4,-8} {5,-8} {6,-8} {7}" -f `
             $name, $cells[0], $cells[1], $cells[2], $cells[3], $cells[4], $cells[5], $cells[6]
         Write-Host $line
+    }
+}
+
+# S1:scene_manager 的两次外部查询。左半是 home_zone_lookup_total{outcome}(没有预建,族内存在规则见 Get-FamilyCountsOrNull);
+#     右半是 enter_scene_stage_seconds 的 $smLookupStages 两个 stage,跨 zone_id 求和:hz = data_service GetPlayerHomeZone
+#     的单次往返,rl = LookupAccountRole(全局 TiDB 点查;zone_id 恒为 0,样本含 LeaveScene)。旧版 sm 没有这两个 stage → n/a。
+$s1Fmt = "  {0,-30} | {1,-7} {2,-9} {3,-9} {4,-6} | {5,-7} {6,-9} {7,-9} | {8,-7} {9,-9} {10}"
+Write-Host ""
+Write-Host "=== S1 SceneManager home_zone / role_lookup (home_zone_lookup_total, enter_scene_stage_seconds) ===" -ForegroundColor Yellow
+Write-Host ""
+if ($smSnapshots.Count -eq 0) {
+    Write-NoData "没有 *_sm 快照"
+} else {
+    Write-Host ($s1Fmt -f @('snapshot', 'mapped', 'unmapped', 'unconfig', 'error', 'hz_n', 'hz_avg', 'hz_p99', 'rl_n', 'rl_avg', 'rl_p99'))
+    Write-Host ($s1Fmt -f @('--------', '------', '--------', '--------', '-----', '----', '------', '------', '----', '------', '------'))
+    foreach ($snap in $smSnapshots) {
+        $m = Read-PromSnapshot $snap.FullName
+        $counts = Get-FamilyCountsOrNull $m 'scene_manager_home_zone_lookup_total' 'outcome' $homeZoneLookupOutcomes
+        $cells = @($snap.BaseName) + @($homeZoneLookupOutcomes | ForEach-Object { Format-CountCell $counts[$_] })
+        foreach ($st in $smLookupStages) {
+            $cells += Get-HistogramCells (Get-HistogramOrNull $m 'scene_manager_enter_scene_stage_seconds' @{ stage = $st }) 1.0 1
+        }
+        Write-Host ($s1Fmt -f $cells)
+    }
+}
+
+# D1:data_service 归属读(*_ds,:9260)。h_* = GetPlayerHomeZone(进场 / 换图,带合服围栏),b_* = BatchGetPlayerHomeZone
+#     (登录角色列表)。ok / nf / err 是 data_service_home_zone_read_seconds 按 result 的次数;avg / p99 跨 result 合并,
+#     是服务端 handler 耗时,与 L1 的 login 客户端耗时之差约等于网络与排队。ids/b = home_zone_batch_ids 的均值(每批几个角色)。
+#     rr_* = data_service_route_read_total 在 path ∈ {home_fence, batch} 上按 result 求和(只在读方门禁打开时预建):
+#     rr_cache = 副本命中,rr_sql = 回源库(sql + not_found_sql),rr_sqlerr = 回源失败。门禁关着或旧版 data_service 打 n/a。
+$d1Fmt = "  {0,-30} | {1,-6} {2,-5} {3,-6} {4,-8} {5,-8} | {6,-6} {7,-5} {8,-6} {9,-8} {10,-8} | {11,-5} | {12,-8} {13,-7} {14}"
+Write-Host ""
+Write-Host "=== D1 data_service home-zone reads (data_service_home_zone_read_seconds / _batch_ids / _route_read_total, :9260) ===" -ForegroundColor Yellow
+Write-Host ""
+if ($dsSnapshots.Count -eq 0) {
+    Write-NoData "没有 *_ds 快照(stress_snap.ps1 缺省抓 data_service :9260)"
+} else {
+    Write-Host ($d1Fmt -f @('snapshot', 'h_ok', 'h_nf', 'h_err', 'h_avg', 'h_p99', 'b_ok', 'b_nf', 'b_err', 'b_avg', 'b_p99', 'ids/b', 'rr_cache', 'rr_sql', 'rr_sqlerr'))
+    Write-Host ($d1Fmt -f @('--------', '----', '----', '-----', '-----', '-----', '----', '----', '-----', '-----', '-----', '-----', '--------', '------', '---------'))
+    foreach ($snap in $dsSnapshots) {
+        $m = Read-PromSnapshot $snap.FullName
+        $cells = @($snap.BaseName)
+        foreach ($rpc in $homeZoneReadRpcs) {
+            foreach ($result in $homeZoneReadResults) {
+                $cells += Format-CountCell (Get-SeriesSumOrNull $m 'data_service_home_zone_read_seconds_count' @{ rpc = $rpc; result = $result })
+            }
+            $hc = Get-HistogramCells (Get-HistogramOrNull $m 'data_service_home_zone_read_seconds' @{ rpc = $rpc }) 1.0 1
+            $cells += @($hc[1], $hc[2])
+        }
+        $ids = Get-HistogramOrNull $m 'data_service_home_zone_batch_ids'
+        $cells += $(if ($null -eq $ids) { 'n/a' } elseif ($ids.Count -le 0) { '-' } else { Format-DecimalCell ($ids.Sum / $ids.Count) 1 })
+        # route_read_total 不是每个 path × result 组合都存在(batch 没有逐 id 的缺席结论,没有 not_found_sql),
+        # 所以按「族存在规则」取:整族没有序列 → n/a;有 → 缺的组合按 0 计。
+        $rrSeen = $null -ne (Get-SeriesSumOrNull $m 'data_service_route_read_total')
+        $rr = @{}
+        foreach ($res in @('cache', 'sql', 'not_found_sql', 'sql_error')) {
+            if (-not $rrSeen) { $rr[$res] = $null; continue }
+            $sum = 0.0
+            foreach ($path in @('home_fence', 'batch')) {
+                $v = Get-SeriesSumOrNull $m 'data_service_route_read_total' @{ path = $path; result = $res }
+                if ($null -ne $v) { $sum += $v }
+            }
+            $rr[$res] = $sum
+        }
+        $cells += @(
+            (Format-CountCell $rr['cache']),
+            (Format-CountCell (Get-SumOrNull @($rr['sql'], $rr['not_found_sql']))),
+            (Format-CountCell $rr['sql_error']))
+        Write-Host ($d1Fmt -f $cells)
+    }
+}
+
+# D2:data_service 账号目录 RPC(data_service_account_directory_rpc_seconds{rpc,result},每个快照 × 每个 rpc 一行)。
+#     n / avg / p99 跨 result 合并;nf / rej / err 是 $accountDirectoryResults 里三种非 OK 结局的次数(rejected = 明确拒绝,
+#     error = 依赖故障)。read 是每次 Login 的悲观事务,lookup 是 EnterGame / scene_manager 的点查,二者是登录链路落到
+#     全局 TiDB 的主要负载;看 err 与 p99 判断目录池(AccountDirectory.MaxOpenConn)是否开始排队。
+$d2NonOk = @($accountDirectoryResults | Where-Object { $_ -cne 'ok' })
+$d2Fmt = "  {0,-30} | {1,-7} | {2,-7} {3,-9} {4,-9} | {5,-5} {6,-5} {7}"
+Write-Host ""
+Write-Host "=== D2 data_service account directory RPC (data_service_account_directory_rpc_seconds, :9260) ===" -ForegroundColor Yellow
+Write-Host ""
+if ($dsSnapshots.Count -eq 0) {
+    Write-NoData "没有 *_ds 快照"
+} else {
+    Write-Host ($d2Fmt -f @('snapshot', 'rpc', 'n', 'avg', 'p99', 'nf', 'rej', 'err'))
+    Write-Host ($d2Fmt -f @('--------', '---', '-', '---', '---', '--', '---', '---'))
+    foreach ($snap in $dsSnapshots) {
+        $m = Read-PromSnapshot $snap.FullName
+        foreach ($rpc in $accountDirectoryRpcs) {
+            $cells = @($snap.BaseName, $rpc)
+            $cells += Get-HistogramCells (Get-HistogramOrNull $m 'data_service_account_directory_rpc_seconds' @{ rpc = $rpc }) 1.0 1
+            foreach ($result in $d2NonOk) {
+                $cells += Format-CountCell (Get-SeriesSumOrNull $m 'data_service_account_directory_rpc_seconds_count' @{ rpc = $rpc; result = $result })
+            }
+            Write-Host ($d2Fmt -f $cells)
+        }
     }
 }
 
@@ -1167,48 +1265,8 @@ if ($dbSnapshots.Count -gt 0) {
 # 缺序列一律打印 n/a,不折成 0:Round 20 之前的 db 没有这些序列,显示成 0 会被读成「测过了,是 0」。
 # histogram 的 sum / count 都有序列但 count=0 时打印 "-"(同 Format-Avg)。
 # 键按 client_golang 输出时的 label 字母序写(op < stage < step;action < mode),原因见 2c 段注释。
-
-# 一条序列的精确匹配正则;$Labels 为空表示无 label 的序列。
-function Get-SeriesPattern {
-    param([string]$Name, [string]$Labels = "")
-    if ($Labels) { return '^' + [regex]::Escape($Name) + '\{' + [regex]::Escape($Labels) + '\}$' }
-    return '^' + [regex]::Escape($Name) + '$'
-}
-
-# histogram 均值(秒)。sum / count 任一序列缺失返回 $null(→ n/a);count 为 0 返回 NaN(→ "-")。
-function Get-HistogramAvgOrNull {
-    param([hashtable]$M, [string]$Name, [string]$Labels = "")
-    $sumV = Get-MetricSumOrNull $M (Get-SeriesPattern "${Name}_sum" $Labels)
-    $cntV = Get-MetricSumOrNull $M (Get-SeriesPattern "${Name}_count" $Labels)
-    if ($null -eq $sumV -or $null -eq $cntV) { return $null }
-    if ($cntV -le 0) { return [double]::NaN }
-    return $sumV / $cntV
-}
-
-# 秒 → 毫秒文本;≥10s 改用秒(同 Format-Avg)。
-function Format-AvgCell {
-    param($AvgSeconds, [int]$Decimals = 1)
-    if ($null -eq $AvgSeconds) { return "n/a" }
-    if ([double]::IsNaN([double]$AvgSeconds)) { return "-" }
-    $ms = [double]$AvgSeconds * 1000.0
-    if ($ms -ge 10000) { return "{0:N1}s" -f ($ms / 1000.0) }
-    return "{0:N$Decimals}ms" -f $ms
-}
-
-# 计数文本;$null(缺序列)→ n/a。
-function Format-CountCell {
-    param($Value)
-    if ($null -eq $Value) { return "n/a" }
-    return "{0:N0}" -f [double]$Value
-}
-
-# 百分比文本;分子或分母缺序列 → n/a,分母为 0 → "-"(同 Format-Avg 的「没有样本」)。
-function Format-RatioCell {
-    param($Numerator, $Denominator)
-    if ($null -eq $Numerator -or $null -eq $Denominator) { return "n/a" }
-    if ([double]$Denominator -le 0) { return "-" }
-    return "{0:N1}%" -f (100.0 * [double]$Numerator / [double]$Denominator)
-}
+# 本段用到的 Get-SeriesPattern / Get-HistogramAvgOrNull / Format-AvgCell / Format-CountCell / Format-RatioCell
+# 原先定义在这里,2026-10-23 搬到文件前部 helpers 区(函数不提升,login 段之后的新表也要用)。
 
 if ($dbSnapshots.Count -gt 0) {
 
@@ -1381,6 +1439,217 @@ if ($dbSnapshots.Count -gt 0) {
 
         $rowArgs = @($snap.BaseName) + @($notifyCells) + @((Format-RatioCell $instNoReceiver $instTotal), (Format-RatioCell $legacyTotal $allTotal))
         Write-Host ($ntFmt -f $rowArgs)
+    }
+}
+
+# ----- 2h. Redis INFO 快照(R1 / R2)与映射读路径总览(M1),2026-10-23 -----------
+#
+# 放在 Kafka 段之前:Kafka 段在 docker 失败时会 return。
+
+# 按 target 分组(组内已按分钟数数值排序),并找出「同一时刻 run_id 相同」的 target:同一个实例被抓了两份
+# (G4a 之前 mapping 与核心就是同一台),后出现的只标 same_as=<先出现的 target>,不重复出数。
+$redisByTarget = [ordered]@{}
+$redisSameAs = @{}
+$redisFirstByTagRun = @{}
+foreach ($s in $redisSnapshots) {
+    if (-not $redisByTarget.Contains($s.Name)) { $redisByTarget[$s.Name] = [System.Collections.Generic.List[object]]::new() }
+    $redisByTarget[$s.Name].Add($s)
+    $rid = $s.Fields['run_id']
+    if (-not $rid) { continue }
+    $k = "$($s.Tag)|$rid"
+    if ($redisFirstByTagRun.ContainsKey($k)) { $redisSameAs["$($s.Tag)|$($s.Name)"] = $redisFirstByTagRun[$k] }
+    else { $redisFirstByTagRun[$k] = $s.Name }
+}
+
+# R1 一行的 16 格;$Win 来自 Get-RedisWindow。重启窗口只出瞬时值,增量列打 "-"。
+function Get-RedisLoadCells {
+    param([string]$Target, [string]$Window, $Win, [string]$Note)
+    $clients = Format-CountCell $Win.Clients
+    $usedMB = Format-DecimalCell $Win.UsedMB 1
+    $memPct = Format-DecimalCell $Win.MemPct 1 '%'
+    if ($Win.Restart) {
+        $n = @($Note, 'restart') | Where-Object { $_ }
+        return @($Target, $Window, '-', '-', '-', '-', '-', '-', $clients, $usedMB, $memPct, '-', '-', '-', '-', ($n -join ' '))
+    }
+    return @($Target, $Window,
+        (Format-DecimalCell $Win.Secs 0), (Format-DecimalCell $Win.Ops 0), (Format-DecimalCell $Win.Cpu 1 '%'), (Format-DecimalCell $Win.Main 1 '%'),
+        (Format-DecimalCell $Win.InKBs 1), (Format-DecimalCell $Win.OutKBs 1),
+        $clients, $usedMB, $memPct,
+        (Format-CountCell $Win.RejConn), (Format-CountCell $Win.ErrRep), (Format-CountCell $Win.Oom), (Format-CountCell $Win.AofDfs),
+        $Note)
+}
+
+function Get-RedisSameAsCells {
+    param([string]$Target, [string]$Window, [string]$SameAs, [int]$Width)
+    return @($Target, $Window) + @(1..($Width - 3) | ForEach-Object { '' }) + @("same_as=$SameAs")
+}
+
+# R1:每个 target 相邻两份一行,再加一行首→末整体窗口(overall);只有一份时打一行「since start」。口径见 Get-RedisWindow:
+#     ops/s、cpu%、main%(单线程饱和判据,接近 100% 就是瓶颈)、网络 KB/s 按窗口求差;clients / used_MB / mem% 取窗口末瞬时值。
+$r1Fmt = "  {0,-10} | {1,-11} | {2,-6} {3,-9} {4,-7} {5,-7} {6,-8} {7,-8} | {8,-7} {9,-8} {10,-6} | {11,-8} {12,-7} {13,-4} {14,-7} | {15}"
+Write-Host ""
+Write-Host "=== R1 Redis instance load (INFO snapshots t<N>m_redis_<name>.txt) ===" -ForegroundColor Yellow
+Write-Host ""
+if ($redisSnapshots.Count -eq 0) {
+    Write-NoData "没有 t<N>m_redis_<name>.txt(stress_snap.ps1 -RedisTargets)"
+} else {
+    Write-Host ($r1Fmt -f @('target', 'window', 'secs', 'ops/s', 'cpu%', 'main%', 'in_KB/s', 'out_KB/s', 'clients', 'used_MB', 'mem%', 'rej_conn', 'err_rep', 'oom', 'aof_dfs', 'note'))
+    Write-Host ($r1Fmt -f @('------', '------', '----', '-----', '----', '-----', '-------', '--------', '-------', '-------', '----', '--------', '-------', '---', '-------', '----'))
+    foreach ($name in $redisByTarget.Keys) {
+        $list = $redisByTarget[$name]
+        if ($list.Count -eq 1) {
+            $s = $list[0]
+            $same = $redisSameAs["$($s.Tag)|$name"]
+            if ($same) { Write-Host ($r1Fmt -f (Get-RedisSameAsCells $name "t$($s.Tag)m" $same 16)); continue }
+            Write-Host ($r1Fmt -f (Get-RedisLoadCells $name "t$($s.Tag)m" (Get-RedisWindow $null $s) '(single snapshot, since start)'))
+            continue
+        }
+        for ($i = 1; $i -lt $list.Count; $i++) {
+            $p = $list[$i - 1]
+            $c = $list[$i]
+            $window = "t$($p.Tag)m-t$($c.Tag)m"
+            $same = $redisSameAs["$($c.Tag)|$name"]
+            if ($same) { Write-Host ($r1Fmt -f (Get-RedisSameAsCells $name $window $same 16)); continue }
+            Write-Host ($r1Fmt -f (Get-RedisLoadCells $name $window (Get-RedisWindow $p $c) ''))
+        }
+        if ($list.Count -gt 2) {
+            $p = $list[0]
+            $c = $list[$list.Count - 1]
+            $window = "t$($p.Tag)m-t$($c.Tag)m"
+            $same = $redisSameAs["$($c.Tag)|$name"]
+            if ($same) { Write-Host ($r1Fmt -f (Get-RedisSameAsCells $name $window $same 16)); continue }
+            Write-Host ($r1Fmt -f (Get-RedisLoadCells $name $window (Get-RedisWindow $p $c) 'overall'))
+        }
+    }
+}
+
+# cmdstat 的 k=v 字段取值,缺失记 0(该命令在窗口起点之前还没被调用过)。
+function Get-RedisCmdField {
+    param($Snap, [string]$Cmd, [string]$Field)
+    if ($null -eq $Snap -or -not $Snap.Cmd.ContainsKey($Cmd)) { return 0.0 }
+    $kv = $Snap.Cmd[$Cmd]
+    if ($kv.ContainsKey($Field)) { return [double]$kv[$Field] }
+    return 0.0
+}
+
+# R2:Redis 热点命令。每个 target 取首→末整体窗口(只有一份时自实例启动):Δcalls 前 8 名,外加 $redisAlwaysCommands 里
+#     出现过的。calls/s、usec/call 是窗口内 Redis 自身执行耗时(不含网络与排队);p50 / p99 / p99.9 取最后一份的
+#     latency_percentiles_usec(自实例启动或上次 CONFIG RESETSTAT 的累计口径,单位 µs);failed / rejected 是窗口内
+#     Δfailed_calls / Δrejected_calls。窗口跨了重启时整组打 restart,不出数。
+$r2Fmt = "  {0,-10} | {1,-11} | {2,-18} | {3,-9} {4,-9} | {5,-8} {6,-8} {7,-8} | {8,-7} {9}"
+Write-Host ""
+Write-Host "=== R2 Redis top commands (commandstats delta, latencystats cumulative) ===" -ForegroundColor Yellow
+Write-Host ""
+if ($redisSnapshots.Count -eq 0) {
+    Write-NoData "没有 t<N>m_redis_<name>.txt(stress_snap.ps1 -RedisTargets)"
+} else {
+    Write-Host ($r2Fmt -f @('target', 'window', 'cmd', 'calls/s', 'usec/call', 'p50', 'p99', 'p99.9', 'failed', 'rejected'))
+    Write-Host ($r2Fmt -f @('------', '------', '---', '-------', '---------', '---', '---', '-----', '------', '--------'))
+    foreach ($name in $redisByTarget.Keys) {
+        $list = $redisByTarget[$name]
+        $last = $list[$list.Count - 1]
+        $first = if ($list.Count -gt 1) { $list[0] } else { $null }
+        $window = if ($null -eq $first) { "t$($last.Tag)m" } else { "t$($first.Tag)m-t$($last.Tag)m" }
+        $same = $redisSameAs["$($last.Tag)|$name"]
+        if ($same) { Write-Host ($r2Fmt -f (Get-RedisSameAsCells $name $window $same 10)); continue }
+        $win = Get-RedisWindow $first $last
+        if ($win.Restart -or $null -eq $win.Secs) {
+            Write-Host ($r2Fmt -f @($name, $window, '-', '-', '-', '-', '-', '-', '-', 'restart'))
+            continue
+        }
+        if (-not $last.Sections.Contains('Commandstats')) {
+            Write-Host ($r2Fmt -f @($name, $window, 'n/a', 'n/a', 'n/a', 'n/a', 'n/a', 'n/a', 'n/a', '(commandstats not captured)'))
+            continue
+        }
+        $rows = foreach ($cmd in $last.Cmd.Keys) {
+            [pscustomobject]@{
+                Cmd      = $cmd
+                Calls    = (Get-RedisCmdField $last $cmd 'calls') - (Get-RedisCmdField $first $cmd 'calls')
+                Usec     = (Get-RedisCmdField $last $cmd 'usec') - (Get-RedisCmdField $first $cmd 'usec')
+                Failed   = (Get-RedisCmdField $last $cmd 'failed_calls') - (Get-RedisCmdField $first $cmd 'failed_calls')
+                Rejected = (Get-RedisCmdField $last $cmd 'rejected_calls') - (Get-RedisCmdField $first $cmd 'rejected_calls')
+            }
+        }
+        $top = @($rows | Where-Object { $_.Calls -gt 0 } | Sort-Object -Property @{ Expression = 'Calls'; Descending = $true }, @{ Expression = 'Cmd'; Descending = $false } | Select-Object -First 8)
+        $topNames = @($top | ForEach-Object { $_.Cmd })
+        $extra = @($rows | Where-Object { $redisAlwaysCommands -ccontains $_.Cmd -and $topNames -cnotcontains $_.Cmd } | Sort-Object Cmd)
+        if (($top.Count + $extra.Count) -eq 0) {
+            Write-Host ($r2Fmt -f @($name, $window, '-', '-', '-', '-', '-', '-', '-', '(no commands in window)'))
+            continue
+        }
+        foreach ($r in @($top) + @($extra)) {
+            $lat = if ($last.Lat.ContainsKey($r.Cmd)) { $last.Lat[$r.Cmd] } else { @{} }
+            $pct = foreach ($q in @('p50', 'p99', 'p99.9')) {
+                if ($lat.ContainsKey($q)) { Format-DecimalCell $lat[$q] 1 } else { 'n/a' }
+            }
+            $usecPerCall = if ($r.Calls -gt 0) { Format-DecimalCell ($r.Usec / $r.Calls) 2 } else { '-' }
+            Write-Host ($r2Fmt -f @($name, $window, $r.Cmd, (Format-DecimalCell ($r.Calls / $win.Secs) 1), $usecPerCall,
+                $pct[0], $pct[1], $pct[2], (Format-CountCell $r.Failed), (Format-CountCell $r.Rejected)))
+        }
+    }
+}
+
+# M1:映射读路径总览,按 t<N>m 把各端关键均值连成一行(prom 是进程启动以来的累计均值;Redis 取该时刻与同一 target
+#     上一份快照之间的窗口,只有一份时自实例启动)。缺哪份快照哪列打 n/a。
+#     l_bgz / l_rad = login 客户端 BatchGetPlayerHomeZone / ReadAccountDirectory;ds_batch / ds_home / ds_dir = data_service
+#     服务端批量归属读 / 单查 / ReadAccountDirectory;sm_hz / sm_rl = scene_manager 两个查询 stage;db_plc_lkp / db_plc_rck =
+#     go/db 写任务选库 / 复核(db_task_redis_step_seconds{op="write"});rd = Redis target,mapping 优先,没有就 core,
+#     再没有就第一个。G4a 之前 mapping 与核心是同一个实例,rd 的数是两者合计。L-18 第 5 步「是不是瓶颈」先看这一张。
+$m1ByTag = @{}
+foreach ($pair in @(@('login', $snapshots), @('sm', $smSnapshots), @('ds', $dsSnapshots), @('db', $dbSnapshots))) {
+    foreach ($f in $pair[1]) {
+        if ($f.BaseName -match '^t(\d+)m(_|$)') {
+            $t = [int]$Matches[1]
+            if (-not $m1ByTag.ContainsKey($t)) { $m1ByTag[$t] = @{} }
+            $m1ByTag[$t][$pair[0]] = $f
+        }
+    }
+}
+$m1Redis = if ($redisByTarget.Contains('mapping')) { 'mapping' } elseif ($redisByTarget.Contains('core')) { 'core' }
+           elseif ($redisByTarget.Count -gt 0) { @($redisByTarget.Keys)[0] } else { $null }
+$m1RedisByTag = @{}
+if ($null -ne $m1Redis) {
+    $list = $redisByTarget[$m1Redis]
+    for ($i = 0; $i -lt $list.Count; $i++) {
+        $prev = if ($i -gt 0) { $list[$i - 1] } else { $null }
+        $m1RedisByTag[$list[$i].Tag] = Get-RedisWindow $prev $list[$i]
+        if (-not $m1ByTag.ContainsKey($list[$i].Tag)) { $m1ByTag[$list[$i].Tag] = @{} }
+    }
+}
+$m1Bgz = $loginRpcMethods[[array]::IndexOf($loginRpcColumns, 'bgz')]
+$m1Rad = $loginRpcMethods[[array]::IndexOf($loginRpcColumns, 'rad')]
+$m1Fmt = "  {0,-6} | {1,-8} {2,-8} | {3,-8} {4,-8} {5,-8} | {6,-8} {7,-8} | {8,-10} {9,-10} | {10,-8} {11}"
+Write-Host ""
+Write-Host "=== M1 Mapping read path at a glance (avg per tag; rd = Redis $(if ($m1Redis) { $m1Redis } else { 'n/a' })) ===" -ForegroundColor Yellow
+Write-Host ""
+if ($m1ByTag.Count -eq 0) {
+    Write-NoData "没有任何 t<N>m_* 快照"
+} else {
+    Write-Host ($m1Fmt -f @('tag', 'l_bgz', 'l_rad', 'ds_batch', 'ds_home', 'ds_dir', 'sm_hz', 'sm_rl', 'db_plc_lkp', 'db_plc_rck', 'rd_ops/s', 'rd_main%'))
+    Write-Host ($m1Fmt -f @('---', '-----', '-----', '--------', '-------', '------', '-----', '-----', '----------', '----------', '--------', '--------'))
+    foreach ($t in @($m1ByTag.Keys | Sort-Object)) {
+        $row = $m1ByTag[$t]
+        $m1MOf = { param($kind) if ($row.ContainsKey($kind)) { Read-PromSnapshot $row[$kind].FullName } else { $null } }
+        $ml = & $m1MOf 'login'
+        $md = & $m1MOf 'ds'
+        $ms = & $m1MOf 'sm'
+        $mb = & $m1MOf 'db'
+        $m1Avg = { param($m, $name, $match, $scale) if ($null -eq $m) { 'n/a' } else { Get-HistogramAvgCell (Get-HistogramOrNull $m $name $match) $scale 1 } }
+        $cells = @("t${t}m",
+            (& $m1Avg $ml 'rpc_client_requests_duration_ms' @{ method = $m1Bgz } 0.001),
+            (& $m1Avg $ml 'rpc_client_requests_duration_ms' @{ method = $m1Rad } 0.001),
+            (& $m1Avg $md 'data_service_home_zone_read_seconds' @{ rpc = 'batch' } 1.0),
+            (& $m1Avg $md 'data_service_home_zone_read_seconds' @{ rpc = 'home' } 1.0),
+            (& $m1Avg $md 'data_service_account_directory_rpc_seconds' @{ rpc = 'read' } 1.0),
+            (& $m1Avg $ms 'scene_manager_enter_scene_stage_seconds' @{ stage = 'home_zone' } 1.0),
+            (& $m1Avg $ms 'scene_manager_enter_scene_stage_seconds' @{ stage = 'role_lookup' } 1.0),
+            (& $m1Avg $mb 'db_task_redis_step_seconds' @{ op = 'write'; step = 'placement_lookup' } 1.0),
+            (& $m1Avg $mb 'db_task_redis_step_seconds' @{ op = 'write'; step = 'placement_recheck' } 1.0))
+        $rw = $m1RedisByTag[$t]
+        if ($null -eq $rw) { $cells += @('n/a', 'n/a') }
+        elseif ($rw.Restart) { $cells += @('restart', 'restart') }
+        else { $cells += @((Format-DecimalCell $rw.Ops 0), (Format-DecimalCell $rw.Main 1 '%')) }
+        Write-Host ($m1Fmt -f $cells)
     }
 }
 

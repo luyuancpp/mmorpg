@@ -56,6 +56,7 @@ class LocalNodeInfoResetListener : public ::testing::EmptyTestEventListener
             identity.set_player_id(player);
             identity.set_generation(kFixtureAdmissionGeneration);
             identity.set_owner_revision(kFixtureOwnerRevision);
+            identity.set_scene_instance_id("explicit-test-scene");
         }
         admission_ = std::make_unique<RoleAdmissionSystem::ScopedDependencies>(std::move(dependencies));
     }
@@ -1206,8 +1207,26 @@ bool MarkPersisted(entt::entity player)
     {
         return false;
     }
-    tlsEcs.actorRegistry.emplace_or_replace<PlayerLastPersistedSnapshotComp>(player).Replace(saved);
-    return true;
+    auto& snapshot = tlsEcs.actorRegistry.emplace_or_replace<PlayerLastPersistedSnapshotComp>(player);
+    const auto* owner = tlsEcs.actorRegistry.try_get<PlayerOwnerEpochComp>(player);
+    if (owner == nullptr || owner->epoch == 0)
+    {
+        snapshot.Replace(saved); // 旧无围栏宿主保留原兼容合同。
+        return true;
+    }
+    // 严格宿主显式模拟原不可变Redis提交：不能用仅Replace的业务字节冒同E/q资格，更不伪SQL ACK。
+    const auto identity = RoleAdmissionSystem::ConfirmedIdentity(kExitPlayerId);
+    if (!identity || identity->scene_instance_id().empty()) return false;
+    auto& admission = tlsEcs.actorRegistry.get_or_emplace<PlayerRoleAdmissionComp>(player,
+        identity->generation(), identity->owner_revision());
+    if (admission.generation != identity->generation() || admission.ownerRevision != identity->owner_revision()) return false;
+    saved.set_last_save_seq(1);
+    const auto source = std::make_shared<const PlayerAllData>(saved);
+    const auto committed = RoleAdmissionSystem::CaptureSnapshotCommit(player, source, owner->epoch, 1);
+    if (!committed) return false;
+    committed(); // 与正式Redis成功hook相同，先钩子，再同一个payload的saved回调。
+    snapshot.Replace(*source);
+    return snapshot.committed_owner_epoch == owner->epoch && snapshot.committed_save_seq == 1;
 }
 } // namespace
 
@@ -1414,14 +1433,18 @@ TEST(ExitPersistEcs, SchemaRejectOnExitingPlayerDiscardsWithoutReleaseMark)
     EXPECT_EQ(persist_schema_stats::Read().regressionRejected, schemaBefore.regressionRejected + 1);
 }
 
-// 交接在等这次存盘落地(标记未发,requestedAtMs = 0):解冻、摘交接意图,玩家留在本节点。
-TEST(ExitPersistEcs, SchemaRejectDuringHandoffBeforeMarkAbortsHandoff)
+// 即使标记未发，旧登记/SET也可能仍在网络中；必须确认撤销原资格才解冻，断连不能猜已取消。
+TEST(ExitPersistEcs, SchemaRejectBeforeMarkWaitsForOriginalQualificationRevocation)
 {
     ScopedPersistedPlayerCleanup cleanup;
     const auto player = MakeOnlinePlayer(kSessionAtExit);
+    auto& holder = tlsEcs.actorRegistry.emplace<PlayerOwnerEpochComp>(player);
+    holder.epoch = 7;
+    holder.handoffFence = "7|explicit-test-scene|1|" + std::string(32, 'a') + "|H|" + std::string(32, 'b');
     ASSERT_TRUE(MarkPersisted(player));
     const auto travelBefore = travel_handoff_stats::Read();
     auto& travel = tlsEcs.actorRegistry.emplace<PlayerTravelHandoffComp>(player);
+    travel.holderFence = holder.handoffFence; // 本次冻结时缓存的原资格，不从回调fresh补取。
     travel.requestedAtMs = 0;
     travel.targetZoneId = 8;
     tlsEcs.actorRegistry.emplace<PlayerFrozenComp>(player);
@@ -1429,11 +1452,23 @@ TEST(ExitPersistEcs, SchemaRejectDuringHandoffBeforeMarkAbortsHandoff)
     PlayerLifecycleSystem::HandlePlayerSaveSchemaRejected(kExitPlayerId, "player-save-test", "6");
 
     ASSERT_TRUE(tlsEcs.actorRegistry.valid(player));
-    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<PlayerTravelHandoffComp>(player));
-    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<PlayerFrozenComp>(player)) << "SET 还没发,解冻安全";
+    ASSERT_TRUE(tlsEcs.actorRegistry.any_of<PlayerTravelHandoffComp>(player));
+    EXPECT_TRUE(tlsEcs.actorRegistry.any_of<PlayerFrozenComp>(player)) << "原资格撤销未知，不能因SET尚未发送解冻";
     EXPECT_EQ(tlsEcs.GetPlayer(kExitPlayerId), player);
     EXPECT_EQ(SessionMap().count(kSessionAtExit), 1u);
-    EXPECT_EQ(travel_handoff_stats::Read().aborted, travelBefore.aborted + 1);
+    EXPECT_EQ(travel_handoff_stats::Read().aborted, travelBefore.aborted);
+    const auto& pending = tlsEcs.actorRegistry.get<PlayerTravelHandoffComp>(player);
+    ASSERT_FALSE(pending.cancelFence.empty());
+    const auto originalCancel = pending.cancelFence;
+    const auto candidate = handoff_sql_barrier::ParseFence(originalCancel);
+    ASSERT_TRUE(candidate.has_value());
+    EXPECT_EQ(candidate->state, handoff_sql_barrier::FenceState::kHeld);
+    EXPECT_EQ(pending.holderFence, holder.handoffFence);
+    EXPECT_NE(originalCancel, holder.handoffFence);
+    PlayerLifecycleSystem::HandlePlayerSaveSchemaRejected(kExitPlayerId, "player-save-test", "6");
+    EXPECT_EQ(tlsEcs.actorRegistry.get<PlayerTravelHandoffComp>(player).cancelFence, originalCancel)
+        << "撤销未知重试固定原候选，不换nonce、不借新资格";
+    EXPECT_TRUE(tlsEcs.actorRegistry.any_of<PlayerFrozenComp>(player));
 }
 
 // 在线:保留实体与会话,本次不落盘;不能按"已废黜"销毁(那是 owner CAS 拒绝的语义)。
@@ -1707,6 +1742,9 @@ TEST(ExitReleaseMarkWrite, ReplyClassification)
     using R = erm::MarkWriteResult;
     EXPECT_EQ(erm::ClassifyMarkWriteReply(erm::ReplyShape::kInteger, 1), R::kWritten);
     EXPECT_EQ(erm::ClassifyMarkWriteReply(erm::ReplyShape::kInteger, 0), R::kEpochMoved);
+    EXPECT_EQ(erm::ClassifyMarkWriteReply(erm::ReplyShape::kInteger, -2), R::kSuperseded)
+        << "原资格已被轮换(handoff_fence),与 owner_epoch 已推进分开计";
+    EXPECT_EQ(erm::ClassifyMarkWriteReply(erm::ReplyShape::kInteger, -1), R::kFailed);
     EXPECT_EQ(erm::ClassifyMarkWriteReply(erm::ReplyShape::kInteger, 2), R::kFailed);
     EXPECT_EQ(erm::ClassifyMarkWriteReply(erm::ReplyShape::kNone, 1), R::kFailed) << "空应答:结果未知,计失败";
     EXPECT_EQ(erm::ClassifyMarkWriteReply(erm::ReplyShape::kError, 0), R::kFailed);
@@ -1717,9 +1755,24 @@ TEST(ExitReleaseMarkWrite, LuaChecksOwnerEpochBeforeSet)
 {
     const std::string lua = erm::kLuaWriteIfOwnerEpoch;
     EXPECT_LT(lua.find("redis.call('GET',KEYS[1])~=ARGV[1]"), lua.find("redis.call('HSET'"));
-    EXPECT_LT(lua.find("if raw~=ARGV[4] then return 0 end"), lua.find("redis.call('SET'"));
+    EXPECT_LT(lua.find("if raw~=ARGV[4] then return -2 end"), lua.find("redis.call('SET'"));
     EXPECT_NE(lua.find("sameholder(held,next)"), std::string::npos);
+    EXPECT_NE(lua.find("held.k~='H'"), std::string::npos) << "A1′ / A2′ / 改派只消费缓存的原 H";
     EXPECT_NE(lua.find("'EX',ARGV[3]"), std::string::npos);
+    EXPECT_EQ(lua.find("tonumber"), std::string::npos);
+}
+
+// 会话结束凭证的 CAS(location-release-binding.md §3.3,2026-10-23):原件来自 HGET 观察,H / F / R 都认,但同样先比 owner、
+// 再比原件整字节,原件被轮换时 -2、一个字节都不写。行为(含迟到帧)在 CurrencyTest 真 Redis 与 Go 金样里验。
+TEST(ExitReleaseMarkWrite, CredentialLuaCasOnObservedOriginalBeforeSet)
+{
+    const std::string lua = handoff_sql_barrier::kCredentialMarkLua;
+    EXPECT_LT(lua.find("redis.call('GET',KEYS[1])~=ARGV[1]"), lua.find("redis.call('HSET'"));
+    EXPECT_LT(lua.find("if raw~=ARGV[4] then return -2 end"), lua.find("redis.call('HSET'"));
+    EXPECT_LT(lua.find("if raw~=ARGV[4] then return -2 end"), lua.find("redis.call('SET'"));
+    EXPECT_NE(lua.find("sameholder(observed,next)"), std::string::npos) << "只能把观察到的那份资格转成 F,不得换持有者";
+    EXPECT_NE(lua.find("next.k~='F'"), std::string::npos);
+    EXPECT_EQ(lua.find("observed.k"), std::string::npos) << "原件状态 H / F / R 都认";
     EXPECT_EQ(lua.find("tonumber"), std::string::npos);
 }
 
@@ -2155,17 +2208,18 @@ TEST(TravelPersistEcs, IncompletePlayerNeverStartsHandoff)
     EXPECT_EQ(tlsEcs.actorRegistry.get<PlayerLastPersistedSnapshotComp>(player).snapshot->SerializeAsString(), saved);
 }
 
-// 刚落地的存档足以支撑交接标记;不再重 marshal 假想的缺组件内存,本宿主在 Redis 连接闸终止。
-TEST(TravelPersistEcs, LandedCallbackWithMissingComponentReachesMarkGate)
+// 刚落地的原件不重marshal已缺组件；Redis断连使撤销资格未知，必须保留冻结及原稳定撤销候选。
+TEST(TravelPersistEcs, LandedCallbackWithMissingComponentWaitsForQualificationRevocation)
 {
     ScopedPersistedPlayerCleanup cleanup;
     entt::entity player{entt::null};
     ASSERT_TRUE(MakeReplyTestPlayer(player));
-    tlsEcs.actorRegistry.emplace_or_replace<PlayerOwnerEpochComp>(player).epoch = 7;
+    ASSERT_EQ(tlsEcs.actorRegistry.get<PlayerOwnerEpochComp>(player).epoch, 7u); // 保留MakeReplyTestPlayer捕获的原H资格。
     PlayerAllData landed;
     ASSERT_TRUE(MarshalAsSaved(player, landed));
     auto& travel = tlsEcs.actorRegistry.emplace<PlayerTravelHandoffComp>(player);
     travel.targetZoneId = kReplyTargetZone;
+    travel.holderFence = tlsEcs.actorRegistry.get<PlayerOwnerEpochComp>(player).handoffFence;
     travel.frozenAtSteady = std::chrono::steady_clock::now();
     tlsEcs.actorRegistry.emplace<PlayerFrozenComp>(player);
     tlsEcs.actorRegistry.remove<BattleSettlementLedgerComp>(player);
@@ -2181,7 +2235,11 @@ TEST(TravelPersistEcs, LandedCallbackWithMissingComponentReachesMarkGate)
     EXPECT_TRUE((tlsEcs.actorRegistry.all_of<PlayerTravelHandoffComp, PlayerFrozenComp>(player)));
     EXPECT_EQ(travel_handoff_stats::Read().aborted, before.aborted);
     EXPECT_EQ(g_handoffMarkComponentRefusedLines, 0);
-    EXPECT_EQ(g_handoffMarkRedisDisconnectedLines, 1);
+    EXPECT_EQ(g_handoffMarkRedisDisconnectedLines, 0); // 尚未确认撤销，不可打印“已中止/解冻”。
+    const auto& pending = tlsEcs.actorRegistry.get<PlayerTravelHandoffComp>(player);
+    EXPECT_EQ(pending.holderFence, tlsEcs.actorRegistry.get<PlayerOwnerEpochComp>(player).handoffFence);
+    EXPECT_FALSE(pending.cancelFence.empty());
+    EXPECT_FALSE(pending.cancellationPending); // 未连接，没有接管任何Redis回调。
     EXPECT_EQ(travel_handoff_stats::Read().handoffFastpathForced, before.handoffFastpathForced);
     EXPECT_FALSE(tlsEcs.actorRegistry.any_of<BattleSettlementLedgerComp>(player));
     EXPECT_EQ(tlsEcs.GetPlayer(kExitPlayerId), player);
@@ -4438,6 +4496,7 @@ void ExpectRelocateStats(const relocate_confirm_stats::Snapshot &actual,
     EXPECT_EQ(actual.credentialWritten, expected.credentialWritten) << "credential_written";
     EXPECT_EQ(actual.credentialEpochMoved, expected.credentialEpochMoved) << "credential_epoch_moved";
     EXPECT_EQ(actual.credentialFailed, expected.credentialFailed) << "credential_failed";
+    EXPECT_EQ(actual.credentialSuperseded, expected.credentialSuperseded) << "credential_superseded";
     // 兜底:以后给 Snapshot 加了字段而上面没跟着逐项列出时,这一条会红(上面各项都绿、只有它红 = 漏列了新字段)。
     EXPECT_TRUE(actual == expected) << "relocate_confirm_stats::Snapshot 有 ExpectRelocateStats 没逐项列出的字段";
 }
@@ -7348,7 +7407,36 @@ uint64_t CredentialCount(const release_fence_stats::Snapshot &snapshot, rf::Sess
 
 uint64_t CredentialWriteOutcomes(const release_fence_stats::Snapshot &snapshot)
 {
-    return snapshot.credentialWritten + snapshot.credentialEpochMoved + snapshot.credentialFailed;
+    return snapshot.credentialWritten + snapshot.credentialEpochMoved + snapshot.credentialSuperseded +
+           snapshot.credentialFailed;
+}
+
+constexpr rf::CredentialQualification kAllCredentialQualifications[] = {
+    rf::CredentialQualification::kQualified,
+    rf::CredentialQualification::kReadFailed,
+    rf::CredentialQualification::kHolderAppeared,
+    rf::CredentialQualification::kNoQualification,
+    rf::CredentialQualification::kMalformed,
+};
+static_assert(std::size(kAllCredentialQualifications) == rf::kCredentialQualificationCount,
+              "新增资格核对结论时补进这张表,并补判定用例");
+
+uint64_t QualificationCount(const release_fence_stats::Snapshot &snapshot, rf::CredentialQualification qualification)
+{
+    return snapshot.credentialQualifications[static_cast<std::size_t>(qualification)];
+}
+
+// 全部条件都满足"以读到的原件写凭证"的输入,各用例只改一项。
+rf::CredentialQualificationFacts QualifiedCredentialFacts()
+{
+    rf::CredentialQualificationFacts facts;
+    facts.replyUsable = true;
+    facts.stillWritable = true;
+    facts.fencePresent = true;
+    facts.fenceParsed = true;
+    facts.fenceMatchesExpectedEpoch = true;
+    facts.fenceOwnedByThisInstance = true;
+    return facts;
 }
 
 // 全部条件都满足"写"的输入,各用例只改一项。
@@ -7463,6 +7551,85 @@ TEST(ReleaseFence, SessionEndedCredentialNamesCoverEveryValue)
     EXPECT_STREQ(rf::SessionEndedCredentialName(rf::SessionEndedCredential::kCount), "?");
 }
 
+// 会话结束凭证的资格核对(2026-10-23,r2-lc#2 之后;location-release-binding.md §3.3):只有"读回时仍完全不持有、原件是
+// 本进程实例在期望 E 下的资格"才以读到的原件做 CAS;其余每一种都不写,且各自计数,排障分得清"设计性不写"与"写失败"。
+TEST(ReleaseFence, CredentialQualificationDecideTable)
+{
+    using Q = rf::CredentialQualification;
+    EXPECT_EQ(rf::DecideCredentialQualification(QualifiedCredentialFacts()), Q::kQualified);
+
+    auto facts = QualifiedCredentialFacts();
+    facts.replyUsable = false;
+    EXPECT_EQ(rf::DecideCredentialQualification(facts), Q::kReadFailed) << "读不到原件:结果未知,不写";
+
+    facts = QualifiedCredentialFacts();
+    facts.stillWritable = false;
+    EXPECT_EQ(rf::DecideCredentialQualification(facts), Q::kHolderAppeared)
+        << "读回时本节点又有了该玩家的内存态:原件可能就是这条新持有刚写的 H,不得消费";
+
+    facts = QualifiedCredentialFacts();
+    facts.fencePresent = false;
+    facts.fenceParsed = false;
+    EXPECT_EQ(rf::DecideCredentialQualification(facts), Q::kNoQualification) << "从未登记:没有可消费的资格";
+
+    facts = QualifiedCredentialFacts();
+    facts.fenceParsed = false;
+    EXPECT_EQ(rf::DecideCredentialQualification(facts), Q::kMalformed);
+
+    facts = QualifiedCredentialFacts();
+    facts.fenceMatchesExpectedEpoch = false;
+    EXPECT_EQ(rf::DecideCredentialQualification(facts), Q::kNoQualification) << "别的 E 的资格不归这次释放处置";
+
+    facts = QualifiedCredentialFacts();
+    facts.fenceOwnedByThisInstance = false;
+    EXPECT_EQ(rf::DecideCredentialQualification(facts), Q::kNoQualification)
+        << "别的节点 / 别的进程实例登记的资格不得由本节点替它释放";
+
+    // 读失败与持有再现先于原件内容判:内存态才是"能不能消费"的前提。
+    facts = QualifiedCredentialFacts();
+    facts.stillWritable = false;
+    facts.fenceOwnedByThisInstance = false;
+    EXPECT_EQ(rf::DecideCredentialQualification(facts), Q::kHolderAppeared);
+
+    // 默认值全部取"不写"的一侧:漏填任何一项都只会少写。
+    EXPECT_NE(rf::DecideCredentialQualification(rf::CredentialQualificationFacts{}), Q::kQualified);
+    static_assert(rf::DecideCredentialQualification(rf::CredentialQualificationFacts{}) == Q::kReadFailed,
+                  "判定必须能在编译期求值(纯函数)");
+}
+
+TEST(ReleaseFence, CredentialQualificationNamesCoverEveryValue)
+{
+    for (std::size_t i = 0; i < rf::kCredentialQualificationCount; ++i)
+    {
+        const auto qualification = kAllCredentialQualifications[i];
+        EXPECT_EQ(static_cast<std::size_t>(qualification), i) << "表按枚举序排列";
+        EXPECT_STRNE(rf::CredentialQualificationName(qualification), "?");
+        for (std::size_t j = 0; j < i; ++j)
+        {
+            EXPECT_STRNE(rf::CredentialQualificationName(kAllCredentialQualifications[j]),
+                         rf::CredentialQualificationName(qualification))
+                << "汇总行 key 不得重名";
+        }
+    }
+    EXPECT_STREQ(rf::CredentialQualificationName(rf::CredentialQualification::kCount), "?");
+    EXPECT_TRUE(rf::QualificationAlarming(rf::CredentialQualification::kNoQualification));
+    EXPECT_TRUE(rf::QualificationAlarming(rf::CredentialQualification::kMalformed));
+    EXPECT_FALSE(rf::QualificationAlarming(rf::CredentialQualification::kQualified));
+    EXPECT_FALSE(rf::QualificationAlarming(rf::CredentialQualification::kHolderAppeared));
+}
+
+TEST(ReleaseFence, SummaryEscalatesOnCredentialWithoutQualification)
+{
+    release_fence_stats::Snapshot previous;
+    release_fence_stats::Snapshot next = previous;
+    ++next.credentialQualifications[static_cast<std::size_t>(rf::CredentialQualification::kQualified)];
+    ++next.credentialQualifications[static_cast<std::size_t>(rf::CredentialQualification::kHolderAppeared)];
+    ++next.credentialSuperseded;
+    EXPECT_FALSE(next.AlarmingIncreaseSince(previous)) << "常态计数增长打 INFO";
+    ++next.credentialQualifications[static_cast<std::size_t>(rf::CredentialQualification::kNoQualification)];
+    EXPECT_TRUE(next.AlarmingIncreaseSince(previous)) << "活着的持有节点拿不出资格:location 可能删不掉,升 WARN";
+}
+
 TEST(ReleaseFenceEcs, SessionEndedReleaseExitsHolderAsClientDisconnect)
 {
     // 持有者缓存恰好是那一代:按客户端断线退出。宿主里快路径同步收尾、实体销毁;A1′ 判定为"写"(原因在可写集合里),
@@ -7530,13 +7697,17 @@ TEST(ReleaseFenceEcs, SessionEndedReleaseDuringHandoffIgnored)
               ReleaseVerdictCount(before, rf::Verdict::kSkipHandoffInFlight) + 1);
 }
 
-TEST(ReleaseFenceEcs, SessionEndedReleaseWithoutHolderWritesCredential)
+TEST(ReleaseFenceEcs, SessionEndedReleaseWithoutHolderReadsQualificationBeforeCredential)
 {
-    // 本节点完全不持有(实体已存盘销毁、A1′ 没写成或已过 TTL):按 owner_epoch 条件补写凭证。宿主无 Redis,写走"写不成"。
+    // 本节点完全不持有(实体已存盘销毁、A1′ 没写成或已过 TTL):判定表判 write 之后,凭证**先读** save_barrier.handoff_fence
+    // 的资格原件、核对之后才以它做 CAS(2026-10-23,r2-lc#2 之后;location-release-binding.md §3.3)。宿主里没有 zone Redis:
+    // 读这一步就失败,记 credential_qualification_read_failed,不发任何标记命令、不按读到的 owner_epoch 现造资格去写
+    // (那样会走到条件写、记成 credential_failed),也不是一律拒发(那样资格核对计数不会动)。
     ScopedPersistedPlayerCleanup cleanup;
     ScopedConfirmedNodeIdentity identity;
     ClearLocalHolderOfExitPlayer();
     const auto before = release_fence_stats::Read();
+    const std::size_t marksInFlightBefore = PlayerLifecycleSystem::ExitReleaseMarksInFlight();
 
     ReleaseEndedSession(kReleaseExpectedEpoch);
 
@@ -7544,7 +7715,20 @@ TEST(ReleaseFenceEcs, SessionEndedReleaseWithoutHolderWritesCredential)
     EXPECT_EQ(after.sessionEnded, before.sessionEnded + 1);
     EXPECT_EQ(CredentialCount(after, rf::SessionEndedCredential::kWrite),
               CredentialCount(before, rf::SessionEndedCredential::kWrite) + 1);
-    EXPECT_EQ(CredentialWriteOutcomes(after), CredentialWriteOutcomes(before) + 1) << "条件写发出且有结果(宿主里是失败)";
+    EXPECT_EQ(QualificationCount(after, rf::CredentialQualification::kReadFailed),
+              QualificationCount(before, rf::CredentialQualification::kReadFailed) + 1)
+        << "判 write 之后必须先读资格原件";
+    for (const auto qualification : kAllCredentialQualifications)
+    {
+        if (qualification != rf::CredentialQualification::kReadFailed)
+        {
+            EXPECT_EQ(QualificationCount(after, qualification), QualificationCount(before, qualification))
+                << rf::CredentialQualificationName(qualification);
+        }
+    }
+    EXPECT_EQ(CredentialWriteOutcomes(after), CredentialWriteOutcomes(before))
+        << "读不到原件就没有 CAS:written / epoch_moved / superseded / failed 都不动";
+    EXPECT_EQ(PlayerLifecycleSystem::ExitReleaseMarksInFlight(), marksInFlightBefore) << "不发任何标记命令";
     EXPECT_EQ(after.verdicts, before.verdicts) << "没有实体时不做实体判定";
     EXPECT_EQ(tlsEcs.playerList.count(kExitPlayerId), 0u) << "凭证不建实体";
 }

@@ -84,10 +84,11 @@ func newTestSvcCtx(t *testing.T, nodeID string) (*svc.ServiceContext, *miniredis
 	c.AllowGateZoneAsHomeZone = true
 
 	return &svc.ServiceContext{
-		Config:        c,
-		Redis:         rds,
-		RoleDirectory: testRoleDirectory(1),
-		SceneIDGen:    snowflake.NewNode(0),
+		Config:         c,
+		Redis:          rds,
+		RoleDirectory:  testRoleDirectory(1),
+		OwnerEpochMint: newFakeOwnerEpochMinter(rds),
+		SceneIDGen:     snowflake.NewNode(0),
 	}, mr
 }
 
@@ -450,10 +451,11 @@ func newTestSvcCtxWithWorldScenes(t *testing.T) (*svc.ServiceContext, *miniredis
 	c.AllowGateZoneAsHomeZone = true
 
 	return &svc.ServiceContext{
-		Config:        c,
-		Redis:         rds,
-		RoleDirectory: testRoleDirectory(1),
-		SceneIDGen:    snowflake.NewNode(0),
+		Config:         c,
+		Redis:          rds,
+		RoleDirectory:  testRoleDirectory(1),
+		OwnerEpochMint: newFakeOwnerEpochMinter(rds),
+		SceneIDGen:     snowflake.NewNode(0),
 	}, mr
 }
 

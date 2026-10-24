@@ -842,7 +842,7 @@ func TestTravelSmokeDescribeTimeout(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			got := travelSmokeDescribeTimeout(c.scan, c.progress, c.before, gate)
+			got := travelSmokeDescribeTimeout(c.scan, c.progress, c.before, gate, travelSmokeRedirectTimeout)
 			for _, want := range c.want {
 				if !strings.Contains(got, want) {
 					t.Fatalf("description %q does not mention %q", got, want)

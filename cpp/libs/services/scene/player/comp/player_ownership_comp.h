@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <string>
 
+#include "engine/infra/storage/redis_cluster/redis_slot.h"
+
 // 玩家归属三件套 —— 跨 zone 场景传送阶段 1 的 C++ 半边。
 //
 // 设计:docs/design/cross-zone-scene-travel.md §3 CZ-2..CZ-5、§6 不变量;
@@ -49,9 +51,11 @@
 //   Redis 当前值"才允许写,否则本节点已被废黜。
 namespace player_ownership
 {
+	// 玩家域键,带 {player_id} hash tag(docs/design/redis-player-store-cluster.md §5.2),与 go/shared/ownerepoch.OwnerEpochKey
+	// 逐字一致。存盘严格 Lua(redis_client.h kSaveWithCommitBarrierLuaScript)按这个形状逐字核对 KEYS[2]。
 	inline std::string OwnerEpochRedisKey(uint64_t playerId)
 	{
-		return "player:" + std::to_string(playerId) + ":owner_epoch";
+		return "player:" + redis_slot::PlayerTag(playerId) + ":owner_epoch";
 	}
 
 	inline std::string HandoffRedisKey(uint64_t playerId)

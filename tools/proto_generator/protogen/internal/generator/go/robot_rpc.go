@@ -430,6 +430,7 @@ func writeRobotRpcDir(dir string, files []robotRpcFile) error {
 	}
 
 	// 文件名按小写比较:Windows 文件系统大小写不敏感,大小写不同的旧名就是本次写入的那个文件,不能删。
+	// 代价:大小写敏感的文件系统(Linux)上,只差大小写的旧桩不会被清理,要手工删;服务改名只改大小写的情况极少。
 	keep := make(map[string]struct{}, len(files))
 	for _, file := range files {
 		keep[strings.ToLower(file.Name)] = struct{}{}

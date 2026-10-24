@@ -682,7 +682,7 @@ func equipForgeGrant(s *equipSmokeSession, configId uint32, count uint64) (*scen
 func equipForgeAddGold(s *equipSmokeSession, amount int64) error {
 	s.throttle(game.SceneCurrencyClientPlayerGmAddCurrencyMessageId)
 	if _, err := gmAddGold(s.gc, s.player, s.stats, amount, equipSmokeRpcTimeout); err != nil {
-		return fmt.Errorf("GmAddCurrency(gold, +%d): %w", amount, err)
+		return fmt.Errorf("gold +%d: %w", amount, err)
 	}
 	return nil
 }

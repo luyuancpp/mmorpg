@@ -521,6 +521,13 @@ type NodeConfig struct {
 	SessionExpireMin uint32        `json:"SessionExpireMin"` // Session idle timeout in minutes
 	MaxLoginDevices  uint32        `json:"MaxLoginDevices"`
 	RedisClient      RedisConf     `json:"RedisClient"`
+	// QueueRedis 是排队、准入与放行锁所在的 Redis(shared-redis-split-by-purpose.md §3.2.1、§25.3 第 10 条:
+	// 按 zone 组分实例 redis-queue-g<N>)。整段不写 = 复用 RedisClient,而且是同一个 *redis.Client(不多开连接池),
+	// 行为与拆分前逐字相同。gate 排空标记(gate:<id>:draining / drained)**不在**这里,仍在 RedisClient:
+	// k8s_gate_drain.ps1 与 scene_manager 的跨 zone 重定向都读核心上的那一份。
+	// 用指针 + optional:go-zero 不会为没出现的 optional 嵌套结构回填内层字段;段一旦出现,内层字段按 RedisConf
+	// 的规则全部必填,K8s ConfigMap 必须整段写出(含 PoolSize,连接总账按它记账)。
+	QueueRedis       *RedisConf    `json:"QueueRedis,optional"`
 	LeaseTTL         int64         `json:"LeaseTTL"` // Lease TTL in seconds
 	QueueShardCount  uint64        `json:"QueueShardCount"`
 	MaxLoginDuration time.Duration `json:"MaxLoginDuration"` // Max online duration per login (e.g. 24h, force logout on expiry)

@@ -22,6 +22,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-sql-driver/mysql"
@@ -76,6 +77,13 @@ func runMerge(o options) {
 	defer sharedRdb.Close()
 	sceneRdb := mustDial(ctx, "scene_manager", o.sceneAddr, o.scenePwd, o.sceneDB)
 	defer sceneRdb.Close()
+	// preflight P2 与 -clear-source-hot-state 都要 etcd 注册表的正面证据(scene_registry.go)。在任何写入之前就校验参数,
+	// 不让一次合服跑到门禁或第 6 步才因为缺参数中止。
+	sceneNodes, rerr := newEtcdGatewayRegistry(o.etcdEndpoints)
+	if rerr != nil {
+		log.Fatalf("-etcd-endpoints is required: preflight P2 and -clear-source-hot-state need positive evidence that zone %d has no registered scene node: %v", src, rerr)
+	}
+	log.Printf("    scene-node registry: etcd endpoints=%s", strings.Join(sceneNodes.endpoints, ","))
 
 	// -route-source(规格 §6.4、§13.3 第 3 条):db 源开路由库并核对库与 mapping Redis 成对;redis 源只核对这个 Redis 不归
 	// db_first 管。之后每个写入点 / 读方按 rb 是否为 nil 分派(nil = 今天的 Redis 路径,逐字不变)。
@@ -314,6 +322,7 @@ func runMerge(o options) {
 	if err := runPreflight(ctx, preflightDeps{
 		teamAuthority: teamAuthority,
 		sceneRdb:      sceneRdb,
+		sceneNodes:    sceneNodes,
 		mappingRdb:    mapRdb,
 		sharedRdb:     sharedRdb,
 		lag:           lagSrc,
@@ -716,7 +725,7 @@ func runMerge(o options) {
 	// ── 6: scene_manager 热状态 ─────────────────────────────
 	if o.clearHotState && !m.stepDone(stepHotState) {
 		requireFence(stepHotState)
-		hot, herr := clearSourceZoneHotState(ctx, sceneRdb, src, playerIDs, o.dryRun)
+		hot, herr := clearSourceZoneHotState(ctx, sceneRdb, sceneNodes, src, playerIDs, o.dryRun)
 		if herr != nil {
 			abortKeepingFence(fmt.Sprintf("clear source hot state:步骤 %s 未标记完成(删除幂等,重跑补齐):%v", stepHotState, herr))
 		}

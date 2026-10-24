@@ -156,3 +156,121 @@ if ARGV[4] == '1' then
 elseif ARGV[4] ~= '0' then return redis.error_reply('restore mode invalid') end
 return 1
 `)
+
+// 新维护提升有独立阶段，不改旧restore协议。所有类型、原件与待投检查先于首写；
+// check无副作用；revoke只撤销并清已与双SQL同内容的原缓存；finish只确认实际SQL目标版。
+var promotionScript = redis.NewScript(savebarrier.LuaVersionHelpers + luaHandoffFenceHelpers + `
+if #KEYS~=74 or #ARGV~=19 or not uint(ARGV[2]) or not uint(ARGV[3]) or cmp(ARGV[3],ARGV[2])<=0
+ or not is_version(ARGV[4]) or not is_version(ARGV[5]) or (ARGV[9]~='check' and ARGV[9]~='revoke' and ARGV[9]~='finish')
+ or not string.match(ARGV[6],'^[1-9]%d*$') or #ARGV[6]>10 or bytecmp(ARGV[6],'4294967295')>0 then return redis.error_reply('promotion arguments invalid') end
+local unique={}
+for _,key in ipairs(KEYS) do if key=='' or unique[key] then return redis.error_reply('promotion keys duplicate') end unique[key]=true end
+if #ARGV[19]~=32 or string.find(ARGV[19],'[^0-9a-f]') or ARGV[19]==string.rep('0',32)
+ or redis.call('TYPE',KEYS[73]).ok~='string' or redis.call('GET',KEYS[73])~='local-debug-import-target' or redis.call('PTTL',KEYS[73])~=-1
+ or redis.call('TYPE',KEYS[74]).ok~='string' or redis.call('GET',KEYS[74])~=ARGV[19] or redis.call('PTTL',KEYS[74])~=-1 then return redis.error_reply('permanent local instance marker required') end
+if redis.call('TYPE',KEYS[1]).ok~='string' or redis.call('GET',KEYS[1])~=ARGV[1] or redis.call('PTTL',KEYS[1])~=-1 then return redis.error_reply('permanent maintenance required') end
+if redis.call('TYPE',KEYS[2]).ok~='string' or redis.call('PTTL',KEYS[2])~=-1 then return redis.error_reply('owner type or ttl invalid') end
+local bkind=redis.call('TYPE',KEYS[8]).ok
+if bkind~='hash' or redis.call('PTTL',KEYS[8])~=-1 then return redis.error_reply('converged permanent barrier required') end
+if redis.call('TYPE',KEYS[7]).ok~='none' then return redis.error_reply('handoff still present') end
+for i=3,5 do local k=redis.call('TYPE',KEYS[i]).ok if k~='none' and k~='string' then return redis.error_reply('cache wrong type') end end
+local assetKind=redis.call('TYPE',KEYS[6]).ok
+if assetKind~='none' and assetKind~='hash' then return redis.error_reply('asset evidence wrong type') end
+if assetKind=='hash' and (redis.call('HLEN',KEYS[6])~=2 or redis.call('PTTL',KEYS[6])~=-1) then return redis.error_reply('asset evidence shape invalid') end
+for i=9,72 do local k=redis.call('TYPE',KEYS[i]).ok if k~='none' and k~='zset' then return redis.error_reply('pending type invalid') end if k=='zset' and redis.call('ZCARD',KEYS[i])~=0 then return redis.error_reply('pending work not drained') end end
+for _,field in ipairs(redis.call('HKEYS',KEYS[8])) do
+ if field~='pending' and field~='player_database' and field~='player_database_1' and field~='schema_gen' and field~='schema_writer' and field~='schema_regressed' and field~='handoff_fence' and field~='verified_identity' then return redis.error_reply('outbox still present') end
+end
+local stamp=redis.call('HGET',KEYS[8],'verified_identity')
+if stamp and (#stamp~=81 or string.sub(stamp,41,41)~=':' or string.find(string.sub(stamp,1,40),'[^0-9a-f]') or string.find(string.sub(stamp,42),'[^0-9a-f]')) then return redis.error_reply('verified identity malformed') end
+local oldOwner=redis.call('GET',KEYS[2]);local oldFence=redis.call('HGET',KEYS[8],'handoff_fence') or ''
+local proposed=fence(ARGV[8]);local original=nil
+if ARGV[7]~='' then original=fence(ARGV[7]);if not original or cmp(original.e,ARGV[2])>0 then return redis.error_reply('original fence invalid') end end
+if not proposed or proposed.k~='R' then return redis.error_reply('revocation invalid') end
+if original then if not sameholder(original,proposed) or original.t==proposed.t then return redis.error_reply('revocation must preserve holder and rotate nonce') end
+elseif proposed.e~=ARGV[3] or proposed.n~='0' then return redis.error_reply('missing prior revocation invalid') end
+local already=oldOwner==ARGV[3] and oldFence==ARGV[8]
+if not already and (oldOwner~=ARGV[2] or oldFence~=ARGV[7]) then return redis.error_reply('owner or cached revocation changed') end
+local pending=redis.call('HGET',KEYS[8],'pending')
+local a=redis.call('HGET',KEYS[8],'player_database');local b=redis.call('HGET',KEYS[8],'player_database_1')
+if pending~=a or pending~=b or (pending~=ARGV[4] and not (already and pending==ARGV[5])) then return redis.error_reply('SQL ACK or pending not converged') end
+for i=3,5 do
+ local offset=10+(i-3)*2;local flag=ARGV[offset]
+ if flag~='0' and flag~='1' then return redis.error_reply('cache presence invalid') end
+ if already then if redis.call('EXISTS',KEYS[i])~=0 then return redis.error_reply('cache reappeared after revocation') end
+ elseif flag=='0' then if redis.call('EXISTS',KEYS[i])~=0 then return redis.error_reply('unexpected cache') end
+ elseif redis.call('GET',KEYS[i])~=ARGV[offset+1] then return redis.error_reply('cache bytes changed or missing') end
+end
+if ARGV[16]~='0' and ARGV[16]~='1' then return redis.error_reply('asset presence invalid') end
+if already then if assetKind~='none' then return redis.error_reply('asset cache reappeared') end
+elseif ARGV[16]=='0' then if assetKind~='none' then return redis.error_reply('unexpected asset evidence') end
+elseif assetKind~='hash' or redis.call('HGET',KEYS[6],'version')~=ARGV[17] or redis.call('HGET',KEYS[6],'data')~=ARGV[18] or ARGV[17]~=ARGV[4] then return redis.error_reply('asset evidence changed') end
+if ARGV[9]=='check' then if already then return redis.error_reply('new plan cannot adopt old revocation') end return 1 end
+if ARGV[9]=='finish' then
+ if not already then return redis.error_reply('revocation not confirmed') end
+ redis.call('HSET',KEYS[8],'pending',ARGV[5],'player_database',ARGV[5],'player_database_1',ARGV[5],'schema_gen',ARGV[6])
+ redis.call('HDEL',KEYS[8],'schema_writer','schema_regressed')
+ return 1
+end
+if not already then
+ redis.call('SET',KEYS[2],ARGV[3])
+ redis.call('HSET',KEYS[8],'handoff_fence',ARGV[8])
+ -- 仅原缓存已与SQL逐内容核对且同Lua再次比原bytes时才清；pending/ACK/outbox不删不伪造。
+ redis.call('DEL',KEYS[3],KEYS[4],KEYS[5],KEYS[6])
+end
+return 1
+`)
+
+// 一物理目标一个命令：校全部TYPE/永久nonce/receipt/guard/原角色围栏后才有副作用。
+// check与apply共用同一判据；完整已提交前缀从入口即可确认，不要求旧guard重新存在。
+const maintenanceReleaseLua = `
+local guards,players=tonumber(ARGV[5]),tonumber(ARGV[6])
+if (ARGV[1]~='check' and ARGV[1]~='apply') or not guards or guards<1 or guards>2
+ or not players or players<0 or players>1000 or #KEYS~=3+guards+2*players
+ or #ARGV~=7+guards+3*players then return redis.error_reply('release shape invalid') end
+local expires=tonumber(ARGV[7])
+local clock=redis.call('TIME')
+if not expires or expires<=tonumber(clock[1])*1000+math.floor(tonumber(clock[2])/1000) then return redis.error_reply('release window expired') end
+for i,key in ipairs(KEYS) do
+ if key=='' then return redis.error_reply('release empty key') end
+ for j=1,i-1 do if key==KEYS[j] then return redis.error_reply('release duplicate key') end end
+end
+local function permanent(key,want)
+ return redis.call('TYPE',key).ok=='string' and redis.call('PTTL',key)==-1 and redis.call('GET',key)==want
+end
+if not permanent(KEYS[1],ARGV[2]) or not permanent(KEYS[2],ARGV[3]) then return redis.error_reply('release local instance changed') end
+local rt=redis.call('TYPE',KEYS[3]).ok
+if rt~='none' and rt~='string' then return redis.error_reply('release receipt type') end
+if rt=='string' and (ARGV[4]=='' or not permanent(KEYS[3],ARGV[4])) then return redis.error_reply('release receipt conflict or ttl') end
+local present=0
+for i=1,guards do
+ local k=KEYS[3+i]
+ local t=redis.call('TYPE',k).ok
+ if t~='none' then
+  if not permanent(k,ARGV[7+i]) then return redis.error_reply('release guard changed or ttl') end
+  present=present+1
+ end
+end
+if rt=='none' and present~=guards then return redis.error_reply('release missing guard without receipt') end
+if rt=='string' and present~=0 then return redis.error_reply('release receipt with residual guard') end
+for i=1,players do
+ local keyindex=3+guards+2*(i-1)
+ local argindex=7+guards+3*(i-1)
+ local owner,barrier=KEYS[keyindex+1],KEYS[keyindex+2]
+ if not permanent(owner,ARGV[argindex+1]) or redis.call('TYPE',barrier).ok~='hash'
+  or redis.call('PTTL',barrier)~=-1 then return redis.error_reply('release owner/barrier changed') end
+ local values=redis.call('HMGET',barrier,'pending','player_database','player_database_1','handoff_fence')
+ if values[1]~=ARGV[argindex+2] or values[2]~=ARGV[argindex+2] or values[3]~=ARGV[argindex+2]
+  or (values[4] or '')~=ARGV[argindex+3] then return redis.error_reply('release SQL ACK/fence mismatch') end
+ for _,field in ipairs(redis.call('HKEYS',barrier)) do
+  if string.sub(field,1,7)=='outbox_' then return redis.error_reply('release pending outbox') end
+ end
+end
+if rt=='string' then return 'committed' end
+if ARGV[1]=='check' then return 'pending' end
+if ARGV[4]=='' then return redis.error_reply('release apply needs immutable plan receipt') end
+-- 所有预检在首写前；这里仅SET/DEL固定string键，无后续可能WRONGTYPE的命令。
+redis.call('SET',KEYS[3],ARGV[4])
+for i=1,guards do redis.call('DEL',KEYS[3+i]) end
+return 'committed'
+`

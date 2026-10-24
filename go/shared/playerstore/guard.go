@@ -21,7 +21,8 @@ var ErrCrossSlot = errors.New("playerstore: 多键命令的键不在同一 slot"
 // GuardHook 在命令发出前检查键:带 tag、同 slot。不认识键位置的命令放行(由服务端与集群路由兜底),
 // 所以守卫只会拒绝确定违规的命令,不会误拒。
 //
-// 事务管道(TxPipeline)里不同命令之间是否同 slot 不在这里检查:Cluster 会拒绝跨槽事务,单实例下仍须由调用方保证。
+// 管道(含事务管道)另有一条规则:非幂等命令不得走管道(见 ErrNonIdempotentInPipeline)。
+// 事务管道里不同命令之间是否同 slot 不在这里检查:Cluster 会拒绝跨槽事务,单实例下仍须由调用方保证。
 type GuardHook struct{}
 
 var _ redis.Hook = GuardHook{}
@@ -42,10 +43,27 @@ func (GuardHook) ProcessHook(next redis.ProcessHook) redis.ProcessHook {
 	}
 }
 
+// ErrNonIdempotentInPipeline:非幂等命令出现在管道(含事务管道)里。go-redis 的 ClusterClient 在管道内部遇到
+// EOF / 超时会自动重发整批命令(v9.16 osscluster.go 的 processPipelineNodeConn 直接用 shouldRetry 判原始错误,
+// 钩子拦不到),已执行的 Lua 或计数命令会被再跑一遍。玩家域的这类命令一律单条发送。
+var ErrNonIdempotentInPipeline = errors.New("playerstore: 非幂等命令不得走管道")
+
+// nonIdempotentCommands 是重放会改变结果或语义的命令。EVAL 族一律算作非幂等(CAS 类脚本重放会得到不同结局)。
+var nonIdempotentCommands = map[string]struct{}{
+	"eval": {}, "evalsha": {}, "fcall": {},
+	"incr": {}, "incrby": {}, "incrbyfloat": {}, "decr": {}, "decrby": {}, "hincrby": {}, "hincrbyfloat": {}, "zincrby": {},
+	"lpush": {}, "rpush": {}, "lpop": {}, "rpop": {}, "spop": {}, "getdel": {}, "getset": {}, "rpoplpush": {}, "lmove": {},
+	"append": {}, "setrange": {},
+}
+
 func (GuardHook) ProcessPipelineHook(next redis.ProcessPipelineHook) redis.ProcessPipelineHook {
 	return func(ctx context.Context, cmds []redis.Cmder) error {
 		for _, cmd := range cmds {
-			if err := CheckCommand(cmd.Args()); err != nil {
+			err := CheckCommand(cmd.Args())
+			if err == nil && has(nonIdempotentCommands, strings.ToLower(argString(firstArg(cmd.Args())))) {
+				err = fmt.Errorf("%w: %s", ErrNonIdempotentInPipeline, strings.ToLower(argString(firstArg(cmd.Args()))))
+			}
+			if err != nil {
 				// 整批不发:管道里任何一条违规都说明调用方的键形有缺陷,部分发送只会制造半截状态。
 				for _, c := range cmds {
 					c.SetErr(err)
@@ -149,6 +167,13 @@ func CheckKeys(keys []string) error {
 		}
 	}
 	return nil
+}
+
+func firstArg(args []interface{}) interface{} {
+	if len(args) == 0 {
+		return ""
+	}
+	return args[0]
 }
 
 func has(set map[string]struct{}, name string) bool {

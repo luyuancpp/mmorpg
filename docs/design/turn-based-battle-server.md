@@ -310,8 +310,8 @@ robot battle 动作、匹配负载均衡、Excel 回合列(替代 kRoundDuration
        → battle_id=0 时从 spectate:battles:active 随机挑一场
        → 读 spectate:battle:{id} 得 SpectateBattleRecord(含 battle_node_id)
        → 读 player:session:{player_id} 组观众 BattleRouting(session/gate/zone,scene 字段留 0)
-       → SETNX+EX spectate:watching:{player_id} = battle_id(TTL 同索引;并发 WatchBattle 抢占失败即拒绝)
-       → gRPC battle.AddObserver(battle_id, observer, routing)
+       → SETNX+EX spectate:watching:{player_id} = AddObserver 原件(TTL 同索引;并发 WatchBattle 抢占失败即拒绝)
+       → gRPC battle.AddObserver(battle_id, observer, routing, op, admit_before_ms, target_instance_id)
   battle: 房间校验(存在/观众未满 kMaxObserversPerRoom/非参战者)→ 加入 room.observers
        → Kafka gate-{gid}: BindBattleEvent(观众 session → 本节点)
        → Kafka gate-{gid}: PushToPlayerEvent(NotifySpectateState 首帧,含 observer_count)
@@ -337,7 +337,7 @@ robot battle 动作、匹配负载均衡、Excel 回合列(替代 kRoundDuration
 |-----|------|------|
 | `spectate:battle:{battle_id}` | string = SpectateBattleRecord pb,TTL = BattleMaxDurationSeconds + 60s | 活跃战斗登记(gather 成功后写) |
 | `spectate:battles:active` | ZSET member=battle_id score=created_at_ms | 随机/列表索引;懒剔除 + 定期按 score 清过期 |
-| `spectate:watching:{player_id}` | string = battle_id,TTL 同上 | 观战互斥标记(gather 清退时反查用);重复 WatchBattle 懒清退旧场(战斗已收尾则仅删标记) |
+| `spectate:watching:{player_id}` | string = 本次观战固定的 AddObserverRequest 原件 pb(battle_id / op / 准入截止 / 实例;2026-10-24 前为十进制 battle_id),TTL 同上 | 观战互斥标记(gather 清退时反查用,RemoveObserver 带原件的同一 op);重复 WatchBattle(含重看同一场)按原件懒清退旧观战(战斗已收尾或标记解析不出原件则仅删标记);见 [battle-spectate-tiered-fanout.md](battle-spectate-tiered-fanout.md) §10.1 |
 
 ### 10.5 房间侧规格(battle 节点)
 

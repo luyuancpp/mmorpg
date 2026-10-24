@@ -233,6 +233,57 @@ private:
     std::optional<Clock::time_point> stagingStartedAt_;
 };
 
+// 终局卡在本节点、节点因此排不空的房间按原因分类(2026-10-22 评审补，r2-battle#4)。
+// 三类都不会自然消失，只能等停机 AbortAllRooms 清房，值班排空时要一起等；
+// battle_room_manager.cpp 的 ReportExhaustedStagingRooms 每 60s 按本函数数一遍房间表。
+enum class StuckTerminal : uint8_t
+{
+    kNone,
+    // 旧协议确认模式：个人结算落库到总跨度上限(ResultCommit::StagingExhausted)，结果不发。
+    kStagingExhausted,
+    // 终局协议 v1：CommitBattleOutcome 到总跨度上限仍没拿到 SQL 终局，或终局原件生成失败(房间的 outcomeExhausted)。
+    kSqlOutcomeUnconfirmed,
+    // 旧协议确认模式：结果序列化失败 / 个人结算与成员对不上的占位(载荷为空、没有待写成员，永不放行)。
+    kPlaceholder,
+};
+
+// commit = 房间的 ResultCommit(没有时传 nullptr)；sqlOutcomeExhausted = v1 终局已重试到上限或原件无效。
+// 两种协议互斥(v1 房间不建 ResultCommit)，先判 v1 只为让结论唯一。
+inline StuckTerminal ClassifyStuckTerminal(const ResultCommit* commit, bool sqlOutcomeExhausted)
+{
+    if (sqlOutcomeExhausted) return StuckTerminal::kSqlOutcomeUnconfirmed;
+    if (commit == nullptr) return StuckTerminal::kNone;
+    // 正常的结果载荷是序列化后的 BattleResultEvent(battle_id 非 0)，不可能为空；空载荷只来自占位。
+    if (commit->Payload().empty()) return StuckTerminal::kPlaceholder;
+    if (commit->StagingExhausted()) return StuckTerminal::kStagingExhausted;
+    return StuckTerminal::kNone;
+}
+
+inline const char* StuckTerminalName(StuckTerminal stuck)
+{
+    switch (stuck)
+    {
+    case StuckTerminal::kNone: return "none";
+    case StuckTerminal::kStagingExhausted: return "staging_exhausted";
+    case StuckTerminal::kSqlOutcomeUnconfirmed: return "sql_unconfirmed";
+    case StuckTerminal::kPlaceholder: return "placeholder";
+    }
+    return "unknown";
+}
+
+// 停机时这间房是否还要在排空窗口内把终局再提交一轮(2026-10-23 修复，审计 r2-battle#2)。
+// 全球局一律走终局协议 v1：整局终局与全员个人结算由 match 在同一个 SQL 事务里提交(CommitBattleOutcome → COMPLETE)，
+// 之后由 match 的持久发件箱补发结果与个人结算；没有 COMPLETE 的局到权威截止后由 match 原子判 ABORT，全员作废。
+// 两种终态都覆盖整局成员，停机不会留下「部分成员已结算」的局；停机能做的只剩一件事：已经算出、还没拿到 SQL 决定的终局
+// 不要白白作废，退出前再提交。
+// 只有这一种房间要补提交：终局原件已冻结(outcomePending)、还没拿到 COMPLETE / ABORT、也没判用尽(总跨度上限 / 原件无效，
+// 那时终局交给 match 恢复裁决)。旧协议房间、还在打的 v1 房间都不在此列：后者没有终局可交，按作废处理(match 截止后判 ABORT)。
+inline bool NeedsShutdownOutcomeFlush(uint32_t outcomeProtocol, bool outcomePending, bool outcomeComplete,
+                                      bool outcomeExhausted)
+{
+    return outcomeProtocol == 1 && outcomePending && !outcomeComplete && !outcomeExhausted;
+}
+
 // 一轮落库的回复汇总(battle_room_manager.cpp StagePersonalSettlements 每轮一份，回调共享)。
 // 本轮成员 = 开轮那一刻的 ResultCommit::UnstagedMembers()，整轮不变。每名成员只记第一次回复，
 // 不在本轮成员里的 id 忽略；全部成员都回复过的那一次 Record 返回 true(恰好一次)，调用方随即把

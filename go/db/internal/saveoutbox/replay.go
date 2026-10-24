@@ -31,6 +31,9 @@ type StoreHealth interface {
 // 重启、切主、就绪标记被对账 leader 撤掉、读脚本出错)时消费循环不从 Kafka 取新消息、重试循环不认领,补投出去的任务只会
 // 堆在 Kafka 里;补投器据此整拍跳过、不认领、不计次(r2-rr#5),与重试循环同口径。
 // 生产由 *kafka.KeyOrderedKafkaConsumer 实现:Placement.RequireRouteReady=false 时没有闸,恒放行。实现必须并发安全。
+// 退场:负责人 2026-10-23 已定映射改为直读 TiDB(docs/handoff/d1-review-fix-handoff-20261023.md),届时 go/db 就绪闸作废。
+// 本接缝随闸同批删除(本接口、KeyOrderedKafkaConsumer.RouteGateOpen、db.go 的注入、测试夹具 routeGateStub 与
+// replay_route_gate_test.go 的闸用例),不要留一个恒放行的空实现;按消费积压暂停补投是另一条后续任务,不复用本接缝。
 type RouteGate interface {
 	RouteGateOpen() bool
 }
@@ -305,14 +308,25 @@ func (r *Replay) Tick(ctx context.Context) (int, error) {
 			continue
 		}
 		if zone != r.cfg.ZoneID {
+			// 映射改为直读 TiDB 后(docs/handoff/d1-review-fix-handoff-20261023.md §4)，这里改读 TiDB 真源，归新方向会话。
 			home, err := r.mapping.Get(ctx, placement.HomeZoneKey(playerID)).Result()
-			if err != nil && !errors.Is(err, redis.Nil) {
-				// mapping Redis 读不到(重启、切主、超时)与意图本身无关，不计次，与发布失败同口径(r2-rr#5)；
-				// 认领时已按本次退避推迟了该意图，下一次到期再读。
+			switch {
+			case err == nil:
+			case errors.Is(err, redis.Nil), redis.HasErrorPrefix(err, "WRONGTYPE"):
+				// 键不存在，或被写成别的类型(GET 稳定回 WRONGTYPE)：都是该玩家映射数据本身的确定性问题，重读不会变好。
+				// 按不匹配处理并计次，次数用完进 exhausted、触发 DbSaveOutboxExhausted；当成故障不计次的话，
+				// 意图会永远停在基数退避上，返场一直被提交屏障拒绝而没有任何告警。
+				if !errors.Is(err, redis.Nil) {
+					logx.Errorf("[SaveOutbox] authoritative home_zone key holds a non-string value, counting the attempt player=%d: %v", playerID, err)
+				}
+				home = ""
+			default:
+				// mapping Redis 不可用(连接、超时，或重启切主期间的 LOADING / MASTERDOWN 等回复)、权限配置错误(NOPERM)
+				// 与意图本身无关，且会同时波及所有跨 zone 意图：不计次，与发布失败同口径(r2-rr#5)，修好后自动恢复，不必逐人清计数。
+				// 认领时已按本次退避推迟了该意图，下一次到期再读；持续出现时看 db_save_outbox_total{result="redis_error"} 的增量。
 				r.results.WithLabelValues("redis_error").Inc()
-				return published, errors.New("save outbox 读取权威home_zone失败，原意图保留")
+				return published, fmt.Errorf("save outbox 读取权威home_zone失败，原意图保留: %w", err)
 			}
-			// 键不存在时 home 为空串，按不匹配处理。
 			if home != strconv.FormatUint(uint64(zone), 10) {
 				r.results.WithLabelValues("invalid").Inc()
 				logx.Errorf("[SaveOutbox] 跨zone索引迁移缺少匹配的权威home_zone，原意图保留")

@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"errors"
+	"google.golang.org/protobuf/proto"
 	"strings"
 	"testing"
 	"time"
@@ -23,6 +24,73 @@ type fakeConsumer struct {
 }
 
 const consumerFixtureSecret = "fixture-only-scene-inbox-signing-secret-000000"
+
+type fakeBattleProducer struct {
+	fakeConsumer
+	calls int
+}
+
+func (f *fakeBattleProducer) EnqueueBattleSettlement(ctx context.Context, r *inboxpb.BattleSettlementInboxRequest) (*inboxpb.BattleSettlementInboxResponse, error) {
+	f.calls++
+	return &inboxpb.BattleSettlementInboxResponse{PlayerId: r.PlayerId, BattleId: r.BattleId, Seq: 42, State: inboxpb.PlayerInboxItemState_PLAYER_INBOX_ITEM_PENDING}, f.err
+}
+func (f *fakeBattleProducer) LookupBattleSettlement(ctx context.Context, r *inboxpb.BattleSettlementInboxRequest) (*inboxpb.BattleSettlementInboxResponse, error) {
+	return f.EnqueueBattleSettlement(ctx, r)
+}
+
+func TestBattleProducerMethodsRequireIndependentSignatureAndBindReply(t *testing.T) {
+	const secret = "fixture-only-match-inbox-secret-000000000000"
+	t.Setenv("MMORPG_PLAYER_INBOX_SECRET_MATCH", secret)
+	store := &fakeBattleProducer{}
+	s := newTestConsumer(t, store, time.Second)
+	r := &inboxpb.BattleSettlementInboxRequest{PlayerId: 11, BattleId: 21, ExpectedOwnerAccount: "original", ExpectedOwnerRevision: 3, IssuedAtMs: 7, SettlementPayload: []byte{1}}
+	method := inboxpb.PlayerInbox_EnqueueBattleSettlement_FullMethodName
+	if _, err := s.EnqueueBattleSettlement(context.Background(), r); status.Code(err) != codes.PermissionDenied {
+		t.Fatalf("缺签名应拒: %v", err)
+	}
+	if err := serviceauth.Sign(method, r, "scene", consumerFixtureSecret, uint64(time.Now().UnixMilli())); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.EnqueueBattleSettlement(context.Background(), r); status.Code(err) != codes.PermissionDenied {
+		t.Fatalf("Scene不能签Match生产入口: %v", err)
+	}
+	if err := serviceauth.Sign(method, r, "match", secret, uint64(time.Now().UnixMilli())); err != nil {
+		t.Fatal(err)
+	}
+	changed := proto.Clone(r).(*inboxpb.BattleSettlementInboxRequest)
+	changed.ExpectedOwnerRevision++
+	if _, err := s.EnqueueBattleSettlement(context.Background(), changed); status.Code(err) != codes.PermissionDenied {
+		t.Fatalf("改owner原件应拒: %v", err)
+	}
+	if store.calls != 0 {
+		t.Fatal("错误签名不得触存储")
+	}
+	resp, err := s.EnqueueBattleSettlement(context.Background(), r)
+	if err != nil {
+		t.Fatal(err)
+	}
+	v, err := serviceauth.New(map[string]string{"inbox": secret})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if caller, err := v.Verify(context.Background(), method+"/reply", resp); err != nil || caller != "inbox" {
+		t.Fatalf("回执签名无效: %s %v", caller, err)
+	}
+	digest, err := serviceauth.Digest(r)
+	if err != nil || resp.RequestDigest != digest || resp.Seq != 42 {
+		t.Fatal("回执未绑定原请求")
+	}
+	if _, err = s.LookupBattleSettlement(context.Background(), r); status.Code(err) != codes.PermissionDenied {
+		t.Fatalf("Enqueue签名不能用于Lookup: %v", err)
+	}
+	method = inboxpb.PlayerInbox_LookupBattleSettlement_FullMethodName
+	if err = serviceauth.Sign(method, r, "match", secret, uint64(time.Now().UnixMilli())); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = s.LookupBattleSettlement(context.Background(), r); err != nil {
+		t.Fatal(err)
+	}
+}
 
 func newTestConsumer(t *testing.T, store ConsumerStore, budget time.Duration) *PlayerInboxServer {
 	t.Helper()

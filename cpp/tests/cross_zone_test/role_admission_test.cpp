@@ -12,6 +12,7 @@
 #include "player/system/player_scene.h"
 #include "player/system/role_admission_system.h"
 #include "player/system/handoff_sql_barrier.h"
+#include "player/system/release_fence.h"
 #include "battle/system/player_battle.h"
 #include "player/comp/player_frozen_comp.h"
 #include "proto/common/component/battle_comp.pb.h"
@@ -546,4 +547,40 @@ TEST_F(RoleAdmissionTest, SealRevokesSubmittedRegistrationBeforeItsReplyCanActiv
     fenceReplies[0]();
     EXPECT_TRUE(activated.empty());
     EXPECT_FALSE(Admission::Allows(kPlayer, registers[0].identity().generation(), kRevision));
+}
+
+// 会话结束凭证(location-release-binding.md §3.3,2026-10-23):本节点完全不持有时凭证要先读 handoff_fence 原件再 CAS。
+// 登记在途时原件可能正是这条登记刚写的 H —— 一条正在建立的持有 —— 必须算作"本节点可能持有",既不读也不写;
+// 登记结清(Activate 之后由待入场条目 / 实体表示持有)才不再算。核对原件 S 用的本进程实例号与登记写入 S 同一来源。
+TEST_F(RoleAdmissionTest, RegistrationInFlightBlocksSessionEndedCredential) {
+    EXPECT_FALSE(Admission::HasAdmissionInFlight(kPlayer));
+    EXPECT_EQ("01234567-89ab-cdef-0123-456789abcdef", Admission::LocalInstanceId());
+    const auto skipLocalHolder = static_cast<std::size_t>(release_fence::SessionEndedCredential::kSkipLocalHolder);
+    const auto releaseWhileInFlight = [&](const char* stage) {
+        const auto before = release_fence_stats::Read();
+        PlayerLifecycleSystem::HandleSessionEndedRelease(kPlayer, Context().ownerEpoch, 0, 0);
+        const auto after = release_fence_stats::Read();
+        EXPECT_EQ(after.credentialDecisions[skipLocalHolder], before.credentialDecisions[skipLocalHolder] + 1) << stage;
+        EXPECT_EQ(after.credentialQualifications, before.credentialQualifications) << stage << ":不读资格原件";
+        EXPECT_EQ(after.credentialWritten + after.credentialEpochMoved + after.credentialSuperseded + after.credentialFailed,
+                  before.credentialWritten + before.credentialEpochMoved + before.credentialSuperseded + before.credentialFailed)
+            << stage << ":不写凭证";
+    };
+
+    delayFence = true;
+    ASSERT_NO_FATAL_FAILURE(Enter());
+    EXPECT_TRUE(Admission::HasAdmissionInFlight(kPlayer)) << "SQL 登记在途";
+    releaseWhileInFlight("sql registration");
+
+    ASSERT_NO_FATAL_FAILURE(CompleteRegister(0));
+    ASSERT_EQ(1u, fenceReads.size());
+    EXPECT_TRUE(Admission::HasAdmissionInFlight(kPlayer)) << "handoff_fence 登记在途(prior 读 / CAS 未回)";
+    releaseWhileInFlight("fence registration");
+
+    fenceReads[0]();
+    ASSERT_EQ(1u, activated.size());
+    EXPECT_FALSE(Admission::HasAdmissionInFlight(kPlayer)) << "登记已结清,持有改由待入场条目 / 实体表示";
+    const auto parsed = handoff_sql_barrier::ParseFence(activated[0].handoffFence);
+    ASSERT_TRUE(parsed);
+    EXPECT_EQ(Admission::LocalInstanceId(), parsed->sceneInstance) << "凭证核对 S 与登记写入 S 必须同一来源";
 }
